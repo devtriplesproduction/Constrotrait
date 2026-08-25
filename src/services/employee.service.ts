@@ -83,8 +83,20 @@ export async function onboardEmployee(data: OnboardFormData) {
     });
 
     if (authError) {
-      console.error("Auth user creation failed:", authError);
-      return { success: false, error: "Failed to create user account" };
+      if (authError.code === "email_exists") {
+        console.warn("Auth user creation duplicate email:", {
+          code: authError.code,
+          status: authError.status,
+          message: authError.message
+        });
+        return { success: false, error: "This work email is already registered." };
+      }
+      console.error("Auth user creation failed:", {
+        code: authError.code,
+        status: authError.status,
+        message: authError.message
+      });
+      return { success: false, error: "Failed to create user account." };
     }
 
     const userId = authUser.user.id;

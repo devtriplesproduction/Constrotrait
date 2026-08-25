@@ -282,14 +282,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
         branch_id: data.branch_id || undefined,
       };
 
-      // Wrap server action in a timeout to prevent UI hanging if Next.js silently swallows a 413 Payload Too Large error
-      const actionPromise = onboardEmployeeAction(onboardData as unknown as Parameters<typeof onboardEmployeeAction>[0]);
-      const timeoutPromise = new Promise<{ success: boolean, error?: string }>((_, reject) => 
-        setTimeout(() => reject(new Error("The server request timed out. If you uploaded large files, they might exceed the allowed size limit. Please try again with smaller files.")), 20000)
-      );
-
-      const result = await Promise.race([actionPromise, timeoutPromise]);
-
+      const result = await onboardEmployeeAction(onboardData as unknown as Parameters<typeof onboardEmployeeAction>[0]);
       if (result?.success) {
         toast({
           title: "Employee Provisioned Successfully",
@@ -308,18 +301,18 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
         }
         toast({
           title: "Provisioning Action Denied",
-          description: result?.error || "An unknown provisioning error occurred.",
+          description: result?.error as string,
           variant: "error"
         });
       }
     } catch (err: unknown) {
       console.error(err);
       if (typeof window !== 'undefined') {
-        window.alert(`Transaction Failure:\n\n${(err as Error)?.message || 'An unexpected network or file engine error occurred.'}`);
+        window.alert(`Transaction Failure:\n\nAn unexpected network or file engine error occurred. ${(err as Error)?.message || ''}`);
       }
       toast({
         title: "Transaction Failure",
-        description: (err as Error)?.message || "An unexpected network or file engine error occurred.",
+        description: "An unexpected network or file engine error occurred.",
         variant: "error"
       });
     } finally {
