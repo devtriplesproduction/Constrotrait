@@ -1,0 +1,44 @@
+"use client";
+
+import React from "react";
+import { LayoutDashboard, Users, ClipboardList } from "lucide-react";
+import { BaseSidebar, SidebarLink } from "./BaseSidebar";
+
+interface AdminSidebarProps {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  role?: string;
+}
+
+export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
+  const isEmployeeManagementAllowed = role?.includes('ADMIN') || role === 'HR';
+
+  const adminLinks: SidebarLink[] = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      title: "EOD Reports",
+      href: "/eod",
+      icon: ClipboardList,
+    },
+  ];
+
+  if (isEmployeeManagementAllowed) {
+    adminLinks.push({
+      title: "Employee Management",
+      icon: Users,
+      subLinks: [
+        {
+          title: "All Employees",
+          href: "/employees",
+          icon: Users,
+        },
+      ],
+    });
+  }
+
+  return <BaseSidebar links={adminLinks} isOpen={isOpen} setIsOpen={setIsOpen} />;
+}
