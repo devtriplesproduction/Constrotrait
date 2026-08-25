@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, Users, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardList, Building2 } from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
 
 interface AdminSidebarProps {
@@ -37,6 +37,14 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
           icon: Users,
         },
       ],
+    });
+  }
+
+  if (role?.includes('SUPER_ADMIN')) {
+    adminLinks.push({
+      title: "Branch Management",
+      href: "/branches",
+      icon: Building2,
     });
   }
 

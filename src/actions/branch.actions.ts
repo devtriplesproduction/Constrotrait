@@ -1,22 +1,43 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getBranches, createBranch, updateBranch } from "@/services/branch.service";
+import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
+import { BranchFormData } from "@/lib/validations/branch";
+import { createBranch, updateBranch, toggleBranchActive } from "@/services/branch.service";
 
-export async function getBranchesAction() {
-  return getBranches();
-}
+export async function createBranchAction(data: BranchFormData) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !user.roles.includes("SUPER_ADMIN")) {
+    return { success: false, error: "Unauthorized. Only Super Admins can create branches." };
+  }
 
-export async function createBranchAction(name: string, code: string, address?: string, is_active: boolean = true) {
-  const result = await createBranch(name, code, address, is_active);
+  const result = await createBranch(data);
   if (result.success) {
     revalidatePath("/branches", "page");
   }
   return result;
 }
 
-export async function updateBranchAction(id: string, updates: { name?: string, code?: string, address?: string, is_active?: boolean }) {
-  const result = await updateBranch(id, updates);
+export async function updateBranchAction(id: string, data: BranchFormData) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !user.roles.includes("SUPER_ADMIN")) {
+    return { success: false, error: "Unauthorized. Only Super Admins can update branches." };
+  }
+
+  const result = await updateBranch(id, data);
+  if (result.success) {
+    revalidatePath("/branches", "page");
+  }
+  return result;
+}
+
+export async function toggleBranchActiveAction(id: string, isActive: boolean) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !user.roles.includes("SUPER_ADMIN")) {
+    return { success: false, error: "Unauthorized. Only Super Admins can change branch status." };
+  }
+
+  const result = await toggleBranchActive(id, isActive);
   if (result.success) {
     revalidatePath("/branches", "page");
   }

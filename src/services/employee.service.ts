@@ -28,33 +28,9 @@ export async function onboardEmployee(data: OnboardFormData) {
     }
 
     // Admin client is genuinely required here to:
-    // 1. Check email/employee_id uniqueness globally (RLS restricts branch managers to their own branch)
-    // 2. Create the Auth user
-    // 3. Insert the profile (no INSERT policy exists for regular users)
+    // 1. Create the Auth user (since normal users cannot directly insert into auth.users)
+    // 2. Rollback the Auth user if profile insertion fails
     const supabaseAdmin = createAdminClient();
-
-    // Check if email already exists in profiles
-    const { data: existingProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("email", data.email.toLowerCase())
-      .maybeSingle();
-
-    if (existingProfile) {
-      return { success: false, error: `Email ${data.email} is already in use.` };
-    }
-
-    // Check if employee ID exists
-    const { data: existingEmpId } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("employee_id", data.employee_id)
-      .maybeSingle();
-
-    if (existingEmpId) {
-      return { success: false, error: `Employee ID ${data.employee_id} is already in use.` };
-    }
-
     const isActive = ['Probation', 'Confirmed'].includes(data.status as string);
 
     let targetBranchId = currentUser.branch_id;
@@ -101,8 +77,12 @@ export async function onboardEmployee(data: OnboardFormData) {
     }
 
     const userId = authUser.user.id;
+    
+    // We can now use the regular authenticated client to insert the profile
+    // Thanks to the new RLS policy for INSERT on public.profiles
+    const supabase = await createClient();
 
-    const { error: profileError } = await supabaseAdmin.from("profiles").insert({
+    const { error: profileError } = await supabase.from("profiles").insert({
       id: userId,
       email: data.email,
       first_name: data.first_name,
@@ -134,6 +114,18 @@ export async function onboardEmployee(data: OnboardFormData) {
       // Rollback auth user creation
       console.error("Profile creation failed:", profileError);
       await supabaseAdmin.auth.admin.deleteUser(userId);
+      
+      // Handle Unique Constraint Violation for employee_id or email
+      if (profileError.code === '23505') {
+        if (profileError.message.includes('employee_id')) {
+          return { success: false, error: `Employee ID ${data.employee_id} is already in use.` };
+        }
+        if (profileError.message.includes('email')) {
+          return { success: false, error: `Email ${data.email} is already in use.` };
+        }
+        return { success: false, error: "A unique constraint was violated. (Check Employee ID or Email)." };
+      }
+      
       return { success: false, error: "Failed to create user profile" };
     }
 

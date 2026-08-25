@@ -22,7 +22,11 @@ const eodSubmitSchema = z.object({
 export async function submitEODAction(formData: FormData) {
   try {
     const user = await getAuthenticatedUserWithRoles();
-    if (!user) return { success: false, error: "Unauthorized" };
+
+    if (!user) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const rawData = {
       employee_id: formData.get('employee_id') as string,
       report_date: formData.get('report_date') as string,
@@ -34,19 +38,27 @@ export async function submitEODAction(formData: FormData) {
     };
 
     const validatedData = eodSubmitSchema.parse(rawData);
-    
+
+    const isManager = canManageEOD(user.roles);
+    const isOwnEOD = user.id === validatedData.employee_id;
+
+    if (!isManager && !isOwnEOD) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const result = await submitEOD(validatedData);
-    
+
     if (result.success) {
       revalidatePath('/eod');
       return { success: true };
-    } else {
-      return { success: false, error: result.error };
     }
+
+    return { success: false, error: result.error };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message };
     }
+
     return { success: false, error: "An unexpected error occurred" };
   }
 }
@@ -117,9 +129,9 @@ export async function updateEODAction(formData: FormData) {
     };
 
     const validatedData = eodSubmitSchema.parse(rawData);
-    
+
     const result = await updateEOD(validatedData);
-    
+
     if (result.success) {
       revalidatePath('/eod');
       return { success: true };
