@@ -43,7 +43,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [activeBranches, setActiveBranches] = useState<{id: string, name: string}[]>([]);
+  const [activeBranches, setActiveBranches] = useState<{id: string, name: string, code: string}[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
@@ -52,15 +52,15 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
     async function init() {
       try {
         const profileRes = await getCurrentUserProfileAction();
-        if (profileRes?.success && profileRes.data) {
+        if (profileRes && "data" in profileRes && profileRes.success && profileRes.data) {
           const roles = profileRes.data.roles || [];
           const hasSuperAdmin = roles.includes("SUPER_ADMIN");
           setIsSuperAdmin(hasSuperAdmin);
           
           if (hasSuperAdmin) {
             const branchRes = await getActiveBranchesAction();
-            if (branchRes?.success && branchRes.data) {
-              setActiveBranches(branchRes.data);
+            if (branchRes && "data" in branchRes && branchRes.success && branchRes.data) {
+              setActiveBranches(branchRes.data as {id: string, name: string, code: string}[]);
             }
           }
         }
@@ -147,6 +147,10 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
   const lastName = useWatch({ control, name: "last_name" });
   const phoneNumber = useWatch({ control, name: "phone_number" });
   const watchedDepartment = useWatch({ control, name: "department" });
+  const watchedRoles = useWatch({ control, name: "roles" }) || [];
+  const watchedAdditionalRoles = useWatch({ control, name: "additional_roles" }) || [];
+  
+  const isBranchManager = watchedRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE") || watchedAdditionalRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE");
 
   useEffect(() => {
     if (phoneNumber) {
@@ -322,7 +326,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
     // Auto-navigate to the step with the error
     if (errors.first_name || errors.last_name || errors.dob || errors.gender || errors.phone_number || errors.personal_email || errors.address || errors.emergency_contact) {
       setStep(1);
-    } else if (errors.department || errors.designation || errors.employment_type || errors.salary || errors.experience || errors.joining_date) {
+    } else if (errors.department || errors.designation || errors.employment_type || errors.salary || errors.experience || errors.joining_date || errors.branch_id) {
       setStep(2);
     } else if (errors.email || errors.employee_id || errors.status || errors.password || errors.confirm_password) {
       setStep(4);
@@ -706,10 +710,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         onChange={(val) => {
                           const mappedRole = getSystemRoleForDesignation(watchedDepartment, val);
                           if (mappedRole !== "SUPER_ADMIN") {
-                            const currentRoles = (control._formValues.roles as string[]) || [];
-                            if (!currentRoles.includes(mappedRole)) {
-                               setValue("roles", [...currentRoles, mappedRole] as never);
-                            }
+                            setValue("roles", [mappedRole] as never);
                           }
                         }}
                       />
@@ -728,6 +729,21 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                     </div>
                   </div>
 
+                  {isSuperAdmin && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-zinc-500 ">
+                        Branch Assignment {isBranchManager ? "*" : ""}
+                      </label>
+                      <FormSelect
+                        name="branch_id"
+                        control={control}
+                        options={activeBranches.map(b => ({ value: b.id, label: `${b.name} (${b.code})` }))}
+                        placeholder="— Select Branch —"
+                        buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                      />
+                      {errors?.branch_id && <p className="text-xs text-rose-500 font-bold mt-1">{errors.branch_id.message}</p>}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-2">
@@ -764,20 +780,6 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       {errors.salary && <p className="text-xs text-rose-500 font-bold mt-1">{errors.salary.message}</p>}
                     </div>
                   </div>
-                  
-                  {isSuperAdmin && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 ">Branch Assignment *</label>
-                      <FormSelect
-                        name="branch_id"
-                        control={control}
-                        options={activeBranches.map(b => ({ value: b.id, label: b.name }))}
-                        placeholder="— Select Branch —"
-                        buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
-                      />
-                      {errors?.branch_id && <p className="text-xs text-rose-500 font-bold mt-1">{errors.branch_id.message}</p>}
-                    </div>
-                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-2">
