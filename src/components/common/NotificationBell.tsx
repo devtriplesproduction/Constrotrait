@@ -25,44 +25,43 @@ export function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const fetchUnreadCount = async () => {
-    try {
-      const res = await getUnreadNotificationCountAction();
-      if (res.success && 'count' in res && res.count !== undefined) {
-        setUnreadCount(res.count as number);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const fetchNotifications = async () => {
-    setLoading(true);
-    try {
-      const res = await getNotificationsAction();
-      if (res.success && 'data' in res && res.data) {
-        setNotifications(res.data as Notification[]);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchUnreadCount();
-    // In a real application, you might want to set up an interval or real-time subscription here
-    // ConstroTrait doesn't use realtime by default, so we'll just fetch on mount
-    const interval = setInterval(fetchUnreadCount, 60000); // Polling every minute
-    return () => clearInterval(interval);
+    let mounted = true;
+    const fetchUnread = () => {
+      getUnreadNotificationCountAction().then(res => {
+        if (mounted && res.success && 'count' in res && res.count !== undefined) {
+          setUnreadCount(res.count as number);
+        }
+      }).catch(console.error);
+    };
+    
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
+    let mounted = true;
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchNotifications();
+      Promise.resolve().then(() => setLoading(true));
+      getNotificationsAction().then(res => {
+        if (mounted) {
+          if (res.success && 'data' in res && res.data) {
+            setNotifications(res.data as Notification[]);
+          }
+          setLoading(false);
+        }
+      }).catch(err => {
+        console.error(err);
+        if (mounted) setLoading(false);
+      });
     }
+    return () => {
+      mounted = false;
+    };
   }, [isOpen]);
 
   useEffect(() => {

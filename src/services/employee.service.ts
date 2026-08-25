@@ -1,38 +1,37 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { OnboardFormData } from "@/lib/validations/onboard";
-import { getAuthenticatedUser } from "./auth.service";
+import { getAuthenticatedUser, getAuthenticatedUserWithRoles } from "./auth.service";
+import { canManageEmployees, isSuperAdmin, isBranchManager, isHR } from "@/config/roles";
 import { Json } from "@/types/database";
 
 export async function onboardEmployee(data: OnboardFormData) {
   try {
-    const currentUser = await getAuthenticatedUser();
+    const currentUser = await getAuthenticatedUserWithRoles();
     if (!currentUser) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const supabaseAdmin = createAdminClient();
-
-    // Verify current user is SUPER_ADMIN, BRANCH_MANAGER_ADMINISTRATIVE, or HR
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("roles, branch_id")
-      .eq("id", currentUser.id)
-      .single();
-
-    const isSuperAdmin = profile?.roles?.includes("SUPER_ADMIN");
-    const isBranchManager = profile?.roles?.includes("BRANCH_MANAGER_ADMINISTRATIVE");
-    const isHR = profile?.roles?.includes("HR");
-
-    if (!isSuperAdmin && !isBranchManager && !isHR) {
+    if (!canManageEmployees(currentUser.roles)) {
       return { success: false, error: "Insufficient permissions to onboard employees" };
     }
 
-    if (!isSuperAdmin) {
+    const isSuperAdminUser = isSuperAdmin(currentUser.roles);
+    const isBranchManagerUser = isBranchManager(currentUser.roles);
+    const isHRUser = isHR(currentUser.roles);
+
+    if (!isSuperAdminUser) {
       if (data.roles.includes("SUPER_ADMIN") || data.roles.includes("BRANCH_MANAGER_ADMINISTRATIVE")) {
         return { success: false, error: "Insufficient permissions to assign privileged roles." };
       }
     }
+
+    // Admin client is genuinely required here to:
+    // 1. Check email/employee_id uniqueness globally (RLS restricts branch managers to their own branch)
+    // 2. Create the Auth user
+    // 3. Insert the profile (no INSERT policy exists for regular users)
+    const supabaseAdmin = createAdminClient();
 
     // Check if email already exists in profiles
     const { data: existingProfile } = await supabaseAdmin
@@ -58,12 +57,13 @@ export async function onboardEmployee(data: OnboardFormData) {
 
     const isActive = ['Probation', 'Confirmed'].includes(data.status as string);
 
-    let targetBranchId = profile?.branch_id;
+    let targetBranchId = currentUser.branch_id;
 
-    if (isSuperAdmin) {
+    if (isSuperAdminUser) {
       if (data.branch_id) {
-        // Validate the explicitly provided branch
-        const { data: branchData } = await supabaseAdmin
+        // Validate the explicitly provided branch using regular authenticated client
+        const supabase = await createClient();
+        const { data: branchData } = await supabase
           .from("branches")
           .select("is_active")
           .eq("id", data.branch_id)
@@ -82,7 +82,7 @@ export async function onboardEmployee(data: OnboardFormData) {
     }
 
     // If branch manager or HR, they can ONLY onboard into their own branch.
-    if ((isBranchManager || isHR) && !isSuperAdmin && !targetBranchId) {
+    if ((isBranchManagerUser || isHRUser) && !isSuperAdminUser && !targetBranchId) {
        return { success: false, error: "Managers and HR must have an assigned branch to onboard employees." };
     }
 

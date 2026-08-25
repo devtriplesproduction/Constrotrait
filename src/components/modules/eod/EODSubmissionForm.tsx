@@ -68,13 +68,15 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
   }, [selectedEmployeeId, reportDate, canManage]);
 
   useEffect(() => {
+    let url: string | null = null;
     if (file) {
-      const url = URL.createObjectURL(file);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFileUrl(url);
-      return () => URL.revokeObjectURL(url);
+      url = URL.createObjectURL(file);
+      Promise.resolve().then(() => setFileUrl(url));
+      return () => {
+        if (url) URL.revokeObjectURL(url);
+      };
     } else {
-      setFileUrl(null);
+      Promise.resolve().then(() => setFileUrl(null));
     }
   }, [file]);
 

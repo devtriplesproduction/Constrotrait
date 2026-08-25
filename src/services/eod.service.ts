@@ -360,7 +360,7 @@ export async function getEODByEmployeeAndDate(employeeId: string, reportDate: st
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('eod_reports')
-      .select('*')
+      .select('id, employee_id, report_date, tasks_accomplished, office_hours, location, blockers, photo_url, status, submitted_by, approved_by, approved_at, rejection_reason, created_at, updated_at')
       .eq('employee_id', employeeId)
       .eq('report_date', reportDate)
       .single();

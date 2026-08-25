@@ -59,12 +59,13 @@ export async function getAuthenticatedUserWithRoles() {
   const supabase = await createClient();
   const { data: profile } = await supabase
     .from('profiles')
-    .select('roles')
+    .select('roles, branch_id')
     .eq('id', user.id)
     .single();
 
   return {
     ...user,
     roles: profile?.roles || [],
+    branch_id: profile?.branch_id || null,
   };
 }

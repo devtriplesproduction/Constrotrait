@@ -57,7 +57,7 @@ export default async function EODPage({ searchParams }: PageProps) {
 
     tasksCompleted = todayEOD ? todayEOD.tasks_accomplished.split('\n').filter((t: string) => t.trim().length > 0).length : 0;
     hoursLogged = todayEOD ? todayEOD.office_hours : 0;
-    hasBlockers = todayEOD && todayEOD.blockers && todayEOD.blockers.trim().length > 0;
+    hasBlockers = !!(todayEOD && todayEOD.blockers && todayEOD.blockers.trim().length > 0);
 
     if (canManage) {
       const { data: emps } = await getAllEmployees({ compact: true });

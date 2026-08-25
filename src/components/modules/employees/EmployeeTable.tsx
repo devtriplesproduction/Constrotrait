@@ -452,6 +452,7 @@ export function EmployeeTable({ employees }: EmployeeTableProps) {
       {/* Profile Modal */}
       {selectedEmployee && (
         <EmployeeProfileModal
+          key={selectedEmployee.id}
           employee={selectedEmployee}
           onClose={() => setSelectedEmployee(null)}
         />

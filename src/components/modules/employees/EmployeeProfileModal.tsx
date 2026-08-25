@@ -242,39 +242,8 @@ export function EmployeeProfileModal({
     );
   };
 
-  // Sync state if employee changes
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFormData({ ...employee });
-    setInitialFormData({ ...employee });
-  }, [employee]);
 
-  // Keep work email updated if names change in edit mode
-  useEffect(() => {
-    if (
-      isEditing &&
-      formData.first_name &&
-      formData.last_name &&
-      initialFormData
-    ) {
-      if (
-        formData.first_name !== initialFormData.first_name ||
-        formData.last_name !== initialFormData.last_name
-      ) {
-        const sanitizedFirst = formData.first_name
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "");
-        const sanitizedLast = formData.last_name
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "");
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setFormData((prev) => ({
-          ...prev,
-          email: `${sanitizedFirst}.${sanitizedLast}@constrotrait.com`,
-        }));
-      }
-    }
-  }, [formData.first_name, formData.last_name, isEditing, initialFormData]);
+
 
   // Handle Dirty Checking
   const handleClose = () => {
@@ -587,9 +556,16 @@ export function EmployeeProfileModal({
                   </label>
                   <Input
                     value={formData.first_name || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, first_name: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const newFirstName = e.target.value;
+                      const sanitizedFirst = newFirstName.toLowerCase().replace(/[^a-z0-9]/g, "");
+                      const sanitizedLast = (formData.last_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                      setFormData({ 
+                        ...formData, 
+                        first_name: newFirstName,
+                        ...(isEditing ? { email: `${sanitizedFirst}.${sanitizedLast}@constrotrait.com` } : {})
+                      });
+                    }}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
                   />
                 </div>
@@ -599,9 +575,16 @@ export function EmployeeProfileModal({
                   </label>
                   <Input
                     value={formData.last_name || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, last_name: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const newLastName = e.target.value;
+                      const sanitizedFirst = (formData.first_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                      const sanitizedLast = newLastName.toLowerCase().replace(/[^a-z0-9]/g, "");
+                      setFormData({ 
+                        ...formData, 
+                        last_name: newLastName,
+                        ...(isEditing ? { email: `${sanitizedFirst}.${sanitizedLast}@constrotrait.com` } : {})
+                      });
+                    }}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
                   />
                 </div>
