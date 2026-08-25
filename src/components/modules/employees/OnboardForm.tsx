@@ -282,7 +282,14 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
         branch_id: data.branch_id || undefined,
       };
 
-      const result = await onboardEmployeeAction(onboardData as unknown as Parameters<typeof onboardEmployeeAction>[0]);
+      // Wrap server action in a timeout to prevent UI hanging if Next.js silently swallows a 413 Payload Too Large error
+      const actionPromise = onboardEmployeeAction(onboardData as unknown as Parameters<typeof onboardEmployeeAction>[0]);
+      const timeoutPromise = new Promise<{ success: boolean, error?: string }>((_, reject) => 
+        setTimeout(() => reject(new Error("The server request timed out. If you uploaded large files, they might exceed the allowed size limit. Please try again with smaller files.")), 20000)
+      );
+
+      const result = await Promise.race([actionPromise, timeoutPromise]);
+
       if (result?.success) {
         toast({
           title: "Employee Provisioned Successfully",
@@ -301,18 +308,18 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
         }
         toast({
           title: "Provisioning Action Denied",
-          description: result?.error as string,
+          description: result?.error || "An unknown provisioning error occurred.",
           variant: "error"
         });
       }
     } catch (err: unknown) {
       console.error(err);
       if (typeof window !== 'undefined') {
-        window.alert(`Transaction Failure:\n\nAn unexpected network or file engine error occurred. ${(err as Error)?.message || ''}`);
+        window.alert(`Transaction Failure:\n\n${(err as Error)?.message || 'An unexpected network or file engine error occurred.'}`);
       }
       toast({
         title: "Transaction Failure",
-        description: "An unexpected network or file engine error occurred.",
+        description: (err as Error)?.message || "An unexpected network or file engine error occurred.",
         variant: "error"
       });
     } finally {
@@ -717,7 +724,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       {errors?.designation && <p className="text-xs text-rose-500 font-bold mt-1">{errors.designation.message}</p>}
                     </div>
 
-                    <div className="space-y-2 sm:col-span-2">
+                    <div className={cn("space-y-2", !isSuperAdmin && "sm:col-span-2")}>
                       <label className="text-xs font-bold text-zinc-500 ">Additional System Roles (Optional)</label>
                       <FormMultiSelect
                         name="additional_roles"
@@ -727,25 +734,17 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                       />
                     </div>
-                  </div>
 
-                  {isSuperAdmin && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 ">
-                        Branch Assignment {isBranchManager ? "*" : ""}
-                      </label>
-                      <FormSelect
-                        name="branch_id"
-                        control={control}
-                        options={activeBranches.map(b => ({ value: b.id, label: `${b.name} (${b.code})` }))}
-                        placeholder="— Select Branch —"
-                        buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
-                      />
-                      {errors?.branch_id && <p className="text-xs text-rose-500 font-bold mt-1">{errors.branch_id.message}</p>}
-                    </div>
-                  )}
+                    {isSuperAdmin && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 ">
+                          Branch Assignment {isBranchManager ? "*" : ""}
+                        </label>
+                        <FormSelect name="branch_id" control={control} options={activeBranches.map(b => ({ value: b.id, label: `${b.name} (${b.code})` }))} placeholder="— Select Branch —" buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all" />
+                        {errors?.branch_id && <p className="text-xs text-rose-500 font-bold mt-1">{errors.branch_id.message}</p>}
+                      </div>
+                    )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-zinc-500 ">Employment Type *</label>
                       <div className="relative">
@@ -779,9 +778,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       </div>
                       {errors.salary && <p className="text-xs text-rose-500 font-bold mt-1">{errors.salary.message}</p>}
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-zinc-500 ">Experience (Years)</label>
                       <Input

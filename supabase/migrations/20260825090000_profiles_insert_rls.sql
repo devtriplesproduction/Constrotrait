@@ -15,7 +15,7 @@ WITH CHECK (
       branch_id = public.get_user_branch_id() 
       AND 
       -- Non-Super Admins cannot create Super Admins
-      NOT (roles ? 'SUPER_ADMIN')
+      NOT ('SUPER_ADMIN' = ANY(roles))
     )
   )
 );
