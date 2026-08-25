@@ -2,16 +2,25 @@
 
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
-import { BranchFormData } from "@/lib/validations/branch";
+import { branchSchema, BranchFormData } from "@/lib/validations/branch";
 import { createBranch, updateBranch, toggleBranchActive } from "@/services/branch.service";
 
 export async function createBranchAction(data: BranchFormData) {
   const user = await getAuthenticatedUserWithRoles();
-  if (!user || !user.roles.includes("SUPER_ADMIN")) {
-    return { success: false, error: "Unauthorized. Only Super Admins can create branches." };
+  if (!user) {
+    return { success: false, error: "Unauthorized. Please log in." };
   }
 
-  const result = await createBranch(data);
+  const validationResult = branchSchema.safeParse(data);
+  if (!validationResult.success) {
+    return { success: false, error: "Validation failed. Please check your input." };
+  }
+
+  if (!user.roles.includes("SUPER_ADMIN")) {
+    return { success: false, error: "Forbidden. Only Super Admins can create branches." };
+  }
+
+  const result = await createBranch(validationResult.data);
   if (result.success) {
     revalidatePath("/branches", "page");
   }
@@ -20,11 +29,24 @@ export async function createBranchAction(data: BranchFormData) {
 
 export async function updateBranchAction(id: string, data: BranchFormData) {
   const user = await getAuthenticatedUserWithRoles();
-  if (!user || !user.roles.includes("SUPER_ADMIN")) {
-    return { success: false, error: "Unauthorized. Only Super Admins can update branches." };
+  if (!user) {
+    return { success: false, error: "Unauthorized. Please log in." };
   }
 
-  const result = await updateBranch(id, data);
+  if (!id || typeof id !== "string") {
+    return { success: false, error: "Invalid branch ID." };
+  }
+
+  const validationResult = branchSchema.safeParse(data);
+  if (!validationResult.success) {
+    return { success: false, error: "Validation failed. Please check your input." };
+  }
+
+  if (!user.roles.includes("SUPER_ADMIN")) {
+    return { success: false, error: "Forbidden. Only Super Admins can update branches." };
+  }
+
+  const result = await updateBranch(id, validationResult.data);
   if (result.success) {
     revalidatePath("/branches", "page");
   }
@@ -33,8 +55,20 @@ export async function updateBranchAction(id: string, data: BranchFormData) {
 
 export async function toggleBranchActiveAction(id: string, isActive: boolean) {
   const user = await getAuthenticatedUserWithRoles();
-  if (!user || !user.roles.includes("SUPER_ADMIN")) {
-    return { success: false, error: "Unauthorized. Only Super Admins can change branch status." };
+  if (!user) {
+    return { success: false, error: "Unauthorized. Please log in." };
+  }
+
+  if (!id || typeof id !== "string") {
+    return { success: false, error: "Invalid branch ID." };
+  }
+
+  if (typeof isActive !== "boolean") {
+    return { success: false, error: "Invalid status value." };
+  }
+
+  if (!user.roles.includes("SUPER_ADMIN")) {
+    return { success: false, error: "Forbidden. Only Super Admins can change branch status." };
   }
 
   const result = await toggleBranchActive(id, isActive);

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUser } from "./auth.service";
 import { BranchFormData } from "@/lib/validations/branch";
-import { Database } from "@/types/database";
+
 
 export async function getBranches() {
   try {
@@ -14,7 +14,7 @@ export async function getBranches() {
 
     const { data, error } = await supabase
       .from("branches")
-      .select("*")
+      .select("id, name, code, address, is_active, created_at, updated_at")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -41,7 +41,7 @@ export async function createBranch(data: BranchFormData) {
         address: data.address || null,
         is_active: data.is_active,
       })
-      .select()
+      .select("id, name, code, address, is_active, created_at, updated_at")
       .single();
 
     if (error) {
@@ -79,7 +79,7 @@ export async function updateBranch(id: string, data: BranchFormData) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .select()
+      .select("id, name, code, address, is_active, created_at, updated_at")
       .single();
 
     if (error) {
@@ -114,7 +114,7 @@ export async function toggleBranchActive(id: string, isActive: boolean) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .select()
+      .select("id, name, code, address, is_active, created_at, updated_at")
       .single();
 
     if (error) {
