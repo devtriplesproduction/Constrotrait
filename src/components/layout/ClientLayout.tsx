@@ -10,9 +10,10 @@ interface ClientLayoutProps {
   children: React.ReactNode;
   user: User;
   role: string;
+  branchName?: string;
 }
 
-export function ClientLayout({ children, user, role }: ClientLayoutProps) {
+export function ClientLayout({ children, user, role, branchName }: ClientLayoutProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -22,7 +23,7 @@ export function ClientLayout({ children, user, role }: ClientLayoutProps) {
       <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} role={role} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar user={user} role={role} onMenuClick={() => setSidebarOpen(true)} />
+        <Topbar user={user} role={role} branchName={branchName} onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-auto p-4 md:p-6 lg:px-8 lg:py-6">
           {children}
         </main>

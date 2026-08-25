@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Menu, LogOut, ChevronDown, User } from "lucide-react";
+import { Menu, LogOut, ChevronDown, User, MapPin } from "lucide-react";
 import { Avatar } from "@/components/common/Avatar";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { logoutAction } from "@/actions/auth.actions";
@@ -12,10 +12,11 @@ import { NotificationBell } from "@/components/common/NotificationBell";
 interface TopbarProps {
   user: SupabaseUser;
   role: string;
+  branchName?: string;
   onMenuClick: () => void;
 }
 
-export function Topbar({ user, role, onMenuClick }: TopbarProps) {
+export function Topbar({ user, role, branchName, onMenuClick }: TopbarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -41,8 +42,8 @@ export function Topbar({ user, role, onMenuClick }: TopbarProps) {
   const initials = firstName[0]?.toUpperCase() + (lastName[0]?.toUpperCase() || "");
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between px-6 bg-white/80 backdrop-blur-xl border-b border-zinc-200">
-      {/* ── Left: Mobile hamburger ── */}
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between px-6 bg-white/80 backdrop-blur-xl border-b border-zinc-200 shadow-sm">
+      {/* ── Left: Mobile hamburger & Branch Badge ── */}
       <div className="flex items-center gap-4">
         <Button variant="custom" onClick={onMenuClick}
           aria-label="Open navigation"
@@ -50,6 +51,16 @@ export function Topbar({ user, role, onMenuClick }: TopbarProps) {
         >
           <Menu className="w-5 h-5" />
         </Button>
+        {branchName && (
+          <div className="hidden md:flex items-center">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-50 to-orange-100/50 border border-orange-200/60 shadow-sm">
+              <MapPin className="w-3.5 h-3.5 text-orange-600" />
+              <span className="text-xs font-bold text-orange-800 tracking-wide uppercase">
+                {branchName}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Right: Notifications & User Profile ── */}

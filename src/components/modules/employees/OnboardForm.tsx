@@ -43,11 +43,11 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [activeBranches, setActiveBranches] = useState<{id: string, name: string, code: string}[]>([]);
+  const [activeBranches, setActiveBranches] = useState<{ id: string, name: string, code: string }[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
-    
+
     // Fetch profile & branches
     async function init() {
       try {
@@ -56,11 +56,11 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
           const roles = profileRes.data.roles || [];
           const hasSuperAdmin = roles.includes("SUPER_ADMIN");
           setIsSuperAdmin(hasSuperAdmin);
-          
+
           if (hasSuperAdmin) {
             const branchRes = await getActiveBranchesAction();
             if (branchRes && "data" in branchRes && branchRes.success && branchRes.data) {
-              setActiveBranches(branchRes.data as {id: string, name: string, code: string}[]);
+              setActiveBranches(branchRes.data as { id: string, name: string, code: string }[]);
             }
           }
         }
@@ -69,7 +69,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
       }
     }
     init();
-    
+
     return () => clearTimeout(timer);
   }, []);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -132,7 +132,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
       salary: "" as unknown as number,
       experience: "" as unknown as number,
       location: "office",
-      status: "Probation",
+      status: "Resignedtion",
       joining_date: new Date().toISOString().split('T')[0],
       department_head: false,
       reporting_manager: "",
@@ -149,7 +149,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
   const watchedDepartment = useWatch({ control, name: "department" });
   const watchedRoles = useWatch({ control, name: "roles" }) || [];
   const watchedAdditionalRoles = useWatch({ control, name: "additional_roles" }) || [];
-  
+
   const isBranchManager = watchedRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE") || watchedAdditionalRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE");
 
   useEffect(() => {

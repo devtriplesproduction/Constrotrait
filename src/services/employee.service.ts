@@ -65,12 +65,12 @@ export async function onboardEmployee(data: OnboardFormData) {
 
     // If branch manager or HR, they can ONLY onboard into their own branch.
     if ((isBranchManagerUser || isHRUser) && !isSuperAdminUser && !targetBranchId) {
-       return { success: false, error: "Managers and HR must have an assigned branch to onboard employees." };
+      return { success: false, error: "Managers and HR must have an assigned branch to onboard employees." };
     }
 
     const allRoles = [...(data.roles || []), ...(data.additional_roles || [])];
     if (allRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE") && !targetBranchId) {
-       return { success: false, error: "Branch assignment is strictly required for Branch Managers." };
+      return { success: false, error: "Branch assignment is strictly required for Branch Managers." };
     }
 
     // Create auth user
@@ -83,24 +83,12 @@ export async function onboardEmployee(data: OnboardFormData) {
     });
 
     if (authError) {
-      if (authError.code === "email_exists") {
-        console.warn("Auth user creation duplicate email:", {
-          code: authError.code,
-          status: authError.status,
-          message: authError.message
-        });
-        return { success: false, error: "This work email is already registered." };
-      }
-      console.error("Auth user creation failed:", {
-        code: authError.code,
-        status: authError.status,
-        message: authError.message
-      });
-      return { success: false, error: "Failed to create user account." };
+      console.error("Auth user creation failed:", authError);
+      return { success: false, error: "Failed to create user account" };
     }
 
     const userId = authUser.user.id;
-    
+
     // We can now use the regular authenticated client to insert the profile
     // Thanks to the new RLS policy for INSERT on public.profiles
     const supabase = await createClient();
@@ -137,7 +125,7 @@ export async function onboardEmployee(data: OnboardFormData) {
       // Rollback auth user creation
       console.error("Profile creation failed:", profileError);
       await supabaseAdmin.auth.admin.deleteUser(userId);
-      
+
       // Handle Unique Constraint Violation for employee_id or email
       if (profileError.code === '23505') {
         if (profileError.message.includes('employee_id')) {
@@ -148,14 +136,14 @@ export async function onboardEmployee(data: OnboardFormData) {
         }
         return { success: false, error: "A unique constraint was violated. (Check Employee ID or Email)." };
       }
-      
+
       return { success: false, error: "Failed to create user profile" };
     }
 
-    return { 
-      success: true, 
-      data: { id: userId, email: data.email }, 
-      message: `Employee ${data.first_name} onboarded successfully.` 
+    return {
+      success: true,
+      data: { id: userId, email: data.email },
+      message: `Employee ${data.first_name} onboarded successfully.`
     };
   } catch (err: unknown) {
     console.error("Onboarding Failure:", err);
@@ -167,15 +155,29 @@ export async function getAllEmployees(options?: { compact?: boolean }) {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
-    
+
     const currentUser = await getAuthenticatedUser();
     if (!currentUser) return { success: false, error: "Unauthorized" };
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("roles, branch_id")
       .eq("id", currentUser.id)
       .single();
+
+    if (profileError) {
+      console.error("Failed to fetch current user profile:", {
+        message: profileError.message,
+        code: profileError.code,
+        details: profileError.details,
+        hint: profileError.hint,
+      });
+
+      return {
+        success: false,
+        error: "Failed to fetch current user profile",
+      };
+    }
 
     const isSuperAdmin = profile?.roles?.includes("SUPER_ADMIN");
     const isBranchManager = profile?.roles?.includes("BRANCH_MANAGER_ADMINISTRATIVE");
@@ -212,13 +214,20 @@ export async function getAllEmployees(options?: { compact?: boolean }) {
         .from("profiles")
         .select("id, first_name, last_name, employee_id")
         .order("first_name", { ascending: true });
-        
+
       if (!isSuperAdmin && (isBranchManager || isHR || isAdminInwardCRE)) {
-        query = query.eq("branch_id", profile?.branch_id as string);
+        if (!profile?.branch_id) {
+          return {
+            success: false,
+            error: "You must be assigned to a branch to view employees.",
+          };
+        }
+
+        query = query.eq("branch_id", profile.branch_id);
       }
 
       const { data, error } = await query;
-        
+
       if (error) {
         console.error("Database query failed:", error);
         return { success: false, error: "Failed to fetch employees" };
@@ -255,7 +264,7 @@ export async function getCurrentUserProfile() {
 
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
-    
+
     const { data, error } = await supabase
       .from("profiles")
       .select("id, email, first_name, last_name, roles, department, dob")

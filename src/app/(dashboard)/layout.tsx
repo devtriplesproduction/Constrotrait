@@ -31,8 +31,10 @@ export default async function DashboardLayout({
     todayBirthdays = ('data' in birthdaysRes && birthdaysRes.data) ? birthdaysRes.data : [];
   }
 
+  const branchName = currentUserProfile?.branches?.name || "";
+
   return (
-    <ClientLayout user={user} role={role}>
+    <ClientLayout user={user} role={role} branchName={branchName}>
       <BirthdayNotifier currentUserProfile={currentUserProfile} todayBirthdays={todayBirthdays} />
       {children}
     </ClientLayout>
