@@ -37,6 +37,12 @@ export async function onboardEmployee(data: OnboardFormData) {
 
     if (isSuperAdminUser) {
       if (data.branch_id) {
+        // Validate UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(data.branch_id)) {
+          return { success: false, error: "Invalid branch ID format." };
+        }
+
         // Validate the explicitly provided branch using regular authenticated client
         const supabase = await createClient();
         const { data: branchData } = await supabase
@@ -60,6 +66,11 @@ export async function onboardEmployee(data: OnboardFormData) {
     // If branch manager or HR, they can ONLY onboard into their own branch.
     if ((isBranchManagerUser || isHRUser) && !isSuperAdminUser && !targetBranchId) {
        return { success: false, error: "Managers and HR must have an assigned branch to onboard employees." };
+    }
+
+    const allRoles = [...(data.roles || []), ...(data.additional_roles || [])];
+    if (allRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE") && !targetBranchId) {
+       return { success: false, error: "Branch assignment is strictly required for Branch Managers." };
     }
 
     // Create auth user

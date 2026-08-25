@@ -1,7 +1,32 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUser } from "./auth.service";
 import { BranchFormData } from "@/lib/validations/branch";
+export async function getActiveBranches() {
+  try {
+    const supabase = await createClient();
+    const currentUser = await getAuthenticatedUser();
+    
+    if (!currentUser) {
+      return { success: false, error: "Unauthorized" };
+    }
 
+    const { data, error } = await supabase
+      .from("branches")
+      .select("id, name, code, is_active")
+      .eq("is_active", true)
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("Failed to fetch active branches:", error);
+      return { success: false, error: "Failed to fetch active branches" };
+    }
+
+    return { success: true, data };
+  } catch (err: unknown) {
+    console.error("Failed to fetch active branches:", err);
+    return { success: false, error: "Failed to fetch active branches" };
+  }
+}
 
 export async function getBranches() {
   try {

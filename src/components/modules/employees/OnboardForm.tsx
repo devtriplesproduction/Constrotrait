@@ -13,7 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { onboardSchema, type OnboardFormData } from "@/lib/validations/onboard";
 import { DEPARTMENTS, getDesignationsForDepartment, getSystemRoleForDesignation } from "@/config/departments";
 import Image from "next/image";
-import { onboardEmployeeAction } from "@/actions/employee.actions";
+import { onboardEmployeeAction, getCurrentUserProfileAction } from "@/actions/employee.actions";
+import { getActiveBranchesAction } from "@/actions/branch.actions";
 import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
@@ -41,9 +42,34 @@ interface UploadedFile {
 export function OnboardForm({ onSuccess }: OnboardFormProps) {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [activeBranches, setActiveBranches] = useState<{id: string, name: string}[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
+    
+    // Fetch profile & branches
+    async function init() {
+      try {
+        const profileRes = await getCurrentUserProfileAction();
+        if (profileRes?.success && profileRes.data) {
+          const roles = profileRes.data.roles || [];
+          const hasSuperAdmin = roles.includes("SUPER_ADMIN");
+          setIsSuperAdmin(hasSuperAdmin);
+          
+          if (hasSuperAdmin) {
+            const branchRes = await getActiveBranchesAction();
+            if (branchRes?.success && branchRes.data) {
+              setActiveBranches(branchRes.data);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Init err", e);
+      }
+    }
+    init();
+    
     return () => clearTimeout(timer);
   }, []);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -155,6 +181,9 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
       fieldsToValidate = ["first_name", "last_name", "dob", "gender", "phone_number", "personal_email", "address", "emergency_contact"];
     } else if (step === 2) {
       fieldsToValidate = ["department", "designation", "employment_type", "salary", "experience", "joining_date"];
+      if (isSuperAdmin) {
+        fieldsToValidate.push("branch_id");
+      }
     } else if (step === 3) {
       // Step 3 is document uploading, no sync validations required
       setStep(4);
@@ -245,7 +274,8 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
         })),
         reporting_manager_id: data.reporting_manager || null,
         department_head_id: data.department_head ? data.reporting_manager || null : null,
-        approval_authority: data.roles?.includes("BRANCH_MANAGER_ADMINISTRATIVE")
+        approval_authority: combinedRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE"),
+        branch_id: data.branch_id || undefined,
       };
 
       const result = await onboardEmployeeAction(onboardData as unknown as Parameters<typeof onboardEmployeeAction>[0]);
@@ -676,7 +706,10 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         onChange={(val) => {
                           const mappedRole = getSystemRoleForDesignation(watchedDepartment, val);
                           if (mappedRole !== "SUPER_ADMIN") {
-                            setValue("roles", [mappedRole] as never);
+                            const currentRoles = (control._formValues.roles as string[]) || [];
+                            if (!currentRoles.includes(mappedRole)) {
+                               setValue("roles", [...currentRoles, mappedRole] as never);
+                            }
                           }
                         }}
                       />
@@ -731,6 +764,20 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       {errors.salary && <p className="text-xs text-rose-500 font-bold mt-1">{errors.salary.message}</p>}
                     </div>
                   </div>
+                  
+                  {isSuperAdmin && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-zinc-500 ">Branch Assignment *</label>
+                      <FormSelect
+                        name="branch_id"
+                        control={control}
+                        options={activeBranches.map(b => ({ value: b.id, label: b.name }))}
+                        placeholder="— Select Branch —"
+                        buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                      />
+                      {errors?.branch_id && <p className="text-xs text-rose-500 font-bold mt-1">{errors.branch_id.message}</p>}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-2">

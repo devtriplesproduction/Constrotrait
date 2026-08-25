@@ -3,7 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
 import { branchSchema, BranchFormData } from "@/lib/validations/branch";
-import { createBranch, updateBranch, toggleBranchActive } from "@/services/branch.service";
+import { createBranch, updateBranch, toggleBranchActive, getActiveBranches } from "@/services/branch.service";
+
+export async function getActiveBranchesAction() {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user) {
+    return { success: false, error: "Unauthorized. Please log in." };
+  }
+  
+  if (!user.roles.includes("SUPER_ADMIN")) {
+    return { success: false, error: "Forbidden. Only Super Admins can list active branches for assignment." };
+  }
+
+  return getActiveBranches();
+}
 
 export async function createBranchAction(data: BranchFormData) {
   const user = await getAuthenticatedUserWithRoles();
