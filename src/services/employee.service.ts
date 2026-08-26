@@ -119,6 +119,7 @@ export async function onboardEmployee(data: OnboardFormData) {
       salary: data.salary || 0,
       experience: data.experience || 0,
       documents: (data.documents || []) as Json,
+      reporting_manager_id: data.reporting_manager_id || null,
     });
 
     if (profileError) {

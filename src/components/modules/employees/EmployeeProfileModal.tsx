@@ -33,6 +33,7 @@ import {
   getSalaryHikesAction,
   resetEmployeePasswordAction,
 } from "@/actions/admin.actions";
+import { getAllEmployeesAction } from "@/actions/employee.actions";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Avatar } from "@/components/common/Avatar";
 import { cn } from "@/lib/utils/cn";
@@ -70,6 +71,7 @@ export interface EmployeeFormData {
   emergency_contact_name?: string | null;
   emergency_contact_relation?: string | null;
   emergency_contact_number?: string | null;
+  reporting_manager_id?: string | null;
   [key: string]: unknown;
 }
 
@@ -106,11 +108,24 @@ export function EmployeeProfileModal({
     {},
   );
 
-  // Data State
   const [formData, setFormData] = useState<EmployeeFormData>({ ...employee });
   const [initialFormData, setInitialFormData] = useState<EmployeeFormData>({
     ...employee,
   });
+
+  const [employees, setEmployees] = useState<{ id: string, first_name: string, last_name: string }[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadEmployees() {
+      const res = await getAllEmployeesAction({ compact: true });
+      if (active && res && 'data' in res && res.success && res.data) {
+        setEmployees(res.data as any);
+      }
+    }
+    loadEmployees();
+    return () => { active = false; };
+  }, []);
 
   const isEditing = true; // Always editable for now
 
@@ -264,6 +279,7 @@ export function EmployeeProfileModal({
         "joining_date",
         "status",
         "roles",
+        "reporting_manager_id",
       ];
       return JSON.stringify(
         Object.keys(obj)
@@ -802,6 +818,26 @@ export function EmployeeProfileModal({
                     }
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-500">
+                    Reporting Manager
+                  </label>
+                  <Select
+                    value={formData.reporting_manager_id || ""}
+                    onValueChange={(val) =>
+                      setFormData({ ...formData, reporting_manager_id: val === "none" ? null : val })
+                    }
+                    buttonClassName="w-full px-4 py-3 h-12 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700"
+                  >
+                    <SelectItem value="none">None</SelectItem>
+                    {employees.map(e => (
+                      <SelectItem key={e.id} value={e.id}>{e.first_name} {e.last_name}</SelectItem>
+                    ))}
+                  </Select>
                 </div>
               </div>
 

@@ -57,7 +57,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
           placeholder={placeholder}
           disabled={disabled}
           buttonClassName={cn(
-            "h-10 text-sm",
+            "h-10 text-sm text-left",
             error && "border-error focus:ring-error",
             buttonClassName
           )}

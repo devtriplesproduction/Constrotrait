@@ -31,3 +31,10 @@ export async function getTodayBirthdaysAction() {
   const { getTodayBirthdays } = await import("@/services/employee.service");
   return getTodayBirthdays();
 }
+
+export async function getAllEmployeesAction(options?: { compact?: boolean }) {
+  const user = await getAuthenticatedUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+  const { getAllEmployees } = await import("@/services/employee.service");
+  return getAllEmployees(options);
+}

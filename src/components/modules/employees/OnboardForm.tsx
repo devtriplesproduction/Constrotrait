@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { onboardSchema, type OnboardFormData } from "@/lib/validations/onboard";
 import { DEPARTMENTS, getDesignationsForDepartment, getSystemRoleForDesignation } from "@/config/departments";
 import Image from "next/image";
-import { onboardEmployeeAction, getCurrentUserProfileAction } from "@/actions/employee.actions";
+import { onboardEmployeeAction, getCurrentUserProfileAction, getAllEmployeesAction } from "@/actions/employee.actions";
 import { getActiveBranchesAction } from "@/actions/branch.actions";
 import { Button } from "@/components/ui/button";
 
@@ -44,6 +44,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
   const [step, setStep] = useState(1);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [activeBranches, setActiveBranches] = useState<{ id: string, name: string, code: string }[]>([]);
+  const [employees, setEmployees] = useState<{ id: string, first_name: string, last_name: string }[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
@@ -62,6 +63,11 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
             if (branchRes && "data" in branchRes && branchRes.success && branchRes.data) {
               setActiveBranches(branchRes.data as { id: string, name: string, code: string }[]);
             }
+          }
+
+          const empRes = await getAllEmployeesAction({ compact: true });
+          if (empRes && "data" in empRes && empRes.success && empRes.data) {
+              setEmployees(empRes.data as { id: string, first_name: string, last_name: string }[]);
           }
         }
       } catch (e) {
@@ -737,6 +743,18 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         {errors?.branch_id && <p className="text-xs text-rose-500 font-bold mt-1">{errors.branch_id.message}</p>}
                       </div>
                     )}
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-zinc-500 ">Reporting Manager (Optional)</label>
+                      <FormSelect 
+                        name="reporting_manager" 
+                        control={control as any} 
+                        options={employees.map(e => ({ value: e.id, label: `${e.first_name} ${e.last_name}` }))} 
+                        placeholder="— Select Manager —" 
+                        buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all" 
+                      />
+                    </div>
+
 
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-zinc-500 ">Employment Type *</label>

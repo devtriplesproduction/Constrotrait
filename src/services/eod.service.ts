@@ -20,6 +20,8 @@ export async function submitEOD(payload: {
   location: "Office" | "Field";
   blockers?: string;
   photo_url?: string;
+  job_card_numbers?: string;
+  tomorrows_plan?: string;
 }) {
   try {
     const currentUser = await getAuthenticatedUserWithRoles();
@@ -54,7 +56,9 @@ export async function submitEOD(payload: {
       p_blockers: payload.blockers || '',
       p_photo_url: payload.photo_url || '',
       p_status: status,
-      p_submitted_by: currentUser.id
+      p_submitted_by: currentUser.id,
+      p_job_card_numbers: payload.job_card_numbers || '',
+      p_tomorrows_plan: payload.tomorrows_plan || ''
     });
 
     if (rpcError) {
@@ -73,10 +77,6 @@ export async function submitEOD(payload: {
       payload.employee_id,
       { report_date: payload.report_date, location: payload.location } as Json
     );
-
-    if (status === 'Approved') {
-        await grantCompOffIfApplicable(payload.employee_id, payload.report_date, payload.office_hours, eodId as string);
-    }
 
     return { success: true, data: eodId };
   } catch (error: unknown) {
@@ -140,13 +140,6 @@ export async function reviewEOD(eodId: string, action: 'Approve' | 'Reject', rej
       eod.employee_id,
       { eod_id: eodId, reason: rejectionReason } as Json
     );
-
-    if (action === 'Approve') {
-        const { data: eodFresh } = await supabase.from('eod_reports').select('report_date, office_hours').eq('id', eodId).single();
-        if (eodFresh) {
-            await grantCompOffIfApplicable(eod.employee_id, eodFresh.report_date, eodFresh.office_hours, eodId);
-        }
-    }
 
     return { success: true };
   } catch (error: unknown) {
@@ -400,6 +393,8 @@ export async function updateEOD(payload: {
   location: "Office" | "Field";
   blockers?: string;
   photo_url?: string;
+  job_card_numbers?: string;
+  tomorrows_plan?: string;
 }) {
   try {
     const currentUser = await getAuthenticatedUserWithRoles();
@@ -424,7 +419,9 @@ export async function updateEOD(payload: {
       p_blockers: payload.blockers || '',
       p_photo_url: payload.photo_url || '',
       p_status: status,
-      p_submitted_by: currentUser.id
+      p_submitted_by: currentUser.id,
+      p_job_card_numbers: payload.job_card_numbers || '',
+      p_tomorrows_plan: payload.tomorrows_plan || ''
     });
 
     if (rpcError) {
@@ -439,8 +436,6 @@ export async function updateEOD(payload: {
       payload.employee_id,
       { report_date: payload.report_date, location: payload.location } as Json
     );
-
-    await grantCompOffIfApplicable(payload.employee_id, payload.report_date, payload.office_hours, eodId as string);
 
     return { success: true, data: eodId };
   } catch (error) {
@@ -469,28 +464,4 @@ async function logEodActivity(
   });
 }
 
-async function grantCompOffIfApplicable(employeeId: string, reportDate: string, officeHours: number, eodId: string) {
-    try {
-        const isWorking = await isWorkingDayForEmployee(employeeId, reportDate);
-        let creditHours = 0;
-        
-        if (isWorking) {
-            if (officeHours > 8) creditHours = officeHours - 8;
-        } else {
-            creditHours = officeHours;
-        }
-
-        if (creditHours > 0) {
-            const supabase = await createClient();
-            await supabase.from('comp_off_ledger').insert({
-                employee_id: employeeId,
-                transaction_type: 'CREDIT',
-                hours: creditHours,
-                reference_id: eodId
-            });
-        }
-    } catch (e) {
-        console.error("Failed to grant comp off credit:", e);
-    }
-}
 

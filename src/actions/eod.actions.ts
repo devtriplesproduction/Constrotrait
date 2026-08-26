@@ -14,6 +14,8 @@ const eodSubmitSchema = z.object({
   location: z.enum(['Office', 'Field']),
   blockers: z.string().optional(),
   photo_url: z.string().optional(),
+  job_card_numbers: z.string().optional(),
+  tomorrows_plan: z.string().optional(),
 }).refine(data => data.location === 'Office' || (data.location === 'Field' && data.photo_url), {
   message: "Field photo is required when location is Field",
   path: ['photo_url']
@@ -35,6 +37,8 @@ export async function submitEODAction(formData: FormData) {
       location: formData.get('location') as "Office" | "Field",
       blockers: (formData.get('blockers') as string | null) ?? undefined,
       photo_url: (formData.get('photo_url') as string | null) ?? undefined,
+      job_card_numbers: (formData.get('job_card_numbers') as string | null) ?? undefined,
+      tomorrows_plan: (formData.get('tomorrows_plan') as string | null) ?? undefined,
     };
 
     const validatedData = eodSubmitSchema.parse(rawData);
@@ -126,6 +130,8 @@ export async function updateEODAction(formData: FormData) {
       location: formData.get('location') as "Office" | "Field",
       blockers: (formData.get('blockers') as string | null) ?? undefined,
       photo_url: (formData.get('photo_url') as string | null) ?? undefined,
+      job_card_numbers: (formData.get('job_card_numbers') as string | null) ?? undefined,
+      tomorrows_plan: (formData.get('tomorrows_plan') as string | null) ?? undefined,
     };
 
     const validatedData = eodSubmitSchema.parse(rawData);

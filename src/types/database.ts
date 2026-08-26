@@ -258,6 +258,7 @@ export type Database = {
           created_at: string
           employee_id: string
           id: string
+          job_card_numbers: string | null
           location: string
           office_hours: number
           photo_url: string | null
@@ -266,6 +267,7 @@ export type Database = {
           status: string
           submitted_by: string
           tasks_accomplished: string
+          tomorrows_plan: string | null
           updated_at: string
         }
         Insert: {
@@ -275,6 +277,7 @@ export type Database = {
           created_at?: string
           employee_id: string
           id?: string
+          job_card_numbers?: string | null
           location: string
           office_hours: number
           photo_url?: string | null
@@ -283,6 +286,7 @@ export type Database = {
           status?: string
           submitted_by: string
           tasks_accomplished: string
+          tomorrows_plan?: string | null
           updated_at?: string
         }
         Update: {
@@ -292,6 +296,7 @@ export type Database = {
           created_at?: string
           employee_id?: string
           id?: string
+          job_card_numbers?: string | null
           location?: string
           office_hours?: number
           photo_url?: string | null
@@ -300,6 +305,7 @@ export type Database = {
           status?: string
           submitted_by?: string
           tasks_accomplished?: string
+          tomorrows_plan?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -584,6 +590,7 @@ export type Database = {
         Args: {
           p_blockers: string
           p_employee_id: string
+          p_job_card_numbers?: string
           p_location: string
           p_office_hours: number
           p_photo_url: string
@@ -591,6 +598,7 @@ export type Database = {
           p_status: string
           p_submitted_by: string
           p_tasks_accomplished: string
+          p_tomorrows_plan?: string
         }
         Returns: string
       }
@@ -598,6 +606,7 @@ export type Database = {
         Args: {
           p_blockers: string
           p_employee_id: string
+          p_job_card_numbers?: string
           p_location: string
           p_office_hours: number
           p_photo_url: string
@@ -605,6 +614,7 @@ export type Database = {
           p_status: string
           p_submitted_by: string
           p_tasks_accomplished: string
+          p_tomorrows_plan?: string
         }
         Returns: string
       }

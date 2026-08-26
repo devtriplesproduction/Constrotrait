@@ -32,6 +32,8 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
   const [tasksAccomplished, setTasksAccomplished] = useState('');
   const [officeHours, setOfficeHours] = useState<string>('');
   const [blockers, setBlockers] = useState('');
+  const [jobCardNumbers, setJobCardNumbers] = useState('');
+  const [tomorrowsPlan, setTomorrowsPlan] = useState('');
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
 
   // Fetch existing EOD if canManage is true and they select an employee/date
@@ -49,6 +51,8 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         setOfficeHours(res.data.office_hours.toString());
         setLocation(res.data.location as 'Office' | 'Field');
         setBlockers(res.data.blockers || '');
+        setJobCardNumbers(res.data.job_card_numbers || '');
+        setTomorrowsPlan(res.data.tomorrows_plan || '');
         setExistingPhotoUrl(res.data.photo_url || null);
         // Note: Existing photo preview isn't easily loadable as a File, we'd need public URL to show it.
         // The RPC uses COALESCE so if we send no file, it keeps the old one.
@@ -59,6 +63,8 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         setOfficeHours('');
         setLocation('Office');
         setBlockers('');
+        setJobCardNumbers('');
+        setTomorrowsPlan('');
         setExistingPhotoUrl(null);
         setFile(null);
       }
@@ -165,6 +171,8 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         setTasksAccomplished('');
         setOfficeHours('');
         setBlockers('');
+        setJobCardNumbers('');
+        setTomorrowsPlan('');
       }
       router.refresh();
 
@@ -218,7 +226,7 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         )}
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Tasks Accomplished</label>
+          <label className="block text-sm font-medium text-foreground">Work Done Today</label>
           <textarea
             name="tasks_accomplished"
             required
@@ -230,9 +238,18 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
           ></textarea>
         </div>
 
+        <Input
+          label="Job Card/UID Numbers"
+          type="text"
+          name="job_card_numbers"
+          value={jobCardNumbers}
+          onChange={(e) => setJobCardNumbers(e.target.value)}
+          placeholder="Enter Job Cards or UID numbers"
+        />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
-            label="Office Hours"
+            label="Hours Worked"
             type="number"
             name="office_hours"
             required
@@ -289,7 +306,7 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         )}
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Blockers (Optional)</label>
+          <label className="block text-sm font-medium text-foreground">Pending Work/Blockers (Optional)</label>
           <textarea
             name="blockers"
             rows={2}
@@ -297,6 +314,18 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
             onChange={(e) => setBlockers(e.target.value)}
             className="flex w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
             placeholder="Any issues blocking your work?"
+          ></textarea>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-foreground">Tomorrow's Plan</label>
+          <textarea
+            name="tomorrows_plan"
+            rows={2}
+            value={tomorrowsPlan}
+            onChange={(e) => setTomorrowsPlan(e.target.value)}
+            className="flex w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+            placeholder="What is your plan for tomorrow?"
           ></textarea>
         </div>
       </div>
