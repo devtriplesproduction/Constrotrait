@@ -17,10 +17,13 @@ interface HolidayFormDialogProps {
   onClose: () => void;
   holiday?: Holiday;
   branches: { id: string; name: string }[];
+  isSuperAdmin: boolean;
+  isHR: boolean;
+  isBranchManager: boolean;
   onSuccess: () => void;
 }
 
-export function HolidayFormDialog({ isOpen, onClose, holiday, branches, onSuccess }: HolidayFormDialogProps) {
+export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperAdmin, isHR, onSuccess }: HolidayFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   
@@ -112,18 +115,20 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, onSucces
           <Input {...register("description")} placeholder="Optional description" />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 mb-1">Branch Scope</label>
-          <select 
-            {...register("branch_id")}
-            className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all duration-200"
-          >
-            <option value="">All Branches (Requires Department)</option>
-            {branches.map(b => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
-        </div>
+        {isSuperAdmin && (
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Branch Scope</label>
+            <select 
+              {...register("branch_id")}
+              className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all duration-200"
+            >
+              <option value="">All Branches (Requires Department)</option>
+              {branches.map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-zinc-700 mb-1">Department Scope</label>
@@ -131,7 +136,7 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, onSucces
             {...register("department")}
             className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all duration-200"
           >
-            <option value="">All Departments (Requires Branch)</option>
+            <option value="">{isHR && !isSuperAdmin ? "Select Department (Required)" : "All Departments (Requires Branch)"}</option>
             {DEPARTMENTS.map(dept => (
               <option key={dept.id} value={dept.name}>{dept.name}</option>
             ))}

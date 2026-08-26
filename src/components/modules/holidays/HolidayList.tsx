@@ -12,10 +12,14 @@ import { Edit2, Trash2 } from "lucide-react";
 interface HolidayListProps {
   initialHolidays: Holiday[];
   branches: { id: string; name: string }[];
-  canManage: boolean;
+  canAdd: boolean;
+  canEditDelete: boolean;
+  isSuperAdmin: boolean;
+  isHR: boolean;
+  isBranchManager: boolean;
 }
 
-export function HolidayList({ initialHolidays, branches, canManage }: HolidayListProps) {
+export function HolidayList({ initialHolidays, branches, canAdd, canEditDelete, isSuperAdmin, isHR, isBranchManager }: HolidayListProps) {
   const [holidays, setHolidays] = useState<Holiday[]>(initialHolidays);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingHoliday, setEditingHoliday] = useState<Holiday | undefined>();
@@ -52,7 +56,7 @@ export function HolidayList({ initialHolidays, branches, canManage }: HolidayLis
           <h2 className="text-xl font-bold text-zinc-900">Holiday Calendar</h2>
           <p className="text-sm text-zinc-500">View and manage organizational holidays.</p>
         </div>
-        {canManage && (
+        {canAdd && (
           <Button onClick={handleAdd}>
             Add Holiday
           </Button>
@@ -67,7 +71,7 @@ export function HolidayList({ initialHolidays, branches, canManage }: HolidayLis
               <th className="px-6 py-4 font-medium">Name</th>
               <th className="px-6 py-4 font-medium">Scope (Branch)</th>
               <th className="px-6 py-4 font-medium">Scope (Department)</th>
-              {canManage && <th className="px-6 py-4 font-medium text-right">Actions</th>}
+              {canEditDelete && <th className="px-6 py-4 font-medium text-right">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -93,7 +97,7 @@ export function HolidayList({ initialHolidays, branches, canManage }: HolidayLis
                   <td className="px-6 py-4">
                     {holiday.department || <span className="text-slate-400">All Departments</span>}
                   </td>
-                  {canManage && (
+                  {canEditDelete && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
@@ -123,6 +127,9 @@ export function HolidayList({ initialHolidays, branches, canManage }: HolidayLis
         onClose={() => setIsDialogOpen(false)}
         holiday={editingHoliday}
         branches={branches}
+        isSuperAdmin={isSuperAdmin}
+        isHR={isHR}
+        isBranchManager={isBranchManager}
         onSuccess={() => {
           // Relies on revalidatePath in Server Action to refresh the page data
           // A full client reload is another way, but server actions should handle it.

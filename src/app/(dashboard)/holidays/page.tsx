@@ -3,7 +3,7 @@ import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
 import { getHolidays } from "@/services/holiday.service";
 import { getBranches } from "@/services/branch.service";
 import { HolidayList } from "@/components/modules/holidays/HolidayList";
-import { isHR, isSuperAdmin } from "@/config/roles";
+import { isHR, isSuperAdmin, isBranchManager } from "@/config/roles";
 
 export const metadata = {
   title: "Holiday Calendar - ConstroTrait",
@@ -20,14 +20,23 @@ export default async function HolidaysPage() {
     getBranches(),
   ]);
 
-  const canManage = isHR(user.roles) || isSuperAdmin(user.roles);
+  const isSuperAdminUser = isSuperAdmin(user.roles);
+  const isHRUser = isHR(user.roles);
+  const isBranchManagerUser = isBranchManager(user.roles);
+  
+  const canAdd = isSuperAdminUser || isHRUser || isBranchManagerUser;
+  const canEditDelete = isSuperAdminUser || isHRUser;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <HolidayList 
         initialHolidays={holidaysResult.data || []} 
         branches={branchesResult.data || []}
-        canManage={canManage}
+        canAdd={canAdd}
+        canEditDelete={canEditDelete}
+        isSuperAdmin={isSuperAdminUser}
+        isHR={isHRUser}
+        isBranchManager={isBranchManagerUser}
       />
     </div>
   );

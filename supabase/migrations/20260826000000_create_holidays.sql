@@ -25,11 +25,24 @@ CREATE POLICY "Authenticated users can read holidays"
 ON public.holidays FOR SELECT
 USING (auth.role() = 'authenticated');
 
--- Only HR and SUPER_ADMIN can insert
-CREATE POLICY "HR and SUPER_ADMIN can insert holidays"
+-- Authorized roles can insert holidays
+CREATE POLICY "Authorized roles can insert holidays"
 ON public.holidays FOR INSERT
 WITH CHECK (
-    (auth.jwt() -> 'app_metadata' -> 'roles') ?| array['SUPER_ADMIN', 'HR']
+    (
+        (auth.jwt() -> 'app_metadata' -> 'roles') ?| array['SUPER_ADMIN']
+    )
+    OR
+    (
+        (auth.jwt() -> 'app_metadata' -> 'roles') ?| array['HR']
+        AND branch_id IS NULL
+        AND department IS NOT NULL
+    )
+    OR
+    (
+        (auth.jwt() -> 'app_metadata' -> 'roles') ?| array['BRANCH_MANAGER_ADMINISTRATIVE']
+        AND branch_id = (SELECT branch_id FROM public.profiles WHERE id = auth.uid())
+    )
 );
 
 -- Only HR and SUPER_ADMIN can update

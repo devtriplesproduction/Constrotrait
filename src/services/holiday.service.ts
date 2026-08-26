@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserWithRoles } from "./auth.service";
-import { isHR, isSuperAdmin } from "@/config/roles";
+import { isHR, isSuperAdmin, isBranchManager } from "@/config/roles";
 import { createHolidayNotification } from "./notification.service";
 
 export interface Holiday {
@@ -53,8 +53,34 @@ export async function createHoliday(input: CreateHolidayInput) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) return { success: false, error: "Unauthorized" };
 
-    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) {
+    const superAdmin = isSuperAdmin(user.roles);
+    const hr = isHR(user.roles);
+    const bm = isBranchManager(user.roles);
+
+    if (!superAdmin && !hr && !bm) {
       return { success: false, error: "Insufficient permissions to create holidays." };
+    }
+
+    if (superAdmin) {
+      // SUPER_ADMIN: branch_id and department are as provided
+    } else if (hr) {
+      // HR: branch_id must be null, department is required
+      if (input.branch_id) {
+        return { success: false, error: "HR cannot create branch-specific holidays." };
+      }
+      if (!input.department) {
+        return { success: false, error: "Department is required." };
+      }
+      input.branch_id = null;
+    } else if (bm) {
+      // BRANCH_MANAGER: branch_id must be their own branch
+      if (input.branch_id && input.branch_id !== user.branch_id) {
+        return { success: false, error: "Cannot create holiday for another branch." };
+      }
+      if (!user.branch_id) {
+        return { success: false, error: "Your profile does not have an assigned branch." };
+      }
+      input.branch_id = user.branch_id;
     }
 
     if (!input.department && !input.branch_id) {
