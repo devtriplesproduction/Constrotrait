@@ -264,213 +264,6 @@ export type Database = {
           },
         ]
       }
-      holidays: {
-        Row: {
-          id: string
-          name: string
-          date: string
-          description: string | null
-          department: string | null
-          branch_id: string | null
-          is_active: boolean | null
-          created_by: string | null
-          updated_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          date: string
-          description?: string | null
-          department?: string | null
-          branch_id?: string | null
-          is_active?: boolean | null
-          created_by?: string | null
-          updated_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          date?: string
-          description?: string | null
-          department?: string | null
-          branch_id?: string | null
-          is_active?: boolean | null
-          created_by?: string | null
-          updated_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "holidays_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "holidays_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "holidays_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      leave_requests: {
-        Row: {
-          id: string
-          employee_id: string
-          leave_type: Database["public"]["Enums"]["leave_type_enum"]
-          start_date: string
-          end_date: string
-          is_half_day: boolean | null
-          reason: string
-          status: Database["public"]["Enums"]["leave_status_enum"]
-          certificate_url: string | null
-          is_paid: boolean | null
-          first_approver_id: string | null
-          first_approval_status: Database["public"]["Enums"]["leave_status_enum"] | null
-          first_approval_date: string | null
-          final_approver_id: string | null
-          final_approval_status: Database["public"]["Enums"]["leave_status_enum"] | null
-          final_approval_date: string | null
-          rejection_reason: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          employee_id: string
-          leave_type: Database["public"]["Enums"]["leave_type_enum"]
-          start_date: string
-          end_date: string
-          is_half_day?: boolean | null
-          reason: string
-          status?: Database["public"]["Enums"]["leave_status_enum"]
-          certificate_url?: string | null
-          is_paid?: boolean | null
-          first_approver_id?: string | null
-          first_approval_status?: Database["public"]["Enums"]["leave_status_enum"] | null
-          first_approval_date?: string | null
-          final_approver_id?: string | null
-          final_approval_status?: Database["public"]["Enums"]["leave_status_enum"] | null
-          final_approval_date?: string | null
-          rejection_reason?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          employee_id?: string
-          leave_type?: Database["public"]["Enums"]["leave_type_enum"]
-          start_date?: string
-          end_date?: string
-          is_half_day?: boolean | null
-          reason?: string
-          status?: Database["public"]["Enums"]["leave_status_enum"]
-          certificate_url?: string | null
-          is_paid?: boolean | null
-          first_approver_id?: string | null
-          first_approval_status?: Database["public"]["Enums"]["leave_status_enum"] | null
-          first_approval_date?: string | null
-          final_approver_id?: string | null
-          final_approval_status?: Database["public"]["Enums"]["leave_status_enum"] | null
-          final_approval_date?: string | null
-          rejection_reason?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "leave_requests_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leave_requests_first_approver_id_fkey"
-            columns: ["first_approver_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leave_requests_final_approver_id_fkey"
-            columns: ["final_approver_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      comp_off_ledger: {
-        Row: {
-          id: string
-          employee_id: string
-          transaction_type: Database["public"]["Enums"]["comp_off_transaction_type"]
-          amount_hours: number
-          reference_eod_id: string | null
-          reference_leave_id: string | null
-          description: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          employee_id: string
-          transaction_type: Database["public"]["Enums"]["comp_off_transaction_type"]
-          amount_hours: number
-          reference_eod_id?: string | null
-          reference_leave_id?: string | null
-          description: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          employee_id?: string
-          transaction_type?: Database["public"]["Enums"]["comp_off_transaction_type"]
-          amount_hours?: number
-          reference_eod_id?: string | null
-          reference_leave_id?: string | null
-          description?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "comp_off_ledger_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "comp_off_ledger_reference_eod_id_fkey"
-            columns: ["reference_eod_id"]
-            isOneToOne: false
-            referencedRelation: "eod_reports"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "comp_off_ledger_reference_leave_id_fkey"
-            columns: ["reference_leave_id"]
-            isOneToOne: false
-            referencedRelation: "leave_requests"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       profiles: {
         Row: {
           branch_id: string | null
@@ -501,7 +294,6 @@ export type Database = {
           salary: number | null
           status: string | null
           updated_at: string
-          reporting_manager_id: string | null
         }
         Insert: {
           branch_id?: string | null
@@ -532,7 +324,6 @@ export type Database = {
           salary?: number | null
           status?: string | null
           updated_at?: string
-          reporting_manager_id?: string | null
         }
         Update: {
           branch_id?: string | null
@@ -563,7 +354,6 @@ export type Database = {
           salary?: number | null
           status?: string | null
           updated_at?: string
-          reporting_manager_id?: string | null
         }
         Relationships: [
           {
@@ -573,13 +363,6 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "profiles_reporting_manager_id_fkey"
-            columns: ["reporting_manager_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
         ]
       }
       salary_hikes: {
@@ -686,20 +469,6 @@ export type Database = {
         | "SAMPLER"
         | "MARKETING_EXECUTIVE"
         | "DIGITAL_MARKETING"
-      leave_type_enum:
-        | "SICK_LEAVE"
-        | "CASUAL_LEAVE"
-        | "UNPAID_LEAVE"
-        | "COMPENSATORY_OFF"
-      leave_status_enum:
-        | "PENDING"
-        | "APPROVED"
-        | "REJECTED"
-        | "CANCELLED"
-      comp_off_transaction_type:
-        | "CREDIT"
-        | "DEBIT"
-        | "REVERSAL"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -844,23 +613,6 @@ export const Constants = {
         "SAMPLER",
         "MARKETING_EXECUTIVE",
         "DIGITAL_MARKETING",
-      ],
-      leave_type_enum: [
-        "SICK_LEAVE",
-        "CASUAL_LEAVE",
-        "UNPAID_LEAVE",
-        "COMPENSATORY_OFF",
-      ],
-      leave_status_enum: [
-        "PENDING",
-        "APPROVED",
-        "REJECTED",
-        "CANCELLED",
-      ],
-      comp_off_transaction_type: [
-        "CREDIT",
-        "DEBIT",
-        "REVERSAL",
       ],
     },
   },
