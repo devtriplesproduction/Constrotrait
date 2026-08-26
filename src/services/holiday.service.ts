@@ -33,7 +33,7 @@ export async function getHolidays() {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("holidays")
-      .select("*, branches(id, name)")
+      .select("id, name, date, description, department, branch_id, is_active, created_by, updated_by, created_at, updated_at, branches(id, name)")
       .order("date", { ascending: true });
 
     if (error) {
@@ -68,7 +68,7 @@ export async function createHoliday(input: CreateHolidayInput) {
         ...input,
         created_by: user.id,
       })
-      .select()
+      .select("id, name, date, description, department, branch_id, is_active, created_by, updated_by, created_at, updated_at")
       .single();
 
     if (error) {
@@ -111,7 +111,7 @@ export async function updateHoliday(id: string, input: UpdateHolidayInput) {
     // Fetch old holiday first
     const { data: oldHoliday, error: fetchError } = await supabase
       .from("holidays")
-      .select("*")
+      .select("id, name, date, department, branch_id, is_active")
       .eq("id", id)
       .single();
 
@@ -127,7 +127,7 @@ export async function updateHoliday(id: string, input: UpdateHolidayInput) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .select()
+      .select("id, name, date, description, department, branch_id, is_active, created_by, updated_by, created_at, updated_at")
       .single();
 
     if (error) {
@@ -199,7 +199,7 @@ export async function deleteHoliday(id: string) {
     // Fetch old holiday first
     const { data: oldHoliday, error: fetchError } = await supabase
       .from("holidays")
-      .select("*")
+      .select("id, name, date, department, branch_id, is_active")
       .eq("id", id)
       .single();
 
@@ -267,7 +267,7 @@ export async function isWorkingDayForEmployee(employeeId: string, targetDateStr:
   // Fetch active holidays on that date
   const { data: holidays, error: holidayError } = await supabase
     .from("holidays")
-    .select("*")
+    .select("branch_id, department")
     .eq("date", dateStr)
     .eq("is_active", true);
 

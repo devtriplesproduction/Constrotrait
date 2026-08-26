@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { HolidayFormData, holidayFormSchema } from "@/lib/validations/holiday";
 import { Modal } from "@/components/common/Modal";
+import { DEPARTMENTS } from "@/config/departments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createHolidayAction, updateHolidayAction } from "@/actions/holiday.actions";
@@ -131,12 +132,9 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, onSucces
             className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all duration-200"
           >
             <option value="">All Departments (Requires Branch)</option>
-            <option value="HR">HR</option>
-            <option value="Admin">Admin</option>
-            <option value="Engineering">Engineering</option>
-            <option value="Marketing">Marketing</option>
-            <option value="Quality">Quality</option>
-            {/* Assuming generic departments for demo, actual project might fetch these dynamically if they were a table, but it's TEXT */}
+            {DEPARTMENTS.map(dept => (
+              <option key={dept.id} value={dept.name}>{dept.name}</option>
+            ))}
           </select>
           {errors.department && <p className="text-red-500 text-xs mt-1">{errors.department.message}</p>}
         </div>

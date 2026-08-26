@@ -5,7 +5,7 @@ CREATE TABLE public.holidays (
     date DATE NOT NULL,
     description TEXT,
     department TEXT,
-    branch_id UUID REFERENCES public.branches(id) ON DELETE CASCADE,
+    branch_id UUID REFERENCES public.branches(id) ON DELETE RESTRICT,
     is_active BOOLEAN DEFAULT true,
     created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     updated_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
