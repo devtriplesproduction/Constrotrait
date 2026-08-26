@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthenticatedUser } from "./auth.service";
 
-export type NotificationType = "LOGIN" | "PASSWORD_CHANGE";
+export type NotificationType = "LOGIN" | "PASSWORD_CHANGE" | "HOLIDAY";
 
 export interface Notification {
   id: string;
@@ -56,6 +56,56 @@ export async function createAdminNotification(message: string, type: Notificatio
     return { success: true };
   } catch (error: unknown) {
     console.error("Error creating notification:", error);
+    return { success: false, error: "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Creates a notification for users affected by a holiday.
+ */
+export async function createHolidayNotification(
+  message: string,
+  target: { branchId: string | null; department: string | null }
+) {
+  try {
+    const supabaseAdmin = createAdminClient();
+
+    let query = supabaseAdmin.from("profiles").select("id").eq("is_active", true);
+
+    if (target.branchId) {
+      query = query.eq("branch_id", target.branchId);
+    }
+    if (target.department) {
+      query = query.eq("department", target.department);
+    }
+
+    const { data: targetProfiles, error: fetchError } = await query;
+
+    if (fetchError) {
+      console.error("Failed to fetch profiles for holiday notification:", fetchError);
+      return { success: false, error: "Failed to create notification" };
+    }
+
+    if (!targetProfiles || targetProfiles.length === 0) {
+      return { success: true };
+    }
+
+    const notifications = targetProfiles.map((profile) => ({
+      user_id: profile.id,
+      message,
+      type: "HOLIDAY" as NotificationType,
+    }));
+
+    const { error: insertError } = await supabaseAdmin.from("notifications").insert(notifications);
+
+    if (insertError) {
+      console.error("Failed to insert holiday notifications:", insertError);
+      return { success: false, error: "Failed to create notification" };
+    }
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Error creating holiday notification:", error);
     return { success: false, error: "An unexpected error occurred" };
   }
 }
