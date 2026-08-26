@@ -19,14 +19,14 @@ interface HolidayFormDialogProps {
   branches: { id: string; name: string }[];
   isSuperAdmin: boolean;
   isHR: boolean;
-  isBranchManager: boolean;
+
   onSuccess: () => void;
 }
 
 export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperAdmin, isHR, onSuccess }: HolidayFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  
+
   const { register, handleSubmit, formState: { errors }, reset } = useForm<HolidayFormData>({
     resolver: zodResolver(holidayFormSchema),
     defaultValues: {
@@ -62,10 +62,10 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
         is_active: holiday ? holiday.is_active : true
       };
 
-      const result = holiday 
+      const result = holiday
         ? await updateHolidayAction(holiday.id, payload)
         : await createHolidayAction(payload);
-        
+
       if (result.success) {
         toast({
           title: "Success",
@@ -103,7 +103,7 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
           <Input {...register("name")} placeholder="Holiday Name" />
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-zinc-700 mb-1">Date</label>
           <Input type="date" {...register("date")} />
@@ -118,7 +118,7 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
         {isSuperAdmin && (
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1">Branch Scope</label>
-            <select 
+            <select
               {...register("branch_id")}
               className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all duration-200"
             >
@@ -132,7 +132,7 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
 
         <div>
           <label className="block text-sm font-medium text-zinc-700 mb-1">Department Scope</label>
-          <select 
+          <select
             {...register("department")}
             className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all duration-200"
           >

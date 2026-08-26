@@ -37,7 +37,7 @@ export function HolidayList({ initialHolidays, branches, canAdd, canEditDelete, 
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this holiday?")) return;
-    
+
     const result = await deleteHolidayAction(id);
     if (result.success) {
       toast({ title: "Success", description: "Holiday deleted." });
@@ -129,11 +129,8 @@ export function HolidayList({ initialHolidays, branches, canAdd, canEditDelete, 
         branches={branches}
         isSuperAdmin={isSuperAdmin}
         isHR={isHR}
-        isBranchManager={isBranchManager}
         onSuccess={() => {
-          // Relies on revalidatePath in Server Action to refresh the page data
-          // A full client reload is another way, but server actions should handle it.
-          window.location.reload(); 
+          window.location.reload();
         }}
       />
     </div>
