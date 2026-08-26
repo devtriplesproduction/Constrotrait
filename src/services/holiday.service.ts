@@ -30,11 +30,24 @@ export type UpdateHolidayInput = Partial<CreateHolidayInput>;
 
 export async function getHolidays() {
   try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from("holidays")
       .select("id, name, date, description, department, branch_id, is_active, created_by, updated_by, created_at, updated_at, branches(id, name)")
       .order("date", { ascending: true });
+
+    if (!isSuperAdmin(user.roles)) {
+      if (user.branch_id) {
+        query = query.or(`branch_id.eq.${user.branch_id},branch_id.is.null`);
+      } else {
+        query = query.is("branch_id", null);
+      }
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Failed to fetch holidays:", JSON.stringify(error, null, 2));
@@ -64,14 +77,17 @@ export async function createHoliday(input: CreateHolidayInput) {
     if (superAdmin) {
       // SUPER_ADMIN: branch_id and department are as provided
     } else if (hr) {
-      // HR: branch_id must be null, department is required
-      if (input.branch_id) {
-        return { success: false, error: "HR cannot create branch-specific holidays." };
+      // HR: branch_id must be their own branch, department is required
+      if (input.branch_id && input.branch_id !== user.branch_id) {
+        return { success: false, error: "HR can only create holidays for their assigned branch." };
       }
       if (!input.department) {
         return { success: false, error: "Department is required." };
       }
-      input.branch_id = null;
+      if (!user.branch_id) {
+        return { success: false, error: "Your HR profile does not have an assigned branch." };
+      }
+      input.branch_id = user.branch_id;
     } else if (bm) {
       // BRANCH_MANAGER: branch_id must be their own branch
       if (input.branch_id && input.branch_id !== user.branch_id) {
@@ -309,7 +325,9 @@ export async function isWorkingDayForEmployee(employeeId: string, targetDateStr:
   for (const holiday of holidays) {
     let applies = false;
     const matchesBranch = holiday.branch_id === profile.branch_id;
-    const matchesDepartment = holiday.department === profile.department;
+    const matchesDepartment = holiday.department && profile.department 
+      ? holiday.department.split(',').map(d => d.trim()).includes(profile.department) 
+      : false;
 
     if (holiday.branch_id && holiday.department) {
       if (matchesBranch && matchesDepartment) applies = true;

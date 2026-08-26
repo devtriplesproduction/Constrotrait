@@ -11,6 +11,10 @@ import { Input } from "@/components/ui/input";
 import { createHolidayAction, updateHolidayAction } from "@/actions/holiday.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Holiday } from "@/services/holiday.service";
+import { FormMultiSelect } from "@/components/forms/FormMultiSelect";
+import { FormSelect } from "@/components/forms/FormSelect";
+import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
+import { Controller } from "react-hook-form";
 
 interface HolidayFormDialogProps {
   isOpen: boolean;
@@ -27,13 +31,13 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<HolidayFormData>({
+  const { register, handleSubmit, control, formState: { errors }, reset } = useForm<HolidayFormData>({
     resolver: zodResolver(holidayFormSchema),
     defaultValues: {
       name: holiday?.name || "",
       date: holiday?.date || "",
       description: holiday?.description || "",
-      department: holiday?.department || "",
+      departments: holiday?.department ? holiday.department.split(',') : [],
       branch_id: holiday?.branch_id || "",
     },
   });
@@ -44,7 +48,7 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
         name: holiday?.name || "",
         date: holiday?.date || "",
         description: holiday?.description || "",
-        department: holiday?.department || "",
+        departments: holiday?.department ? holiday.department.split(',') : [],
         branch_id: holiday?.branch_id || "",
       });
     }
@@ -57,7 +61,7 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
         name: data.name,
         date: data.date,
         description: data.description || null,
-        department: data.department || null,
+        department: data.departments && data.departments.length > 0 ? data.departments.join(',') : null,
         branch_id: data.branch_id || null,
         is_active: holiday ? holiday.is_active : true
       };
@@ -106,7 +110,17 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
 
         <div>
           <label className="block text-sm font-medium text-zinc-700 mb-1">Date</label>
-          <Input type="date" {...register("date")} />
+          <Controller
+            control={control as any}
+            name="date"
+            render={({ field }) => (
+              <PremiumDatePicker
+                value={field.value}
+                onChange={field.onChange}
+                side="right"
+              />
+            )}
+          />
           {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>}
         </div>
 
@@ -118,30 +132,27 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
         {isSuperAdmin && (
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1">Branch Scope</label>
-            <select
-              {...register("branch_id")}
-              className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all duration-200"
-            >
-              <option value="">All Branches (Requires Department)</option>
-              {branches.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
+            <FormSelect
+              name="branch_id"
+              control={control as any}
+              options={[
+                { value: "", label: "All Branches (Requires Department)" },
+                ...branches.map((b) => ({ value: b.id, label: b.name })),
+              ]}
+              placeholder="Select Branch"
+            />
           </div>
         )}
 
         <div>
           <label className="block text-sm font-medium text-zinc-700 mb-1">Department Scope</label>
-          <select
-            {...register("department")}
-            className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all duration-200"
-          >
-            <option value="">{isHR && !isSuperAdmin ? "Select Department (Required)" : "All Departments (Requires Branch)"}</option>
-            {DEPARTMENTS.map(dept => (
-              <option key={dept.id} value={dept.name}>{dept.name}</option>
-            ))}
-          </select>
-          {errors.department && <p className="text-red-500 text-xs mt-1">{errors.department.message}</p>}
+          <FormMultiSelect
+            name="departments"
+            control={control as any}
+            options={DEPARTMENTS.map(dept => ({ label: dept.name, value: dept.id }))}
+            placeholder={isHR && !isSuperAdmin ? "Select Departments (Required)" : "All Departments (Requires Branch)"}
+          />
+          {errors.departments && <p className="text-red-500 text-xs mt-1">{errors.departments.message}</p>}
         </div>
 
         <div className="pt-4 flex justify-end gap-2">

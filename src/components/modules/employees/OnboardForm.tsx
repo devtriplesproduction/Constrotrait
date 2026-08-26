@@ -132,7 +132,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
       salary: "" as unknown as number,
       experience: "" as unknown as number,
       location: "office",
-      status: "Resignedtion",
+      status: "Probation",
       joining_date: new Date().toISOString().split('T')[0],
       department_head: false,
       reporting_manager: "",
@@ -434,7 +434,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
           </div>
         ) : (
           <form
-            onSubmit={handleSubmit(onSubmit as unknown as import("react-hook-form").SubmitHandler<OnboardFormData>, onError)}
+            onSubmit={handleSubmit(onSubmit as unknown as any, onError)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
                 e.preventDefault();
@@ -572,7 +572,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-zinc-500 ">Date of Birth</label>
                       <Controller
-                        control={control}
+                        control={control as any}
                         name="dob"
                         render={({ field }) => (
                           <PremiumDatePicker
@@ -589,7 +589,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       <div className="relative">
                         <FormSelect
                           name="gender"
-                          control={control}
+                          control={control as any}
                           options={[
                             { value: "male", label: "Male" },
                             { value: "female", label: "Female" },
@@ -689,7 +689,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       <label className="text-xs font-bold text-zinc-500 ">Department *</label>
                       <FormSelect
                         name="department"
-                        control={control}
+                        control={control as any}
                         options={DEPARTMENTS.map(d => ({ value: d.id, label: d.name }))}
                         placeholder="Select Department"
                         buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
@@ -703,7 +703,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       <label className="text-xs font-bold text-zinc-500 ">Designation / Role *</label>
                       <FormSelect
                         name="designation"
-                        control={control}
+                        control={control as any}
                         options={getDesignationsForDepartment(watchedDepartment || "").map(r => ({ value: r.id, label: r.name }))}
                         placeholder="— Select Role —"
                         buttonClassName={cn("w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all", !watchedDepartment && "opacity-50 cursor-not-allowed pointer-events-none")}
@@ -721,7 +721,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       <label className="text-xs font-bold text-zinc-500 ">Additional System Roles (Optional)</label>
                       <FormMultiSelect
                         name="additional_roles"
-                        control={control}
+                        control={control as any}
                         options={ONBOARDING_ROLES.map(r => ({ value: r.id, label: r.name }))}
                         placeholder="— Select Additional Roles —"
                         buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
@@ -733,7 +733,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         <label className="text-xs font-bold text-zinc-500 ">
                           Branch Assignment {isBranchManager ? "*" : ""}
                         </label>
-                        <FormSelect name="branch_id" control={control} options={activeBranches.map(b => ({ value: b.id, label: `${b.name} (${b.code})` }))} placeholder="— Select Branch —" buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all" />
+                        <FormSelect name="branch_id" control={control as any} options={activeBranches.map(b => ({ value: b.id, label: `${b.name} (${b.code})` }))} placeholder="— Select Branch —" buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all" />
                         {errors?.branch_id && <p className="text-xs text-rose-500 font-bold mt-1">{errors.branch_id.message}</p>}
                       </div>
                     )}
@@ -743,7 +743,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       <div className="relative">
                         <FormSelect
                           name="employment_type"
-                          control={control}
+                          control={control as any}
                           options={[
                             { value: "full-time", label: "Full Time" },
                             { value: "part-time", label: "Part Time" },
@@ -788,7 +788,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-zinc-500 ">Joining Date *</label>
                       <Controller
-                        control={control}
+                        control={control as any}
                         name="joining_date"
                         render={({ field }) => (
                           <PremiumDatePicker
@@ -1023,7 +1023,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                     type="button"
                     onClick={() => {
                       setShowStep4Errors(true);
-                      handleSubmit(onSubmit as Parameters<typeof handleSubmit>[0], onError)();
+                      handleSubmit(onSubmit as any, onError)();
                     }}
                     variant="primary"
                     className="h-10 text-xs font-bold uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"

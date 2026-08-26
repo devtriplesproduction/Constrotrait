@@ -39,6 +39,106 @@ export type Database = {
   }
   public: {
     Tables: {
+      leave_requests: {
+        Row: {
+          id: string
+          employee_id: string
+          leave_type: string
+          start_date: string
+          end_date: string
+          is_half_day: boolean
+          reason: string
+          status: string
+          medical_certificate_url: string | null
+          is_paid: boolean
+          certificate_verified_by: string | null
+          first_level_approver_id: string | null
+          hr_approver_id: string | null
+          rejection_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          leave_type: string
+          start_date: string
+          end_date: string
+          is_half_day?: boolean
+          reason: string
+          status?: string
+          medical_certificate_url?: string | null
+          is_paid?: boolean
+          certificate_verified_by?: string | null
+          first_level_approver_id?: string | null
+          hr_approver_id?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          leave_type?: string
+          start_date?: string
+          end_date?: string
+          is_half_day?: boolean
+          reason?: string
+          status?: string
+          medical_certificate_url?: string | null
+          is_paid?: boolean
+          certificate_verified_by?: string | null
+          first_level_approver_id?: string | null
+          hr_approver_id?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      comp_off_ledger: {
+        Row: {
+          id: string
+          employee_id: string
+          transaction_type: string
+          hours: number
+          reference_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          transaction_type: string
+          hours: number
+          reference_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          transaction_type?: string
+          hours?: number
+          reference_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comp_off_ledger_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       activity_logs: {
         Row: {
           action: string

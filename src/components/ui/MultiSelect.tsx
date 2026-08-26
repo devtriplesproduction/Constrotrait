@@ -43,11 +43,22 @@ export function MultiSelect({
     return () => clearTimeout(timeoutId);
   }, []);
 
+  const [placement, setPlacement] = React.useState<"bottom" | "top">("bottom");
+
   const updateCoords = () => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      let newPlacement: "bottom" | "top" = "bottom";
+      if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+        newPlacement = "top";
+      }
+      
+      setPlacement(newPlacement);
       setCoords({
-        top: rect.bottom + window.scrollY + 8,
+        top: newPlacement === "bottom" ? rect.bottom + window.scrollY + 8 : rect.top + window.scrollY - 8,
         left: rect.left + window.scrollX,
         width: rect.width,
       });
@@ -115,7 +126,9 @@ export function MultiSelect({
           transition={{ duration: 0.15, ease: "easeOut" }}
           style={{
             position: "absolute",
-            top: coords.top,
+            ...(placement === "top" 
+              ? { bottom: document.documentElement.scrollHeight - coords.top } 
+              : { top: coords.top }),
             left: coords.left,
             width: coords.width,
             zIndex: 99999,
@@ -125,7 +138,8 @@ export function MultiSelect({
             "z-[99999] rounded-xl overflow-hidden",
             "bg-white/95 backdrop-blur-xl",
             "border border-slate-200/80",
-            "shadow-xl shadow-slate-200/50"
+            "shadow-xl shadow-slate-200/50",
+            placement === "top" ? "origin-bottom" : "origin-top"
           )}
         >
           <div className="p-1.5 max-h-64 overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">

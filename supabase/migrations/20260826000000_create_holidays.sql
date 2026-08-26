@@ -11,9 +11,10 @@ CREATE TABLE public.holidays (
     updated_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
-    CONSTRAINT chk_holiday_scope CHECK (department IS NOT NULL OR branch_id IS NOT NULL),
-    CONSTRAINT uq_holiday_scope UNIQUE (date, COALESCE(department, 'ALL'), COALESCE(branch_id, '00000000-0000-0000-0000-000000000000'::uuid))
+    CONSTRAINT chk_holiday_scope CHECK (department IS NOT NULL OR branch_id IS NOT NULL)
 );
+
+CREATE UNIQUE INDEX uq_holiday_scope ON public.holidays (date, COALESCE(department, 'ALL'), COALESCE(branch_id, '00000000-0000-0000-0000-000000000000'::uuid));
 
 -- Enable RLS
 ALTER TABLE public.holidays ENABLE ROW LEVEL SECURITY;

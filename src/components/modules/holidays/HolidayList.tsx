@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { deleteHolidayAction } from "@/actions/holiday.actions";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Plus, Trash2, Calendar } from "lucide-react";
+import { DEPARTMENTS } from "@/config/departments";
+import { PageHeader } from "@/components/modules/PageHeader";
 
 interface HolidayListProps {
   initialHolidays: Holiday[];
@@ -51,76 +53,120 @@ export function HolidayList({ initialHolidays, branches, canAdd, canEditDelete, 
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold text-zinc-900">Holiday Calendar</h2>
-          <p className="text-sm text-zinc-500">View and manage organizational holidays.</p>
-        </div>
-        {canAdd && (
-          <Button onClick={handleAdd}>
-            Add Holiday
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Holiday Calendar"
+        subtitle="View and manage organizational holidays."
+        icon={Calendar}
+        actions={
+          canAdd && (
+            <Button onClick={handleAdd}>
+              <Plus className="w-4 h-4 mr-2" /> Add Holiday
+            </Button>
+          )
+        }
+      />
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
-            <tr>
-              <th className="px-6 py-4 font-medium">Date</th>
-              <th className="px-6 py-4 font-medium">Name</th>
-              <th className="px-6 py-4 font-medium">Scope (Branch)</th>
-              <th className="px-6 py-4 font-medium">Scope (Department)</th>
-              {canEditDelete && <th className="px-6 py-4 font-medium text-right">Actions</th>}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {holidays.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                  No holidays found.
-                </td>
-              </tr>
-            ) : (
-              holidays.map(holiday => (
-                <tr key={holiday.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-900">
-                    {format(new Date(holiday.date), "MMM dd, yyyy")}
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-slate-900">{holiday.name}</p>
-                    {holiday.description && <p className="text-xs text-slate-500">{holiday.description}</p>}
-                  </td>
-                  <td className="px-6 py-4">
-                    {holiday.branches?.name || <span className="text-slate-400">All Branches</span>}
-                  </td>
-                  <td className="px-6 py-4">
-                    {holiday.department || <span className="text-slate-400">All Departments</span>}
-                  </td>
-                  {canEditDelete && (
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(holiday)}
-                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(holiday.id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {holidays.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="w-20 h-20 bg-orange-100/50 rounded-full flex items-center justify-center mb-6">
+            <Calendar className="w-10 h-10 text-orange-400" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">No Holidays Found</h3>
+          <p className="text-slate-500 text-center max-w-sm">
+            There are no holidays scheduled yet. Click the Add Holiday button to create one.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {holidays.map((holiday, idx) => (
+            <div 
+              key={holiday.id} 
+              className="group relative bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(249,115,22,0.12)] rounded-3xl p-6 transition-all duration-500 hover:-translate-y-1 overflow-hidden"
+              style={{ animationDelay: `${idx * 50}ms` }}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-400/20 to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110" />
+              
+              <div className="relative z-10 flex justify-between items-start mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/40 transition-shadow">
+                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-90">{format(new Date(holiday.date), "MMM")}</span>
+                    <span className="text-xl font-black leading-none mt-0.5">{format(new Date(holiday.date), "dd")}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-orange-600 transition-colors">{holiday.name}</h3>
+                    <p className="text-sm font-medium text-slate-500">{format(new Date(holiday.date), "EEEE, yyyy")}</p>
+                  </div>
+                </div>
+
+                {canEditDelete && (
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(holiday)}
+                      className="h-8 w-8 rounded-full bg-white text-slate-400 hover:text-orange-600 hover:bg-orange-50 shadow-sm"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(holiday.id)}
+                      className="h-8 w-8 rounded-full bg-white text-slate-400 hover:text-red-600 hover:bg-red-50 shadow-sm"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {holiday.description && (
+                <p className="text-sm text-slate-600 mb-6 line-clamp-2 relative z-10">
+                  {holiday.description}
+                </p>
+              )}
+
+              <div className="space-y-3 relative z-10">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Branch Scope</span>
+                  <div className="flex flex-wrap gap-2">
+                    {holiday.branches?.name ? (
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50/80 text-blue-700 border border-blue-100/50">
+                        {holiday.branches.name}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100/80 text-slate-600 border border-slate-200/50">
+                        All Branches
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Department Scope</span>
+                  <div className="flex flex-wrap gap-2">
+                    {holiday.department ? (
+                      holiday.department.split(',').map((id, index) => {
+                        const dept = DEPARTMENTS.find(d => d.id === id.trim());
+                        const deptName = dept ? dept.name : id.trim();
+                        return (
+                          <span key={index} className="inline-flex items-center px-3 py-1.5 rounded-xl text-[11px] font-bold bg-orange-50/80 text-orange-700 border border-orange-100/50 transition-colors hover:bg-orange-100">
+                            {deptName}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100/80 text-slate-600 border border-slate-200/50">
+                        All Departments
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <HolidayFormDialog
         isOpen={isDialogOpen}

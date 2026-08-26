@@ -31,7 +31,7 @@ export default async function DashboardLayout({
     todayBirthdays = ('data' in birthdaysRes && birthdaysRes.data) ? birthdaysRes.data : [];
   }
 
-  const branchName = currentUserProfile?.branches?.name || "";
+  const branchName = (currentUserProfile as any)?.branches?.name || "";
 
   return (
     <ClientLayout user={user} role={role} branchName={branchName}>

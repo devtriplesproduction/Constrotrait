@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, Users, ClipboardList, Building2, Calendar } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardList, Building2, Calendar, CalendarDays } from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
 
 interface AdminSidebarProps {
@@ -23,6 +23,11 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
       title: "EOD Reports",
       href: "/eod",
       icon: ClipboardList,
+    },
+    {
+      title: "Leave",
+      href: "/leave",
+      icon: CalendarDays,
     },
     {
       title: "Holidays",

@@ -70,23 +70,45 @@ export async function createHolidayNotification(
   try {
     const supabaseAdmin = createAdminClient();
 
-    let query = supabaseAdmin.from("profiles").select("id").eq("is_active", true);
+    let query = supabaseAdmin.from("profiles").select("id, roles, department").eq("is_active", true);
 
     if (target.branchId) {
       query = query.eq("branch_id", target.branchId);
     }
-    if (target.department) {
-      query = query.eq("department", target.department);
-    }
 
-    const { data: targetProfiles, error: fetchError } = await query;
+    const { data: profiles, error: fetchError } = await query;
 
     if (fetchError) {
       console.error("Failed to fetch profiles for holiday notification:", fetchError);
       return { success: false, error: "Failed to create notification" };
     }
 
-    if (!targetProfiles || targetProfiles.length === 0) {
+    if (!profiles || profiles.length === 0) {
+      return { success: true };
+    }
+
+    const depts = target.department ? target.department.split(',').map(d => d.trim()) : null;
+
+    const targetProfiles = profiles.filter(profile => {
+      // Always notify management roles for this branch
+      if (profile.roles && (
+        profile.roles.includes('BRANCH_MANAGER_ADMINISTRATIVE') || 
+        profile.roles.includes('HR') || 
+        profile.roles.includes('SUPER_ADMIN')
+      )) {
+        return true;
+      }
+      
+      // If department is specified, check if employee matches
+      if (depts) {
+        return profile.department && depts.includes(profile.department);
+      }
+      
+      // If no department specified (e.g. all departments), notify everyone
+      return true;
+    });
+
+    if (targetProfiles.length === 0) {
       return { success: true };
     }
 

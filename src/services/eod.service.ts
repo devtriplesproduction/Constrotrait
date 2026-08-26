@@ -4,6 +4,7 @@ import { isSuperAdminOrHR } from "@/config/roles";
 import { Database, Json } from "@/types/database";
 import { format } from "date-fns";
 import { canManageEOD, canReviewEOD } from "@/config/roles";
+import { isWorkingDayForEmployee } from "./holiday.service";
 
 export type EODReport = Database['public']['Tables']['eod_reports']['Row'];
 
@@ -73,6 +74,10 @@ export async function submitEOD(payload: {
       { report_date: payload.report_date, location: payload.location } as Json
     );
 
+    if (status === 'Approved') {
+        await grantCompOffIfApplicable(payload.employee_id, payload.report_date, payload.office_hours, eodId as string);
+    }
+
     return { success: true, data: eodId };
   } catch (error: unknown) {
     console.error("Failed to submit EOD:", error);
@@ -135,6 +140,13 @@ export async function reviewEOD(eodId: string, action: 'Approve' | 'Reject', rej
       eod.employee_id,
       { eod_id: eodId, reason: rejectionReason } as Json
     );
+
+    if (action === 'Approve') {
+        const { data: eodFresh } = await supabase.from('eod_reports').select('report_date, office_hours').eq('id', eodId).single();
+        if (eodFresh) {
+            await grantCompOffIfApplicable(eod.employee_id, eodFresh.report_date, eodFresh.office_hours, eodId);
+        }
+    }
 
     return { success: true };
   } catch (error: unknown) {
@@ -428,6 +440,8 @@ export async function updateEOD(payload: {
       { report_date: payload.report_date, location: payload.location } as Json
     );
 
+    await grantCompOffIfApplicable(payload.employee_id, payload.report_date, payload.office_hours, eodId as string);
+
     return { success: true, data: eodId };
   } catch (error) {
     console.error("Failed to update EOD:", error);
@@ -453,5 +467,30 @@ async function logEodActivity(
     target_user_id,
     details
   });
+}
+
+async function grantCompOffIfApplicable(employeeId: string, reportDate: string, officeHours: number, eodId: string) {
+    try {
+        const isWorking = await isWorkingDayForEmployee(employeeId, reportDate);
+        let creditHours = 0;
+        
+        if (isWorking) {
+            if (officeHours > 8) creditHours = officeHours - 8;
+        } else {
+            creditHours = officeHours;
+        }
+
+        if (creditHours > 0) {
+            const supabase = await createClient();
+            await supabase.from('comp_off_ledger').insert({
+                employee_id: employeeId,
+                transaction_type: 'CREDIT',
+                hours: creditHours,
+                reference_id: eodId
+            });
+        }
+    } catch (e) {
+        console.error("Failed to grant comp off credit:", e);
+    }
 }
 
