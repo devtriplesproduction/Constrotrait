@@ -60,6 +60,39 @@ export async function createAdminNotification(message: string, type: Notificatio
   }
 }
 
+/**
+ * Creates notifications for specific employees.
+ */
+export async function createEmployeeNotification(employeeIds: string[], message: string, type: string) {
+  try {
+    const supabaseAdmin = createAdminClient();
+
+    if (!employeeIds || employeeIds.length === 0) {
+      return { success: true };
+    }
+
+    const notifications = employeeIds.map((id) => ({
+      user_id: id,
+      message,
+      type,
+    }));
+
+    const { error: insertError } = await supabaseAdmin
+      .from("notifications")
+      .insert(notifications);
+
+    if (insertError) {
+      console.error("Failed to insert employee notifications:", insertError);
+      return { success: false, error: "Failed to create notification" };
+    }
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Error creating employee notification:", error);
+    return { success: false, error: "An unexpected error occurred" };
+  }
+}
+
 export async function getNotifications() {
   try {
     const currentUser = await getAuthenticatedUser();

@@ -4,6 +4,7 @@ import { isSuperAdminOrHR } from "@/config/roles";
 import { Database, Json } from "@/types/database";
 import { format } from "date-fns";
 import { canManageEOD, canReviewEOD } from "@/config/roles";
+import { grantCompOffForEOD } from "./comp_off.service";
 
 export type EODReport = Database['public']['Tables']['eod_reports']['Row'];
 
@@ -73,6 +74,11 @@ export async function submitEOD(payload: {
       { report_date: payload.report_date, location: payload.location } as Json
     );
 
+    // If proxy submitted (Approved), grant comp off
+    if (status === 'Approved' && typeof eodId === 'string') {
+      await grantCompOffForEOD(eodId, payload.employee_id, payload.office_hours, payload.report_date);
+    }
+
     return { success: true, data: eodId };
   } catch (error: unknown) {
     console.error("Failed to submit EOD:", error);
@@ -135,6 +141,20 @@ export async function reviewEOD(eodId: string, action: 'Approve' | 'Reject', rej
       eod.employee_id,
       { eod_id: eodId, reason: rejectionReason } as Json
     );
+
+    // Grant comp off if approved
+    if (action === 'Approve') {
+      // Need to fetch office_hours and report_date
+      const { data: eodDetails } = await supabase
+        .from('eod_reports')
+        .select('office_hours, report_date')
+        .eq('id', eodId)
+        .single();
+        
+      if (eodDetails) {
+        await grantCompOffForEOD(eodId, eod.employee_id, eodDetails.office_hours, eodDetails.report_date);
+      }
+    }
 
     return { success: true };
   } catch (error: unknown) {
@@ -427,6 +447,12 @@ export async function updateEOD(payload: {
       payload.employee_id,
       { report_date: payload.report_date, location: payload.location } as Json
     );
+
+    // Update triggers comp-off recalculation (idempotent logic inside service will ignore if already credited, 
+    // or you could add robust recalculation later. For now, try to grant.)
+    if (typeof eodId === 'string') {
+       await grantCompOffForEOD(eodId, payload.employee_id, payload.office_hours, payload.report_date);
+    }
 
     return { success: true, data: eodId };
   } catch (error) {
