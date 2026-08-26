@@ -37,7 +37,7 @@ export async function getHolidays() {
       .order("date", { ascending: true });
 
     if (error) {
-      console.error("Failed to fetch holidays:", error);
+      console.error("Failed to fetch holidays:", JSON.stringify(error, null, 2));
       return { success: false, error: "Failed to fetch holidays" };
     }
 
