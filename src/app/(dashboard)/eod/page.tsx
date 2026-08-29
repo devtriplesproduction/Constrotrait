@@ -26,10 +26,11 @@ export default async function EODPage({ searchParams }: PageProps) {
 
   const canReview = canReviewEOD(profile?.roles);
   const canManage = canManageEOD(profile?.roles);
+  const isSuperAdmin = profile?.roles?.includes('SUPER_ADMIN');
 
   // Determine active tab
   const params = await searchParams;
-  const activeTab = canReview ? (params.tab || 'review') : 'submit';
+  const activeTab = isSuperAdmin ? 'review' : (canReview ? (params.tab || 'review') : 'submit');
 
   // --- Fetch Data for Submit Tab ---
   let history: EODReport[] = [];
@@ -102,14 +103,16 @@ export default async function EODPage({ searchParams }: PageProps) {
                   <BarChart2 className="w-4 h-4" />
                   Review EOD
                 </Link>
-                <Link
-                  href="?tab=submit"
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${activeTab === 'submit' ? 'bg-orange-600 text-white shadow' : 'text-slate-600 hover:text-slate-800'
-                    }`}
-                >
-                  <Send className="w-4 h-4" />
-                  Submit EOD
-                </Link>
+                {!isSuperAdmin && (
+                  <Link
+                    href="?tab=submit"
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${activeTab === 'submit' ? 'bg-orange-600 text-white shadow' : 'text-slate-600 hover:text-slate-800'
+                      }`}
+                  >
+                    <Send className="w-4 h-4" />
+                    Submit EOD
+                  </Link>
+                )}
               </div>
             )}
 

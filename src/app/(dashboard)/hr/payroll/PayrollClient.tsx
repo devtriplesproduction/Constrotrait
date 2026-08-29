@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { 
   calculateMonthlyPayrollAction, 
   approveAndLockPayrollAction,
   addManualLedgerEntryAction
 } from "@/actions/payroll.actions";
+import type { Database } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -26,39 +27,16 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/modules/PageHeader";
 
-export interface PayrollSnapshot {
-  id: string;
-  employee_id: string;
-  employee_name: string;
-  department: string;
-  base_salary: number;
-  days_present: number;
-  days_field: number;
-  days_paid_leave: number;
-  days_unpaid_leave: number;
-  days_absent: number;
-  net_payable: number;
-  basic_salary: number;
-  hra: number;
-  allowance: number;
-  bonus: number;
-  gross_salary: number;
-  pf: number;
-  esi: number;
-  professional_tax: number;
-  income_tax: number;
-  other_deductions: number;
-  total_deductions: number;
-  net_salary: number;
+export type PayrollSnapshot = Database["public"]["Tables"]["payroll_snapshots"]["Row"] & {
   status?: string;
-}
+};
 
 interface PayrollClientProps {
   initialMonth: number;
   initialYear: number;
   initialData: PayrollSnapshot[];
   initialIsLocked: boolean;
-  initialCycle: any;
+  initialCycle: Database["public"]["Tables"]["payroll_cycles"]["Row"] | null;
   currentUserRole: string;
   branches?: { id: string; name: string }[];
   userBranchId?: string;
@@ -71,7 +49,6 @@ export function PayrollClient({
   initialData, 
   initialIsLocked,
   initialCycle,
-  currentUserRole,
   branches = [],
   userBranchId,
   isSA
@@ -80,16 +57,15 @@ export function PayrollClient({
   const [year, setYear] = useState(initialYear);
   const [data, setData] = useState<PayrollSnapshot[]>(initialData);
   const [isLocked, setIsLocked] = useState(initialIsLocked);
-  const [cycle, setCycle] = useState<any>(initialCycle);
+  const [cycle, setCycle] = useState<Database["public"]["Tables"]["payroll_cycles"]["Row"] | null>(initialCycle);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   
   const [selectedBranchId, setSelectedBranchId] = useState<string>(isSA ? "" : (userBranchId || ""));
 
-  const [totalEmployees, setTotalEmployees] = useState(0);
-  const [grossPayroll, setGrossPayroll] = useState(0);
-  const [totalDeductions, setTotalDeductions] = useState(0);
-  const [netPayroll, setNetPayroll] = useState(0);
+  const totalEmployees = data.length;
+  const grossPayroll = data.reduce((acc, curr) => acc + (curr.gross_salary || 0), 0);
+  const netPayroll = data.reduce((acc, curr) => acc + (curr.net_salary || 0), 0);
 
   const [activeTab, setActiveTab] = useState<"attendance" | "adjustments" | "history">("attendance");
 
@@ -112,13 +88,6 @@ export function PayrollClient({
     "July", "August", "September", "October", "November", "December"
   ];
 
-  useEffect(() => {
-    setTotalEmployees(data.length);
-    setGrossPayroll(data.reduce((acc, curr) => acc + (curr.gross_salary || 0), 0));
-    setTotalDeductions(data.reduce((acc, curr) => acc + (curr.total_deductions || 0), 0));
-    setNetPayroll(data.reduce((acc, curr) => acc + (curr.net_salary || 0), 0));
-  }, [data]);
-
   const loadData = async (m: number, y: number, branchId: string) => {
     if (!branchId && isSA) {
       setData([]);
@@ -128,17 +97,18 @@ export function PayrollClient({
     }
     setLoading(true);
     try {
-      const res: any = await calculateMonthlyPayrollAction(m, y, branchId);
-      if (res.success && res.data) {
+      const res = await calculateMonthlyPayrollAction(m, y, branchId);
+      if (res.success && 'data' in res && res.data) {
         setData(res.data);
         setIsLocked(res.isLocked || false);
         setCycle(res.cycle || null);
-      } else {
+      } else if (!res.success) {
         toast({ title: "Error", description: res.error || "Failed to load payroll data.", variant: "error" });
         setData([]);
       }
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "An error occurred.", variant: "error" });
+    } catch (err) {
+      const error = err as Error;
+      toast({ title: "Error", description: error.message || "An error occurred.", variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -182,8 +152,9 @@ export function PayrollClient({
       } else {
         toast({ title: "Error", description: res.error || "Failed to lock payroll.", variant: "error" });
       }
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "An error occurred.", variant: "error" });
+    } catch (err) {
+      const error = err as Error;
+      toast({ title: "Error", description: error.message || "An error occurred.", variant: "error" });
     } finally {
       setActionLoading(false);
     }
@@ -199,12 +170,12 @@ export function PayrollClient({
       emp.employee_id.substring(0,8),
       emp.employee_name,
       emp.department,
-      emp.days_present,
-      emp.days_paid_leave,
-      emp.days_absent,
-      emp.gross_salary,
-      emp.total_deductions,
-      emp.net_salary
+      emp.days_present || 0,
+      emp.days_paid_leave || 0,
+      emp.days_absent || 0,
+      emp.gross_salary || 0,
+      emp.total_deductions || 0,
+      emp.net_salary || 0
     ]);
     const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -237,8 +208,9 @@ export function PayrollClient({
       } else {
         toast({ title: "Error", description: res.error || "Failed to add adjustment", variant: "error" });
       }
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "error" });
+    } catch (err) {
+      const error = err as Error;
+      toast({ title: "Error", description: error.message, variant: "error" });
     } finally {
       setIsSubmittingAdj(false);
     }
@@ -423,22 +395,22 @@ export function PayrollClient({
                               <td className="px-6 py-4 text-right font-bold text-slate-700">₹{(emp.base_salary || 0).toLocaleString()}</td>
                               <td className="px-6 py-4 text-center">
                                 <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                  {emp.days_present} / 26
+                                  {emp.days_present || 0} / 26
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-center">
                                 <div className="flex items-center justify-center gap-2">
                                   <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100" title="Paid Leaves">
-                                    {emp.days_paid_leave}P
+                                    {emp.days_paid_leave || 0}P
                                   </span>
                                   <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100" title="Unpaid Leaves">
-                                    {emp.days_unpaid_leave}U
+                                    {emp.days_unpaid_leave || 0}U
                                   </span>
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-center">
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${emp.days_absent > 0 ? "bg-red-50 text-red-700 border-red-100" : "bg-slate-50 text-slate-600 border-slate-100"}`}>
-                                  {emp.days_absent}
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${(emp.days_absent || 0) > 0 ? "bg-red-50 text-red-700 border-red-100" : "bg-slate-50 text-slate-600 border-slate-100"}`}>
+                                  {emp.days_absent || 0}
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-right font-black text-slate-900 text-base">

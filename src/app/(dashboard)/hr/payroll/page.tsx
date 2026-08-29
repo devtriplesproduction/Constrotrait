@@ -4,6 +4,7 @@ import { isSuperAdmin, isHR, isBranchManager } from "@/config/roles";
 import { getBranches } from "@/services/branch.service";
 import { calculateMonthlyPayrollAction } from "@/actions/payroll.actions";
 import { PayrollClient, PayrollSnapshot } from "./PayrollClient";
+import type { Database } from "@/types/database";
 
 export default async function PayrollPage() {
   const user = await getAuthenticatedUserWithRoles();
@@ -31,12 +32,12 @@ export default async function PayrollPage() {
   
   let initialData: PayrollSnapshot[] = [];
   let initialIsLocked = false;
-  let initialCycle: unknown = null;
+  let initialCycle: Database["public"]["Tables"]["payroll_cycles"]["Row"] | null = null;
 
   // Only prefetch if we have a branch to filter by (or if SA, they must select a branch first)
   if (branchId) {
     const res: unknown = await calculateMonthlyPayrollAction(initialMonth, initialYear, branchId);
-    const result = res as { success: boolean; data?: PayrollSnapshot[]; isLocked?: boolean; cycle?: unknown; error?: string };
+    const result = res as { success: boolean; data?: PayrollSnapshot[]; isLocked?: boolean; cycle?: Database["public"]["Tables"]["payroll_cycles"]["Row"] | null; error?: string };
     if (result.success && result.data) {
       initialData = result.data;
       initialIsLocked = result.isLocked || false;
