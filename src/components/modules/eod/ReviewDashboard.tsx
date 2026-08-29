@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dropdown } from '@/components/ui/Dropdown';
-import { Search, SlidersHorizontal, RefreshCcw, CheckCircle2, Clock, XCircle, AlertCircle, FileSearch, FileText } from 'lucide-react';
+import { Search, SlidersHorizontal, RefreshCcw, CheckCircle2, Clock, XCircle, AlertCircle, FileSearch, FileText, User, Calendar, MapPin, AlertTriangle, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { EODReport } from '@/services/eod.service';
 import { reviewEODAction } from '@/actions/eod.actions';
@@ -334,127 +334,175 @@ export function ReviewDashboard({
         )}
       </div>
       {selectedEod && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
-
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-800">
-                EOD Details
-              </h2>
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="bg-slate-50 px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800 leading-tight">EOD Report</h2>
+                  <p className="text-sm text-slate-500 font-medium">Review details and take action</p>
+                </div>
+              </div>
               <Button
                 variant="ghost"
+                size="icon"
+                className="rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
                 onClick={() => setSelectedEod(null)}
               >
-                Close
+                <X className="w-5 h-5" />
               </Button>
             </div>
 
-            <div className="space-y-4">
-
-              <div>
-                <p className="text-xs text-slate-500">Employee</p>
-                <p className="font-semibold">
-                  {selectedEod.profiles?.first_name}{' '}
-                  {selectedEod.profiles?.last_name}
-                </p>
-                <p className="text-sm text-slate-500">
-                  {selectedEod.profiles?.employee_id}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-slate-500">Report Date</p>
-                <p className="font-medium">
-                  {new Date(selectedEod.report_date).toLocaleDateString()}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-slate-500">Status</p>
-                <p className="font-medium">
-                  {selectedEod.status}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-slate-500">Location</p>
-                <p className="font-medium">
-                  {selectedEod.location}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-slate-500">Office Hours</p>
-                <p className="font-medium">
-                  {selectedEod.office_hours} hours
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-slate-500">
-                  Tasks Accomplished
-                </p>
-                <p className="text-sm whitespace-pre-wrap">
-                  {selectedEod.tasks_accomplished}
-                </p>
-              </div>
-
-              {selectedEod.blockers && (
-                <div>
-                  <p className="text-xs text-slate-500">
-                    Blockers
-                  </p>
-                  <p className="text-sm whitespace-pre-wrap">
-                    {selectedEod.blockers}
-                  </p>
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Employee Info Card */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4 text-slate-800">
+                    <User className="w-4 h-4 text-orange-500" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Employee Details</h3>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-lg border-2 border-white shadow-sm">
+                      {selectedEod.profiles?.first_name?.[0]}{selectedEod.profiles?.last_name?.[0]}
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-800 text-lg">
+                        {selectedEod.profiles?.first_name} {selectedEod.profiles?.last_name}
+                      </div>
+                      <div className="text-sm font-medium text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded-md mt-1">
+                        {selectedEod.profiles?.employee_id}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
 
+                {/* Report Meta Card */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                   <div className="flex items-center gap-2 mb-2 text-slate-800">
+                    <Calendar className="w-4 h-4 text-blue-500" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Report Info</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date</p>
+                      <p className="font-semibold text-slate-700 text-sm">
+                        {new Date(selectedEod.report_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status</p>
+                      <span className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md inline-flex items-center gap-1 ${
+                        selectedEod.status === 'Approved' ? 'bg-emerald-100/80 text-emerald-700' :
+                        selectedEod.status === 'Rejected' ? 'bg-rose-100/80 text-rose-700' :
+                        'bg-amber-100/80 text-amber-700'
+                      }`}>
+                        {selectedEod.status}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1"><MapPin className="w-3 h-3"/> Location</p>
+                      <p className="font-semibold text-slate-700 text-sm">{selectedEod.location}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1"><Clock className="w-3 h-3"/> Hours</p>
+                      <p className="font-semibold text-slate-700 text-sm">{selectedEod.office_hours}h</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    <h3 className="font-bold text-slate-800">Tasks Accomplished</h3>
+                  </div>
+                  <div className="text-slate-600 whitespace-pre-wrap leading-relaxed text-sm bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    {selectedEod.tasks_accomplished}
+                  </div>
+                </div>
+
+                {selectedEod.blockers && (
+                  <div className="bg-rose-50/50 rounded-2xl p-5 border border-rose-100/50">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertTriangle className="w-5 h-5 text-rose-500" />
+                      <h3 className="font-bold text-slate-800">Blockers & Issues</h3>
+                    </div>
+                    <div className="text-slate-600 whitespace-pre-wrap leading-relaxed text-sm bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
+                      {selectedEod.blockers}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {selectedEod.status === 'Pending' && (
-              <div className="mt-6 pt-6 border-t border-slate-100">
-                {actionError && (
-                  <div className="mb-4 text-sm text-rose-600 bg-rose-50 p-3 rounded-lg border border-rose-100">
-                    {actionError}
-                  </div>
-                )}
-                
-                {isRejecting ? (
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Rejection Reason</label>
-                      <textarea 
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                        className="w-full flex rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 resize-none"
-                        rows={3}
-                        placeholder="Please provide a reason for rejection..."
-                        required
-                      />
+            {/* Modal Footer Actions */}
+            <div className="border-t border-slate-100 bg-slate-50 p-6 sticky bottom-0 z-10">
+              {selectedEod.status === 'Pending' ? (
+                <>
+                  {actionError && (
+                    <div className="mb-4 text-sm text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" /> {actionError}
                     </div>
-                    <div className="flex justify-end gap-3">
-                      <Button variant="ghost" onClick={() => setIsRejecting(false)} disabled={isSubmitting}>
-                        Cancel
-                      </Button>
-                      <Button variant="danger" className="bg-rose-600 hover:bg-rose-700 text-white" onClick={() => handleAction('Reject')} isLoading={isSubmitting} disabled={isSubmitting}>
-                        Confirm Rejection
-                      </Button>
+                  )}
+                  
+                  {isRejecting ? (
+                    <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-200">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Reason for Rejection</label>
+                        <textarea 
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                          className="w-full flex rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 resize-none shadow-sm transition-all"
+                          rows={3}
+                          placeholder="Please provide constructive feedback..."
+                          required
+                        />
+                      </div>
+                      <div className="flex justify-end gap-3">
+                        <Button variant="ghost" onClick={() => setIsRejecting(false)} disabled={isSubmitting} className="rounded-xl">
+                          Cancel
+                        </Button>
+                        <Button variant="danger" className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-sm shadow-rose-200" onClick={() => handleAction('Reject')} isLoading={isSubmitting} disabled={isSubmitting}>
+                          Confirm Rejection
+                        </Button>
+                      </div>
                     </div>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-slate-500 font-medium hidden sm:block">Please review carefully before deciding.</p>
+                      <div className="flex justify-end gap-3 w-full sm:w-auto">
+                        <Button variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-xl" onClick={() => handleAction('Reject')} disabled={isSubmitting}>
+                          <XCircle className="w-4 h-4 mr-2"/> Reject Report
+                        </Button>
+                        <Button variant="primary" className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm shadow-emerald-200" onClick={() => handleAction('Approve')} isLoading={isSubmitting} disabled={isSubmitting}>
+                          <CheckCircle2 className="w-4 h-4 mr-2"/> Approve Report
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex justify-between items-center">
+                  <div className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                    {selectedEod.status === 'Approved' ? (
+                       <><CheckCircle2 className="w-4 h-4 text-emerald-500" /> This report has been approved.</>
+                    ) : (
+                       <><XCircle className="w-4 h-4 text-rose-500" /> This report was rejected.</>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex justify-end gap-3">
-                    <Button variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700" onClick={() => handleAction('Reject')} disabled={isSubmitting}>
-                      Reject
-                    </Button>
-                    <Button variant="primary" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleAction('Approve')} isLoading={isSubmitting} disabled={isSubmitting}>
-                      Approve
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
+                  <Button variant="ghost" className="rounded-xl" onClick={() => setSelectedEod(null)}>
+                    Close window
+                  </Button>
+                </div>
+              )}
+            </div>
 
           </div>
         </div>

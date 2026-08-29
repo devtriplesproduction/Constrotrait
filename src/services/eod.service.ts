@@ -111,7 +111,7 @@ export async function reviewEOD(eodId: string, action: 'Approve' | 'Reject', rej
     if (!eod) return { success: false, error: "EOD not found" };
 
     if (eod.employee_id === currentUser.id && !isSuperAdmin) {
-      return { success: false, error: "HR cannot review their own EOD." };
+      return { success: false, error: "You cannot review your own EOD." };
     }
 
     const newStatus = action === 'Approve' ? 'Approved' : 'Rejected';

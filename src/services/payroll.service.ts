@@ -212,24 +212,27 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
       let paidLeavePortion = 0;
       let unpaidLeavePortion = 0;
 
-      // Only calculate leave deductions on days that would otherwise be working days. 
-      if (isWorking) {
+      // Process attendance regardless of working day to count weekend work
+      if (attendanceForDay) {
+        if (leaveForDay && leaveForDay.is_half_day && isWorking) {
+          if (attendanceForDay.status === 'Field Assignment') fieldPortion += 0.5;
+          else if (attendanceForDay.status === 'Present') presentPortion += 0.5;
+          
+          if (leaveForDay.is_paid) paidLeavePortion += 0.5;
+          else unpaidLeavePortion += 0.5;
+        } else {
+          if (attendanceForDay.status === 'Field Assignment') fieldPortion += 1;
+          else if (attendanceForDay.status === 'Present') presentPortion += 1;
+        }
+      } else if (isWorking) {
         if (leaveForDay) {
           if (leaveForDay.is_half_day) {
             if (leaveForDay.is_paid) paidLeavePortion += 0.5;
             else unpaidLeavePortion += 0.5;
-            
-            if (attendanceForDay) {
-                if (attendanceForDay.status === 'Field Assignment') fieldPortion += 0.5;
-                else if (attendanceForDay.status === 'Present') presentPortion += 0.5;
-            }
           } else {
             if (leaveForDay.is_paid) paidLeavePortion += 1;
             else unpaidLeavePortion += 1;
           }
-        } else if (attendanceForDay) {
-          if (attendanceForDay.status === 'Field Assignment') fieldPortion += 1;
-          else if (attendanceForDay.status === 'Present') presentPortion += 1;
         }
       }
 

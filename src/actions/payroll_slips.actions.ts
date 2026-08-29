@@ -41,7 +41,7 @@ export async function getMySalarySlipsAction() {
 
     if (error) throw error;
     
-    const formattedData = (slips || []).map((s: any) => ({
+    const formattedData = (slips || []).map((s) => ({
       id: s.id,
       month: s.cycle?.month,
       year: s.cycle?.year,
@@ -53,8 +53,8 @@ export async function getMySalarySlipsAction() {
     }));
 
     return { success: true, data: formattedData };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -79,7 +79,7 @@ export async function generateSalarySlipAction(snapshotId: string, month: number
     }
 
     // 2. Branch Security
-    const empBranchId = (snapshot as any).profiles?.branch_id;
+    const empBranchId = (snapshot as unknown as { profiles?: { branch_id?: string | null } | null }).profiles?.branch_id;
     if (!isSuperAdmin(user.roles) && user.branch_id !== empBranchId) {
       return { success: false, error: "Unauthorized access to another branch's data." };
     }
@@ -139,8 +139,8 @@ export async function generateSalarySlipAction(snapshotId: string, month: number
     }
 
     return { success: true, message: "Salary slip generated successfully.", pdf_url: pdfUrl };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -164,7 +164,7 @@ export async function emailSalarySlipAction(snapshotId: string) {
     }
 
     // Branch Security
-    const empBranchId = (slip as any).profiles?.branch_id;
+    const empBranchId = (slip as unknown as { profiles?: { email?: string | null, first_name?: string | null, last_name?: string | null, branch_id?: string | null } | null }).profiles?.branch_id;
     if (!isSuperAdmin(user.roles) && user.branch_id !== empBranchId) {
       return { success: false, error: "Unauthorized access to another branch's data." };
     }
@@ -173,8 +173,8 @@ export async function emailSalarySlipAction(snapshotId: string) {
       return { success: false, error: "Validation Error: Salary slip file does not exist." };
     }
 
-    const employeeEmail = (slip as any).profiles?.email;
-    const employeeName = (slip as any).profiles?.first_name ? `${(slip as any).profiles.first_name} ${(slip as any).profiles.last_name || ''}`.trim() : "Employee";
+    const employeeEmail = (slip as unknown as { profiles?: { email?: string | null, first_name?: string | null, last_name?: string | null, branch_id?: string | null } | null }).profiles?.email;
+    const employeeName = (slip as unknown as { profiles?: { email?: string | null, first_name?: string | null, last_name?: string | null, branch_id?: string | null } | null }).profiles?.first_name ? `${(slip as unknown as { profiles?: { email?: string | null, first_name?: string | null, last_name?: string | null, branch_id?: string | null } | null }).profiles?.first_name} ${(slip as unknown as { profiles?: { email?: string | null, first_name?: string | null, last_name?: string | null, branch_id?: string | null } | null }).profiles?.last_name || ''}`.trim() : "Employee";
 
     if (!employeeEmail) {
       return { success: false, error: "Employee does not have a registered email address." };
@@ -193,8 +193,8 @@ export async function emailSalarySlipAction(snapshotId: string) {
     }
 
     return { success: true, message: `Salary slip emailed to ${employeeName}.` };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -218,7 +218,7 @@ export async function generateSignedSalarySlipUrlAction(snapshotId: string, expi
     }
 
     // Branch Security
-    const empBranchId = (slip as any).profiles?.branch_id;
+    const empBranchId = (slip as unknown as { profiles?: { email?: string | null, first_name?: string | null, last_name?: string | null, branch_id?: string | null } | null }).profiles?.branch_id;
     if (!isSuperAdmin(user.roles) && user.branch_id !== empBranchId) {
       return { success: false, error: "Unauthorized access to another branch's data." };
     }
@@ -234,8 +234,8 @@ export async function generateSignedSalarySlipUrlAction(snapshotId: string, expi
     }
 
     return { success: true, signedUrl: data.signedUrl };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -257,7 +257,7 @@ export async function markSalarySlipSharedAction(snapshotId: string) {
     if (!slip) return { success: false, error: "Validation Error: Salary slip does not exist." };
 
     // Branch Security
-    const empBranchId = (slip as any).profiles?.branch_id;
+    const empBranchId = (slip as unknown as { profiles?: { email?: string | null, first_name?: string | null, last_name?: string | null, branch_id?: string | null } | null }).profiles?.branch_id;
     if (!isSuperAdmin(user.roles) && user.branch_id !== empBranchId) {
       return { success: false, error: "Unauthorized access to another branch's data." };
     }
@@ -270,8 +270,8 @@ export async function markSalarySlipSharedAction(snapshotId: string) {
     if (error) throw error;
     
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -297,7 +297,7 @@ export async function downloadSalarySlipBase64Action(employeeId: string, month: 
     if (!slip || !slip.pdf_url) return { success: false, error: "Salary slip not found." };
 
     // Branch Security
-    const empBranchId = (slip as any).profiles?.branch_id;
+    const empBranchId = (slip as unknown as { profiles?: { email?: string | null, first_name?: string | null, last_name?: string | null, branch_id?: string | null } | null }).profiles?.branch_id;
     if (!isSuperAdmin(user.roles) && user.branch_id !== empBranchId) {
       return { success: false, error: "Unauthorized access to another branch's data." };
     }
@@ -311,7 +311,7 @@ export async function downloadSalarySlipBase64Action(employeeId: string, month: 
     const base64 = Buffer.from(arrayBuffer).toString('base64');
 
     return { success: true, base64, filename: fileName.split('/').pop() };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
