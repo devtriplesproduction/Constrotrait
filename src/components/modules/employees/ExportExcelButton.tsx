@@ -5,6 +5,7 @@ import { FileText } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Json } from "@/types/database";
+import { toast } from "@/hooks/use-toast";
 export type EmployeeProfile = {
   id: string;
   first_name: string;
@@ -34,7 +35,7 @@ interface ExportExcelButtonProps {
 export function ExportExcelButton({ employees }: ExportExcelButtonProps) {
   const handleExport = () => {
     if (!employees || employees.length === 0) {
-      alert("No data to export");
+      toast({ title: "Export Failed", description: "No data to export", variant: "warning" });
       return;
     }
 

@@ -69,8 +69,9 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
       return {
         ...snapshotData,
         emailed: slip ? slip.emailed : false,
-        notification_status: notifStatus
-      } as PayrollSnapshot & { emailed: boolean, notification_status: string };
+        notification_status: notifStatus,
+        slip_status: slip ? slip.status : 'not_generated'
+      } as PayrollSnapshot & { emailed: boolean, notification_status: string, slip_status: string };
     });
 
     return { data: enrichedSnapshots, isLocked: true, cycle: existingCycle, appliedAdjustments: [] };

@@ -6,6 +6,11 @@ import {
   approveAndLockPayrollAction,
   addManualLedgerEntryAction
 } from "@/actions/payroll.actions";
+import {
+  generateSalarySlipAction,
+  generateSignedSalarySlipUrlAction,
+  downloadSalarySlipBase64Action
+} from "@/actions/payroll_slips.actions";
 import type { Database } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,6 +34,7 @@ import { PageHeader } from "@/components/modules/PageHeader";
 
 export type PayrollSnapshot = Database["public"]["Tables"]["payroll_snapshots"]["Row"] & {
   status?: string;
+  slip_status?: string;
 };
 
 interface PayrollClientProps {
@@ -213,6 +219,58 @@ export function PayrollClient({
       toast({ title: "Error", description: error.message, variant: "error" });
     } finally {
       setIsSubmittingAdj(false);
+    }
+  };
+
+  const handleGenerateSlip = async (snapshotId: string) => {
+    setActionLoading(true);
+    try {
+      const res = await generateSalarySlipAction(snapshotId, month, year);
+      if (res.success) {
+        toast({ title: "Success", description: res.message || "Salary slip generated.", variant: "success" });
+        loadData(month, year, selectedBranchId);
+      } else {
+        toast({ title: "Error", description: res.error || "Failed to generate slip.", variant: "error" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: (err as Error).message, variant: "error" });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleViewSlip = async (snapshotId: string) => {
+    setActionLoading(true);
+    try {
+      const res = await generateSignedSalarySlipUrlAction(snapshotId);
+      if (res.success && res.signedUrl) {
+        window.open(res.signedUrl, '_blank');
+      } else {
+        toast({ title: "Error", description: res.error || "Failed to view slip.", variant: "error" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: (err as Error).message, variant: "error" });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDownloadSlip = async (employeeId: string) => {
+    setActionLoading(true);
+    try {
+      const res = await downloadSalarySlipBase64Action(employeeId, month, year);
+      if (res.success && res.base64) {
+        const link = document.createElement('a');
+        link.href = `data:application/pdf;base64,${res.base64}`;
+        link.download = res.filename || `salary-slip-${employeeId}-${month}-${year}.pdf`;
+        link.click();
+      } else {
+        toast({ title: "Error", description: res.error || "Failed to download slip.", variant: "error" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: (err as Error).message, variant: "error" });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -705,18 +763,67 @@ export function PayrollClient({
               </div>
             </div>
             
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center">
-              <Button 
-                onClick={() => {
-                  setAdjEmployeeId(selectedEmployee.employee_id);
-                  setIsAdjustmentModalOpen(true);
-                }}
-                disabled={isLocked}
-                className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 hover:text-indigo-800 rounded-xl font-bold"
-                size="sm"
-              >
-                + Add Adjustment
-              </Button>
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap gap-3 justify-between items-center">
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    setAdjEmployeeId(selectedEmployee.employee_id);
+                    setIsAdjustmentModalOpen(true);
+                  }}
+                  disabled={isLocked}
+                  className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 hover:text-indigo-800 rounded-xl font-bold"
+                  size="sm"
+                >
+                  + Add Adjustment
+                </Button>
+                
+                {isLocked && (
+                  <>
+                    <Button 
+                      onClick={() => handleGenerateSlip(selectedEmployee.id)}
+                      disabled={actionLoading}
+                      variant="outline"
+                      className="rounded-xl font-bold border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                      size="sm"
+                    >
+                      {actionLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+                      Generate Slip
+                    </Button>
+                    
+                    {selectedEmployee.slip_status === 'generated' || selectedEmployee.slip_status === 'sent' ? (
+                      <>
+                        <Button 
+                          onClick={() => handleViewSlip(selectedEmployee.id)}
+                          disabled={actionLoading}
+                          variant="outline"
+                          className="rounded-xl font-bold"
+                          size="sm"
+                        >
+                          View
+                        </Button>
+                        <Button 
+                          onClick={() => handleDownloadSlip(selectedEmployee.employee_id)}
+                          disabled={actionLoading}
+                          variant="outline"
+                          className="rounded-xl font-bold"
+                          size="sm"
+                        >
+                          Download
+                        </Button>
+                      </>
+                    ) : null}
+                    
+                    <span className={`text-xs font-bold px-2 py-1 rounded-md self-center ${
+                      selectedEmployee.slip_status === 'generated' || selectedEmployee.slip_status === 'sent' 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {selectedEmployee.slip_status === 'generated' || selectedEmployee.slip_status === 'sent' ? 'Generated' : 'Not Generated'}
+                    </span>
+                  </>
+                )}
+              </div>
+              
               <Button variant="outline" onClick={() => setEmployeeDetailsOpen(false)} className="rounded-xl font-bold bg-white ml-auto">Close Details</Button>
             </div>
           </div>

@@ -302,9 +302,6 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
         });
         if (onSuccess) onSuccess();
       } else {
-        if (typeof window !== 'undefined') {
-          window.alert(`Provisioning Action Denied:\n\n${result?.error}`);
-        }
         toast({
           title: "Provisioning Action Denied",
           description: result?.error as string,
@@ -313,9 +310,6 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
       }
     } catch (err: unknown) {
       console.error(err);
-      if (typeof window !== 'undefined') {
-        window.alert(`Transaction Failure:\n\nAn unexpected network or file engine error occurred. ${(err as Error)?.message || ''}`);
-      }
       toast({
         title: "Transaction Failure",
         description: "An unexpected network or file engine error occurred.",
@@ -342,10 +336,6 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
       .map(([key, err]: [string, { message?: string } | undefined | unknown]) => `${key}: ${(err as { message?: string })?.message || 'Invalid value'}`)
       .join('\n');
 
-    // Loud alert to guarantee visibility of errors
-    if (typeof window !== 'undefined') {
-      window.alert(`Validation Check Failed:\n\n${errorMessages || "Please fill all required fields."}`);
-    }
 
     toast({
       title: "Validation Check Failed",
