@@ -459,6 +459,7 @@ export type Database = {
           personal_email: string | null
           phone_number: string | null
           profile_photo: string | null
+          reporting_manager_id: string | null
           residential_address: string | null
           roles: Database["public"]["Enums"]["user_role"][]
           salary: number | null
@@ -489,6 +490,7 @@ export type Database = {
           personal_email?: string | null
           phone_number?: string | null
           profile_photo?: string | null
+          reporting_manager_id?: string | null
           residential_address?: string | null
           roles?: Database["public"]["Enums"]["user_role"][]
           salary?: number | null
@@ -519,6 +521,7 @@ export type Database = {
           personal_email?: string | null
           phone_number?: string | null
           profile_photo?: string | null
+          reporting_manager_id?: string | null
           residential_address?: string | null
           roles?: Database["public"]["Enums"]["user_role"][]
           salary?: number | null

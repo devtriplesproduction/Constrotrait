@@ -119,7 +119,7 @@ export async function onboardEmployee(data: OnboardFormData) {
       salary: data.salary || 0,
       experience: data.experience || 0,
       documents: (data.documents || []) as Json,
-      reporting_manager_id: data.reporting_manager_id || null,
+      reporting_manager_id: data.reporting_manager || null,
     });
 
     if (profileError) {
@@ -241,7 +241,13 @@ export async function getAllEmployees(options?: { compact?: boolean }) {
         .order("created_at", { ascending: false });
 
       if (!isSuperAdmin && (isBranchManager || isHR || isAdminInwardCRE)) {
-        query = query.eq("branch_id", profile?.branch_id as string);
+        if (!profile?.branch_id) {
+          return {
+            success: false,
+            error: "You must be assigned to a branch to view employees.",
+          };
+        }
+        query = query.eq("branch_id", profile.branch_id);
       }
 
       const { data, error } = await query;
