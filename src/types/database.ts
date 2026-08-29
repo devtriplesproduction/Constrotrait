@@ -573,6 +573,363 @@ export type Database = {
           },
         ]
       }
+      payroll_cycles: {
+        Row: {
+          id: string
+          month: number
+          year: number
+          status: string
+          locked_by: string | null
+          locked_at: string | null
+          slip_status: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          month: number
+          year: number
+          status?: string
+          locked_by?: string | null
+          locked_at?: string | null
+          slip_status?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          month?: number
+          year?: number
+          status?: string
+          locked_by?: string | null
+          locked_at?: string | null
+          slip_status?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_cycles_locked_by_fkey"
+            columns: ["locked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      payroll_snapshots: {
+        Row: {
+          id: string
+          cycle_id: string
+          employee_id: string
+          employee_name: string | null
+          employee_id_external: string | null
+          department: string | null
+          designation: string | null
+          base_salary: number | null
+          days_present: number | null
+          days_field: number | null
+          days_paid_leave: number | null
+          days_unpaid_leave: number | null
+          days_absent: number | null
+          net_payable: number | null
+          basic_salary: number | null
+          hra: number | null
+          allowance: number | null
+          bonus: number | null
+          gross_salary: number | null
+          pf: number | null
+          esi: number | null
+          professional_tax: number | null
+          income_tax: number | null
+          other_deductions: number | null
+          damage_recovery: number | null
+          salary_advance_recovery: number | null
+          total_deductions: number | null
+          net_salary: number | null
+          overtime_hours: number | null
+          overtime_pay: number | null
+          is_reviewed: boolean | null
+          remarks: string | null
+          calculated_at: string | null
+        }
+        Insert: {
+          id?: string
+          cycle_id: string
+          employee_id: string
+          employee_name?: string | null
+          employee_id_external?: string | null
+          department?: string | null
+          designation?: string | null
+          base_salary?: number | null
+          days_present?: number | null
+          days_field?: number | null
+          days_paid_leave?: number | null
+          days_unpaid_leave?: number | null
+          days_absent?: number | null
+          net_payable?: number | null
+          basic_salary?: number | null
+          hra?: number | null
+          allowance?: number | null
+          bonus?: number | null
+          gross_salary?: number | null
+          pf?: number | null
+          esi?: number | null
+          professional_tax?: number | null
+          income_tax?: number | null
+          other_deductions?: number | null
+          damage_recovery?: number | null
+          salary_advance_recovery?: number | null
+          total_deductions?: number | null
+          net_salary?: number | null
+          overtime_hours?: number | null
+          overtime_pay?: number | null
+          is_reviewed?: boolean | null
+          remarks?: string | null
+          calculated_at?: string | null
+        }
+        Update: {
+          id?: string
+          cycle_id?: string
+          employee_id?: string
+          employee_name?: string | null
+          employee_id_external?: string | null
+          department?: string | null
+          designation?: string | null
+          base_salary?: number | null
+          days_present?: number | null
+          days_field?: number | null
+          days_paid_leave?: number | null
+          days_unpaid_leave?: number | null
+          days_absent?: number | null
+          net_payable?: number | null
+          basic_salary?: number | null
+          hra?: number | null
+          allowance?: number | null
+          bonus?: number | null
+          gross_salary?: number | null
+          pf?: number | null
+          esi?: number | null
+          professional_tax?: number | null
+          income_tax?: number | null
+          other_deductions?: number | null
+          damage_recovery?: number | null
+          salary_advance_recovery?: number | null
+          total_deductions?: number | null
+          net_salary?: number | null
+          overtime_hours?: number | null
+          overtime_pay?: number | null
+          is_reviewed?: boolean | null
+          remarks?: string | null
+          calculated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_snapshots_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_snapshots_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      salary_slips: {
+        Row: {
+          id: string
+          employee_id: string
+          cycle_id: string
+          snapshot_id: string
+          pdf_url: string | null
+          generated_at: string | null
+          generated_by: string | null
+          emailed: boolean | null
+          emailed_at: string | null
+          emailed_by: string | null
+          shared: boolean | null
+          status: string | null
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          cycle_id: string
+          snapshot_id: string
+          pdf_url?: string | null
+          generated_at?: string | null
+          generated_by?: string | null
+          emailed?: boolean | null
+          emailed_at?: string | null
+          emailed_by?: string | null
+          shared?: boolean | null
+          status?: string | null
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          cycle_id?: string
+          snapshot_id?: string
+          pdf_url?: string | null
+          generated_at?: string | null
+          generated_by?: string | null
+          emailed?: boolean | null
+          emailed_at?: string | null
+          emailed_by?: string | null
+          shared?: boolean | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_slips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_slips_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_slips_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_snapshots"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      employee_financial_ledger: {
+        Row: {
+          id: string
+          employee_id: string
+          adjustment_type: string
+          adjustment_category: string
+          original_amount: number
+          remaining_amount: number
+          suggested_installment_amount: number | null
+          effective_date: string
+          description: string | null
+          status: string
+          created_by: string | null
+          updated_by: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          adjustment_type: string
+          adjustment_category: string
+          original_amount?: number
+          remaining_amount?: number
+          suggested_installment_amount?: number | null
+          effective_date?: string
+          description?: string | null
+          status?: string
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          adjustment_type?: string
+          adjustment_category?: string
+          original_amount?: number
+          remaining_amount?: number
+          suggested_installment_amount?: number | null
+          effective_date?: string
+          description?: string | null
+          status?: string
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_financial_ledger_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      payroll_adjustment_applications: {
+        Row: {
+          id: string
+          employee_id: string
+          ledger_id: string | null
+          cycle_id: string
+          adjustment_type: string
+          adjustment_category: string
+          applied_amount: number
+          status: string
+          applied_at: string | null
+          applied_by: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          ledger_id?: string | null
+          cycle_id: string
+          adjustment_type: string
+          adjustment_category: string
+          applied_amount?: number
+          status?: string
+          applied_at?: string | null
+          applied_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          ledger_id?: string | null
+          cycle_id?: string
+          adjustment_type?: string
+          adjustment_category?: string
+          applied_amount?: number
+          status?: string
+          applied_at?: string | null
+          applied_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_adjustment_applications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_adjustment_applications_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "employee_financial_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_adjustment_applications_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_cycles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

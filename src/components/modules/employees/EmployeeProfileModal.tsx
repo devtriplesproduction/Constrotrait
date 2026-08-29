@@ -43,6 +43,7 @@ import { MultiSelect } from "@/components/ui/MultiSelect";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { APP_ROLES, ONBOARDING_ROLES } from "@/config/roles";
 import { DEPARTMENTS, getDesignationsForDepartment } from "@/config/departments";
+import { usePrompt } from "@/hooks/use-prompt";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,7 @@ export function EmployeeProfileModal({
   onClose: () => void;
 }) {
   const { toast } = useToast();
+  const { prompt, PromptComponent } = usePrompt();
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<
     "personal" | "professional" | "documents" | "salary" | "security"
@@ -436,7 +438,7 @@ export function EmployeeProfileModal({
   };
 
   const handleDelete = async () => {
-    const confirmStr = prompt(
+    const confirmStr = await prompt(
       `Type "DELETE" to permanently archive ${employee.first_name}'s account.`,
     );
     if (confirmStr !== "DELETE") return;
@@ -513,7 +515,7 @@ export function EmployeeProfileModal({
                 {DEPARTMENTS.find((d) => d.id === formData.department)?.name ||
                   formData.department ||
                   "No Department"}{" "}
-                â€¢{" "}
+                •{" "}
                 {(formData.roles || [])
                   .map((r) => APP_ROLES[r as keyof typeof APP_ROLES] || r)
                   .join(", ") || "No Roles"}
@@ -844,7 +846,7 @@ export function EmployeeProfileModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500">
-                    Base Salary (â‚¹)
+                    Base Salary (₹)
                   </label>
                   <div className="relative">
                     <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -988,7 +990,7 @@ export function EmployeeProfileModal({
                 <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
                   <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
                   <p className="text-xs font-semibold text-amber-700 flex-1">
-                    Hike of â‚¹{pendingHike.newSalary.toLocaleString("en-IN")} is
+                    Hike of ₹{pendingHike.newSalary.toLocaleString("en-IN")} is
                     staged but <strong>not saved yet</strong>. Click{" "}
                     <strong>Save Changes</strong> below to commit.
                   </p>
@@ -1048,7 +1050,7 @@ export function EmployeeProfileModal({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-500">
-                        Previous Salary (â‚¹)
+                        Previous Salary (₹)
                       </label>
                       <Input
                         type="text"
@@ -1059,7 +1061,7 @@ export function EmployeeProfileModal({
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-500">
-                        New Proposed Salary (â‚¹) *
+                        New Proposed Salary (₹) *
                       </label>
                       <Input
                         type="number"
@@ -1112,7 +1114,7 @@ export function EmployeeProfileModal({
                         Current Salary
                       </p>
                       <h3 className="text-2xl font-black text-slate-800">
-                        â‚¹{(formData.salary || 0).toLocaleString("en-IN")}
+                        ₹{(formData.salary || 0).toLocaleString("en-IN")}
                       </h3>
                     </div>
 
@@ -1141,7 +1143,7 @@ export function EmployeeProfileModal({
                       </p>
                       <h3 className="text-lg font-bold text-slate-500">
                         {salaryHikes.length > 0
-                          ? `â‚¹${salaryHikes[0].new_salary?.toLocaleString("en-IN")}`
+                          ? `₹${salaryHikes[0].new_salary?.toLocaleString("en-IN")}`
                           : "No history yet"}
                       </h3>
                     </div>
@@ -1174,9 +1176,9 @@ export function EmployeeProfileModal({
                           >
                             <div>
                               <p className="text-sm font-bold text-slate-800">
-                                â‚¹{hike.new_salary?.toLocaleString("en-IN")}
+                                ₹{hike.new_salary?.toLocaleString("en-IN")}
                                 <span className="text-xs font-medium text-slate-500 ml-2">
-                                  from â‚¹
+                                  from ₹
                                   {hike.previous_salary?.toLocaleString(
                                     "en-IN",
                                   )}
@@ -1443,11 +1445,9 @@ export function EmployeeProfileModal({
           </div>
         </div>
       )}
+      <PromptComponent />
     </div>
   );
 
-  if (typeof document === "undefined") return null;
   return createPortal(modalContent, document.body);
 }
-
-

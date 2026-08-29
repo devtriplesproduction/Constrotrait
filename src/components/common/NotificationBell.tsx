@@ -113,13 +113,15 @@ export function NotificationBell() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 bg-zinc-50/50">
             <h3 className="font-semibold text-sm text-zinc-900">Notifications</h3>
             {unreadCount > 0 && (
-              <button 
+              <Button 
+                variant="custom"
+                size="none"
                 onClick={handleMarkAllAsRead}
                 className="text-xs text-orange-600 hover:text-orange-800 flex items-center gap-1 font-medium transition-colors"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 Mark all as read
-              </button>
+              </Button>
             )}
           </div>
           
@@ -153,13 +155,15 @@ export function NotificationBell() {
                         </p>
                       </div>
                       {!notification.is_read && (
-                        <button
+                        <Button
+                          variant="custom"
+                          size="none"
                           onClick={(e) => handleMarkAsRead(notification.id, e)}
                           className="flex-shrink-0 p-1.5 text-zinc-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
                           title="Mark as read"
                         >
                           <Check className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>

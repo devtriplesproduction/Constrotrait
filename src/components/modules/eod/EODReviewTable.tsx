@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { reviewEODAction } from '@/actions/eod.actions';
 import { useRouter } from 'next/navigation';
 import { EODReport } from '@/services/eod.service';
+import { usePrompt } from "@/hooks/use-prompt";
 
 export function EODReviewTable({ eods }: { eods: (EODReport & { profiles: { first_name: string, last_name: string, employee_id: string } | null })[] }) {
   const [loading, setLoading] = useState<string | null>(null);
   const router = useRouter();
+  const { prompt, PromptComponent } = usePrompt();
 
   async function handleReview(eodId: string, action: 'Approve' | 'Reject') {
-    const reason = action === 'Reject' ? window.prompt("Enter rejection reason:") : undefined;
+    const reason = action === 'Reject' ? await prompt("Enter rejection reason:") : undefined;
     
     if (action === 'Reject' && (!reason || reason.trim() === '')) {
       alert("Rejection reason is required.");
@@ -86,6 +88,7 @@ export function EODReviewTable({ eods }: { eods: (EODReport & { profiles: { firs
           ))}
         </tbody>
       </table>
+      <PromptComponent />
     </div>
   );
 }

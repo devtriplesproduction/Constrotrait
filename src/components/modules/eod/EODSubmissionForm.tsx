@@ -10,6 +10,7 @@ import { Dropdown } from '@/components/ui/Dropdown';
 import { ImagePlus, X } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { PremiumDatePicker } from '@/components/ui/PremiumDatePicker';
 
 type EmployeeOption = { id: string; first_name: string; last_name: string; employee_id: string };
 
@@ -205,21 +206,20 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         )}
 
         {canEditDate ? (
-          <Input
-            label="Report Date"
-            type="date"
-            name="report_date"
-            required
-            value={reportDate}
-            onChange={(e) => setReportDate(e.target.value)}
-          />
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-foreground">Report Date</label>
+            <PremiumDatePicker
+              value={reportDate}
+              onChange={(date) => setReportDate(date)}
+            />
+            <input type="hidden" name="report_date" value={reportDate} />
+          </div>
         ) : (
-          <div>
-            <Input
-              label="Report Date"
-              type="date"
-              disabled
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-foreground">Report Date</label>
+            <PremiumDatePicker
               value={todayDate}
+              disabled
             />
             <input type="hidden" name="report_date" value={todayDate} />
           </div>

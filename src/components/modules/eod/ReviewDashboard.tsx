@@ -4,8 +4,10 @@ import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { Search, SlidersHorizontal, RefreshCcw, CheckCircle2, Clock, XCircle, AlertCircle, FileSearch, FileText } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { EODReport } from '@/services/eod.service';
 import { reviewEODAction } from '@/actions/eod.actions';
+import { PremiumDatePicker } from '@/components/ui/PremiumDatePicker';
 
 type Employee = { id: string; first_name: string; last_name: string; employee_id: string };
 type EnrichedEOD = EODReport & { profiles: Employee | null };
@@ -145,7 +147,7 @@ export function ReviewDashboard({
             <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Search</label>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
+              <Input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -173,22 +175,20 @@ export function ReviewDashboard({
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">From</label>
-            <input
-              type="date"
+            <PremiumDatePicker
               value={fromDate}
-              onChange={e => setFromDate(e.target.value)}
-              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all outline-none"
+              onChange={(date) => setFromDate(date)}
+              className="w-full"
             />
           </div>
 
           <div className="flex gap-2">
             <div className="flex-1 space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">To</label>
-              <input
-                type="date"
+              <PremiumDatePicker
                 value={toDate}
-                onChange={e => setToDate(e.target.value)}
-                className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all outline-none"
+                onChange={(date) => setToDate(date)}
+                className="w-full"
               />
             </div>
             <div className="pb-0.5 self-end">

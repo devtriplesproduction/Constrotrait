@@ -80,14 +80,14 @@ export async function submitLeave(input: CreateLeaveInput) {
       const durationDays = await calculateLeaveDurationDays(user.id, input.start_date, input.end_date, input.is_half_day);
       const hoursRequired = durationDays * 8; // Full day = 8 hours, half day = 4 hours
       const balance = await getCompOffBalance(user.id);
-      
+
       if (balance < hoursRequired) {
         return { success: false, error: `Insufficient Comp-Off balance. Required: ${hoursRequired} hours, Available: ${balance} hours.` };
       }
     }
 
     if (input.leave_type === "Sick Leave" && !input.medical_certificate_url) {
-      // It's allowed to submit without it, but it will be unpaid.
+      return { success: false, error: "Medical certificate is required to submit a Sick Leave." };
     }
 
     const supabase = await createClient();
@@ -124,54 +124,44 @@ export async function submitLeave(input: CreateLeaveInput) {
 export async function approveLeaveFirstLevel(leaveId: string) {
   try {
     const user = await getAuthenticatedUserWithRoles();
-    if (!user) return { success: false, error: "Unauthorized" };
+    if (!user) {
+      return { success: false, error: "Unauthorized" };
+    }
 
     const supabase = await createClient();
     
-    // Fetch leave and check branch manager auth
+    // Fetch leave first to validate
     const { data: leave, error: fetchError } = await supabase
       .from("leave_requests")
-      .select("*, profiles!leave_requests_employee_id_fkey(branch_id, reporting_manager_id)")
+      .select("*")
       .eq("id", leaveId)
       .single();
 
     if (fetchError || !leave) return { success: false, error: "Leave not found" };
 
-    if (leave.employee_id === user.id) {
-        return { success: false, error: "Cannot approve your own leave." };
+    if (leave.leave_type === "Sick Leave" && !leave.medical_certificate_url) {
+      return { success: false, error: "Cannot approve Sick Leave without a medical certificate." };
     }
 
-    const isManager = isBranchManager(user.roles);
-    // profiles is an object because of the join, but typing might complain so cast it
-    const leaveProfile = leave.profiles as unknown as { branch_id: string, reporting_manager_id: string | null };
+    const { error } = await supabase.rpc("approve_leave_first_level", {
+      p_leave_id: leaveId,
+    });
 
-    if (!isManager || leaveProfile.branch_id !== user.branch_id) {
-      if (leaveProfile.reporting_manager_id !== user.id) {
-        return { success: false, error: "Unauthorized to approve this leave." };
-      }
+    if (error) {
+      console.error("Failed to approve leave via RPC:", error);
+      return {
+        success: false,
+        error: error.message || "Failed to approve leave",
+      };
     }
 
-    if (leave.status !== "Pending First Level") {
-      return { success: false, error: "Leave is not pending first-level approval." };
-    }
-
-    const { data, error } = await supabase
-      .from("leave_requests")
-      .update({
-        status: "Pending HR",
-        first_level_approver_id: user.id,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", leaveId)
-      .select()
-      .single();
-
-    if (error) return { success: false, error: "Failed to approve leave" };
-
-    return { success: true, data };
+    return { success: true };
   } catch (error) {
     console.error("Error approving leave:", error);
-    return { success: false, error: "An unexpected error occurred" };
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
   }
 }
 
@@ -208,153 +198,143 @@ export async function approveLeaveHR(leaveId: string) {
   }
 }
 
-export async function rejectLeave(leaveId: string, reason: string) {
-    try {
-        const user = await getAuthenticatedUserWithRoles();
-        if (!user) return { success: false, error: "Unauthorized" };
+export async function rejectLeave(
+  leaveId: string,
+  reason: string
+) {
+  try {
+    const supabase = await createClient();
 
-        const supabase = await createClient();
-        const { data: leave, error: fetchError } = await supabase
-          .from("leave_requests")
-          .select("*, profiles!leave_requests_employee_id_fkey(branch_id, reporting_manager_id)")
-          .eq("id", leaveId)
-          .single();
+    const { error } = await supabase.rpc("reject_leave", {
+      p_leave_id: leaveId,
+      p_reason: reason,
+    });
 
-        if (fetchError || !leave) return { success: false, error: "Leave not found" };
+    if (error) {
+      console.error("Failed to reject leave via RPC:", error);
 
-        const leaveProfile = leave.profiles as unknown as { branch_id: string, reporting_manager_id: string | null };
-        const canReject = 
-            isHR(user.roles) || 
-            isSuperAdmin(user.roles) || 
-            (isBranchManager(user.roles) && user.branch_id === leaveProfile.branch_id) ||
-            (leaveProfile.reporting_manager_id === user.id);
-
-        if (!canReject) return { success: false, error: "Unauthorized to reject this leave." };
-
-        const { data, error } = await supabase
-          .from("leave_requests")
-          .update({
-            status: "Rejected",
-            rejection_reason: reason,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", leaveId)
-          .select()
-          .single();
-
-        if (error) return { success: false, error: "Failed to reject leave" };
-
-        return { success: true, data };
-    } catch (error) {
-        return { success: false, error: "An unexpected error occurred" };
+      return {
+        success: false,
+        error: error.message || "Failed to reject leave",
+      };
     }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error rejecting leave:", error);
+
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
 }
 
 export async function cancelApprovedLeave(leaveId: string) {
-    try {
-        const user = await getAuthenticatedUserWithRoles();
-        if (!user) return { success: false, error: "Unauthorized" };
-        if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
 
-        const supabase = await createClient();
-        const { data: leave, error: fetchError } = await supabase
-          .from("leave_requests")
-          .select("*")
-          .eq("id", leaveId)
-          .single();
+    const supabase = await createClient();
+    const { data: leave, error: fetchError } = await supabase
+      .from("leave_requests")
+      .select("*")
+      .eq("id", leaveId)
+      .single();
 
-        if (fetchError || !leave) return { success: false, error: "Leave not found" };
-        if (leave.status !== "Approved") return { success: false, error: "Only approved leaves can be cancelled." };
+    if (fetchError || !leave) return { success: false, error: "Leave not found" };
+    if (leave.status !== "Approved") return { success: false, error: "Only approved leaves can be cancelled." };
 
-        const { error: rpcError } = await supabase.rpc("cancel_comp_off_leave", {
-          p_leave_id: leaveId
-        });
+    const { error: rpcError } = await supabase.rpc("cancel_comp_off_leave", {
+      p_leave_id: leaveId
+    });
 
-        if (rpcError) {
-          console.error("Failed to cancel leave via RPC:", rpcError);
-          return { success: false, error: rpcError.message || "Failed to cancel leave" };
-        }
-
-        return { success: true };
-    } catch (error) {
-        return { success: false, error: "An unexpected error occurred" };
+    if (rpcError) {
+      console.error("Failed to cancel leave via RPC:", rpcError);
+      return { success: false, error: rpcError.message || "Failed to cancel leave" };
     }
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "An unexpected error occurred" };
+  }
 }
 
 export async function verifyMedicalCertificate(leaveId: string) {
-    try {
-        const user = await getAuthenticatedUserWithRoles();
-        if (!user) return { success: false, error: "Unauthorized" };
-        if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
 
-        const supabase = await createClient();
-        const { error: rpcError } = await supabase.rpc("verify_medical_certificate", {
-          p_leave_id: leaveId
-        });
+    const supabase = await createClient();
+    const { error: rpcError } = await supabase.rpc("verify_medical_certificate", {
+      p_leave_id: leaveId
+    });
 
-        if (rpcError) {
-          console.error("Failed to verify certificate via RPC:", rpcError);
-          return { success: false, error: rpcError.message || "Failed to verify certificate" };
-        }
-        return { success: true };
-    } catch (error) {
-        return { success: false, error: "An unexpected error occurred" };
+    if (rpcError) {
+      console.error("Failed to verify certificate via RPC:", rpcError);
+      return { success: false, error: rpcError.message || "Failed to verify certificate" };
     }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "An unexpected error occurred" };
+  }
 }
 
 export async function getLeaves() {
-    try {
-        const user = await getAuthenticatedUserWithRoles();
-        if (!user) return { success: false, error: "Unauthorized" };
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
 
-        const supabase = await createClient();
-        const { data, error } = await supabase
-            .from("leave_requests")
-            .select("*")
-            .eq("employee_id", user.id)
-            .order("created_at", { ascending: false });
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("leave_requests")
+      .select("*")
+      .eq("employee_id", user.id)
+      .order("created_at", { ascending: false });
 
-        if (error) return { success: false, error: "Failed to fetch leaves" };
-        return { success: true, data };
-    } catch (e) {
-        return { success: false, error: "Error fetching leaves" };
-    }
+    if (error) return { success: false, error: "Failed to fetch leaves" };
+    return { success: true, data };
+  } catch (e) {
+    return { success: false, error: "Error fetching leaves" };
+  }
 }
 
 export async function getLeavesToApprove() {
-    try {
-        const user = await getAuthenticatedUserWithRoles();
-        if (!user) return { success: false, error: "Unauthorized" };
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
 
-        const supabase = await createClient();
-        
-        let query = supabase.from("leave_requests").select("*, profiles!leave_requests_employee_id_fkey(first_name, last_name, branch_id, reporting_manager_id)");
-        
-        if (isHR(user.roles) || isSuperAdmin(user.roles)) {
-            // HR sees everything pending HR, or everything if they want, but pending HR is the action items
-            query = query.in("status", ["Pending HR", "Approved", "Rejected", "Cancelled"]);
-        } else if (isBranchManager(user.roles)) {
-            // Branch manager sees their branch's pending First level, or others for history
-            // We just fetch all for their branch in JS
-        } else {
-            return { success: true, data: [] }; // No permissions to approve
-        }
+    const supabase = await createClient();
 
-        const { data, error } = await query.order("created_at", { ascending: false });
-        if (error) return { success: false, error: "Failed to fetch pending leaves" };
+    let query = supabase.from("leave_requests").select("*, profiles!leave_requests_employee_id_fkey(first_name, last_name, branch_id, reporting_manager_id)");
 
-        let finalData = data;
-        if (!isHR(user.roles) && !isSuperAdmin(user.roles)) {
-            finalData = data.filter((l: Record<string, unknown>) => {
-                const profiles = l.profiles as { branch_id: string, reporting_manager_id: string | null } | null;
-                const isManagerOfBranch = isBranchManager(user.roles) && profiles?.branch_id === user.branch_id;
-                const isReportingManager = profiles?.reporting_manager_id === user.id;
-                return isManagerOfBranch || isReportingManager;
-            });
-        }
-
-        return { success: true, data: finalData };
-    } catch (e) {
-        return { success: false, error: "Error fetching pending leaves" };
+    if (isHR(user.roles) || isSuperAdmin(user.roles)) {
+      // HR sees everything pending HR, or everything if they want, but pending HR is the action items
+      query = query.in("status", ["Pending HR", "Approved", "Rejected", "Cancelled"]);
+    } else if (isBranchManager(user.roles)) {
+      // Branch manager sees their branch's pending First level, or others for history
+      // We just fetch all for their branch in JS
     }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
+    if (error) return { success: false, error: "Failed to fetch pending leaves" };
+
+    let finalData = data;
+    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) {
+      finalData = data.filter((l: Record<string, unknown>) => {
+        const profiles = l.profiles as { branch_id: string, reporting_manager_id: string | null } | null;
+        const isManagerOfBranch = isBranchManager(user.roles) && profiles?.branch_id === user.branch_id;
+        const isReportingManager = profiles?.reporting_manager_id === user.id;
+        return isManagerOfBranch || isReportingManager;
+      });
+    }
+
+    return { success: true, data: finalData };
+  } catch (e) {
+    return { success: false, error: "Error fetching pending leaves" };
+  }
 }
