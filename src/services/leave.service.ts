@@ -3,6 +3,14 @@ import { getAuthenticatedUserWithRoles } from "./auth.service";
 import { isHR, isSuperAdmin, isBranchManager } from "@/config/roles";
 import { isWorkingDayForEmployee } from "./holiday.service";
 import { Database } from "@/types/database";
+import { SupabaseClient } from "@supabase/supabase-js";
+
+type AppSupabaseClient = SupabaseClient<Database> & {
+  rpc: (
+    fn: "approve_leave_first_level" | "approve_comp_off_leave" | "reject_leave" | "cancel_comp_off_leave" | "verify_medical_certificate",
+    args?: Record<string, unknown>
+  ) => Promise<{ error: { message: string, code?: string } | null; data: unknown }>;
+};
 
 export type LeaveRequest = Database["public"]["Tables"]["leave_requests"]["Row"];
 export type CompOffLedger = Database["public"]["Tables"]["comp_off_ledger"]["Row"];
@@ -43,30 +51,21 @@ export async function getCompOffBalance(employeeId: string): Promise<number> {
   return Math.max(0, balance);
 }
 
-// Helper to perfectly replicate leave date iteration
-export function expandLeaveDates(startDate: string, endDate: string): string[] {
-  const dates: string[] = [];
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  while (start <= end) {
-    dates.push(start.toISOString().split("T")[0]);
-    start.setDate(start.getDate() + 1);
-  }
-  return dates;
-}
-
 // Calculate the number of working days in a date range for a specific employee
 export async function calculateLeaveDurationDays(employeeId: string, startDate: string, endDate: string, isHalfDay: boolean): Promise<number> {
   if (isHalfDay) return 0.5;
 
+  const start = new Date(startDate);
+  const end = new Date(endDate);
   let workingDays = 0;
-  const dates = expandLeaveDates(startDate, endDate);
-  
-  for (const dateStr of dates) {
+
+  while (start <= end) {
+    const dateStr = start.toISOString().split("T")[0];
     const isWorking = await isWorkingDayForEmployee(employeeId, dateStr);
     if (isWorking) {
       workingDays += 1;
     }
+    start.setDate(start.getDate() + 1);
   }
 
   return workingDays;
@@ -137,7 +136,7 @@ export async function approveLeaveFirstLevel(leaveId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient() as unknown as AppSupabaseClient;
     
     // Fetch leave first to validate
     const { data: leave, error: fetchError } = await supabase
@@ -180,7 +179,7 @@ export async function approveLeaveHR(leaveId: string) {
     if (!user) return { success: false, error: "Unauthorized" };
     if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
 
-    const supabase = await createClient();
+    const supabase = await createClient() as unknown as AppSupabaseClient;
     const { data: leave, error: fetchError } = await supabase
       .from("leave_requests")
       .select("*")
@@ -212,7 +211,7 @@ export async function rejectLeave(
   reason: string
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient() as unknown as AppSupabaseClient;
 
     const { error } = await supabase.rpc("reject_leave", {
       p_leave_id: leaveId,
@@ -247,7 +246,7 @@ export async function cancelApprovedLeave(leaveId: string) {
     if (!user) return { success: false, error: "Unauthorized" };
     if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
 
-    const supabase = await createClient();
+    const supabase = await createClient() as unknown as AppSupabaseClient;
     const { data: leave, error: fetchError } = await supabase
       .from("leave_requests")
       .select("*")
@@ -267,7 +266,8 @@ export async function cancelApprovedLeave(leaveId: string) {
     }
 
     return { success: true };
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("Error cancelling leave:", error);
     return { success: false, error: "An unexpected error occurred" };
   }
 }
@@ -278,7 +278,7 @@ export async function verifyMedicalCertificate(leaveId: string) {
     if (!user) return { success: false, error: "Unauthorized" };
     if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
 
-    const supabase = await createClient();
+    const supabase = await createClient() as unknown as AppSupabaseClient;
     const { error: rpcError } = await supabase.rpc("verify_medical_certificate", {
       p_leave_id: leaveId
     });
@@ -288,7 +288,8 @@ export async function verifyMedicalCertificate(leaveId: string) {
       return { success: false, error: rpcError.message || "Failed to verify certificate" };
     }
     return { success: true };
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("Error verifying medical cert:", error);
     return { success: false, error: "An unexpected error occurred" };
   }
 }
@@ -307,7 +308,8 @@ export async function getLeaves() {
 
     if (error) return { success: false, error: "Failed to fetch leaves" };
     return { success: true, data };
-  } catch (e) {
+  } catch (e: unknown) {
+    console.error("Error fetching leaves:", e);
     return { success: false, error: "Error fetching leaves" };
   }
 }
@@ -343,7 +345,8 @@ export async function getLeavesToApprove() {
     }
 
     return { success: true, data: finalData };
-  } catch (e) {
+  } catch (e: unknown) {
+    console.error("Error fetching pending leaves:", e);
     return { success: false, error: "Error fetching pending leaves" };
   }
 }

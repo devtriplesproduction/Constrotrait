@@ -26,7 +26,7 @@ export function BranchTable({ branches }: BranchTableProps) {
       const newStatus = !currentStatus;
       const res = await toggleBranchActiveAction(id, newStatus);
       if (res.success) {
-        toast({ title: res.message || "Branch status updated.", variant: "success" });
+        toast({ title: "message" in res ? res.message : "Branch status updated.", variant: "success" });
       } else {
         toast({ title: res.error || "Failed to update branch status.", variant: "error" });
       }

@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { expandLeaveDates } from "./leave.service";
 import { Database } from "@/types/database";
 
 export type PayrollCycle = Database["public"]["Tables"]["payroll_cycles"]["Row"];
@@ -144,7 +143,13 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
     // Pre-expand leaves to match Leave module logic
     const expandedLeaves = new Map<string, typeof empLeaves[0]>();
     for (const lr of empLeaves) {
-      const dates = expandLeaveDates(lr.start_date, lr.end_date);
+      const dates: string[] = [];
+      const start = new Date(lr.start_date);
+      const end = new Date(lr.end_date);
+      while (start <= end) {
+        dates.push(start.toISOString().split("T")[0]);
+        start.setDate(start.getDate() + 1);
+      }
       for (const d of dates) {
         expandedLeaves.set(d, lr);
       }

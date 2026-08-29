@@ -6,12 +6,27 @@ CREATE OR REPLACE FUNCTION public.lock_payroll_cycle(
 ) RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     v_cycle_id UUID;
     v_status TEXT;
     v_snapshot JSONB;
+    v_caller_uid UUID;
 BEGIN
+    v_caller_uid := auth.uid();
+
+    IF v_caller_uid IS NULL OR v_caller_uid != p_locked_by THEN
+        RAISE EXCEPTION 'Unauthorized: Caller identity mismatch';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM public.profiles 
+        WHERE id = v_caller_uid 
+        AND (roles @> '{"SUPER_ADMIN"}' OR roles @> '{"HR"}')
+    ) THEN
+        RAISE EXCEPTION 'Unauthorized: Insufficient permissions to lock payroll';
+    END IF;
     -- Check existing cycle
     SELECT id, status INTO v_cycle_id, v_status
     FROM public.payroll_cycles

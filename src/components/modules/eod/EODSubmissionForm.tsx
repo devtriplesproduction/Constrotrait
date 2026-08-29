@@ -52,8 +52,8 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         setOfficeHours(res.data.office_hours.toString());
         setLocation(res.data.location as 'Office' | 'Field');
         setBlockers(res.data.blockers || '');
-        setJobCardNumbers(res.data.job_card_numbers || '');
-        setTomorrowsPlan(res.data.tomorrows_plan || '');
+        setJobCardNumbers((res.data as Record<string, unknown>).job_card_numbers as string || '');
+        setTomorrowsPlan((res.data as Record<string, unknown>).tomorrows_plan as string || '');
         setExistingPhotoUrl(res.data.photo_url || null);
         // Note: Existing photo preview isn't easily loadable as a File, we'd need public URL to show it.
         // The RPC uses COALESCE so if we send no file, it keeps the old one.
@@ -318,7 +318,7 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Tomorrow's Plan</label>
+          <label className="block text-sm font-medium text-foreground">Tomorrow&apos;s Plan</label>
           <textarea
             name="tomorrows_plan"
             rows={2}

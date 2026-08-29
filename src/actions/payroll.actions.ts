@@ -5,8 +5,7 @@ import { isHR, isSuperAdmin } from "@/config/roles";
 import {
   getPayrollCycles,
   calculateMonthlyPayroll,
-  lockPayrollCycle,
-  PayrollSnapshot
+  lockPayrollCycle
 } from "@/services/payroll.service";
 
 export async function getPayrollCyclesAction() {
