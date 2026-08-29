@@ -170,7 +170,7 @@ export function SelectItem({
   return (
     <Button variant="custom" type="button" onClick={() => { context?.onValueChange(value); context?.setOpen(false); }}
       className={cn(
-        "relative flex w-full cursor-pointer select-none items-center rounded-lg py-2.5 pl-9 pr-4 text-sm font-medium outline-none transition-all duration-200",
+        "relative flex w-full justify-start text-left cursor-pointer select-none items-center rounded-lg py-2.5 pl-9 pr-4 text-sm font-medium outline-none transition-all duration-200",
         "text-slate-600  hover:bg-slate-100 hover:text-slate-900",
         isSelected && "text-orange-600  font-semibold bg-orange-50/80 ",
         className

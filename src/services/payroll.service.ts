@@ -17,7 +17,7 @@ export async function getPayrollCycles(): Promise<PayrollCycle[]> {
   return cycles || [];
 }
 
-export async function calculateMonthlyPayroll(month: number, year: number, branchId: string): Promise<{ isLocked: boolean; cycle: PayrollCycle | null; data: PayrollSnapshot[] }> {
+export async function calculateMonthlyPayroll(month: number, year: number, branchId: string): Promise<{ isLocked: boolean; cycle: PayrollCycle | null; data: PayrollSnapshot[]; appliedAdjustments?: any[] }> {
   const supabase = await createClient();
 
   // Check if cycle is already locked
@@ -63,7 +63,7 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
       } as PayrollSnapshot & { emailed: boolean, notification_status: string };
     });
 
-    return { data: enrichedSnapshots, isLocked: true, cycle: existingCycle };
+    return { data: enrichedSnapshots, isLocked: true, cycle: existingCycle, appliedAdjustments: [] };
   }
 
   // 1. Fetch all active employees (include branch_id for holiday resolution)
@@ -116,6 +116,17 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     .select('employee_id, new_salary, effective_date')
     .lte('effective_date', endOfMonth)
     .order('effective_date', { ascending: false });
+
+  // 6. Fetch all active ledger entries up to this month
+  const { data: ledgerData, error: ledgerError } = await supabase
+    .from('employee_financial_ledger')
+    .select('*')
+    .in('status', ['pending', 'partially_recovered'])
+    .lte('effective_date', endOfMonth);
+    
+  if (ledgerError) throw ledgerError;
+
+  const appliedAdjustments: any[] = [];
 
   const workingDaysLimit = 26;
 
@@ -233,12 +244,33 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     const hra = Math.round(net_payable * 0.2);
     const allowance = net_payable - basic_salary - hra;
 
-    const total_bonus = 0; // UNKNOWN — NEEDS VERIFICATION
-    const total_other_deductions = 0; // UNKNOWN — NEEDS VERIFICATION
-    const salary_advance_recovery = 0; // UNKNOWN — NEEDS VERIFICATION
-    const damage_recovery = 0; // UNKNOWN — NEEDS VERIFICATION
-    const overtime_hours = 0; // UNKNOWN — NEEDS VERIFICATION
-    const bonus = 0; // UNKNOWN — NEEDS VERIFICATION
+    const empLedger = (ledgerData || []).filter((l) => l.employee_id === emp.id);
+    let calculated_bonus = 0;
+    let calculated_other_deductions = 0;
+    let calculated_salary_advance_recovery = 0;
+    let calculated_damage_recovery = 0;
+
+    for (const entry of empLedger) {
+        const amount = Number(entry.remaining_amount);
+        if (entry.adjustment_type.toLowerCase().includes('bonus')) {
+            calculated_bonus += amount;
+        } else if (entry.adjustment_type.toLowerCase().includes('advance')) {
+            calculated_salary_advance_recovery += amount;
+        } else if (entry.adjustment_type.toLowerCase().includes('damage')) {
+            calculated_damage_recovery += amount;
+        } else {
+            calculated_other_deductions += amount;
+        }
+        
+        appliedAdjustments.push({
+            ledger_id: entry.id,
+            adjustment_type: entry.adjustment_type,
+            adjustment_category: entry.adjustment_category,
+            amount: amount
+        });
+    }
+
+    const bonus = calculated_bonus;
     const overtime_pay = 0; // ConstroTrait overtime -> Comp-Off
     const gross_salary = basic_salary + hra + allowance + bonus + overtime_pay;
     
@@ -246,10 +278,13 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     const esi = 0;
     const professional_tax = 0;
     const income_tax = 0;
-    const other_deductions = total_other_deductions;
+    const other_deductions = calculated_other_deductions;
+    const salary_advance_recovery = calculated_salary_advance_recovery;
+    const damage_recovery = calculated_damage_recovery;
     const total_deductions = pf + esi + professional_tax + income_tax + other_deductions + salary_advance_recovery + damage_recovery;
     
     const net_salary = gross_salary - total_deductions;
+    const overtime_hours = 0;
 
     draftSnapshots.push({
       id: `draft-${emp.id}`,
@@ -288,14 +323,14 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     });
   }
 
-  return { data: draftSnapshots, isLocked: false, cycle: existingCycle };
+  return { data: draftSnapshots, isLocked: false, cycle: existingCycle, appliedAdjustments };
 }
 
 export async function lockPayrollCycle(month: number, year: number, userId: string, branchId: string): Promise<void> {
   const supabase = await createClient();
 
   // Re-calculate safely on the server to prevent trusting client snapshots
-  const { data: serverCalculatedSnapshots } = await calculateMonthlyPayroll(month, year, branchId);
+  const { data: serverCalculatedSnapshots, appliedAdjustments } = await calculateMonthlyPayroll(month, year, branchId);
   
   if (!serverCalculatedSnapshots || serverCalculatedSnapshots.length === 0) {
       throw new Error("No snapshots generated.");
@@ -306,7 +341,8 @@ export async function lockPayrollCycle(month: number, year: number, userId: stri
     p_month: month,
     p_year: year,
     p_locked_by: userId,
-    p_snapshots: serverCalculatedSnapshots
+    p_snapshots: serverCalculatedSnapshots,
+    p_adjustments: appliedAdjustments
   });
 
   if (rpcError) {

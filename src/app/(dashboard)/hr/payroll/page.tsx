@@ -1,17 +1,18 @@
 import React from "react";
-import { getPayrollCyclesAction } from "@/actions/payroll.actions";
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
-import { isSuperAdmin } from "@/config/roles";
+import { isSuperAdmin, isHR, isBranchManager } from "@/config/roles";
 import { getBranches } from "@/services/branch.service";
-import PayrollClient from "./PayrollClient";
+import { calculateMonthlyPayrollAction } from "@/actions/payroll.actions";
+import { PayrollClient, PayrollSnapshot } from "./PayrollClient";
 
 export default async function PayrollPage() {
   const user = await getAuthenticatedUserWithRoles();
-  const role = user?.roles ? (user.roles as string[]) : [];
-  const isSA = isSuperAdmin(user?.roles);
-
-  const cyclesRes = await getPayrollCyclesAction();
-  const cycles = (cyclesRes.success && cyclesRes.data) ? cyclesRes.data : [];
+  const roleArray = user?.roles ? (user.roles as string[]) : [];
+  const isSA = isSuperAdmin(roleArray);
+  let primaryRole = "employee";
+  if (isSA) primaryRole = "admin";
+  else if (isHR(roleArray)) primaryRole = "hr";
+  else if (isBranchManager(roleArray)) primaryRole = "manager";
 
   let branches: { id: string; name: string }[] = [];
   if (isSA) {
@@ -21,5 +22,39 @@ export default async function PayrollPage() {
     }
   }
 
-  return <PayrollClient initialCycles={cycles} userRoles={role} branches={branches} />;
+  // Pre-calculate/fetch current month's payroll for initial render
+  const currentDate = new Date();
+  const initialMonth = currentDate.getMonth() + 1;
+  const initialYear = currentDate.getFullYear();
+  
+  const branchId = isSA ? undefined : user?.branch_id;
+  
+  let initialData: PayrollSnapshot[] = [];
+  let initialIsLocked = false;
+  let initialCycle: unknown = null;
+
+  // Only prefetch if we have a branch to filter by (or if SA, they must select a branch first)
+  if (branchId) {
+    const res: unknown = await calculateMonthlyPayrollAction(initialMonth, initialYear, branchId);
+    const result = res as { success: boolean; data?: PayrollSnapshot[]; isLocked?: boolean; cycle?: unknown; error?: string };
+    if (result.success && result.data) {
+      initialData = result.data;
+      initialIsLocked = result.isLocked || false;
+      initialCycle = result.cycle || null;
+    }
+  }
+
+  return (
+    <PayrollClient 
+      initialMonth={initialMonth} 
+      initialYear={initialYear} 
+      initialData={initialData} 
+      initialIsLocked={initialIsLocked}
+      initialCycle={initialCycle}
+      currentUserRole={primaryRole}
+      branches={branches}
+      userBranchId={user?.branch_id || undefined}
+      isSA={isSA}
+    />
+  );
 }

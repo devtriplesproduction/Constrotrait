@@ -70,3 +70,40 @@ export async function approveAndLockPayrollAction(month: number, year: number, r
     return { success: false, error: err.message };
   }
 }
+
+export async function addManualLedgerEntryAction(
+  employeeId: string,
+  type: string,
+  amount: number,
+  description?: string
+) {
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const { supabase } = await import("@/lib/supabase/server");
+    const supabaseClient = supabase();
+
+    const { error } = await supabaseClient
+      .from("employee_financial_ledger")
+      .insert({
+        employee_id: employeeId,
+        adjustment_type: type,
+        adjustment_category: "one_time",
+        original_amount: amount,
+        remaining_amount: amount,
+        description,
+        status: "pending",
+        created_by: user.id,
+      });
+
+    if (error) throw error;
+    return { success: true, message: "Adjustment added successfully." };
+  } catch (error) {
+    const err = error as Error;
+    return { success: false, error: err.message };
+  }
+}

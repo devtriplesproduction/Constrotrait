@@ -53,13 +53,13 @@ export function PageHeader({
 
   const renderTitle = () => {
     if (typeof title === 'string') {
-      const words = title.trim().split(' ');
+      const words = title.split(' ');
       if (words.length > 1) {
-        const lastWord = words.pop();
         return (
           <>
-            {words.join(' ')}{' '}
-            <span className="text-primary">{lastWord}</span>
+            {words[0]}{' '}
+            <span className="text-orange-500">{words[1]}</span>
+            {words.length > 2 && ' ' + words.slice(2).join(' ')}
           </>
         );
       }
@@ -74,7 +74,7 @@ export function PageHeader({
           {renderPageHeaderIcon(title, PropIcon, iconClassName)}
         </div>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground leading-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 leading-tight">
             {renderTitle()}
           </h1>
           {subtitle && (
