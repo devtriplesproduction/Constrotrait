@@ -3,14 +3,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { MaterialTestingSVG } from "./MaterialTestingSVG";
 
 const slides = [
   {
     id: 0,
     title: "Precision Material Testing",
     description: "Ensure uncompromising quality. Leverage advanced analysis for soil, water, and cement breaks with our intuitive platform.",
-    component: <MaterialTestingSVG />,
+    image: "/lab-testing.jpg",
     badges: [
       { top: "6", right: "6", color: "bg-blue-500/80", icon: "water", title: "Water Analysis", sub: "99.9% Purity", delay: 0 },
       { bottom: "8", left: "6", color: "bg-green-500/80", icon: "soil", title: "Soil Strength", sub: "Optimal Grade", delay: 1 }
@@ -61,7 +60,7 @@ export function AuthCarousel() {
     <div className="flex-1 flex flex-col justify-center w-full">
       
       {/* Animated Testing Illustration (The Slider Images) */}
-      <div className="relative w-full max-h-[500px] min-h-[300px] flex-1 flex items-center justify-center">
+      <div className="relative w-full max-h-[400px] min-h-[300px] flex-1 flex items-center justify-center mt-4">
         
         {/* Background ambient glow */}
         <motion.div
@@ -70,19 +69,22 @@ export function AuthCarousel() {
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
 
-        <div className="relative w-full max-w-[450px] aspect-square">
+        <div className="relative w-full max-w-[400px] aspect-square group perspective-1000">
           <AnimatePresence mode="wait">
             <motion.div
               key={current}
-              initial={{ opacity: 0, x: 20, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -20, scale: 0.95 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0 rounded-[2rem] overflow-hidden shadow-2xl border border-white/20"
+              initial={{ opacity: 0, y: 20, rotateX: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, rotateX: -10, scale: 0.95 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0 rounded-[2rem] overflow-hidden shadow-2xl border border-white/20 transform-gpu"
             >
-              {slides[current].component ? (
-                slides[current].component
-              ) : (
+              {/* Image with Ken Burns effect */}
+              <motion.div
+                className="absolute inset-0 w-full h-full"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              >
                 <Image
                   src={slides[current].image!}
                   alt={slides[current].title}
@@ -90,13 +92,20 @@ export function AuthCarousel() {
                   className="object-cover"
                   priority
                 />
-              )}
+              </motion.div>
+
+              {/* Sci-fi Scanning Line Effect */}
+              <motion.div 
+                className="absolute inset-x-0 h-1 bg-white/40 blur-[2px] shadow-[0_0_15px_rgba(255,255,255,0.8)] z-10"
+                animate={{ top: ["-10%", "110%"] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
               
               {/* Floating Glassmorphism Badges for the current slide */}
               {slides[current].badges.map((badge, idx) => (
                 <motion.div 
                   key={`${current}-badge-${idx}`}
-                  className="absolute bg-white/20 backdrop-blur-md border border-white/40 rounded-2xl p-3 flex items-center gap-3 shadow-lg"
+                  className="absolute bg-white/20 backdrop-blur-md border border-white/40 rounded-2xl p-3 flex items-center gap-3 shadow-lg z-20"
                   style={{
                     top: badge.top ? `${badge.top}rem` : "auto",
                     bottom: badge.bottom ? `${badge.bottom}rem` : "auto",
@@ -121,14 +130,15 @@ export function AuthCarousel() {
                 </motion.div>
               ))}
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+              {/* Overlay subtle gradient to blend the edges */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none z-10" />
             </motion.div>
           </AnimatePresence>
         </div>
       </div>
 
       {/* Bottom Text and Pagination */}
-      <div className="relative z-10 mt-6 xl:mt-12 min-h-[120px]">
+      <div className="relative z-10 mt-4 xl:mt-8 min-h-[100px]">
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
@@ -137,23 +147,21 @@ export function AuthCarousel() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.4 }}
           >
-            <h2 className="text-3xl xl:text-4xl font-extrabold text-white mb-2 xl:mb-4 leading-tight drop-shadow-sm">
-              {slides[current].title.split(" ").map((word, i, arr) => (
-                i === arr.length - 1 ? <span key={i}><br/>{word}</span> : <span key={i}>{word} </span>
-              ))}
+            <h2 className="text-2xl xl:text-3xl font-extrabold text-white mb-2 leading-tight drop-shadow-sm">
+              {slides[current].title}
             </h2>
-            <p className="text-orange-100/80 text-sm xl:text-[15px] max-w-[95%] xl:max-w-[85%] leading-relaxed font-medium">
+            <p className="text-orange-100/90 text-xs xl:text-sm max-w-[95%] xl:max-w-[85%] leading-relaxed font-medium">
               {slides[current].description}
             </p>
           </motion.div>
         </AnimatePresence>
 
-        <div className="flex gap-2.5 mt-4 xl:mt-8">
+        <div className="flex gap-2 mt-4 xl:mt-6">
           {slides.map((_, idx) => (
             <motion.div 
               key={idx}
               className={`h-1.5 rounded-full cursor-pointer transition-colors ${current === idx ? "bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" : "bg-white/30 hover:bg-white/50"}`}
-              animate={{ width: current === idx ? 40 : 10 }}
+              animate={{ width: current === idx ? 30 : 8 }}
               transition={{ duration: 0.3 }}
               onClick={() => setCurrent(idx)}
             />
