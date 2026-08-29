@@ -576,12 +576,9 @@ export function EmployeeProfileModal({
                     value={formData.first_name || ""}
                     onChange={(e) => {
                       const newFirstName = e.target.value;
-                      const sanitizedFirst = newFirstName.toLowerCase().replace(/[^a-z0-9]/g, "");
-                      const sanitizedLast = (formData.last_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
                       setFormData({ 
                         ...formData, 
                         first_name: newFirstName,
-                        ...(isEditing ? { email: `${sanitizedFirst}.${sanitizedLast}@constrotrait.com` } : {})
                       });
                     }}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
@@ -595,12 +592,9 @@ export function EmployeeProfileModal({
                     value={formData.last_name || ""}
                     onChange={(e) => {
                       const newLastName = e.target.value;
-                      const sanitizedFirst = (formData.first_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                      const sanitizedLast = newLastName.toLowerCase().replace(/[^a-z0-9]/g, "");
                       setFormData({ 
                         ...formData, 
                         last_name: newLastName,
-                        ...(isEditing ? { email: `${sanitizedFirst}.${sanitizedLast}@constrotrait.com` } : {})
                       });
                     }}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"

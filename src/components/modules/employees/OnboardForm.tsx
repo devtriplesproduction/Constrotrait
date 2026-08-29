@@ -943,12 +943,13 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 ">Work Email Address *</label>
+                      <label className="text-xs font-bold text-zinc-500 ">Work Email Address * (Auto-Generated)</label>
                       <Input
                         {...register("email")}
                         type="email"
+                        readOnly
                         placeholder="employee@agency.com"
-                        className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                        className="w-full px-4 py-3 bg-zinc-100/80 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-500 cursor-not-allowed opacity-75 outline-none transition-all"
                       />
                       {showStep4Errors && errors.email && <p className="text-xs text-rose-500 font-bold mt-1">{errors.email.message}</p>}
                     </div>

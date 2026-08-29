@@ -7,7 +7,7 @@ import { Select, SelectItem } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { submitLeaveAction } from "@/actions/leave.actions";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Calendar, FileText, Stethoscope, UploadCloud } from "lucide-react";
+import { Loader2, Calendar, FileText, Stethoscope, UploadCloud, Clock } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 
@@ -94,22 +94,17 @@ export function LeaveForm({ onSuccess, onCancel }: LeaveFormProps) {
           </Select>
         </div>
 
-        <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-100 flex items-center justify-between transition-colors hover:bg-slate-50">
-          <div>
-            <label htmlFor="halfDay" className="text-sm font-semibold text-slate-700 cursor-pointer block">Half Day Request</label>
-            <p className="text-xs text-slate-500 mt-0.5">Applies for a single day only</p>
-          </div>
-          <label htmlFor="halfDay" className="relative inline-block w-11 h-6 align-middle select-none cursor-pointer">
-            <input 
-              type="checkbox" 
-              id="halfDay" 
-              className="peer sr-only"
-              checked={isHalfDay} 
-              onChange={(e) => setIsHalfDay(e.target.checked)} 
-            />
-            <div className="block bg-slate-200 w-11 h-6 rounded-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500/50 transition-colors peer-checked:bg-orange-600"></div>
-            <div className="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5 shadow-sm"></div>
+        <div className="grid gap-2">
+          <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-orange-500" /> Leave Duration
           </label>
+          <Select 
+            value={isHalfDay ? "Half Day" : "Full Day"} 
+            onValueChange={(val) => setIsHalfDay(val === "Half Day")}
+          >
+            <SelectItem value="Full Day">Full Day</SelectItem>
+            <SelectItem value="Half Day">Half Day (Applies for a single day only)</SelectItem>
+          </Select>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
