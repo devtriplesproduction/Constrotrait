@@ -168,7 +168,7 @@ export function MultiSelect({
                       </motion.div>
                     )}
                   </span>
-                  <span className="truncate">{option.label}</span>
+                  <span className="truncate flex-1 text-left">{option.label}</span>
                 </Button>
               ))
             ) : (

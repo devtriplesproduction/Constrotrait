@@ -158,7 +158,7 @@ export function FormMultiSelect<T extends FieldValues>({
                           toggleValue(option.value);
                         }}
                         className={cn(
-                          "relative flex w-full cursor-pointer select-none items-center rounded-lg py-2.5 pl-9 pr-4 text-sm font-medium outline-none transition-all duration-200",
+                          "relative flex w-full justify-start text-left cursor-pointer select-none items-center rounded-lg py-2.5 pl-9 pr-4 text-sm font-medium outline-none transition-all duration-200",
                           "text-slate-600  hover:bg-slate-100 hover:text-slate-900",
                           isSelected(option.value) && "text-orange-600  font-semibold bg-orange-50/80 "
                         )}
@@ -174,7 +174,7 @@ export function FormMultiSelect<T extends FieldValues>({
                             </motion.div>
                           )}
                         </span>
-                        <span className="truncate">{option.label}</span>
+                        <span className="truncate flex-1 text-left">{option.label}</span>
                       </Button>
                     ))
                   ) : (

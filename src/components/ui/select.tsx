@@ -187,7 +187,7 @@ export function SelectItem({
           </motion.div>
         )}
       </span>
-      <span className="truncate">{children}</span>
+      <span className="truncate flex-1 text-left">{children}</span>
     </Button>
   );
 }

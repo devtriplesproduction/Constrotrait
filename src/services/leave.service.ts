@@ -39,12 +39,10 @@ export async function getCompOffBalance(employeeId: string): Promise<number> {
 
   let balance = 0;
   for (const record of data) {
-    if (record.transaction_type === "CREDIT") {
+    if (record.transaction_type === "CREDIT" || record.transaction_type === "REVERSAL" || record.transaction_type === "RELEASE") {
       balance += Number(record.hours);
-    } else if (record.transaction_type === "DEBIT") {
+    } else if (record.transaction_type === "DEBIT" || record.transaction_type === "HOLD") {
       balance -= Number(record.hours);
-    } else if (record.transaction_type === "REVERSAL") {
-      balance += Number(record.hours);
     }
   }
 
@@ -99,21 +97,43 @@ export async function submitLeave(input: CreateLeaveInput) {
     }
 
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("leave_requests")
-      .insert({
-        employee_id: user.id,
-        leave_type: input.leave_type,
-        start_date: input.start_date,
-        end_date: input.end_date,
-        is_half_day: input.is_half_day,
-        reason: input.reason,
-        medical_certificate_url: input.medical_certificate_url || null,
-        status: "Pending First Level",
-        is_paid: input.leave_type === "Compensatory Off" // Sick leave is unpaid until cert verified. Casual/Unpaid are unpaid.
-      })
-      .select()
-      .single();
+    let data;
+    let error;
+    
+    if (input.leave_type === "Compensatory Off") {
+      // @ts-expect-error newly added rpc not in types yet
+      const { data: rpcData, error: rpcError } = await (supabase as unknown as AppSupabaseClient).rpc(
+        "submit_comp_off_leave" as any, 
+        {
+          p_start_date: input.start_date,
+          p_end_date: input.end_date,
+          p_is_half_day: input.is_half_day,
+          p_reason: input.reason
+        }
+      );
+      
+      data = rpcData ? { id: rpcData } : null;
+      error = rpcError;
+    } else {
+      const res = await supabase
+        .from("leave_requests")
+        .insert({
+          employee_id: user.id,
+          leave_type: input.leave_type,
+          start_date: input.start_date,
+          end_date: input.end_date,
+          is_half_day: input.is_half_day,
+          reason: input.reason,
+          medical_certificate_url: input.medical_certificate_url || null,
+          status: "Pending First Level",
+          is_paid: false // Sick leave is unpaid until cert verified. Casual/Unpaid are unpaid.
+        })
+        .select()
+        .single();
+        
+      data = res.data;
+      error = res.error;
+    }
 
     if (error) {
       console.error("Failed to submit leave:", error);

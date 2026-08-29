@@ -99,7 +99,7 @@ export function LeaveForm({ onSuccess, onCancel }: LeaveFormProps) {
             <label htmlFor="halfDay" className="text-sm font-semibold text-slate-700 cursor-pointer block">Half Day Request</label>
             <p className="text-xs text-slate-500 mt-0.5">Applies for a single day only</p>
           </div>
-          <div className="relative inline-block w-11 h-6 align-middle select-none">
+          <label htmlFor="halfDay" className="relative inline-block w-11 h-6 align-middle select-none cursor-pointer">
             <input 
               type="checkbox" 
               id="halfDay" 
@@ -109,7 +109,7 @@ export function LeaveForm({ onSuccess, onCancel }: LeaveFormProps) {
             />
             <div className="block bg-slate-200 w-11 h-6 rounded-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500/50 transition-colors peer-checked:bg-orange-600"></div>
             <div className="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5 shadow-sm"></div>
-          </div>
+          </label>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
