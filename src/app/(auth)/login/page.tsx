@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, Variants } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
-import { MaterialTestingAnimation } from "@/components/auth/MaterialTestingAnimation";
+import { AuthCarousel } from "@/components/auth/AuthCarousel";
 export default function LoginPage() {
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -31,7 +31,7 @@ export default function LoginPage() {
         initial={{ opacity: 0, x: -50, scale: 0.95 }}
         animate={{ opacity: 1, x: 0, scale: 1 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="hidden lg:flex w-1/2 bg-[#C2410C] rounded-[2.5rem] p-12 flex-col relative overflow-hidden shadow-2xl shadow-orange-900/20"
+        className="hidden lg:flex w-1/2 bg-[#C2410C] rounded-[2.5rem] p-8 xl:p-12 flex-col relative overflow-hidden shadow-2xl shadow-orange-900/20"
       >
         {/* Animated Background Elements */}
         <div className="absolute top-0 left-0 w-full h-full z-0 overflow-hidden bg-gradient-to-br from-orange-500 to-orange-800">
@@ -60,7 +60,7 @@ export default function LoginPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.6 }}
-          className="relative z-10 flex items-center gap-3 mb-12"
+          className="relative z-10 flex items-center gap-3 mb-6 xl:mb-12"
         >
           <div className="w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center transform -rotate-6">
             <div className="w-5 h-5 bg-gradient-to-tr from-orange-600 to-pink-600 rounded-lg transform rotate-6" />
@@ -68,35 +68,8 @@ export default function LoginPage() {
           <span className="text-white font-bold text-2xl tracking-wide drop-shadow-md">ConstroTrait</span>
         </motion.div>
 
-        {/* Animated Testing Illustration */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.8 }}
-          className="relative z-10 flex-1 flex flex-col justify-center w-full"
-        >
-          <MaterialTestingAnimation />
-        </motion.div>
-
-        {/* Bottom Text and Pagination */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.6 }}
-          className="relative z-10 mt-12"
-        >
-          <h2 className="text-4xl font-extrabold text-white mb-4 leading-tight drop-shadow-sm">
-            Precision Material <br/> Testing
-          </h2>
-          <p className="text-orange-100/80 text-[15px] max-w-[85%] leading-relaxed font-medium">
-            Ensure uncompromising quality. Leverage advanced analysis for soil, water, and cement breaks with our intuitive platform.
-          </p>
-          <div className="flex gap-2.5 mt-8">
-            <div className="w-10 h-1.5 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
-            <div className="w-2.5 h-1.5 bg-white/30 rounded-full hover:bg-white/50 transition-colors cursor-pointer"></div>
-            <div className="w-2.5 h-1.5 bg-white/30 rounded-full hover:bg-white/50 transition-colors cursor-pointer"></div>
-          </div>
-        </motion.div>
+        {/* Animated Carousel */}
+        <AuthCarousel />
       </motion.div>
 
       {/* Right Side - Form */}

@@ -116,22 +116,6 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
     .lte('effective_date', endOfMonth)
     .order('effective_date', { ascending: false });
 
-  // 6. Fetch ledger
-  const { data: ledgerData } = await supabase
-    .from('employee_financial_ledger')
-    .select('id, employee_id, adjustment_type, adjustment_category, remaining_amount, status')
-    .in('employee_id', employees.map((e) => e.id))
-    .eq('status', 'pending');
-    
-  let currentApps: Database["public"]["Tables"]["payroll_adjustment_applications"]["Row"][] = [];
-  if (existingCycle?.id) {
-    const { data } = await supabase
-      .from('payroll_adjustment_applications')
-      .select('id, employee_id, ledger_id, cycle_id, adjustment_type, adjustment_category, applied_amount, status, applied_at, applied_by, created_at, updated_at')
-      .eq('cycle_id', existingCycle.id);
-    currentApps = data || [];
-  }
-
   const workingDaysLimit = 26;
 
   const draftSnapshots: PayrollSnapshot[] = [];
@@ -248,39 +232,13 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
     const hra = Math.round(net_payable * 0.2);
     const allowance = net_payable - basic_salary - hra;
 
-    const empLedgers = (ledgerData || []).filter((l) => l.employee_id === emp.id);
-    const empApps = (currentApps || []).filter((a) => a.employee_id === emp.id);
-
-    let total_bonus = 0;
-    let total_other_deductions = 0;
-    let salary_advance_recovery = 0;
-    let damage_recovery = 0;
-    let overtime_hours = 0;
-
-    for (const ledger of empLedgers) {
-      const draftApp = empApps.find((a) => a.ledger_id === ledger.id);
-      const applied_amount = draftApp ? draftApp.applied_amount : (ledger.adjustment_category === 'one_time' ? ledger.remaining_amount : 0);
-
-      if (applied_amount > 0) {
-          if (ledger.adjustment_type === 'bonus' || ledger.adjustment_type === 'festival_bonus') total_bonus += applied_amount;
-          else if (ledger.adjustment_type === 'salary_advance') salary_advance_recovery += applied_amount;
-          else if (ledger.adjustment_type === 'damage') damage_recovery += applied_amount;
-          else total_other_deductions += applied_amount;
-      }
-    }
-
-    for (const app of empApps) {
-      if (!empLedgers.find((l) => l.id === app.ledger_id)) {
-          if (app.adjustment_type === 'bonus') total_bonus += app.applied_amount;
-          else if (app.adjustment_type === 'overtime_hours') overtime_hours += app.applied_amount;
-          else total_other_deductions += app.applied_amount;
-      }
-    }
-
-    const hourly_rate = base_salary / 208; // 26 days * 8 hours
-    const overtime_pay = Math.round(overtime_hours * 1.5 * hourly_rate);
-
-    const bonus = total_bonus;
+    const total_bonus = 0; // UNKNOWN — NEEDS VERIFICATION
+    const total_other_deductions = 0; // UNKNOWN — NEEDS VERIFICATION
+    const salary_advance_recovery = 0; // UNKNOWN — NEEDS VERIFICATION
+    const damage_recovery = 0; // UNKNOWN — NEEDS VERIFICATION
+    const overtime_hours = 0; // UNKNOWN — NEEDS VERIFICATION
+    const bonus = 0; // UNKNOWN — NEEDS VERIFICATION
+    const overtime_pay = 0; // ConstroTrait overtime -> Comp-Off
     const gross_salary = basic_salary + hra + allowance + bonus + overtime_pay;
     
     const pf = 0;
