@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectItem } from "@/components/ui/select";
-import { calculateMonthlyPayrollAction, approveAndLockPayrollAction } from "@/actions/payroll.actions";
+import { calculateMonthlyPayrollAction } from "@/actions/payroll.actions";
+import { isSuperAdmin } from "@/config/roles";
 
 type PayrollCycle = {
   id: string;
@@ -17,21 +18,28 @@ type PayrollSnapshot = {
   id: string;
   employee_name: string | null;
   employee_id_external: string | null;
+  department: string | null;
   days_present: number | null;
   days_field: number | null;
   days_paid_leave: number | null;
+  days_unpaid_leave: number | null;
   days_absent: number | null;
   base_salary: number | null;
   net_payable: number | null;
+  basic_salary: number | null;
+  hra: number | null;
+  allowance: number | null;
+  bonus: number | null;
   total_deductions: number | null;
   gross_salary: number | null;
   net_salary: number | null;
 };
 
-export default function PayrollClient({ initialCycles }: { initialCycles: PayrollCycle[] }) {
+export default function PayrollClient({ initialCycles, userRoles, branches }: { initialCycles: PayrollCycle[], userRoles?: string[], branches?: { id: string; name: string }[] }) {
   const [cycles] = useState<PayrollCycle[]>(initialCycles);
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
   const [snapshots, setSnapshots] = useState<PayrollSnapshot[]>([]);
   const [activeCycle, setActiveCycle] = useState<{ status: string } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,6 +50,8 @@ export default function PayrollClient({ initialCycles }: { initialCycles: Payrol
     "July", "August", "September", "October", "November", "December"
   ];
   const years = [2024, 2025, 2026, 2027, 2028];
+  
+  const isSA = isSuperAdmin(userRoles);
 
   const handleCalculate = async () => {
     setLoading(true);
@@ -50,7 +60,7 @@ export default function PayrollClient({ initialCycles }: { initialCycles: Payrol
     setActiveCycle(null);
     
     try {
-      const res = await calculateMonthlyPayrollAction(selectedMonth, selectedYear);
+      const res = await calculateMonthlyPayrollAction(selectedMonth, selectedYear, isSA ? selectedBranchId : undefined);
       if (res.success && 'data' in res) {
         setSnapshots(res.data || []);
         setActiveCycle(res.cycle || { status: 'draft' });
@@ -68,30 +78,7 @@ export default function PayrollClient({ initialCycles }: { initialCycles: Payrol
     }
   };
 
-  const handleLock = async () => {
-    if (!confirm("Are you sure you want to lock this payroll cycle? This cannot be undone.")) return;
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const res = await approveAndLockPayrollAction(selectedMonth, selectedYear);
-      if (res.success) {
-        alert("Payroll locked successfully.");
-        // Refresh calculation
-        await handleCalculate();
-      } else {
-        setError(res.error || "Failed to lock payroll.");
-      }
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        setError(e.message || "An unexpected error occurred.");
-      } else {
-        setError("An unexpected error occurred.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Lock workflow removed for Stage 1
 
   return (
     <div className="p-6 space-y-8">
@@ -116,7 +103,18 @@ export default function PayrollClient({ initialCycles }: { initialCycles: Payrol
           </Select>
         </div>
         
-        <Button onClick={handleCalculate} disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded">
+        {isSA && branches && branches.length > 0 && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Branch</label>
+            <Select value={selectedBranchId} onValueChange={(v) => setSelectedBranchId(v)} placeholder="Select Branch">
+              {branches.map((b) => (
+                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+              ))}
+            </Select>
+          </div>
+        )}
+        
+        <Button onClick={handleCalculate} disabled={loading || (isSA && !selectedBranchId)} className="bg-blue-600 text-white px-4 py-2 rounded">
           {loading ? "Calculating..." : "Calculate Payroll"}
         </Button>
       </div>
@@ -132,18 +130,7 @@ export default function PayrollClient({ initialCycles }: { initialCycles: Payrol
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold">Payroll Details</h2>
             <div className="flex items-center gap-4">
-              <span className={`px-3 py-1 rounded text-sm font-semibold uppercase ${
-                activeCycle?.status === 'draft' ? 'bg-gray-200 text-gray-700' :
-                activeCycle?.status === 'locked' ? 'bg-yellow-200 text-yellow-800' :
-                'bg-green-200 text-green-800'
-              }`}>
-                {activeCycle?.status || 'Draft'}
-              </span>
-              {activeCycle?.status === 'draft' && (
-                <Button onClick={handleLock} disabled={loading} className="bg-red-600 text-white px-4 py-2 rounded">
-                  Lock Payroll
-                </Button>
-              )}
+              {/* Lock button removed for Stage 1 */}
             </div>
           </div>
           
@@ -152,24 +139,42 @@ export default function PayrollClient({ initialCycles }: { initialCycles: Payrol
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="p-3 font-semibold text-gray-600">Employee</th>
-                  <th className="p-3 font-semibold text-gray-600">Earned / Absent</th>
+                  <th className="p-3 font-semibold text-gray-600">Department</th>
                   <th className="p-3 font-semibold text-gray-600">Base Salary</th>
+                  <th className="p-3 font-semibold text-gray-600">Present</th>
+                  <th className="p-3 font-semibold text-gray-600">Field Assgn</th>
+                  <th className="p-3 font-semibold text-gray-600">Paid Lv</th>
+                  <th className="p-3 font-semibold text-gray-600">Unpaid Lv</th>
+                  <th className="p-3 font-semibold text-gray-600">Absent</th>
                   <th className="p-3 font-semibold text-gray-600">Net Payable</th>
+                  <th className="p-3 font-semibold text-gray-600">Basic Salary</th>
+                  <th className="p-3 font-semibold text-gray-600">HRA</th>
+                  <th className="p-3 font-semibold text-gray-600">Allowance</th>
+                  <th className="p-3 font-semibold text-gray-600">Bonus</th>
                   <th className="p-3 font-semibold text-gray-600">Deductions</th>
-                  <th className="p-3 font-semibold text-gray-600">Gross Salary</th>
                   <th className="p-3 font-semibold text-gray-600">Net Salary</th>
+                  <th className="p-3 font-semibold text-gray-600">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {snapshots.map((snap) => (
                   <tr key={snap.id} className="border-b hover:bg-gray-50">
                     <td className="p-3 font-medium">{snap.employee_name} ({snap.employee_id_external})</td>
-                    <td className="p-3">{((snap.days_present || 0) + (snap.days_field || 0) + (snap.days_paid_leave || 0)).toFixed(1)} / {(snap.days_absent || 0).toFixed(1)}</td>
+                    <td className="p-3">{snap.department}</td>
                     <td className="p-3">₹{(snap.base_salary || 0).toLocaleString()}</td>
+                    <td className="p-3">{(snap.days_present || 0).toFixed(1)}</td>
+                    <td className="p-3">{(snap.days_field || 0).toFixed(1)}</td>
+                    <td className="p-3">{(snap.days_paid_leave || 0).toFixed(1)}</td>
+                    <td className="p-3">{(snap.days_unpaid_leave || 0).toFixed(1)}</td>
+                    <td className="p-3">{(snap.days_absent || 0).toFixed(1)}</td>
                     <td className="p-3">₹{(snap.net_payable || 0).toLocaleString()}</td>
+                    <td className="p-3">₹{(snap.basic_salary || 0).toLocaleString()}</td>
+                    <td className="p-3">₹{(snap.hra || 0).toLocaleString()}</td>
+                    <td className="p-3">₹{(snap.allowance || 0).toLocaleString()}</td>
+                    <td className="p-3">₹{(snap.bonus || 0).toLocaleString()}</td>
                     <td className="p-3 text-red-600">₹{(snap.total_deductions || 0).toLocaleString()}</td>
-                    <td className="p-3">₹{(snap.gross_salary || 0).toLocaleString()}</td>
                     <td className="p-3 font-bold text-green-700">₹{(snap.net_salary || 0).toLocaleString()}</td>
+                    <td className="p-3 capitalize">{activeCycle?.status || 'Draft'}</td>
                   </tr>
                 ))}
               </tbody>

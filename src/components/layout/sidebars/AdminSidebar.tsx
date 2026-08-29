@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, Users, ClipboardList, Building2, Calendar, CalendarDays } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardList, Building2, Calendar, CalendarDays, Banknote } from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
 
 interface AdminSidebarProps {
@@ -12,6 +12,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
   const isEmployeeManagementAllowed = role?.includes('ADMIN') || role === 'HR';
+  const isPayrollAllowed = role === 'HR' || role?.includes('SUPER_ADMIN') || role?.includes('BRANCH_MANAGER_ADMINISTRATIVE');
 
   const adminLinks: SidebarLink[] = [
     {
@@ -47,6 +48,14 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
           icon: Users,
         },
       ],
+    });
+  }
+
+  if (isPayrollAllowed) {
+    adminLinks.push({
+      title: "Payroll",
+      href: "/hr/payroll",
+      icon: Banknote,
     });
   }
 

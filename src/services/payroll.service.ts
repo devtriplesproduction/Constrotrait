@@ -17,7 +17,7 @@ export async function getPayrollCycles(): Promise<PayrollCycle[]> {
   return cycles || [];
 }
 
-export async function calculateMonthlyPayroll(month: number, year: number): Promise<{ isLocked: boolean; cycle: PayrollCycle | null; data: PayrollSnapshot[] }> {
+export async function calculateMonthlyPayroll(month: number, year: number, branchId: string): Promise<{ isLocked: boolean; cycle: PayrollCycle | null; data: PayrollSnapshot[] }> {
   const supabase = await createClient();
 
   // Check if cycle is already locked
@@ -71,6 +71,7 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
     .from('profiles')
     .select('id, first_name, last_name, employee_id, branch_id, department, designation, salary')
     .eq('is_active', true)
+    .eq('branch_id', branchId)
     .is('deleted_at', null);
     
   if (empError || !employees) throw new Error("Failed to fetch employees.");
@@ -290,11 +291,11 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
   return { data: draftSnapshots, isLocked: false, cycle: existingCycle };
 }
 
-export async function lockPayrollCycle(month: number, year: number, userId: string): Promise<void> {
+export async function lockPayrollCycle(month: number, year: number, userId: string, branchId: string): Promise<void> {
   const supabase = await createClient();
 
   // Re-calculate safely on the server to prevent trusting client snapshots
-  const { data: serverCalculatedSnapshots } = await calculateMonthlyPayroll(month, year);
+  const { data: serverCalculatedSnapshots } = await calculateMonthlyPayroll(month, year, branchId);
   
   if (!serverCalculatedSnapshots || serverCalculatedSnapshots.length === 0) {
       throw new Error("No snapshots generated.");

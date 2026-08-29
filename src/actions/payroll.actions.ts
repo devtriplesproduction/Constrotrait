@@ -1,7 +1,7 @@
 "use server";
 
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
-import { isHR, isSuperAdmin } from "@/config/roles";
+import { isHR, isSuperAdmin, isBranchManager } from "@/config/roles";
 import {
   getPayrollCycles,
   calculateMonthlyPayroll,
@@ -21,13 +21,23 @@ export async function getPayrollCyclesAction() {
   }
 }
 
-export async function calculateMonthlyPayrollAction(month: number, year: number) {
+export async function calculateMonthlyPayrollAction(month: number, year: number, requestedBranchId?: string) {
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) return { success: false, error: "Unauthorized" };
-    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
+    if (!isHR(user.roles) && !isSuperAdmin(user.roles) && !isBranchManager(user.roles)) return { success: false, error: "Unauthorized" };
 
-    const result = await calculateMonthlyPayroll(month, year);
+    let branchId = requestedBranchId;
+    if (!isSuperAdmin(user.roles)) {
+      if (!user.branch_id) return { success: false, error: "No branch assigned to user" };
+      branchId = user.branch_id;
+    }
+
+    if (!branchId) {
+      return { success: false, error: "Branch ID is required" };
+    }
+
+    const result = await calculateMonthlyPayroll(month, year, branchId);
 
     return { success: true, ...result };
   } catch (error) {
@@ -36,13 +46,23 @@ export async function calculateMonthlyPayrollAction(month: number, year: number)
   }
 }
 
-export async function approveAndLockPayrollAction(month: number, year: number) {
+export async function approveAndLockPayrollAction(month: number, year: number, requestedBranchId?: string) {
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) return { success: false, error: "Unauthorized" };
-    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
+    if (!isHR(user.roles) && !isSuperAdmin(user.roles) && !isBranchManager(user.roles)) return { success: false, error: "Unauthorized" };
 
-    await lockPayrollCycle(month, year, user.id);
+    let branchId = requestedBranchId;
+    if (!isSuperAdmin(user.roles)) {
+      if (!user.branch_id) return { success: false, error: "No branch assigned to user" };
+      branchId = user.branch_id;
+    }
+    
+    if (!branchId) {
+      return { success: false, error: "Branch ID is required" };
+    }
+
+    await lockPayrollCycle(month, year, user.id, branchId);
 
     return { success: true, message: "Payroll cycle locked successfully." };
   } catch (error) {
