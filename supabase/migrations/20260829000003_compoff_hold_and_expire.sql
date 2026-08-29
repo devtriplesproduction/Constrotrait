@@ -82,6 +82,9 @@ BEGIN
         RAISE EXCEPTION 'No working days in the selected period';
     END IF;
 
+    -- Lock the employee profile to prevent concurrent double-spending
+    PERFORM 1 FROM public.profiles WHERE id = v_employee_id FOR UPDATE;
+
     v_balance := public.get_comp_off_balance(v_employee_id);
 
     IF v_balance < v_hours_required THEN

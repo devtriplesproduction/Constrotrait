@@ -3,7 +3,7 @@ const fs = require('fs');
 
 async function runMigration() {
   // Read SQL migration
-  const sql = fs.readFileSync('supabase/migrations/20260824000002_branch_manager_profiles_select.sql', 'utf8');
+  const sql = fs.readFileSync('supabase/migrations/20260829000001_fix_eod_attendance_flow.sql', 'utf8');
 
   // Try standard password
   const client = new Client({

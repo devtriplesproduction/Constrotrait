@@ -278,7 +278,7 @@ export function PayrollClient({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <PageHeader
-          title={<>Payroll Processing</>}
+          title="Payroll Processing"
           subtitle="Manage attendance, adjustments, and calculate net payable salary."
           icon={Layers}
           className="flex-1 w-auto"

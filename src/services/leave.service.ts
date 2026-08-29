@@ -7,7 +7,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 type AppSupabaseClient = SupabaseClient<Database> & {
   rpc: (
-    fn: "approve_leave_first_level" | "approve_comp_off_leave" | "reject_leave" | "cancel_comp_off_leave" | "verify_medical_certificate",
+    fn: "approve_leave_first_level" | "approve_comp_off_leave" | "reject_leave" | "cancel_comp_off_leave" | "verify_medical_certificate" | "submit_comp_off_leave",
     args?: Record<string, unknown>
   ) => Promise<{ error: { message: string, code?: string } | null; data: unknown }>;
 };
@@ -101,9 +101,8 @@ export async function submitLeave(input: CreateLeaveInput) {
     let error;
     
     if (input.leave_type === "Compensatory Off") {
-      // @ts-expect-error newly added rpc not in types yet
       const { data: rpcData, error: rpcError } = await (supabase as unknown as AppSupabaseClient).rpc(
-        "submit_comp_off_leave" as any, 
+        "submit_comp_off_leave", 
         {
           p_start_date: input.start_date,
           p_end_date: input.end_date,
