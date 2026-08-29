@@ -938,6 +938,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      lock_payroll_cycle: {
+        Args: {
+          p_month: number
+          p_year: number
+          p_locked_by: string
+          p_snapshots: Json[]
+        }
+        Returns: void
+      }
       get_today_birthdays: {
         Args: never
         Returns: {

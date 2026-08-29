@@ -37,13 +37,13 @@ export async function calculateMonthlyPayrollAction(month: number, year: number)
   }
 }
 
-export async function approveAndLockPayrollAction(month: number, year: number, snapshots: Omit<PayrollSnapshot, 'id' | 'cycle_id'>[]) {
+export async function approveAndLockPayrollAction(month: number, year: number) {
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) return { success: false, error: "Unauthorized" };
     if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
 
-    await lockPayrollCycle(month, year, snapshots, user.id);
+    await lockPayrollCycle(month, year, user.id);
 
     return { success: true, message: "Payroll cycle locked successfully." };
   } catch (error) {

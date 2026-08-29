@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { isWorkingDayForEmployee } from "./holiday.service";
+import { expandLeaveDates } from "./leave.service";
 import { Database } from "@/types/database";
 
 export type PayrollCycle = Database["public"]["Tables"]["payroll_cycles"]["Row"];
@@ -67,10 +67,10 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
     return { data: enrichedSnapshots, isLocked: true, cycle: existingCycle };
   }
 
-  // 1. Fetch all active employees
+  // 1. Fetch all active employees (include branch_id for holiday resolution)
   const { data: employees, error: empError } = await supabase
     .from('profiles')
-    .select('id, first_name, last_name, employee_id, department, designation, salary')
+    .select('id, first_name, last_name, employee_id, branch_id, department, designation, salary')
     .eq('is_active', true)
     .is('deleted_at', null);
     
@@ -100,14 +100,24 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
 
   if (leaveError) throw leaveError;
 
-  // 4. Fetch all salary hikes up to this month
+  // 4. Fetch all active holidays for the month
+  const { data: allHolidays, error: holidaysError } = await supabase
+    .from('holidays')
+    .select('date, branch_id, department')
+    .gte('date', startOfMonth)
+    .lte('date', endOfMonth)
+    .eq('is_active', true);
+    
+  if (holidaysError) throw holidaysError;
+
+  // 5. Fetch all salary hikes up to this month
   const { data: incrementsData } = await supabase
     .from('salary_hikes')
     .select('employee_id, new_salary, effective_date')
     .lte('effective_date', endOfMonth)
     .order('effective_date', { ascending: false });
 
-  // 5. Fetch ledger
+  // 6. Fetch ledger
   const { data: ledgerData } = await supabase
     .from('employee_financial_ledger')
     .select('id, employee_id, adjustment_type, adjustment_category, remaining_amount, status')
@@ -131,6 +141,15 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
     const empAttendance = (attendanceLogs || []).filter((l) => l.employee_id === emp.id);
     const empLeaves = (leaveRequests || []).filter((l) => l.employee_id === emp.id);
 
+    // Pre-expand leaves to match Leave module logic
+    const expandedLeaves = new Map<string, typeof empLeaves[0]>();
+    for (const lr of empLeaves) {
+      const dates = expandLeaveDates(lr.start_date, lr.end_date);
+      for (const d of dates) {
+        expandedLeaves.set(d, lr);
+      }
+    }
+
     let days_present = 0;
     let days_field = 0;
     let days_paid_leave = 0;
@@ -144,26 +163,36 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
       const dayOfWeek = currentDateObj.getUTCDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       
-      // 1. Is it a working day for this employee? (Checks weekends and branch/department holidays)
-      const isWorking = await isWorkingDayForEmployee(emp.id, currentDateStr);
-      
-      if (!isWorking && !isWeekend) {
-        // It's not a weekend, but it's not a working day. Therefore it's an applicable holiday.
-        standardHolidaysCount += 1;
-      }
+      // Replicate `isWorkingDayForEmployee` logic purely in-memory
+      let isHoliday = false;
+      const activeHolidays = (allHolidays || []).filter((h) => h.date === currentDateStr);
+      for (const holiday of activeHolidays) {
+        let applies = false;
+        const matchesBranch = holiday.branch_id === emp.branch_id;
+        const matchesDepartment = holiday.department && emp.department 
+          ? holiday.department.split(',').map((d: string) => d.trim()).includes(emp.department) 
+          : false;
 
-      // Check Leaves first (Daily expansion as required, but preserving per-day rules)
-      let leaveForDay = null;
-      for (const lr of empLeaves) {
-        const start = new Date(lr.start_date).toISOString().split('T')[0];
-        const end = new Date(lr.end_date).toISOString().split('T')[0];
-        if (currentDateStr >= start && currentDateStr <= end) {
-          leaveForDay = lr;
+        if (holiday.branch_id && holiday.department) {
+          if (matchesBranch && matchesDepartment) applies = true;
+        } else if (holiday.branch_id && !holiday.department) {
+          if (matchesBranch) applies = true;
+        } else if (!holiday.branch_id && holiday.department) {
+          if (matchesDepartment) applies = true;
+        }
+
+        if (applies) {
+          isHoliday = true;
           break;
         }
       }
-      
-      // Check Attendance (Use canonical Attendance table)
+
+      const isWorking = !isWeekend && !isHoliday;
+      if (isHoliday) {
+        standardHolidaysCount += 1;
+      }
+
+      const leaveForDay = expandedLeaves.get(currentDateStr);
       const attendanceForDay = empAttendance.find((l) => l.date === currentDateStr);
 
       let presentPortion = 0;
@@ -171,15 +200,13 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
       let paidLeavePortion = 0;
       let unpaidLeavePortion = 0;
 
-      // Note: Only calculate leave deductions on days that would otherwise be working days. 
-      // If it's a weekend or holiday, it doesn't count as a consumed leave day.
+      // Only calculate leave deductions on days that would otherwise be working days. 
       if (isWorking) {
         if (leaveForDay) {
           if (leaveForDay.is_half_day) {
             if (leaveForDay.is_paid) paidLeavePortion += 0.5;
             else unpaidLeavePortion += 0.5;
             
-            // If half-day leave, the other half depends on Attendance
             if (attendanceForDay) {
                 if (attendanceForDay.status === 'Field Assignment') fieldPortion += 0.5;
                 else if (attendanceForDay.status === 'Present') presentPortion += 0.5;
@@ -193,7 +220,6 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
           else if (attendanceForDay.status === 'Present') presentPortion += 1;
         }
       }
-      // If not working day, neither leave nor attendance modifies the core working limits.
 
       days_present += presentPortion;
       days_field += fieldPortion;
@@ -201,12 +227,10 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
       days_unpaid_leave += unpaidLeavePortion;
     }
 
-    // Calculate days_absent: Any working day (up to 26) not accounted for
     const effectiveHolidays = (days_present + days_field + days_paid_leave > 0) ? standardHolidaysCount : 0;
     const accounted_days = days_present + days_field + days_paid_leave + days_unpaid_leave + effectiveHolidays;
     const days_absent = Math.max(0, workingDaysLimit - accounted_days);
 
-    // Salary
     const empIncrements = (incrementsData || []).filter((inc) => inc.employee_id === emp.id);
     const latestIncrement = empIncrements.length > 0 ? empIncrements[0] : null;
     const base_salary = latestIncrement ? latestIncrement.new_salary : (emp.salary || 0);
@@ -303,26 +327,25 @@ export async function calculateMonthlyPayroll(month: number, year: number): Prom
   return { data: draftSnapshots, isLocked: false, cycle: existingCycle };
 }
 
-export async function lockPayrollCycle(month: number, year: number, snapshots: Omit<PayrollSnapshot, 'id' | 'cycle_id'>[], userId: string): Promise<void> {
+export async function lockPayrollCycle(month: number, year: number, userId: string): Promise<void> {
   const supabase = await createClient();
 
-  // Upsert the cycle
-  const { data: cycle, error: cycleError } = await supabase
-    .from('payroll_cycles')
-    .upsert({ month, year, status: 'locked', locked_by: userId, locked_at: new Date().toISOString() }, { onConflict: 'month,year' })
-    .select('id')
-    .single();
+  // Re-calculate safely on the server to prevent trusting client snapshots
+  const { data: serverCalculatedSnapshots } = await calculateMonthlyPayroll(month, year);
+  
+  if (!serverCalculatedSnapshots || serverCalculatedSnapshots.length === 0) {
+      throw new Error("No snapshots generated.");
+  }
 
-  if (cycleError || !cycle) throw cycleError;
-
-  // Clean existing snapshots to allow re-locking safely (Idempotency)
-  await supabase.from('payroll_snapshots').delete().eq('cycle_id', cycle.id);
-
-  // Insert new snapshots
-  const inserts = snapshots.map(s => {
-    return { ...s, cycle_id: cycle.id };
+  // Use the safe RPC for atomic finalization
+  const { error: rpcError } = await supabase.rpc('lock_payroll_cycle', {
+    p_month: month,
+    p_year: year,
+    p_locked_by: userId,
+    p_snapshots: serverCalculatedSnapshots
   });
 
-  const { error: snapError } = await supabase.from('payroll_snapshots').insert(inserts);
-  if (snapError) throw snapError;
+  if (rpcError) {
+    throw new Error(rpcError.message || "Failed to lock payroll cycle transactionally.");
+  }
 }

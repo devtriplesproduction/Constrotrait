@@ -43,21 +43,30 @@ export async function getCompOffBalance(employeeId: string): Promise<number> {
   return Math.max(0, balance);
 }
 
+// Helper to perfectly replicate leave date iteration
+export function expandLeaveDates(startDate: string, endDate: string): string[] {
+  const dates: string[] = [];
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  while (start <= end) {
+    dates.push(start.toISOString().split("T")[0]);
+    start.setDate(start.getDate() + 1);
+  }
+  return dates;
+}
+
 // Calculate the number of working days in a date range for a specific employee
 export async function calculateLeaveDurationDays(employeeId: string, startDate: string, endDate: string, isHalfDay: boolean): Promise<number> {
   if (isHalfDay) return 0.5;
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
   let workingDays = 0;
-
-  while (start <= end) {
-    const dateStr = start.toISOString().split("T")[0];
+  const dates = expandLeaveDates(startDate, endDate);
+  
+  for (const dateStr of dates) {
     const isWorking = await isWorkingDayForEmployee(employeeId, dateStr);
     if (isWorking) {
       workingDays += 1;
     }
-    start.setDate(start.getDate() + 1);
   }
 
   return workingDays;
