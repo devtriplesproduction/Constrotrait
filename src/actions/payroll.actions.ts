@@ -84,8 +84,8 @@ export async function addManualLedgerEntryAction(
       return { success: false, error: "Unauthorized" };
     }
 
-    const { supabase } = await import("@/lib/supabase/server");
-    const supabaseClient = supabase();
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabaseClient = await createClient();
 
     const { error } = await supabaseClient
       .from("employee_financial_ledger")

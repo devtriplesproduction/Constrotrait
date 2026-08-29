@@ -17,7 +17,7 @@ export async function getPayrollCycles(): Promise<PayrollCycle[]> {
   return cycles || [];
 }
 
-export async function calculateMonthlyPayroll(month: number, year: number, branchId: string): Promise<{ isLocked: boolean; cycle: PayrollCycle | null; data: PayrollSnapshot[]; appliedAdjustments?: any[] }> {
+export async function calculateMonthlyPayroll(month: number, year: number, branchId: string): Promise<{ isLocked: boolean; cycle: PayrollCycle | null; data: PayrollSnapshot[]; appliedAdjustments?: { ledger_id: string; adjustment_type: string; adjustment_category: string | null; amount: number }[] }> {
   const supabase = await createClient();
 
   // Check if cycle is already locked
@@ -33,11 +33,21 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
   const isLocked = existingCycle?.status === "locked" || existingCycle?.status === "paid";
 
   if (isLocked) {
-    // Return existing snapshots
+    // Fetch employees for this branch to isolate snapshots
+    const { data: branchEmployees, error: branchEmpError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('branch_id', branchId);
+      
+    if (branchEmpError) throw branchEmpError;
+    const branchEmpIds = branchEmployees.map((e) => e.id);
+
+    // Return existing snapshots isolated by branch
     const { data: cycleSnapshots, error: snapshotsError } = await supabase
       .from('payroll_snapshots')
       .select('id, cycle_id, employee_id, employee_name, employee_id_external, department, designation, base_salary, days_present, days_field, days_paid_leave, days_unpaid_leave, days_absent, net_payable, basic_salary, hra, allowance, bonus, gross_salary, pf, esi, professional_tax, income_tax, other_deductions, damage_recovery, salary_advance_recovery, total_deductions, net_salary, overtime_hours, overtime_pay, is_reviewed, remarks, calculated_at, salary_slips(emailed, status)')
-      .eq('cycle_id', existingCycle.id);
+      .eq('cycle_id', existingCycle.id)
+      .in('employee_id', branchEmpIds);
 
     if (snapshotsError) throw snapshotsError;
 
@@ -126,7 +136,7 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     
   if (ledgerError) throw ledgerError;
 
-  const appliedAdjustments: any[] = [];
+  const appliedAdjustments: { ledger_id: string; adjustment_type: string; adjustment_category: string | null; amount: number }[] = [];
 
   const workingDaysLimit = 26;
 
