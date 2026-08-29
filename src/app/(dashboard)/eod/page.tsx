@@ -89,7 +89,7 @@ export default async function EODPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <PageHeader
-        title={<span className="text-slate-800">EOD Reports</span>}
+        title="EOD Reports"
         subtitle={canReview ? "Review team reports or submit your own end-of-day update." : "Submit your daily end-of-day update."}
         actions={
           <div className="flex items-center gap-3">
