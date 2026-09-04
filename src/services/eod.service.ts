@@ -291,6 +291,7 @@ export async function getAllEODs(filters?: {
   startDate?: string;
   endDate?: string;
   searchString?: string;
+  branchId?: string;
 }) {
   try {
     const currentUser = await getAuthenticatedUserWithRoles();
@@ -306,7 +307,7 @@ export async function getAllEODs(filters?: {
       .from('eod_reports')
       .select(`
         id, employee_id, report_date, tasks_accomplished, office_hours, location, blockers, photo_url, status, submitted_by, approved_by, approved_at, rejection_reason, created_at, updated_at,
-        profiles!eod_reports_employee_id_fkey(first_name, last_name, employee_id)
+        profiles!eod_reports_employee_id_fkey(first_name, last_name, employee_id, branch_id)
       `);
 
     if (filters?.employeeId && filters.employeeId !== 'all') {
@@ -342,6 +343,11 @@ export async function getAllEODs(filters?: {
         (eod.blockers && eod.blockers.toLowerCase().includes(s)) ||
         (eod.profiles && (eod.profiles.first_name.toLowerCase().includes(s) || eod.profiles.last_name.toLowerCase().includes(s)))
       );
+    }
+    
+    // JS-side filtering for branch
+    if (filters?.branchId && filters.branchId !== 'all') {
+      finalData = finalData.filter(eod => eod.profiles?.branch_id === filters.branchId);
     }
 
     return { success: true, data: finalData };

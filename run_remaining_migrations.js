@@ -4,9 +4,7 @@ const path = require('path');
 
 async function runMigrations() {
   const migrationsToRun = [
-    '20260829000003_compoff_hold_and_expire.sql',
-    '20260829000004_secure_payroll_rpc.sql',
-    '20260829000005_update_payroll_rpc.sql'
+    '20260904000000_make_payroll_cycles_branch_specific.sql'
   ];
 
   const client = new Client({

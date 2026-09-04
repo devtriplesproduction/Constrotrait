@@ -34,6 +34,7 @@ export default async function LeavePage() {
         leavesToApprove={leavesToApprove}
         isHR={isHR(user.roles) || isSuperAdmin(user.roles)}
         compOffBalance={compOffBalance}
+        isSuperAdmin={isSuperAdmin(user.roles)}
       />
     </div>
   );

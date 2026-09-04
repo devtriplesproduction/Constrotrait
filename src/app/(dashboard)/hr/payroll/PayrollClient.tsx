@@ -27,7 +27,8 @@ import {
   DollarSign, 
   Clock, 
   FileSpreadsheet,
-  X
+  X,
+  Plus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/modules/PageHeader";
@@ -501,9 +502,10 @@ export function PayrollClient({
                         <div className="flex justify-end p-4 border-b border-slate-100">
                           <Button 
                             onClick={() => setIsAdjustmentModalOpen(true)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20"
+                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-95"
                           >
-                            + Add Adjustment
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Adjustment
                           </Button>
                         </div>
                       )}
@@ -688,8 +690,8 @@ export function PayrollClient({
                 <Button type="button" variant="outline" onClick={() => setIsAdjustmentModalOpen(false)} className="rounded-xl font-bold border-slate-200 hover:bg-slate-100">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmittingAdj} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20">
-                  {isSubmittingAdj && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" disabled={isSubmittingAdj} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+                  {isSubmittingAdj ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
                   Add Adjustment
                 </Button>
               </div>
@@ -765,18 +767,6 @@ export function PayrollClient({
             
             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap gap-3 justify-between items-center">
               <div className="flex gap-2">
-                <Button 
-                  onClick={() => {
-                    setAdjEmployeeId(selectedEmployee.employee_id);
-                    setIsAdjustmentModalOpen(true);
-                  }}
-                  disabled={isLocked}
-                  className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 hover:text-indigo-800 rounded-xl font-bold"
-                  size="sm"
-                >
-                  + Add Adjustment
-                </Button>
-                
                 {isLocked && (
                   <>
                     <Button 

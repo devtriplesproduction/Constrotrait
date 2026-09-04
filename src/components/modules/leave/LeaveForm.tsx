@@ -144,7 +144,7 @@ export function LeaveForm({ onSuccess, onCancel }: LeaveFormProps) {
         {leaveType === "Sick Leave" && (
           <div className="grid gap-2 p-4 rounded-xl border border-orange-100 bg-orange-50/30">
             <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <Stethoscope className="w-4 h-4 text-orange-500" /> Medical Certificate
+              <Stethoscope className="w-4 h-4 text-orange-500" /> Medical Certificate <span className="text-xs font-normal text-slate-500">(Optional at time of application)</span>
             </label>
             <div className="relative group">
               <input 
@@ -189,3 +189,4 @@ export function LeaveForm({ onSuccess, onCancel }: LeaveFormProps) {
     </form>
   );
 }
+

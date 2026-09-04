@@ -92,9 +92,7 @@ export async function submitLeave(input: CreateLeaveInput) {
       }
     }
 
-    if (input.leave_type === "Sick Leave" && !input.medical_certificate_url) {
-      return { success: false, error: "Medical certificate is required to submit a Sick Leave." };
-    }
+    
 
     const supabase = await createClient();
     let data;
@@ -166,9 +164,7 @@ export async function approveLeaveFirstLevel(leaveId: string) {
 
     if (fetchError || !leave) return { success: false, error: "Leave not found" };
 
-    if (leave.leave_type === "Sick Leave" && !leave.medical_certificate_url) {
-      return { success: false, error: "Cannot approve Sick Leave without a medical certificate." };
-    }
+    
 
     const { error } = await supabase.rpc("approve_leave_first_level", {
       p_leave_id: leaveId,
@@ -211,6 +207,10 @@ export async function approveLeaveHR(leaveId: string) {
     const { error: rpcError } = await supabase.rpc("approve_comp_off_leave", {
       p_leave_id: leaveId
     });
+
+    if (!rpcError && leave.leave_type === "Sick Leave" && leave.medical_certificate_url) {
+      await supabase.rpc("verify_medical_certificate", { p_leave_id: leaveId });
+    }
 
     if (rpcError) {
       console.error("Failed to approve leave via RPC:", rpcError);
@@ -291,11 +291,21 @@ export async function cancelApprovedLeave(leaveId: string) {
   }
 }
 
-export async function verifyMedicalCertificate(leaveId: string) {
+export async function verifyMedicalCertificate(leaveId: string, certificateUrl?: string) {
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) return { success: false, error: "Unauthorized" };
     if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
+
+    if (certificateUrl) {
+      const { createClient: createAdminClient } = await import("@supabase/supabase-js");
+      const adminSupabase = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+      const { error: updateError } = await adminSupabase.from("leave_requests").update({ medical_certificate_url: certificateUrl }).eq("id", leaveId);
+      if (updateError) {
+        console.error("Failed to update medical certificate url:", updateError);
+        return { success: false, error: updateError.message };
+      }
+    }
 
     const supabase = await createClient() as unknown as AppSupabaseClient;
     const { error: rpcError } = await supabase.rpc("verify_medical_certificate", {
@@ -344,7 +354,7 @@ export async function getLeavesToApprove() {
 
     if (isHR(user.roles) || isSuperAdmin(user.roles)) {
       // HR sees everything pending HR, or everything if they want, but pending HR is the action items
-      query = query.in("status", ["Pending HR", "Approved", "Rejected", "Cancelled"]);
+      query = query.in("status", ["Pending First Level", "Pending HR", "Approved", "Rejected", "Cancelled"]);
     } else if (isBranchManager(user.roles)) {
       // Branch manager sees their branch's pending First level, or others for history
       // We just fetch all for their branch in JS

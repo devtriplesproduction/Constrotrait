@@ -43,8 +43,8 @@ export async function cancelApprovedLeaveAction(leaveId: string) {
     return res;
 }
 
-export async function verifyMedicalCertificateAction(leaveId: string) {
-    const res = await verifyMedicalCertificate(leaveId);
+export async function verifyMedicalCertificateAction(leaveId: string, certificateUrl?: string) {
+    const res = await verifyMedicalCertificate(leaveId, certificateUrl);
     if (res.success) {
         revalidatePath("/leave");
     }

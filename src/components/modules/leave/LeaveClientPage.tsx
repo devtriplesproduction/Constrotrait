@@ -8,17 +8,59 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, FileText, UserCircle2, Ban, Plus } from "lucide-react";
 import { PageHeader } from "@/components/modules/PageHeader";
+import { Modal } from "@/components/common/Modal";
+import { UploadCloud } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { usePrompt } from "@/hooks/use-prompt";
 
-export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, compOffBalance }: {
+export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, compOffBalance, isSuperAdmin = false }: {
   myLeaves: Record<string, unknown>[],
   canApprove: boolean,
   leavesToApprove: Record<string, unknown>[],
   isHR: boolean,
-  compOffBalance: number
+  compOffBalance: number,
+  isSuperAdmin?: boolean
 }) {
   const [showForm, setShowForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<"mine" | "approve">("mine");
+  const [activeTab, setActiveTab] = useState<"mine" | "approve">(isSuperAdmin ? "approve" : "mine");
+  const [uploadingCertFor, setUploadingCertFor] = useState<string | null>(null);
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUploadAndVerify = async () => {
+    if (!uploadingCertFor || !certFile) return;
+    setUploading(true);
+    try {
+      const supabase = createClient();
+      const fileExt = certFile.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `public/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("medical-certificates")
+        .upload(filePath, certFile);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      let certificateUrl = "";
+      if (data) {
+        const { data: publicUrlData } = supabase.storage
+          .from("medical-certificates")
+          .getPublicUrl(filePath);
+        certificateUrl = publicUrlData.publicUrl;
+      }
+
+      await handleAction(verifyMedicalCertificateAction as any, uploadingCertFor, certificateUrl);
+      setUploadingCertFor(null);
+      setCertFile(null);
+    } catch (e: any) {
+      toast({ title: "Upload Failed", description: e.message, variant: "error" });
+    } finally {
+      setUploading(false);
+    }
+  };
   const { toast } = useToast();
   const { prompt, PromptComponent } = usePrompt();
 
@@ -63,12 +105,14 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full 2xl:w-auto overflow-x-auto pb-2 2xl:pb-0">
           {canApprove && (
             <div className="flex p-1.5 space-x-1.5 bg-white/40 backdrop-blur-xl rounded-2xl shrink-0 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-              <button 
-                className={`py-2.5 px-4 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'mine' ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'}`}
-                onClick={() => setActiveTab('mine')}
-              >
-                My Leaves
-              </button>
+              {!isSuperAdmin && (
+                <button 
+                  className={`py-2.5 px-4 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'mine' ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'}`}
+                  onClick={() => setActiveTab('mine')}
+                >
+                  My Leaves
+                </button>
+              )}
               <button 
                 className={`py-2.5 px-4 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'approve' ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'}`}
                 onClick={() => setActiveTab('approve')}
@@ -85,11 +129,13 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
             </div>
           )}
 
-          <div className="bg-blue-50 text-blue-700 px-4 py-2.5 rounded-xl font-medium shrink-0">
-            Comp-Off Balance: <span className="font-bold">{compOffBalance}</span> hours
-          </div>
+          {!isSuperAdmin && (
+            <div className="bg-blue-50 text-blue-700 px-4 py-2.5 rounded-xl font-medium shrink-0">
+              Comp-Off Balance: <span className="font-bold">{compOffBalance}</span> hours
+            </div>
+          )}
 
-          {!showForm && activeTab === 'mine' && (
+          {!showForm && activeTab === 'mine' && !isSuperAdmin && (
             <Button onClick={() => setShowForm(true)} className="rounded-xl shadow-lg shrink-0 shadow-orange-500/20 transition-all hover:shadow-orange-500/40 hover:-translate-y-0.5 h-[44px]">
               <Plus className="w-4 h-4 mr-2" /> Apply Leave
             </Button>
@@ -120,7 +166,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
               </div>
               <h3 className="text-xl font-bold text-slate-800 mb-2">No Leave History</h3>
               <p className="text-slate-500 text-center max-w-sm">
-                You haven't applied for any leaves yet. Click the Apply Leave button to create your first request.
+                {isSuperAdmin ? "Super admins do not apply for leaves." : "You haven't applied for any leaves yet. Click the Apply Leave button to create your first request."}
               </p>
             </div>
           ) : (
@@ -265,7 +311,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                       </div>
 
                       <div className="flex flex-row md:flex-col gap-2 md:min-w-[140px] justify-center md:border-l border-slate-200/60 md:pl-6">
-                        {leave.status === 'Pending First Level' && !isHR && (
+                        {leave.status === 'Pending First Level' && (!isHR || isSuperAdmin) && (
                           <>
                             <Button className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 shadow-sm" onClick={() => handleAction(approveLeaveFirstLevelAction as any, leave.id as string)}>
                               Approve
@@ -291,18 +337,23 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                             </Button>
                           </>
                         )}
-                        {leave.leave_type === 'Sick Leave' && !leave.is_paid && isHR && (
-                          <Button variant="secondary" className="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm" onClick={() => handleAction(verifyMedicalCertificateAction as any, leave.id as string)}>
-                            Verify Cert
-                          </Button>
-                        )}
+                        {leave.leave_type === 'Sick Leave' && !leave.is_paid && isHR && !leave.medical_certificate_url && (
+                            <Button variant="secondary" className="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm" onClick={() => setUploadingCertFor(leave.id as string)}>
+                              Upload Cert
+                            </Button>
+                          )}
+                          {leave.leave_type === 'Sick Leave' && leave.medical_certificate_url && (
+                            <Button variant="secondary" className="w-full rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shadow-sm" onClick={() => window.open(leave.medical_certificate_url as string, '_blank')}>
+                              View Cert
+                            </Button>
+                          )}
                         {leave.status === 'Approved' && isHR && (
                           <Button variant="danger" className="w-full rounded-xl shadow-sm" onClick={() => handleAction(cancelApprovedLeaveAction as any, leave.id as string)}>
                             Cancel Leave
                           </Button>
                         )}
                         
-                        {!((leave.status === 'Pending First Level' && !isHR) || (leave.status === 'Pending HR' && isHR) || (leave.leave_type === 'Sick Leave' && !leave.is_paid && isHR) || (leave.status === 'Approved' && isHR)) && (
+                        {!((leave.status === 'Pending First Level' && (!isHR || isSuperAdmin)) || (leave.status === 'Pending HR' && isHR) || (leave.leave_type === 'Sick Leave' && !leave.is_paid && isHR) || (leave.status === 'Approved' && isHR)) && (
                           <div className="text-center text-xs text-slate-400 font-bold uppercase tracking-wider py-4">
                             No Actions
                           </div>
@@ -317,6 +368,43 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
         </div>
       )}
       <PromptComponent />
+      
+      <Modal isOpen={!!uploadingCertFor} onClose={() => setUploadingCertFor(null)}>
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-slate-800">Upload Medical Certificate</h2>
+        </div>
+        <div className="space-y-4 pt-4">
+          <div className="border-2 border-dashed border-orange-200 bg-white rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center relative">
+            <input 
+              type="file" 
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={(e) => setCertFile(e.target.files?.[0] || null)}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <UploadCloud className="w-8 h-8 text-orange-400" />
+            <div className="text-sm text-slate-600">
+              {certFile ? (
+                <span className="font-medium text-orange-600">{certFile.name}</span>
+              ) : (
+                <span><span className="font-semibold text-orange-600">Click to upload</span> or drag and drop</span>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={() => { setUploadingCertFor(null); setCertFile(null); }} disabled={uploading}>Cancel</Button>
+            <Button className="bg-orange-600 hover:bg-orange-700 text-white" onClick={handleUploadAndVerify} disabled={uploading || !certFile}>
+              {uploading ? "Uploading..." : "Upload & Verify"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
+
+
+
+
+
+
+

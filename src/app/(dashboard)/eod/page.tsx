@@ -8,9 +8,11 @@ import { ReviewDashboard } from "@/components/modules/eod/ReviewDashboard";
 import { CheckCircle2, Clock, ShieldAlert, Send, History, BarChart2 } from "lucide-react";
 import { PageHeader } from "@/components/modules/PageHeader";
 import Link from "next/link";
+import { getActiveBranches } from "@/services/branch.service";
+import { BranchSelectorClient } from "@/components/modules/eod/BranchSelectorClient";
 
 interface PageProps {
-  searchParams: { tab?: string };
+  searchParams: { tab?: string, branch?: string };
 }
 
 export default async function EODPage({ searchParams }: PageProps) {
@@ -31,6 +33,15 @@ export default async function EODPage({ searchParams }: PageProps) {
   // Determine active tab
   const params = await searchParams;
   const activeTab = isSuperAdmin ? 'review' : (canReview ? (params.tab || 'review') : 'submit');
+  const selectedBranch = params.branch || 'all';
+
+  let activeBranches: { id: string; name: string }[] = [];
+  if (isSuperAdmin) {
+    const { data } = await getActiveBranches();
+    if (data) {
+      activeBranches = data;
+    }
+  }
 
   // --- Fetch Data for Submit Tab ---
   let history: EODReport[] = [];
@@ -71,11 +82,11 @@ export default async function EODPage({ searchParams }: PageProps) {
   let todayReportsCount = 0;
 
   if (activeTab === 'review' && canReview) {
-    const { data: eods } = await getAllEODs();
-    allEODs = (eods || []) as EODWithEmployee[];
+    const { data: eods } = await getAllEODs({ branchId: selectedBranch });
+    allEODs = (eods || []) as unknown as EODWithEmployee[];
 
     if (allEmployees.length === 0) {
-      const { data: emps } = await getAllEmployees({ compact: true });
+      const { data: emps } = await getAllEmployees({ compact: true, branchId: selectedBranch });
       allEmployees = (emps || []) as EmployeeOption[];
     }
 
@@ -117,10 +128,14 @@ export default async function EODPage({ searchParams }: PageProps) {
             )}
 
             {activeTab === 'review' ? (
-              <div className="bg-white text-slate-800 px-4 py-2.5 rounded-xl font-semibold border border-slate-200 flex items-center gap-2 shadow-sm">
-                <BarChart2 className="w-4 h-4 text-orange-500" />
-                <span>{todayReportsCount}</span> <span className="text-slate-500 font-medium">Reports Today</span>
-              </div>
+              isSuperAdmin ? (
+                <BranchSelectorClient branches={activeBranches} />
+              ) : (
+                <div className="bg-white text-slate-800 px-4 py-2.5 rounded-xl font-semibold border border-slate-200 flex items-center gap-2 shadow-sm">
+                  <BarChart2 className="w-4 h-4 text-orange-500" />
+                  <span>{todayReportsCount}</span> <span className="text-slate-500 font-medium">Reports Today</span>
+                </div>
+              )
             ) : (
               <div className="bg-orange-50 text-orange-700 px-4 py-2 rounded-xl font-semibold border border-orange-100 flex items-center gap-2">
                 Current Streak: {streak} days 🔥
@@ -272,3 +287,4 @@ export default async function EODPage({ searchParams }: PageProps) {
     </div>
   );
 }
+

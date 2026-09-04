@@ -579,6 +579,7 @@ export type Database = {
       payroll_cycles: {
         Row: {
           id: string
+          branch_id: string | null
           month: number
           year: number
           status: string
@@ -589,6 +590,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          branch_id?: string | null
           month: number
           year: number
           status?: string
@@ -599,6 +601,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          branch_id?: string | null
           month?: number
           year?: number
           status?: string

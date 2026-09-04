@@ -9,7 +9,7 @@ export async function getPayrollCycles(): Promise<PayrollCycle[]> {
   const supabase = await createClient();
   const { data: cycles, error } = await supabase
     .from('payroll_cycles')
-    .select('id, month, year, status, locked_by, locked_at, slip_status, created_at')
+    .select('id, branch_id, month, year, status, locked_by, locked_at, slip_status, created_at')
     .order('year', { ascending: false })
     .order('month', { ascending: false });
 
@@ -23,9 +23,10 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
   // Check if cycle is already locked
   const { data: cycles, error: cyclesError } = await supabase
     .from('payroll_cycles')
-    .select('id, month, year, status, locked_by, locked_at, slip_status, created_at')
+    .select('id, branch_id, month, year, status, locked_by, locked_at, slip_status, created_at')
     .eq('month', month)
-    .eq('year', year);
+    .eq('year', year)
+    .eq('branch_id', branchId);
 
   if (cyclesError) throw cyclesError;
 
@@ -356,7 +357,8 @@ export async function lockPayrollCycle(month: number, year: number, userId: stri
     p_year: year,
     p_locked_by: userId,
     p_snapshots: serverCalculatedSnapshots,
-    p_adjustments: appliedAdjustments
+    p_adjustments: appliedAdjustments,
+    p_branch_id: branchId
   });
 
   if (rpcError) {

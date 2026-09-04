@@ -152,7 +152,7 @@ export async function onboardEmployee(data: OnboardFormData) {
   }
 }
 
-export async function getAllEmployees(options?: { compact?: boolean }) {
+export async function getAllEmployees(options?: { compact?: boolean, branchId?: string }) {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
@@ -225,6 +225,8 @@ export async function getAllEmployees(options?: { compact?: boolean }) {
         }
 
         query = query.eq("branch_id", profile.branch_id);
+      } else if (isSuperAdmin && options?.branchId && options.branchId !== 'all') {
+        query = query.eq("branch_id", options.branchId);
       }
 
       const { data, error } = await query;
@@ -248,6 +250,8 @@ export async function getAllEmployees(options?: { compact?: boolean }) {
           };
         }
         query = query.eq("branch_id", profile.branch_id);
+      } else if (isSuperAdmin && options?.branchId && options.branchId !== 'all') {
+        query = query.eq("branch_id", options.branchId);
       }
 
       const { data, error } = await query;
