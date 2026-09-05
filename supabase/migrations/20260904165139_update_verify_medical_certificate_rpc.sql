@@ -1,4 +1,4 @@
-﻿CREATE OR REPLACE FUNCTION public.verify_medical_certificate(
+CREATE OR REPLACE FUNCTION public.verify_medical_certificate(
     p_leave_id UUID,
     p_medical_certificate_url TEXT DEFAULT NULL
 )
