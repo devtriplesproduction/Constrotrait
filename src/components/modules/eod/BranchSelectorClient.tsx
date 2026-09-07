@@ -28,6 +28,7 @@ export function BranchSelectorClient({ branches }: { branches: { id: string; nam
           ...branches.map(b => ({ label: b.name, value: b.id }))
         ]}
         buttonClassName="h-[40px] rounded-xl bg-white border border-orange-500 hover:border-orange-600 text-orange-600 font-semibold"
+        iconClassName="text-orange-600"
       />
     </div>
   );

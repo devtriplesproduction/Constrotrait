@@ -20,6 +20,7 @@ export interface DropdownProps {
   className?: string;
   buttonClassName?: string;
   id?: string;
+  iconClassName?: string;
 }
 
 export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
@@ -37,6 +38,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
       className,
       buttonClassName,
       id,
+      iconClassName,
     },
     ref
   ) => {
@@ -61,6 +63,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
             error && "border-error focus:ring-error",
             buttonClassName
           )}
+          iconClassName={iconClassName}
         >
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
