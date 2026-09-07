@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Cake, PartyPopper } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
 import { canViewAllBirthdays } from "@/config/roles";
+import { Button } from "@/components/ui/button";
 
 type BirthdayUser = {
   id: string;
@@ -89,12 +90,12 @@ export function BirthdayNotifier({ currentUserProfile, todayBirthdays }: Birthda
           </div>
         )}
 
-        <button
+        <Button
           onClick={() => setIsOpen(false)}
           className="mt-6 w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition-colors"
         >
           Awesome!
-        </button>
+        </Button>
       </div>
     </Modal>
   );

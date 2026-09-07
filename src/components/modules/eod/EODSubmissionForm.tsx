@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dropdown } from '@/components/ui/Dropdown';
-import { ImagePlus, X } from 'lucide-react';
+import { ImagePlus, X, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { PremiumDatePicker } from '@/components/ui/PremiumDatePicker';
@@ -33,7 +33,22 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
   const [tasksAccomplished, setTasksAccomplished] = useState('');
   const [officeHours, setOfficeHours] = useState<string>('');
   const [blockers, setBlockers] = useState('');
-  const [jobCardNumbers, setJobCardNumbers] = useState('');
+  const [jobCardNumbers, setJobCardNumbers] = useState<string[]>([]);
+  const [jobCardInput, setJobCardInput] = useState('');
+
+  const addJobCard = (e?: any) => {
+    if (e && e.key && e.key !== 'Enter') return;
+    if (e) e.preventDefault();
+    const val = jobCardInput.trim();
+    if (val && !jobCardNumbers.includes(val)) {
+      setJobCardNumbers([...jobCardNumbers, val]);
+      setJobCardInput('');
+    }
+  };
+
+  const removeJobCard = (card: string) => {
+    setJobCardNumbers(jobCardNumbers.filter(c => c !== card));
+  };
   const [tomorrowsPlan, setTomorrowsPlan] = useState('');
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
 
@@ -52,7 +67,8 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         setOfficeHours(res.data.office_hours.toString());
         setLocation(res.data.location as 'Office' | 'Field');
         setBlockers(res.data.blockers || '');
-        setJobCardNumbers((res.data as Record<string, unknown>).job_card_numbers as string || '');
+        const jcn = (res.data as Record<string, unknown>).job_card_numbers as string || '';
+          setJobCardNumbers(jcn ? jcn.split(',').map(s => s.trim()).filter(Boolean) : []);
         setTomorrowsPlan((res.data as Record<string, unknown>).tomorrows_plan as string || '');
         setExistingPhotoUrl(res.data.photo_url || null);
         // Note: Existing photo preview isn't easily loadable as a File, we'd need public URL to show it.
@@ -64,7 +80,7 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         setOfficeHours('');
         setLocation('Office');
         setBlockers('');
-        setJobCardNumbers('');
+        setJobCardNumbers([]);
         setTomorrowsPlan('');
         setExistingPhotoUrl(null);
         setFile(null);
@@ -172,7 +188,7 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         setTasksAccomplished('');
         setOfficeHours('');
         setBlockers('');
-        setJobCardNumbers('');
+        setJobCardNumbers([]);
         setTomorrowsPlan('');
       }
       router.refresh();
@@ -238,14 +254,35 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
           ></textarea>
         </div>
 
-        <Input
-          label="Job Card/UID Numbers"
-          type="text"
-          name="job_card_numbers"
-          value={jobCardNumbers}
-          onChange={(e) => setJobCardNumbers(e.target.value)}
-          placeholder="Enter Job Cards or UID numbers"
-        />
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-foreground">Job Card/UID Numbers</label>
+          {jobCardNumbers.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {jobCardNumbers.map((card, idx) => (
+                <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm bg-primary/10 text-primary border border-primary/20">
+                  {card}
+                  <Button type="button" onClick={() => removeJobCard(card)} className="text-primary hover:text-primary/70">
+                    <X className="w-3 h-3" />
+                  </Button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={jobCardInput}
+              onChange={(e) => setJobCardInput(e.target.value)}
+              onKeyDown={addJobCard}
+              className="flex w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Type number and press Enter"
+            />
+            <Button type="button" variant="outline" onClick={addJobCard} className="shrink-0">
+              <Plus className="w-4 h-4 mr-1" /> Add
+            </Button>
+          </div>
+          <input type="hidden" name="job_card_numbers" value={jobCardNumbers.join(',')} />
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
@@ -256,8 +293,15 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
             min="0"
             max="12"
             step="0.5"
+            placeholder="e.g. 8"
             value={officeHours}
             onChange={(e) => setOfficeHours(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                e.preventDefault();
+              }
+            }}
+            className="[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
           />
 
           <Dropdown

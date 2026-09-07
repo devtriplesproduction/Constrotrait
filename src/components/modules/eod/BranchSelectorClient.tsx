@@ -20,9 +20,9 @@ export function BranchSelectorClient({ branches }: { branches: { id: string; nam
   };
 
   return (
-    <div className="flex items-center gap-2 bg-white border border-slate-200 shadow-sm rounded-xl px-1.5 py-0.5 focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
+    <div className="flex items-center gap-2 bg-white border border-slate-200 shadow-sm rounded-xl px-1.5 h-[42px] focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
       <Building2 className="w-4 h-4 text-slate-400 ml-2.5 flex-shrink-0" />
-      <div className="w-48">
+      <div className="w-48 flex items-center">
         <Dropdown
           name="branch"
           value={currentBranch}

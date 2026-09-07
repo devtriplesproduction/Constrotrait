@@ -7,7 +7,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 type AppSupabaseClient = SupabaseClient<Database> & {
   rpc: (
-    fn: "approve_leave_first_level" | "approve_comp_off_leave" | "reject_leave" | "cancel_comp_off_leave" | "verify_medical_certificate" | "submit_comp_off_leave",
+    fn: "approve_leave_first_level" | "approve_comp_off_leave" | "reject_leave" | "cancel_comp_off_leave" | "verify_medical_certificate" | "submit_comp_off_leave" | "delete_medical_certificate" | "reject_medical_certificate",
     args?: Record<string, unknown>
   ) => Promise<{ error: { message: string, code?: string } | null; data: unknown }>;
 };
@@ -297,19 +297,10 @@ export async function verifyMedicalCertificate(leaveId: string, certificateUrl?:
     if (!user) return { success: false, error: "Unauthorized" };
     if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
 
-    if (certificateUrl) {
-      const { createClient: createAdminClient } = await import("@supabase/supabase-js");
-      const adminSupabase = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-      const { error: updateError } = await adminSupabase.from("leave_requests").update({ medical_certificate_url: certificateUrl }).eq("id", leaveId);
-      if (updateError) {
-        console.error("Failed to update medical certificate url:", updateError);
-        return { success: false, error: updateError.message };
-      }
-    }
-
     const supabase = await createClient() as unknown as AppSupabaseClient;
     const { error: rpcError } = await supabase.rpc("verify_medical_certificate", {
-      p_leave_id: leaveId
+      p_leave_id: leaveId,
+      p_medical_certificate_url: certificateUrl || null
     });
 
     if (rpcError) {
@@ -319,6 +310,46 @@ export async function verifyMedicalCertificate(leaveId: string, certificateUrl?:
     return { success: true };
   } catch (error: unknown) {
     console.error("Error verifying medical cert:", error);
+    return { success: false, error: "An unexpected error occurred" };
+  }
+}
+
+export async function deleteMedicalCertificate(leaveId: string) {
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
+
+    const supabase = await createClient() as unknown as AppSupabaseClient;
+    const { error: rpcError } = await supabase.rpc("delete_medical_certificate", { p_leave_id: leaveId });
+    
+    if (rpcError) {
+      console.error("Failed to delete medical certificate via RPC:", rpcError);
+      return { success: false, error: rpcError.message || "Failed to delete medical certificate" };
+    }
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Error deleting medical cert:", error);
+    return { success: false, error: "An unexpected error occurred" };
+  }
+}
+
+export async function rejectMedicalCertificate(leaveId: string) {
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
+
+    const supabase = await createClient() as unknown as AppSupabaseClient;
+    const { error: rpcError } = await supabase.rpc("reject_medical_certificate", { p_leave_id: leaveId });
+    
+    if (rpcError) {
+      console.error("Failed to reject medical certificate via RPC:", rpcError);
+      return { success: false, error: rpcError.message || "Failed to reject medical certificate" };
+    }
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Error rejecting medical cert:", error);
     return { success: false, error: "An unexpected error occurred" };
   }
 }

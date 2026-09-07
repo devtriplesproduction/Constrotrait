@@ -9,8 +9,8 @@
   --border: #E2E8F0;
 
   /* Primary Color */
-  --primary: #F97316;
-  --primary-hover: #EA580C;
+  --primary: #FB8513;
+  --primary-hover: #D96F0B;
 
   /* Accent Color */
   --accent: #F59E0B;
@@ -43,6 +43,19 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
   --color-info: var(--info);
+
+  /* Constrotrait Logo Orange Palette */
+  --color-orange-50: #fff6eb;
+  --color-orange-100: #ffe8cc;
+  --color-orange-200: #ffd199;
+  --color-orange-300: #ffba66;
+  --color-orange-400: #ffa333;
+  --color-orange-500: #fc9324;
+  --color-orange-600: #FB8513;
+  --color-orange-700: #D96F0B;
+  --color-orange-800: #B35905;
+  --color-orange-900: #8C4300;
+  --color-orange-950: #662E00;
 
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -80,4 +93,13 @@ body {
 
 .animate-float-delayed {
   animation: float 6s ease-in-out 3s infinite;
+}
+/* Hide number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
 }

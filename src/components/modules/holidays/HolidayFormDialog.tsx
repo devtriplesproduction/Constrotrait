@@ -37,7 +37,7 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
       name: holiday?.name || "",
       date: holiday?.date || "",
       description: holiday?.description || "",
-      departments: holiday?.department ? holiday.department.split(',') : [],
+      departments: holiday ? (holiday.department ? holiday.department.split(',') : ["all"]) : [],
       branch_id: holiday?.branch_id || "",
     },
   });
@@ -48,7 +48,7 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
         name: holiday?.name || "",
         date: holiday?.date || "",
         description: holiday?.description || "",
-        departments: holiday?.department ? holiday.department.split(',') : [],
+        departments: holiday ? (holiday.department ? holiday.department.split(',') : ["all"]) : [],
         branch_id: holiday?.branch_id || "",
       });
     }
@@ -57,11 +57,14 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
   const onSubmit = async (data: HolidayFormData) => {
     setLoading(true);
     try {
+      const isAllDepts = data.departments?.includes("all");
+      const finalDepartments = isAllDepts ? [] : data.departments;
+
       const payload = {
         name: data.name,
         date: data.date,
         description: data.description || null,
-        department: data.departments && data.departments.length > 0 ? data.departments.join(',') : null,
+        department: finalDepartments && finalDepartments.length > 0 ? finalDepartments.join(',') : null,
         branch_id: data.branch_id || null,
         is_active: holiday ? holiday.is_active : true
       };
@@ -149,7 +152,10 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
           <FormMultiSelect
             name="departments"
             control={control as any}
-            options={DEPARTMENTS.map(dept => ({ label: dept.name, value: dept.id }))}
+            options={[
+              { label: "All Departments", value: "all" },
+              ...DEPARTMENTS.map(dept => ({ label: dept.name, value: dept.id }))
+            ]}
             placeholder={isHR && !isSuperAdmin ? "Select Departments (Required)" : "All Departments (Requires Branch)"}
           />
           {errors.departments && <p className="text-red-500 text-xs mt-1">{errors.departments.message}</p>}

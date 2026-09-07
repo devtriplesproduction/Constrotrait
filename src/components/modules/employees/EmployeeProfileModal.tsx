@@ -33,7 +33,8 @@ import {
   getSalaryHikesAction,
   resetEmployeePasswordAction,
 } from "@/actions/admin.actions";
-import { getAllEmployeesAction } from "@/actions/employee.actions";
+import { getAllEmployeesAction, getCurrentUserProfileAction } from "@/actions/employee.actions";
+import { getActiveBranchesAction } from "@/actions/branch.actions";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Avatar } from "@/components/common/Avatar";
 import { cn } from "@/lib/utils/cn";
@@ -73,6 +74,7 @@ export interface EmployeeFormData {
   emergency_contact_relation?: string | null;
   emergency_contact_number?: string | null;
   reporting_manager_id?: string | null;
+  branch_id?: string | null;
   [key: string]: unknown;
 }
 
@@ -116,16 +118,32 @@ export function EmployeeProfileModal({
   });
 
   const [employees, setEmployees] = useState<{ id: string, first_name: string, last_name: string }[]>([]);
+  const [activeBranches, setActiveBranches] = useState<{ id: string, name: string, code: string }[]>([]);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     let active = true;
-    async function loadEmployees() {
+    async function loadData() {
+      const profileRes = await getCurrentUserProfileAction();
+      if (active && profileRes && 'data' in profileRes && profileRes.success && profileRes.data) {
+        const roles = profileRes.data.roles || [];
+        const hasSuperAdmin = roles.includes("SUPER_ADMIN");
+        setIsSuperAdmin(hasSuperAdmin);
+
+        if (hasSuperAdmin) {
+          const branchRes = await getActiveBranchesAction();
+          if (active && branchRes && 'data' in branchRes && branchRes.success && branchRes.data) {
+            setActiveBranches(branchRes.data as { id: string, name: string, code: string }[]);
+          }
+        }
+      }
+
       const res = await getAllEmployeesAction({ compact: true });
       if (active && res && 'data' in res && res.success && res.data) {
         setEmployees(res.data as any);
       }
     }
-    loadEmployees();
+    loadData();
     return () => { active = false; };
   }, []);
 
@@ -282,6 +300,7 @@ export function EmployeeProfileModal({
         "status",
         "roles",
         "reporting_manager_id",
+        "branch_id",
       ];
       return JSON.stringify(
         Object.keys(obj)
@@ -761,23 +780,78 @@ export function EmployeeProfileModal({
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500">
-                    System Roles
+                    Designation / Role *
+                  </label>
+                  <Select
+                    value={(() => {
+                      const mappedDesignations = formData.department ? getDesignationsForDepartment(formData.department) : [];
+                      const primaryDesignation = mappedDesignations.find(d => formData.roles?.includes(d.id));
+                      return primaryDesignation ? primaryDesignation.id : "";
+                    })()}
+                    onValueChange={(val) => {
+                      const mappedDesignations = formData.department ? getDesignationsForDepartment(formData.department) : [];
+                      const primaryDesignation = mappedDesignations.find(d => formData.roles?.includes(d.id));
+                      const designationValue = primaryDesignation ? primaryDesignation.id : "";
+                      const additionalRoles = formData.roles?.filter(r => r !== designationValue) || [];
+                      
+                      const newRoles = [...additionalRoles];
+                      if (val) newRoles.push(val);
+                      setFormData({ ...formData, roles: newRoles });
+                    }}
+                    buttonClassName="w-full px-4 py-3 h-12 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700"
+                  >
+                    {formData.department ? getDesignationsForDepartment(formData.department).map(d => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    )) : []}
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500">
+                    Additional System Roles (Optional)
                   </label>
                   <MultiSelect
-                    options={(formData.department
-                      ? getDesignationsForDepartment(formData.department)
-                      : ONBOARDING_ROLES
-                    ).map((r) => ({
+                    options={ONBOARDING_ROLES.map((r) => ({
                       value: r.id,
                       label: r.name,
                     }))}
-                    value={formData.roles || []}
+                    value={(() => {
+                      const mappedDesignations = formData.department ? getDesignationsForDepartment(formData.department) : [];
+                      const primaryDesignation = mappedDesignations.find(d => formData.roles?.includes(d.id));
+                      const designationValue = primaryDesignation ? primaryDesignation.id : "";
+                      return formData.roles?.filter(r => r !== designationValue) || [];
+                    })()}
                     onChange={(val: string[]) => {
-                      setFormData((prev) => ({ ...prev, roles: val }));
+                      const mappedDesignations = formData.department ? getDesignationsForDepartment(formData.department) : [];
+                      const primaryDesignation = mappedDesignations.find(d => formData.roles?.includes(d.id));
+                      const designationValue = primaryDesignation ? primaryDesignation.id : "";
+                      
+                      const newRoles = [...val];
+                      if (designationValue) newRoles.push(designationValue);
+                      setFormData((prev) => ({ ...prev, roles: newRoles }));
                     }}
-                    placeholder="Select Roles"
+                    placeholder="Select Additional Roles"
                   />
                 </div>
+                
+                {isSuperAdmin && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500">
+                      Branch Assignment {formData.roles?.includes("BRANCH_MANAGER_ADMINISTRATIVE") ? "*" : ""}
+                    </label>
+                    <Select
+                      value={formData.branch_id || ""}
+                      onValueChange={(val) => setFormData({ ...formData, branch_id: val })}
+                      buttonClassName="w-full px-4 py-3 h-12 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700"
+                    >
+                      {activeBranches.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

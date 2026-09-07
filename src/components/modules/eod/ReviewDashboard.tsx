@@ -447,7 +447,7 @@ export function ReviewDashboard({
               {selectedEod.status === 'Pending' ? (
                 <>
                   {actionError && (
-                    <div className="mb-4 text-sm text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100 flex items-center gap-2">
+                    <div className="mb-4 text-sm text-orange-600 bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-center gap-2">
                       <AlertCircle className="w-4 h-4" /> {actionError}
                     </div>
                   )}

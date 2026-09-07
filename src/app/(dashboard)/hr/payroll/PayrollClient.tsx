@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  calculateMonthlyPayrollAction, 
+import {
+  calculateMonthlyPayrollAction,
   approveAndLockPayrollAction,
   addManualLedgerEntryAction
 } from "@/actions/payroll.actions";
@@ -17,15 +17,15 @@ import { Card } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Lock, 
-  Loader2, 
-  FileText, 
-  Layers, 
-  DollarSign, 
-  Clock, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Lock,
+  Loader2,
+  FileText,
+  Layers,
+  DollarSign,
+  Clock,
   FileSpreadsheet,
   X,
   Plus
@@ -50,10 +50,10 @@ interface PayrollClientProps {
   isSA: boolean;
 }
 
-export function PayrollClient({ 
-  initialMonth, 
-  initialYear, 
-  initialData, 
+export function PayrollClient({
+  initialMonth,
+  initialYear,
+  initialData,
   initialIsLocked,
   initialCycle,
   branches = [],
@@ -67,7 +67,7 @@ export function PayrollClient({
   const [cycle, setCycle] = useState<Database["public"]["Tables"]["payroll_cycles"]["Row"] | null>(initialCycle);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  
+
   const [selectedBranchId, setSelectedBranchId] = useState<string>(isSA ? "" : (userBranchId || ""));
 
   const totalEmployees = data.length;
@@ -87,7 +87,7 @@ export function PayrollClient({
   const [adjAmount, setAdjAmount] = useState("");
   const [adjDesc, setAdjDesc] = useState("");
   const [isSubmittingAdj, setIsSubmittingAdj] = useState(false);
-  
+
   const { toast } = useToast();
 
   const months = [
@@ -174,7 +174,7 @@ export function PayrollClient({
     }
     const headers = ["Employee ID", "Name", "Department", "Days Present", "Days Paid Leave", "Days Absent", "Gross Salary", "Total Deductions", "Net Salary"];
     const rows = data.map(emp => [
-      emp.employee_id.substring(0,8),
+      emp.employee_id.substring(0, 8),
       emp.employee_name,
       emp.department,
       emp.days_present || 0,
@@ -189,7 +189,7 @@ export function PayrollClient({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Payroll_${months[month-1]}_${year}.csv`);
+    link.setAttribute("download", `Payroll_${months[month - 1]}_${year}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -284,7 +284,7 @@ export function PayrollClient({
           icon={Layers}
           className="flex-1 w-auto"
         />
-        
+
         <div className="flex items-center gap-3">
           {isSA && (
             <div className="w-48">
@@ -293,11 +293,12 @@ export function PayrollClient({
                 value={selectedBranchId}
                 onChange={handleBranchChange}
                 placeholder="Select Branch"
+                buttonClassName="h-[42px] rounded-xl"
               />
             </div>
           )}
-          
-          <div className="flex items-center bg-white rounded-xl border shadow-sm p-1 border-gray-200">
+
+          <div className="flex items-center bg-white rounded-xl border shadow-sm p-1 border-gray-200 h-[42px]">
             <Button variant="ghost" size="sm" onClick={handlePrevMonth} disabled={loading || actionLoading} className="h-8 w-8 p-0">
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -394,20 +395,20 @@ export function PayrollClient({
 
           <div className="bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl overflow-hidden">
             <div className="flex border-b border-gray-100">
-              <button 
-                className={`flex-1 py-4 px-6 text-sm font-bold transition-colors ${activeTab === 'attendance' ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/30' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'}`}
+              <button
+                className={`flex-1 py-4 px-6 text-sm font-bold transition-colors outline-none focus:outline-none ${activeTab === 'attendance' ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/30' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'}`}
                 onClick={() => setActiveTab('attendance')}
               >
                 Attendance Summary
               </button>
-              <button 
-                className={`flex-1 py-4 px-6 text-sm font-bold transition-colors ${activeTab === 'adjustments' ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/30' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'}`}
+              <button
+                className={`flex-1 py-4 px-6 text-sm font-bold transition-colors outline-none focus:outline-none ${activeTab === 'adjustments' ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/30' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'}`}
                 onClick={() => setActiveTab('adjustments')}
               >
                 Payroll Adjustments
               </button>
-              <button 
-                className={`flex-1 py-4 px-6 text-sm font-bold transition-colors ${activeTab === 'history' ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/30' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'}`}
+              <button
+                className={`flex-1 py-4 px-6 text-sm font-bold transition-colors outline-none focus:outline-none ${activeTab === 'history' ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/30' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'}`}
                 onClick={() => setActiveTab('history')}
               >
                 Payroll History
@@ -448,7 +449,7 @@ export function PayrollClient({
                             <tr key={emp.employee_id} className="hover:bg-orange-50/30 transition-colors">
                               <td className="px-6 py-4">
                                 <div className="font-bold text-slate-900">{emp.employee_name}</div>
-                                <div className="text-xs text-slate-500 font-mono mt-0.5">{emp.employee_id.substring(0,8)}</div>
+                                <div className="text-xs text-slate-500 font-mono mt-0.5">{emp.employee_id.substring(0, 8)}</div>
                               </td>
                               <td className="px-6 py-4 text-slate-600 font-medium">{emp.department || 'N/A'}</td>
                               <td className="px-6 py-4 text-right font-bold text-slate-700">₹{(emp.base_salary || 0).toLocaleString()}</td>
@@ -500,9 +501,9 @@ export function PayrollClient({
                     <>
                       {!isLocked && data.length > 0 && (
                         <div className="flex justify-end p-4 border-b border-slate-100">
-                          <Button 
+                          <Button
                             onClick={() => setIsAdjustmentModalOpen(true)}
-                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-95"
+                            className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold shadow-md shadow-orange-500/20 transition-all duration-300 h-[40px]"
                           >
                             <Plus className="w-4 h-4 mr-2" />
                             Add Adjustment
@@ -511,48 +512,48 @@ export function PayrollClient({
                       )}
                       <table className="w-full text-sm text-left">
                         <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
-                        <tr>
-                          <th className="px-6 py-4">Employee</th>
-                          <th className="px-6 py-4 text-right">Gross Salary</th>
-                          <th className="px-6 py-4 text-right text-emerald-600">Bonus</th>
-                          <th className="px-6 py-4 text-right text-red-600">Deductions</th>
-                          <th className="px-6 py-4 text-right">Net Salary</th>
-                          <th className="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {data.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="text-center py-16 text-slate-500 font-medium">
-                              No adjustments data for this branch/period.
-                            </td>
+                            <th className="px-6 py-4">Employee</th>
+                            <th className="px-6 py-4 text-right">Gross Salary</th>
+                            <th className="px-6 py-4 text-right text-emerald-600">Bonus</th>
+                            <th className="px-6 py-4 text-right text-red-600">Deductions</th>
+                            <th className="px-6 py-4 text-right">Net Salary</th>
+                            <th className="px-6 py-4 text-right">Actions</th>
                           </tr>
-                        ) : (
-                          data.map((emp) => (
-                            <tr key={emp.employee_id} className="hover:bg-orange-50/30 transition-colors">
-                              <td className="px-6 py-4">
-                                <div className="font-bold text-slate-900">{emp.employee_name}</div>
-                                <div className="text-xs text-slate-500 font-mono mt-0.5">{emp.employee_id.substring(0,8)}</div>
-                              </td>
-                              <td className="px-6 py-4 text-right font-bold text-slate-700">₹{(emp.gross_salary || 0).toLocaleString()}</td>
-                              <td className="px-6 py-4 text-right text-emerald-600 font-black">+₹{(emp.bonus || 0).toLocaleString()}</td>
-                              <td className="px-6 py-4 text-right text-red-600 font-black">-₹{(emp.total_deductions || 0).toLocaleString()}</td>
-                              <td className="px-6 py-4 text-right font-black text-slate-900 text-base">₹{(emp.net_salary || 0).toLocaleString()}</td>
-                              <td className="px-6 py-4 text-right">
-                                <Button variant="outline" size="sm" onClick={() => { setSelectedEmployee(emp); setEmployeeDetailsOpen(true); }} className="rounded-xl text-xs font-bold">
-                                  Breakdown
-                                </Button>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {data.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="text-center py-16 text-slate-500 font-medium">
+                                No adjustments data for this branch/period.
                               </td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </>
+                          ) : (
+                            data.map((emp) => (
+                              <tr key={emp.employee_id} className="hover:bg-orange-50/30 transition-colors">
+                                <td className="px-6 py-4">
+                                  <div className="font-bold text-slate-900">{emp.employee_name}</div>
+                                  <div className="text-xs text-slate-500 font-mono mt-0.5">{emp.employee_id.substring(0, 8)}</div>
+                                </td>
+                                <td className="px-6 py-4 text-right font-bold text-slate-700">₹{(emp.gross_salary || 0).toLocaleString()}</td>
+                                <td className="px-6 py-4 text-right text-emerald-600 font-black">+₹{(emp.bonus || 0).toLocaleString()}</td>
+                                <td className="px-6 py-4 text-right text-red-600 font-black">-₹{(emp.total_deductions || 0).toLocaleString()}</td>
+                                <td className="px-6 py-4 text-right font-black text-slate-900 text-base">₹{(emp.net_salary || 0).toLocaleString()}</td>
+                                <td className="px-6 py-4 text-right">
+                                  <Button variant="outline" size="sm" onClick={() => { setSelectedEmployee(emp); setEmployeeDetailsOpen(true); }} className="rounded-xl text-xs font-bold">
+                                    Breakdown
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </>
                   )}
                 </div>
               )}
-              
+
               {activeTab === 'history' && (
                 <div className="p-8 bg-white min-h-[400px] rounded-b-3xl">
                   {cycle ? (
@@ -601,9 +602,9 @@ export function PayrollClient({
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h2 className="text-xl font-bold text-slate-900">Lock Payroll</h2>
-              <button onClick={() => setLockModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+              <Button onClick={() => setLockModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
             <div className="px-6 py-6 text-slate-600 text-sm leading-relaxed">
               Are you sure you want to lock the payroll for <span className="font-bold text-slate-900">{months[month - 1]} {year}</span>?
@@ -628,11 +629,11 @@ export function PayrollClient({
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
             <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h2 className="text-xl font-bold text-slate-900">Add Payroll Adjustment</h2>
-              <button onClick={() => setIsAdjustmentModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1.5 shadow-sm border border-slate-200">
+              <Button onClick={() => setIsAdjustmentModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1.5 shadow-sm border border-slate-200">
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
-            
+
             <form onSubmit={handleAddAdjustment} className="px-6 py-6 overflow-y-auto space-y-4">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Employee</label>
@@ -677,12 +678,12 @@ export function PayrollClient({
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Description (Optional)</label>
-                <textarea 
-                  className="w-full rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white"
+                <textarea
+                  className="flex w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-700 shadow-sm resize-none transition-all"
                   value={adjDesc}
                   onChange={(e) => setAdjDesc(e.target.value)}
                   placeholder="Reason for adjustment..."
-                  rows={2}
+
                 />
               </div>
 
@@ -690,7 +691,7 @@ export function PayrollClient({
                 <Button type="button" variant="outline" onClick={() => setIsAdjustmentModalOpen(false)} className="rounded-xl font-bold border-slate-200 hover:bg-slate-100">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmittingAdj} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+                <Button type="submit" disabled={isSubmittingAdj} className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold shadow-md shadow-orange-500/20 transition-all duration-300">
                   {isSubmittingAdj ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
                   Add Adjustment
                 </Button>
@@ -709,11 +710,11 @@ export function PayrollClient({
                 <h2 className="text-xl font-bold text-slate-900">Payroll Details</h2>
                 <p className="text-sm font-medium text-slate-500 mt-0.5">{selectedEmployee.employee_name}</p>
               </div>
-              <button onClick={() => setEmployeeDetailsOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1.5 shadow-sm border border-slate-200">
+              <Button onClick={() => setEmployeeDetailsOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1.5 shadow-sm border border-slate-200">
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
-            
+
             <div className="px-6 py-6 overflow-y-auto">
               <div className="space-y-6">
                 <div>
@@ -736,7 +737,7 @@ export function PayrollClient({
                       <p className="font-black text-emerald-700">+₹{(selectedEmployee.bonus || 0).toLocaleString()}</p>
                     </div>
                   </div>
-                  
+
                   <div className="mt-3 flex justify-between items-center px-4 py-3 bg-slate-100 rounded-2xl">
                     <span className="font-bold text-slate-600 text-sm">Gross Salary</span>
                     <span className="font-black text-slate-900">₹{(selectedEmployee.gross_salary || 0).toLocaleString()}</span>
@@ -764,12 +765,12 @@ export function PayrollClient({
                 </div>
               </div>
             </div>
-            
+
             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap gap-3 justify-between items-center">
               <div className="flex gap-2">
                 {isLocked && (
                   <>
-                    <Button 
+                    <Button
                       onClick={() => handleGenerateSlip(selectedEmployee.id)}
                       disabled={actionLoading}
                       variant="outline"
@@ -779,10 +780,10 @@ export function PayrollClient({
                       {actionLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
                       Generate Slip
                     </Button>
-                    
+
                     {selectedEmployee.slip_status === 'generated' || selectedEmployee.slip_status === 'sent' ? (
                       <>
-                        <Button 
+                        <Button
                           onClick={() => handleViewSlip(selectedEmployee.id)}
                           disabled={actionLoading}
                           variant="outline"
@@ -791,7 +792,7 @@ export function PayrollClient({
                         >
                           View
                         </Button>
-                        <Button 
+                        <Button
                           onClick={() => handleDownloadSlip(selectedEmployee.employee_id)}
                           disabled={actionLoading}
                           variant="outline"
@@ -802,18 +803,17 @@ export function PayrollClient({
                         </Button>
                       </>
                     ) : null}
-                    
-                    <span className={`text-xs font-bold px-2 py-1 rounded-md self-center ${
-                      selectedEmployee.slip_status === 'generated' || selectedEmployee.slip_status === 'sent' 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-slate-200 text-slate-600'
-                    }`}>
+
+                    <span className={`text-xs font-bold px-2 py-1 rounded-md self-center ${selectedEmployee.slip_status === 'generated' || selectedEmployee.slip_status === 'sent'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-slate-200 text-slate-600'
+                      }`}>
                       {selectedEmployee.slip_status === 'generated' || selectedEmployee.slip_status === 'sent' ? 'Generated' : 'Not Generated'}
                     </span>
                   </>
                 )}
               </div>
-              
+
               <Button variant="outline" onClick={() => setEmployeeDetailsOpen(false)} className="rounded-xl font-bold bg-white ml-auto">Close Details</Button>
             </div>
           </div>

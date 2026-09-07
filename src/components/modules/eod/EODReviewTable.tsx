@@ -5,6 +5,7 @@ import { reviewEODAction } from '@/actions/eod.actions';
 import { useRouter } from 'next/navigation';
 import { EODReport } from '@/services/eod.service';
 import { usePrompt } from "@/hooks/use-prompt";
+import { Button } from "@/components/ui/button";
 
 export function EODReviewTable({ eods }: { eods: (EODReport & { profiles: { first_name: string, last_name: string, employee_id: string } | null })[] }) {
   const [loading, setLoading] = useState<string | null>(null);
@@ -69,20 +70,20 @@ export function EODReviewTable({ eods }: { eods: (EODReport & { profiles: { firs
                 {eod.office_hours}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                <button 
+                <Button 
                   onClick={() => handleReview(eod.id, 'Approve')}
                   disabled={loading === eod.id}
                   className="text-green-600 hover:text-green-900 disabled:opacity-50"
                 >
                   Approve
-                </button>
-                <button 
+                </Button>
+                <Button 
                   onClick={() => handleReview(eod.id, 'Reject')}
                   disabled={loading === eod.id}
                   className="text-red-600 hover:text-red-900 disabled:opacity-50"
                 >
                   Reject
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

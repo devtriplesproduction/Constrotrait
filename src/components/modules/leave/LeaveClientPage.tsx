@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LeaveForm } from "./LeaveForm";
-import { approveLeaveFirstLevelAction, approveLeaveHRAction, rejectLeaveAction, cancelApprovedLeaveAction, verifyMedicalCertificateAction } from "@/actions/leave.actions";
+import { approveLeaveFirstLevelAction, approveLeaveHRAction, rejectLeaveAction, cancelApprovedLeaveAction, verifyMedicalCertificateAction, deleteMedicalCertificateAction, rejectMedicalCertificateAction } from "@/actions/leave.actions";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, FileText, UserCircle2, Ban, Plus } from "lucide-react";
@@ -79,15 +79,15 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
   };
 
   const getStatusConfig = (status: string) => {
-    switch(status) {
-      case 'Approved': 
+    switch (status) {
+      case 'Approved':
         return { color: 'bg-green-50/80 text-green-700 border-green-100/50', icon: CheckCircle2 };
       case 'Rejected':
-      case 'Cancelled': 
+      case 'Cancelled':
         return { color: 'bg-red-50/80 text-red-700 border-red-100/50', icon: XCircle };
       case 'Pending First Level':
       case 'Pending HR':
-      default: 
+      default:
         return { color: 'bg-amber-50/80 text-amber-700 border-amber-100/50', icon: Clock };
     }
   };
@@ -106,14 +106,14 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
           {canApprove && (
             <div className="flex p-1.5 space-x-1.5 bg-white/40 backdrop-blur-xl rounded-2xl shrink-0 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
               {!isSuperAdmin && (
-                <button 
+                <Button
                   className={`py-2.5 px-4 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'mine' ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'}`}
                   onClick={() => setActiveTab('mine')}
                 >
                   My Leaves
-                </button>
+                </Button>
               )}
-              <button 
+              <Button
                 className={`py-2.5 px-4 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'approve' ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'}`}
                 onClick={() => setActiveTab('approve')}
               >
@@ -125,12 +125,12 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                     </span>
                   )}
                 </div>
-              </button>
+              </Button>
             </div>
           )}
 
           {!isSuperAdmin && (
-            <div className="bg-blue-50 text-blue-700 px-4 py-2.5 rounded-xl font-medium shrink-0">
+            <div className="bg-orange-50 text-orange-700 px-4 py-2.5 rounded-xl font-medium shrink-0">
               Comp-Off Balance: <span className="font-bold">{compOffBalance}</span> hours
             </div>
           )}
@@ -174,15 +174,15 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
               {myLeaves.map((leave: Record<string, any>, idx) => {
                 const statusConfig = getStatusConfig(leave.status);
                 const StatusIcon = statusConfig.icon;
-                
+
                 return (
-                  <div 
-                    key={leave.id as string} 
+                  <div
+                    key={leave.id as string}
                     className="group relative bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(249,115,22,0.12)] rounded-3xl p-6 transition-all duration-500 hover:-translate-y-1 overflow-hidden"
                     style={{ animationDelay: `${idx * 50}ms` }}
                   >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-400/20 to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110" />
-                    
+
                     <div className="relative z-10 flex justify-between items-start mb-6">
                       <div className="flex items-center gap-4">
                         <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/40 transition-shadow">
@@ -192,13 +192,13 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                         <div>
                           <h3 className="text-lg font-bold text-slate-900 group-hover:text-orange-600 transition-colors">{leave.leave_type}</h3>
                           <p className="text-sm font-medium text-slate-500">
-                            {leave.start_date ? format(new Date(leave.start_date), "MMM dd, yyyy") : ""} 
+                            {leave.start_date ? format(new Date(leave.start_date), "MMM dd, yyyy") : ""}
                             {!leave.is_half_day && leave.end_date && ` - ${format(new Date(leave.end_date), "MMM dd, yyyy")}`}
                             {leave.is_half_day && " (Half Day)"}
                           </p>
                         </div>
                       </div>
-                      
+
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border ${statusConfig.color} whitespace-nowrap`}>
                         <StatusIcon className="w-3.5 h-3.5" />
                         {leave.status}
@@ -226,7 +226,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                           {leave.is_paid ? "Paid" : "Unpaid"}
                         </span>
                       </div>
-                      
+
                       {leave.status === 'Approved' && isHR && (
                         <Button variant="danger" size="sm" className="rounded-xl shadow-sm h-8" onClick={() => handleAction(cancelApprovedLeaveAction as any, leave.id as string)}>
                           Cancel
@@ -258,15 +258,15 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
               {leavesToApprove.map((leave: Record<string, any>, idx) => {
                 const statusConfig = getStatusConfig(leave.status);
                 const StatusIcon = statusConfig.icon;
-                
+
                 return (
-                  <div 
+                  <div
                     key={leave.id as string}
                     className="group relative bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(249,115,22,0.12)] rounded-3xl p-6 transition-all duration-500 hover:-translate-y-1 overflow-hidden"
                     style={{ animationDelay: `${idx * 50}ms` }}
                   >
                     <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-400/10 to-transparent rounded-bl-full -mr-8 -mt-8 pointer-events-none" />
-                    
+
                     <div className="flex flex-col md:flex-row gap-6 relative z-10">
                       <div className="flex-1">
                         <div className="flex justify-between items-start mb-6">
@@ -291,7 +291,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                           <div>
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Date</span>
                             <div className="font-medium text-slate-700 text-sm">
-                              {leave.start_date ? format(new Date(leave.start_date), "MMM dd, yyyy") : ""} 
+                              {leave.start_date ? format(new Date(leave.start_date), "MMM dd, yyyy") : ""}
                               {!leave.is_half_day && leave.end_date && ` - ${format(new Date(leave.end_date), "MMM dd, yyyy")}`}
                               {leave.is_half_day && <span className="text-xs text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded ml-2">Half Day</span>}
                             </div>
@@ -337,23 +337,38 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                             </Button>
                           </>
                         )}
-                        {leave.leave_type === 'Sick Leave' && !leave.is_paid && isHR && !leave.medical_certificate_url && (
-                            <Button variant="secondary" className="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm" onClick={() => setUploadingCertFor(leave.id as string)}>
-                              Upload Cert
-                            </Button>
-                          )}
-                          {leave.leave_type === 'Sick Leave' && leave.medical_certificate_url && (
+                        {leave.leave_type === 'Sick Leave' && !leave.medical_certificate_url && (isHR || isSuperAdmin) && (
+                          <Button variant="secondary" className="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm" onClick={() => setUploadingCertFor(leave.id as string)}>
+                            Upload Cert
+                          </Button>
+                        )}
+                        {leave.leave_type === 'Sick Leave' && leave.medical_certificate_url && (isHR || isSuperAdmin) && (
+                          <>
                             <Button variant="secondary" className="w-full rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shadow-sm" onClick={() => window.open(leave.medical_certificate_url as string, '_blank')}>
                               View Cert
                             </Button>
-                          )}
+                            <Button variant="danger" className="w-full rounded-xl bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 shadow-sm" onClick={() => handleAction(deleteMedicalCertificateAction as any, leave.id as string)}>
+                              Delete Cert
+                            </Button>
+                            {!leave.certificate_verified_by && (
+                              <>
+                                <Button variant="secondary" className="w-full rounded-xl bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 shadow-sm" onClick={() => handleAction(verifyMedicalCertificateAction as any, leave.id as string)}>
+                                  Mark Valid (Paid)
+                                </Button>
+                                <Button variant="secondary" className="w-full rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 shadow-sm" onClick={() => handleAction(rejectMedicalCertificateAction as any, leave.id as string)}>
+                                  Mark Invalid (Unpaid)
+                                </Button>
+                              </>
+                            )}
+                          </>
+                        )}
                         {leave.status === 'Approved' && isHR && (
                           <Button variant="danger" className="w-full rounded-xl shadow-sm" onClick={() => handleAction(cancelApprovedLeaveAction as any, leave.id as string)}>
                             Cancel Leave
                           </Button>
                         )}
-                        
-                        {!((leave.status === 'Pending First Level' && (!isHR || isSuperAdmin)) || (leave.status === 'Pending HR' && isHR) || (leave.leave_type === 'Sick Leave' && !leave.is_paid && isHR) || (leave.status === 'Approved' && isHR)) && (
+
+                        {!((leave.status === 'Pending First Level' && (!isHR || isSuperAdmin)) || (leave.status === 'Pending HR' && isHR) || (leave.leave_type === 'Sick Leave' && (isHR || isSuperAdmin)) || (leave.status === 'Approved' && isHR)) && (
                           <div className="text-center text-xs text-slate-400 font-bold uppercase tracking-wider py-4">
                             No Actions
                           </div>
@@ -368,15 +383,15 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
         </div>
       )}
       <PromptComponent />
-      
+
       <Modal isOpen={!!uploadingCertFor} onClose={() => setUploadingCertFor(null)}>
         <div className="mb-4">
           <h2 className="text-xl font-bold text-slate-800">Upload Medical Certificate</h2>
         </div>
         <div className="space-y-4 pt-4">
           <div className="border-2 border-dashed border-orange-200 bg-white rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center relative">
-            <input 
-              type="file" 
+            <input
+              type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               onChange={(e) => setCertFile(e.target.files?.[0] || null)}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
