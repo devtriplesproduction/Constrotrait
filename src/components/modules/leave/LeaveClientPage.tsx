@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectItem } from "@/components/ui/select";
 import { LeaveForm } from "./LeaveForm";
 import { approveLeaveFirstLevelAction, approveLeaveHRAction, rejectLeaveAction, cancelApprovedLeaveAction, verifyMedicalCertificateAction, deleteMedicalCertificateAction, rejectMedicalCertificateAction } from "@/actions/leave.actions";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +25,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"mine" | "approve">(isSuperAdmin ? "approve" : "mine");
   const [uploadingCertFor, setUploadingCertFor] = useState<string | null>(null);
+  const [viewingCertUrl, setViewingCertUrl] = useState<string | null>(null);
   const [certFile, setCertFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -228,7 +230,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                       </div>
 
                       {leave.status === 'Approved' && isHR && (
-                        <Button variant="danger" size="sm" className="rounded-xl shadow-sm h-8" onClick={() => handleAction(cancelApprovedLeaveAction as any, leave.id as string)}>
+                        <Button variant="outline" size="sm" className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 h-8" onClick={() => handleAction(cancelApprovedLeaveAction as any, leave.id as string)}>
                           Cancel
                         </Button>
                       )}
@@ -343,27 +345,31 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                           </Button>
                         )}
                         {leave.leave_type === 'Sick Leave' && leave.medical_certificate_url && (isHR || isSuperAdmin) && (
-                          <>
-                            <Button variant="secondary" className="w-full rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shadow-sm" onClick={() => window.open(leave.medical_certificate_url as string, '_blank')}>
-                              View Cert
-                            </Button>
-                            <Button variant="danger" className="w-full rounded-xl bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 shadow-sm" onClick={() => handleAction(deleteMedicalCertificateAction as any, leave.id as string)}>
-                              Delete Cert
-                            </Button>
-                            {!leave.certificate_verified_by && (
-                              <>
-                                <Button variant="secondary" className="w-full rounded-xl bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 shadow-sm" onClick={() => handleAction(verifyMedicalCertificateAction as any, leave.id as string)}>
-                                  Mark Valid (Paid)
-                                </Button>
-                                <Button variant="secondary" className="w-full rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 shadow-sm" onClick={() => handleAction(rejectMedicalCertificateAction as any, leave.id as string)}>
-                                  Mark Invalid (Unpaid)
-                                </Button>
-                              </>
-                            )}
-                          </>
+                            <div className="w-full relative">
+                              <Select
+                                value=""
+                                onValueChange={(val) => {
+                                  if (val === 'view') setViewingCertUrl(leave.medical_certificate_url as string);
+                                  else if (val === 'delete') handleAction(deleteMedicalCertificateAction as any, leave.id as string);
+                                  else if (val === 'valid') handleAction(verifyMedicalCertificateAction as any, leave.id as string);
+                                  else if (val === 'invalid') handleAction(rejectMedicalCertificateAction as any, leave.id as string);
+                                }}
+                                placeholder="Cert Actions"
+                                buttonClassName="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm flex justify-center items-center font-bold"
+                              >
+                                <SelectItem value="view" className="text-orange-700 hover:bg-orange-50 font-semibold">View Cert</SelectItem>
+                                <SelectItem value="delete" className="text-orange-700 hover:bg-orange-50 font-semibold">Delete Cert</SelectItem>
+                                {!leave.certificate_verified_by && (
+                                  <>
+                                    <SelectItem value="valid" className="text-orange-700 hover:bg-orange-50 font-semibold">Mark Valid (Paid)</SelectItem>
+                                    <SelectItem value="invalid" className="text-orange-700 hover:bg-orange-50 font-semibold">Mark Invalid (Unpaid)</SelectItem>
+                                  </>
+                                )}
+                              </Select>
+                            </div>
                         )}
                         {leave.status === 'Approved' && isHR && (
-                          <Button variant="danger" className="w-full rounded-xl shadow-sm" onClick={() => handleAction(cancelApprovedLeaveAction as any, leave.id as string)}>
+                          <Button variant="outline" className="w-full rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={() => handleAction(cancelApprovedLeaveAction as any, leave.id as string)}>
                             Cancel Leave
                           </Button>
                         )}
@@ -411,6 +417,33 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
               {uploading ? "Uploading..." : "Upload & Verify"}
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={!!viewingCertUrl} onClose={() => setViewingCertUrl(null)} className="max-w-4xl w-full">
+        <div className="mb-6">
+          <PageHeader
+            title="Medical Certificate"
+            subtitle="Document viewer"
+            icon={FileText}
+          />
+        </div>
+        
+        <div className="w-full h-[65vh] min-h-[400px] p-2 bg-slate-50/80 rounded-2xl border border-slate-200/60 shadow-inner">
+          <iframe 
+            src={viewingCertUrl ? `${viewingCertUrl}#toolbar=0&view=FitH` : ''} 
+            className="w-full h-full rounded-xl bg-white shadow-sm" 
+            title="Medical Certificate" 
+          />
+        </div>
+        
+        <div className="flex justify-end gap-3 pt-6">
+          <Button 
+            className="rounded-xl px-6 bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-orange-500/50 hover:-translate-y-0.5"
+            onClick={() => setViewingCertUrl(null)}
+          >
+            Close Viewer
+          </Button>
         </div>
       </Modal>
     </div>

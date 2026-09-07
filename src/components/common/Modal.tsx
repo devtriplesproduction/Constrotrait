@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 
 interface ModalProps {
   isOpen: boolean;
@@ -31,7 +32,10 @@ export function Modal({ isOpen, onClose, children, className = "" }: ModalProps)
         onClick={onClose}
       />
       <div
-        className={`relative w-full max-w-sm bg-white rounded-[2rem] border border-slate-200 shadow-2xl overflow-hidden p-6 text-center animate-in zoom-in-95 duration-200 ${className}`}
+        className={cn(
+          "relative w-full max-w-sm bg-white rounded-[2rem] border border-slate-200 shadow-2xl overflow-hidden p-6 text-center animate-in zoom-in-95 duration-200",
+          className
+        )}
       >
         <Button
           variant="ghost"

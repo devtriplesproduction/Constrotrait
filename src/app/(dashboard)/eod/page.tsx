@@ -105,10 +105,10 @@ export default async function EODPage({ searchParams }: PageProps) {
         actions={
           <div className="flex items-center gap-3">
             {canReview && (
-              <div className="flex bg-slate-100 p-1 rounded-xl h-[42px] items-center">
+              <div className="flex bg-slate-100 p-1 rounded-xl h-[48px] items-center">
                 <Link
                   href="?tab=review"
-                  className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${activeTab === 'review' ? 'bg-orange-600 text-white shadow' : 'text-slate-600 hover:text-slate-800'
+                  className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${activeTab === 'review' ? 'bg-orange-500 text-white shadow' : 'text-slate-600 hover:text-slate-800'
                     }`}
                 >
                   <BarChart2 className="w-4 h-4" />
@@ -117,7 +117,7 @@ export default async function EODPage({ searchParams }: PageProps) {
                 {!isSuperAdmin && (
                   <Link
                     href="?tab=submit"
-                    className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${activeTab === 'submit' ? 'bg-orange-600 text-white shadow' : 'text-slate-600 hover:text-slate-800'
+                    className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${activeTab === 'submit' ? 'bg-white text-slate-800 shadow' : 'text-slate-600 hover:text-slate-800'
                       }`}
                   >
                     <Send className="w-4 h-4" />

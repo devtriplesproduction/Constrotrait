@@ -39,7 +39,7 @@ export async function getBranches() {
 
     const { data, error } = await supabase
       .from("branches")
-      .select("id, name, code, address, is_active, created_at, updated_at")
+      .select("id, name, code, address, email, phone, gst_number, is_active, created_at, updated_at")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -64,9 +64,12 @@ export async function createBranch(data: BranchFormData) {
         name: data.name,
         code: data.code,
         address: data.address || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        gst_number: data.gst_number || null,
         is_active: data.is_active,
       })
-      .select("id, name, code, address, is_active, created_at, updated_at")
+      .select("id, name, code, address, email, phone, gst_number, is_active, created_at, updated_at")
       .single();
 
     if (error) {
@@ -100,11 +103,14 @@ export async function updateBranch(id: string, data: BranchFormData) {
         name: data.name,
         code: data.code,
         address: data.address || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        gst_number: data.gst_number || null,
         is_active: data.is_active,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .select("id, name, code, address, is_active, created_at, updated_at")
+      .select("id, name, code, address, email, phone, gst_number, is_active, created_at, updated_at")
       .single();
 
     if (error) {
@@ -139,7 +145,7 @@ export async function toggleBranchActive(id: string, isActive: boolean) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .select("id, name, code, address, is_active, created_at, updated_at")
+      .select("id, name, code, address, email, phone, gst_number, is_active, created_at, updated_at")
       .single();
 
     if (error) {

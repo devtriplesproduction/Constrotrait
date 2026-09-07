@@ -4,6 +4,9 @@ export const branchSchema = z.object({
   name: z.string().trim().min(1, "Branch name is required"),
   code: z.string().trim().min(1, "Branch code is required"),
   address: z.string().trim().optional(),
+  email: z.string().trim().email("Invalid email format").optional().or(z.literal("")),
+  phone: z.string().trim().optional(),
+  gst_number: z.string().trim().optional(),
   is_active: z.boolean(),
 });
 

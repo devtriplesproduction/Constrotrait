@@ -29,6 +29,9 @@ export function BranchFormModal({ branch, onClose }: BranchFormModalProps) {
     defaultValues: {
       name: branch?.name || "",
       code: branch?.code || "",
+      email: branch?.email || "",
+      phone: branch?.phone || "",
+      gst_number: branch?.gst_number || "",
       address: branch?.address || "",
       is_active: branch?.is_active ?? true,
     },
@@ -62,7 +65,7 @@ export function BranchFormModal({ branch, onClose }: BranchFormModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div>
@@ -81,30 +84,72 @@ export function BranchFormModal({ branch, onClose }: BranchFormModalProps) {
         {/* Form */}
         <div className="p-6">
           <form id="branch-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500">Branch Name *</label>
-              <Input
-                {...register("name")}
-                placeholder="e.g. Headquarters"
-                className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-700 outline-none ${
-                  errors.name ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                }`}
-                disabled={isPending}
-              />
-              {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500">Branch Name *</label>
+                <Input
+                  {...register("name")}
+                  placeholder="e.g. Headquarters"
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-700 outline-none ${
+                    errors.name ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                  }`}
+                  disabled={isPending}
+                />
+                {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
+              </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500">Branch Code *</label>
-              <Input
-                {...register("code")}
-                placeholder="e.g. HQ-01"
-                className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-700 outline-none ${
-                  errors.code ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                }`}
-                disabled={isPending}
-              />
-              {errors.code && <p className="text-xs text-red-500">{errors.code.message}</p>}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500">Branch Code *</label>
+                <Input
+                  {...register("code")}
+                  placeholder="e.g. HQ-01"
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-700 outline-none ${
+                    errors.code ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                  }`}
+                  disabled={isPending}
+                />
+                {errors.code && <p className="text-xs text-red-500">{errors.code.message}</p>}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500">Email</label>
+                <Input
+                  {...register("email")}
+                  type="email"
+                  placeholder="branch@example.com"
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-700 outline-none ${
+                    errors.email ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                  }`}
+                  disabled={isPending}
+                />
+                {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500">Phone</label>
+                <Input
+                  {...register("phone")}
+                  placeholder="e.g. +1 234 567 8900"
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-700 outline-none ${
+                    errors.phone ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                  }`}
+                  disabled={isPending}
+                />
+                {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
+              </div>
+
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-xs font-bold text-slate-500">GST Number</label>
+                <Input
+                  {...register("gst_number")}
+                  placeholder="e.g. 22AAAAA0000A1Z5"
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-700 outline-none ${
+                    errors.gst_number ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                  }`}
+                  disabled={isPending}
+                />
+                {errors.gst_number && <p className="text-xs text-red-500">{errors.gst_number.message}</p>}
+              </div>
             </div>
 
             <div className="space-y-1">

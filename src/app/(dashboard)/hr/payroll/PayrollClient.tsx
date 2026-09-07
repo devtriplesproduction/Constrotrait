@@ -293,19 +293,19 @@ export function PayrollClient({
                 value={selectedBranchId}
                 onChange={handleBranchChange}
                 placeholder="Select Branch"
-                buttonClassName="h-[42px] rounded-xl"
+                buttonClassName="h-[42px] rounded-xl bg-white border border-orange-500 hover:border-orange-600"
               />
             </div>
           )}
 
-          <div className="flex items-center bg-white rounded-xl border shadow-sm p-1 border-gray-200 h-[42px]">
-            <Button variant="ghost" size="sm" onClick={handlePrevMonth} disabled={loading || actionLoading} className="h-8 w-8 p-0">
+          <div className="flex items-center bg-orange-600 text-white rounded-xl border shadow-sm p-1 border-orange-600 h-[42px] transition-colors hover:bg-orange-700 hover:border-orange-700">
+            <Button variant="ghost" size="sm" onClick={handlePrevMonth} disabled={loading || actionLoading} className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white">
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <div className="px-4 font-medium text-sm w-32 text-center text-gray-700">
+            <div className="px-4 font-medium text-sm w-32 text-center text-white">
               {months[month - 1]} {year}
             </div>
-            <Button variant="ghost" size="sm" onClick={handleNextMonth} disabled={loading || actionLoading} className="h-8 w-8 p-0">
+            <Button variant="ghost" size="sm" onClick={handleNextMonth} disabled={loading || actionLoading} className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
