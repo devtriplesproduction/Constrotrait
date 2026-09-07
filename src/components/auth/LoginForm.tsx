@@ -64,9 +64,7 @@ export function LoginForm() {
             <label className="block text-sm font-medium text-slate-700">
               Password
             </label>
-            <Link href="#" className="text-xs font-semibold text-orange-600 hover:text-orange-700 transition-colors">
-              Forgot password?
-            </Link>
+
           </div>
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-600 transition-colors">
