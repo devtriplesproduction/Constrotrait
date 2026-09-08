@@ -17,7 +17,8 @@ export async function getPayrollCyclesAction() {
     return { success: true, data: cycles };
   } catch (error) {
     const err = error as Error;
-    return { success: false, error: err.message };
+    console.error("Error fetching payroll cycles:", err);
+    return { success: false, error: "Failed to retrieve payroll cycles." };
   }
 }
 
@@ -42,7 +43,8 @@ export async function calculateMonthlyPayrollAction(month: number, year: number,
     return { success: true, ...result };
   } catch (error) {
     const err = error as Error;
-    return { success: false, error: err.message };
+    console.error("Error calculating monthly payroll:", err);
+    return { success: false, error: "Failed to calculate monthly payroll." };
   }
 }
 
@@ -67,7 +69,8 @@ export async function approveAndLockPayrollAction(month: number, year: number, r
     return { success: true, message: "Payroll cycle locked successfully." };
   } catch (error) {
     const err = error as Error;
-    return { success: false, error: err.message };
+    console.error("Error approving and locking payroll:", err);
+    return { success: false, error: "Failed to approve and lock payroll." };
   }
 }
 
@@ -84,26 +87,12 @@ export async function addManualLedgerEntryAction(
       return { success: false, error: "Unauthorized" };
     }
 
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabaseClient = await createClient();
+    await import("@/services/payroll.service").then(m => m.addManualLedgerEntry(employeeId, type, amount, description, user.id));
 
-    const { error } = await supabaseClient
-      .from("employee_financial_ledger")
-      .insert({
-        employee_id: employeeId,
-        adjustment_type: type,
-        adjustment_category: "one_time",
-        original_amount: amount,
-        remaining_amount: amount,
-        description,
-        status: "pending",
-        created_by: user.id,
-      });
-
-    if (error) throw error;
     return { success: true, message: "Adjustment added successfully." };
   } catch (error) {
     const err = error as Error;
-    return { success: false, error: err.message };
+    console.error("Error adding manual ledger entry:", err);
+    return { success: false, error: err.message === "Validation failed" ? "Invalid input provided." : "Failed to add manual ledger entry." };
   }
 }

@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error("Cron expiry error:", error);
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      return NextResponse.json({ success: false, error: "Failed to expire pending comp-off leaves" }, { status: 500 });
     }
 
     return NextResponse.json({ 

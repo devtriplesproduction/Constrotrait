@@ -47,8 +47,12 @@ export async function toggleUserActive(userId: string, isActive: boolean) {
       return { success: false, error: "Insufficient permissions" };
     }
 
-    const { data: targetProfile } = await supabaseAdmin.from("profiles").select("email, branch_id").eq("id", userId).maybeSingle();
+    const { data: targetProfile } = await supabaseAdmin.from("profiles").select("email, roles, branch_id").eq("id", userId).maybeSingle();
     
+    if (targetProfile?.roles?.includes("SUPER_ADMIN") && !profile?.roles?.includes("SUPER_ADMIN")) {
+      return { success: false, error: "Only Super Admins can manage other Super Admins" };
+    }
+
     if (!profile?.roles?.includes("SUPER_ADMIN") && profile?.branch_id !== targetProfile?.branch_id) {
       return { success: false, error: "Unauthorized: Cross-branch operations are not permitted" };
     }
@@ -135,6 +139,10 @@ export async function onboardEmployee(userId: string) {
 
     const { data: targetProfile } = await supabaseAdmin.from("profiles").select("email, roles, branch_id").eq("id", userId).maybeSingle();
     
+    if (targetProfile?.roles?.includes("SUPER_ADMIN") && !profile?.roles?.includes("SUPER_ADMIN")) {
+      return { success: false, error: "Only Super Admins can manage other Super Admins" };
+    }
+
     if (!profile?.roles?.includes("SUPER_ADMIN") && profile?.branch_id !== targetProfile?.branch_id) {
       return { success: false, error: "Unauthorized: Cross-branch operations are not permitted" };
     }
@@ -226,8 +234,12 @@ export async function resetEmployeePassword(userId: string, newPassword: string)
       return { success: false, error: "Insufficient permissions" };
     }
 
-    const { data: targetProfileCheck } = await supabaseAdmin.from("profiles").select("branch_id").eq("id", userId).maybeSingle();
+    const { data: targetProfileCheck } = await supabaseAdmin.from("profiles").select("roles, branch_id").eq("id", userId).maybeSingle();
     
+    if (targetProfileCheck?.roles?.includes("SUPER_ADMIN") && !profile?.roles?.includes("SUPER_ADMIN")) {
+      return { success: false, error: "Only Super Admins can manage other Super Admins" };
+    }
+
     if (!profile?.roles?.includes("SUPER_ADMIN") && profile?.branch_id !== targetProfileCheck?.branch_id) {
       return { success: false, error: "Unauthorized: Cross-branch operations are not permitted" };
     }
@@ -325,6 +337,10 @@ export async function updateEmployeeRoles(userId: string, newRoles: string[]) {
     const { data: targetProfile } = await supabaseAdmin.from("profiles").select("email, roles, branch_id").eq("id", userId).maybeSingle();
     if (!targetProfile) return { success: false, error: "User not found" };
 
+    if (targetProfile.roles?.includes("SUPER_ADMIN") && !isActorSuperAdmin) {
+      return { success: false, error: "Only Super Admins can manage other Super Admins" };
+    }
+
     if (!isActorSuperAdmin && profile?.branch_id !== targetProfile.branch_id) {
       return { success: false, error: "Unauthorized: Cross-branch operations are not permitted" };
     }
@@ -371,8 +387,12 @@ export async function updateEmployeeProfile(userId: string, data: Partial<Profil
       return { success: false, error: "Insufficient permissions" };
     }
 
-    const { data: targetProfileCheck } = await supabaseAdmin.from("profiles").select("branch_id").eq("id", userId).maybeSingle();
+    const { data: targetProfileCheck } = await supabaseAdmin.from("profiles").select("roles, branch_id").eq("id", userId).maybeSingle();
     
+    if (targetProfileCheck?.roles?.includes("SUPER_ADMIN") && !isActorSuperAdmin) {
+      return { success: false, error: "Only Super Admins can manage other Super Admins" };
+    }
+
     if (!isActorSuperAdmin && profile?.branch_id !== targetProfileCheck?.branch_id) {
       return { success: false, error: "Unauthorized: Cross-branch operations are not permitted" };
     }

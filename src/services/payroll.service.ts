@@ -365,3 +365,35 @@ export async function lockPayrollCycle(month: number, year: number, userId: stri
     throw new Error(rpcError.message || "Failed to lock payroll cycle transactionally.");
   }
 }
+
+export async function addManualLedgerEntry(
+  employeeId: string,
+  type: string,
+  amount: number,
+  description?: string,
+  createdBy?: string
+) {
+  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Validation failed");
+  }
+  if (!employeeId || !type) {
+    throw new Error("Validation failed");
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("employee_financial_ledger")
+    .insert({
+      employee_id: employeeId,
+      adjustment_type: type,
+      adjustment_category: "one_time",
+      original_amount: amount,
+      remaining_amount: amount,
+      description,
+      status: "pending",
+      created_by: createdBy,
+    });
+
+  if (error) throw error;
+}

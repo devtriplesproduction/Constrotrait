@@ -174,7 +174,7 @@ export async function approveLeaveFirstLevel(leaveId: string) {
       console.error("Failed to approve leave via RPC:", error);
       return {
         success: false,
-        error: error.message || "Failed to approve leave",
+        error: "Failed to approve leave",
       };
     }
 
@@ -214,7 +214,7 @@ export async function approveLeaveHR(leaveId: string) {
 
     if (rpcError) {
       console.error("Failed to approve leave via RPC:", rpcError);
-      return { success: false, error: rpcError.message || "Failed to approve leave" };
+      return { success: false, error: "Failed to approve leave" };
     }
 
     // Since RPC doesn't return data, we can just fetch it if needed, or return success
@@ -230,6 +230,9 @@ export async function rejectLeave(
   reason: string
 ) {
   try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+
     const supabase = await createClient() as unknown as AppSupabaseClient;
 
     const { error } = await supabase.rpc("reject_leave", {
@@ -242,7 +245,7 @@ export async function rejectLeave(
 
       return {
         success: false,
-        error: error.message || "Failed to reject leave",
+        error: "Failed to reject leave",
       };
     }
 
@@ -281,7 +284,7 @@ export async function cancelApprovedLeave(leaveId: string) {
 
     if (rpcError) {
       console.error("Failed to cancel leave via RPC:", rpcError);
-      return { success: false, error: rpcError.message || "Failed to cancel leave" };
+      return { success: false, error: "Failed to cancel leave" };
     }
 
     return { success: true };
@@ -305,7 +308,7 @@ export async function verifyMedicalCertificate(leaveId: string, certificateUrl?:
 
     if (rpcError) {
       console.error("Failed to verify certificate via RPC:", rpcError);
-      return { success: false, error: rpcError.message || "Failed to verify certificate" };
+      return { success: false, error: "Failed to verify certificate" };
     }
     return { success: true };
   } catch (error: unknown) {
@@ -325,7 +328,7 @@ export async function deleteMedicalCertificate(leaveId: string) {
     
     if (rpcError) {
       console.error("Failed to delete medical certificate via RPC:", rpcError);
-      return { success: false, error: rpcError.message || "Failed to delete medical certificate" };
+      return { success: false, error: "Failed to delete medical certificate" };
     }
     return { success: true };
   } catch (error: unknown) {
@@ -345,7 +348,7 @@ export async function rejectMedicalCertificate(leaveId: string) {
     
     if (rpcError) {
       console.error("Failed to reject medical certificate via RPC:", rpcError);
-      return { success: false, error: rpcError.message || "Failed to reject medical certificate" };
+      return { success: false, error: "Failed to reject medical certificate" };
     }
     return { success: true };
   } catch (error: unknown) {
