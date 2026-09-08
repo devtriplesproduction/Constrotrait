@@ -54,7 +54,8 @@ export async function getMySalarySlipsAction() {
 
     return { success: true, data: formattedData };
   } catch (error: unknown) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    console.error("Error fetching salary slips:", error);
+    return { success: false, error: "Failed to retrieve salary slips." };
   }
 }
 
@@ -140,7 +141,8 @@ export async function generateSalarySlipAction(snapshotId: string, month: number
 
     return { success: true, message: "Salary slip generated successfully.", pdf_url: pdfUrl };
   } catch (error: unknown) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    console.error("Error generating salary slip:", error);
+    return { success: false, error: "Failed to generate salary slip." };
   }
 }
 
@@ -194,7 +196,8 @@ export async function emailSalarySlipAction(snapshotId: string) {
 
     return { success: true, message: `Salary slip emailed to ${employeeName}.` };
   } catch (error: unknown) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    console.error("Error emailing salary slip:", error);
+    return { success: false, error: "Failed to email salary slip." };
   }
 }
 
@@ -235,7 +238,8 @@ export async function generateSignedSalarySlipUrlAction(snapshotId: string, expi
 
     return { success: true, signedUrl: data.signedUrl };
   } catch (error: unknown) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    console.error("Error generating signed url for salary slip:", error);
+    return { success: false, error: "Failed to access salary slip." };
   }
 }
 
@@ -271,7 +275,8 @@ export async function markSalarySlipSharedAction(snapshotId: string) {
     
     return { success: true };
   } catch (error: unknown) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    console.error("Error marking salary slip as shared:", error);
+    return { success: false, error: "Failed to mark salary slip as shared." };
   }
 }
 
@@ -312,6 +317,7 @@ export async function downloadSalarySlipBase64Action(employeeId: string, month: 
 
     return { success: true, base64, filename: fileName.split('/').pop() };
   } catch (error: unknown) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    console.error("Error downloading salary slip base64:", error);
+    return { success: false, error: "Failed to download salary slip." };
   }
 }

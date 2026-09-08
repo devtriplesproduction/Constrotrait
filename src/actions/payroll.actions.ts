@@ -83,7 +83,7 @@ export async function addManualLedgerEntryAction(
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) return { success: false, error: "Unauthorized" };
-    if (!isHR(user.roles) && !isSuperAdmin(user.roles) && !isBranchManager(user.roles)) {
+    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) {
       return { success: false, error: "Unauthorized" };
     }
 

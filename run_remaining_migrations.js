@@ -1,6 +1,7 @@
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: '.env.local' });
 
 async function runMigrations() {
   const migrationsToRun = [
@@ -8,7 +9,7 @@ async function runMigrations() {
   ];
 
   const client = new Client({
-    connectionString: "postgresql://postgres:ceSJ6657ONQDRMQP@db.wbsgbohrwsgmrymyprib.supabase.co:5432/postgres",
+    connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
   });
 
