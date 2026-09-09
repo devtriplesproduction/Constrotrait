@@ -193,46 +193,100 @@ BEGIN
                 
                 db_base_salary := COALESCE(db_base_salary, 0);
 
-                -- 1.5 Calculate attendance independently from DB
-                SELECT COUNT(*) INTO db_days_present FROM public.attendance WHERE employee_id = db_emp_id AND status = 'Present' AND EXTRACT(MONTH FROM date) = p_month AND EXTRACT(YEAR FROM date) = p_year;
-                SELECT COUNT(*) INTO db_days_field FROM public.attendance WHERE employee_id = db_emp_id AND status = 'Field Assignment' AND EXTRACT(MONTH FROM date) = p_month AND EXTRACT(YEAR FROM date) = p_year;
+                -- 1.5 Calculate attendance and leaves day-by-day (matching JS logic)
+                db_days_present := 0;
+                db_days_field := 0;
+                db_days_paid_leave := 0;
+                db_days_unpaid_leave := 0;
+                db_standard_holidays := 0;
 
-                -- 1.6 Derive metadata securely from profiles
-                SELECT first_name || ' ' || last_name, employee_id, department, designation
-                INTO v_emp_name, v_emp_external_id, v_emp_dept, v_emp_desig
-                FROM public.profiles
-                WHERE id = db_emp_id;
+                FOR d IN SELECT d_date::DATE FROM generate_series(
+                    make_date(p_year, p_month, 1),
+                    v_end_date,
+                    '1 day'::interval
+                ) AS d_date
+                LOOP
+                    DECLARE
+                        v_is_weekend BOOLEAN;
+                        v_is_holiday BOOLEAN;
+                        v_is_working BOOLEAN;
+                        v_att_status TEXT;
+                        v_leave_paid BOOLEAN;
+                        v_leave_half BOOLEAN;
+                        v_has_leave BOOLEAN := false;
+                        v_present_portion NUMERIC := 0;
+                        v_field_portion NUMERIC := 0;
+                        v_paid_leave_portion NUMERIC := 0;
+                        v_unpaid_leave_portion NUMERIC := 0;
+                    BEGIN
+                        v_is_weekend := EXTRACT(DOW FROM d) IN (0, 6);
+                        
+                        SELECT EXISTS (
+                            SELECT 1 FROM public.holidays h 
+                            WHERE h.date = d
+                              AND h.is_active = true
+                              AND (h.branch_id IS NULL OR h.branch_id = p_branch_id)
+                              AND (h.department IS NULL OR v_emp_dept IS NULL OR h.department ILIKE '%' || v_emp_dept || '%')
+                        ) INTO v_is_holiday;
 
-                -- 1.7 Calculate Holidays
-                SELECT COUNT(*) INTO db_standard_holidays
-                FROM public.holidays
-                WHERE is_active = true 
-                  AND date >= make_date(p_year, p_month, 1) 
-                  AND date <= v_end_date
-                  AND (branch_id IS NULL OR branch_id = p_branch_id)
-                  AND (department IS NULL OR v_emp_dept IS NULL OR department ILIKE '%' || v_emp_dept || '%');
+                        IF v_is_holiday THEN
+                            db_standard_holidays := db_standard_holidays + 1;
+                        END IF;
 
-                -- 1.8 Calculate Leaves
-                SELECT 
-                    COALESCE(SUM(CASE WHEN lr.is_paid THEN (CASE WHEN lr.is_half_day THEN 0.5 ELSE 1.0 END) ELSE 0 END), 0),
-                    COALESCE(SUM(CASE WHEN NOT lr.is_paid THEN (CASE WHEN lr.is_half_day THEN 0.5 ELSE 1.0 END) ELSE 0 END), 0)
-                INTO db_days_paid_leave, db_days_unpaid_leave
-                FROM public.leave_requests lr,
-                     generate_series(
-                         GREATEST(lr.start_date, make_date(p_year, p_month, 1)),
-                         LEAST(lr.end_date, v_end_date),
-                         '1 day'::interval
-                     ) d
-                WHERE lr.employee_id = db_emp_id
-                  AND lr.status = 'Approved'
-                  AND extract(dow from d) NOT IN (0, 6)
-                  AND NOT EXISTS (
-                      SELECT 1 FROM public.holidays h 
-                      WHERE h.date = d::date 
-                        AND h.is_active = true
-                        AND (h.branch_id IS NULL OR h.branch_id = p_branch_id)
-                        AND (h.department IS NULL OR v_emp_dept IS NULL OR h.department ILIKE '%' || v_emp_dept || '%')
-                  );
+                        v_is_working := NOT v_is_weekend AND NOT v_is_holiday;
+
+                        SELECT is_paid, is_half_day INTO v_leave_paid, v_leave_half
+                        FROM public.leave_requests
+                        WHERE employee_id = db_emp_id
+                          AND status = 'Approved'
+                          AND start_date <= d
+                          AND end_date >= d
+                        LIMIT 1;
+
+                        IF FOUND THEN
+                            v_has_leave := true;
+                        END IF;
+
+                        SELECT status INTO v_att_status
+                        FROM public.attendance
+                        WHERE employee_id = db_emp_id
+                          AND date = d
+                        LIMIT 1;
+
+                        IF v_att_status IS NOT NULL THEN
+                            IF v_has_leave AND v_leave_half AND v_is_working THEN
+                                IF v_att_status = 'Field Assignment' THEN v_field_portion := 0.5;
+                                ELSIF v_att_status = 'Present' THEN v_present_portion := 0.5;
+                                END IF;
+
+                                IF v_leave_paid THEN v_paid_leave_portion := 0.5;
+                                ELSE v_unpaid_leave_portion := 0.5;
+                                END IF;
+                            ELSE
+                                IF v_att_status = 'Field Assignment' THEN v_field_portion := 1.0;
+                                ELSIF v_att_status = 'Present' THEN v_present_portion := 1.0;
+                                END IF;
+                            END IF;
+                        ELSIF v_is_working THEN
+                            IF v_has_leave THEN
+                                IF v_leave_half THEN
+                                    IF v_leave_paid THEN v_paid_leave_portion := 0.5;
+                                    ELSE v_unpaid_leave_portion := 0.5;
+                                    END IF;
+                                ELSE
+                                    IF v_leave_paid THEN v_paid_leave_portion := 1.0;
+                                    ELSE v_unpaid_leave_portion := 1.0;
+                                    END IF;
+                                END IF;
+                            END IF;
+                        END IF;
+
+                        db_days_present := db_days_present + v_present_portion;
+                        db_days_field := db_days_field + v_field_portion;
+                        db_days_paid_leave := db_days_paid_leave + v_paid_leave_portion;
+                        db_days_unpaid_leave := db_days_unpaid_leave + v_unpaid_leave_portion;
+                    END;
+                END LOOP;
 
                 -- 1.9 Derive net payable and absences strictly on the server
                 IF (db_days_present + db_days_field + db_days_paid_leave) > 0 THEN
