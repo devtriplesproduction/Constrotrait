@@ -132,7 +132,7 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
   // 6. Fetch all active ledger entries up to this month
   const { data: ledgerData, error: ledgerError } = await supabase
     .from('employee_financial_ledger')
-    .select('*')
+    .select('id, employee_id, adjustment_type, adjustment_category, remaining_amount')
     .in('status', ['pending', 'partially_recovered'])
     .lte('effective_date', endOfMonth);
     

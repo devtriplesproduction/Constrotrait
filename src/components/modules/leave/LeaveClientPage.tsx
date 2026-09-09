@@ -28,19 +28,45 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
   const [viewingCertUrl, setViewingCertUrl] = useState<string | null>(null);
   const [certFile, setCertFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+
+  const filteredMyLeaves = myLeaves.filter(leave => {
+    if (statusFilter === "All") return true;
+    if (statusFilter === "Pending") return (leave.status as string)?.includes("Pending");
+    return leave.status === statusFilter;
+  });
+
+  const filteredLeavesToApprove = leavesToApprove.filter(leave => {
+    if (statusFilter === "All") return true;
+    if (statusFilter === "Pending") return (leave.status as string)?.includes("Pending");
+    return leave.status === statusFilter;
+  });
 
   const handleUploadAndVerify = async () => {
     if (!uploadingCertFor || !certFile) return;
     setUploading(true);
+    setUploadProgress(0);
     try {
       const supabase = createClient();
       const fileExt = certFile.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `public/${fileName}`;
 
+      const progressInterval = setInterval(() => {
+        setUploadProgress(p => {
+          const inc = Math.random() * 15;
+          const next = p + inc;
+          return next > 90 ? 90 : next;
+        });
+      }, 300);
+
       const { data, error } = await supabase.storage
         .from("medical-certificates")
         .upload(filePath, certFile);
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
 
       if (error) {
         throw new Error(error.message);
@@ -61,6 +87,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
       toast({ title: "Upload Failed", description: e.message, variant: "error" });
     } finally {
       setUploading(false);
+      setTimeout(() => setUploadProgress(0), 500);
     }
   };
   const { toast } = useToast();
@@ -105,6 +132,21 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
         />
 
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full 2xl:w-auto overflow-x-auto pb-2 2xl:pb-0">
+          <div className="shrink-0 z-50">
+            <Select
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+              placeholder="Filter Status"
+              buttonClassName="w-[140px] bg-white border border-slate-200 rounded-xl"
+            >
+              <SelectItem value="All">All Statuses</SelectItem>
+              <SelectItem value="Approved">Approved</SelectItem>
+              <SelectItem value="Rejected">Rejected</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Cancelled">Cancelled</SelectItem>
+            </Select>
+          </div>
+
           {canApprove && (
             <div className="flex p-1.5 space-x-1.5 bg-white/40 backdrop-blur-xl rounded-2xl shrink-0 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
               {!isSuperAdmin && (
@@ -161,7 +203,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
             </div>
           )}
 
-          {myLeaves.length === 0 && !showForm ? (
+          {filteredMyLeaves.length === 0 && !showForm ? (
             <div className="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
               <div className="w-20 h-20 bg-orange-100/50 rounded-full flex items-center justify-center mb-6">
                 <FileText className="w-10 h-10 text-orange-400" />
@@ -173,7 +215,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {myLeaves.map((leave: Record<string, any>, idx) => {
+              {filteredMyLeaves.map((leave: Record<string, any>, idx) => {
                 const statusConfig = getStatusConfig(leave.status);
                 const StatusIcon = statusConfig.icon;
 
@@ -245,7 +287,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
 
       {activeTab === 'approve' && (
         <div className="space-y-6">
-          {leavesToApprove.length === 0 ? (
+          {filteredLeavesToApprove.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
               <div className="w-20 h-20 bg-green-100/50 rounded-full flex items-center justify-center mb-6">
                 <CheckCircle2 className="w-10 h-10 text-green-500" />
@@ -257,7 +299,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
             </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {leavesToApprove.map((leave: Record<string, any>, idx) => {
+              {filteredLeavesToApprove.map((leave: Record<string, any>, idx) => {
                 const statusConfig = getStatusConfig(leave.status);
                 const StatusIcon = statusConfig.icon;
 
@@ -339,12 +381,12 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                             </Button>
                           </>
                         )}
-                        {leave.leave_type === 'Sick Leave' && !leave.medical_certificate_url && (isHR || isSuperAdmin) && (
+                        {leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && !leave.medical_certificate_url && (isHR || isSuperAdmin) && (
                           <Button variant="secondary" className="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm" onClick={() => setUploadingCertFor(leave.id as string)}>
                             Upload Cert
                           </Button>
                         )}
-                        {leave.leave_type === 'Sick Leave' && leave.medical_certificate_url && (isHR || isSuperAdmin) && (
+                        {leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && leave.medical_certificate_url && (isHR || isSuperAdmin) && (
                             <div className="w-full relative">
                               <Select
                                 value=""
@@ -357,12 +399,12 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                                 placeholder="Cert Actions"
                                 buttonClassName="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm flex justify-center items-center font-bold"
                               >
-                                <SelectItem value="view" className="text-orange-700 hover:bg-orange-50 font-semibold">View Cert</SelectItem>
-                                <SelectItem value="delete" className="text-orange-700 hover:bg-orange-50 font-semibold">Delete Cert</SelectItem>
+                                <SelectItem value="view" className="text-orange-700 hover:bg-orange-50 font-semibold">View</SelectItem>
+                                <SelectItem value="delete" className="text-orange-700 hover:bg-orange-50 font-semibold">Delete</SelectItem>
                                 {!leave.certificate_verified_by && (
                                   <>
-                                    <SelectItem value="valid" className="text-orange-700 hover:bg-orange-50 font-semibold">Mark Valid (Paid)</SelectItem>
-                                    <SelectItem value="invalid" className="text-orange-700 hover:bg-orange-50 font-semibold">Mark Invalid (Unpaid)</SelectItem>
+                                    <SelectItem value="valid" className="text-orange-700 hover:bg-orange-50 font-semibold">Valid</SelectItem>
+                                    <SelectItem value="invalid" className="text-orange-700 hover:bg-orange-50 font-semibold">Invalid</SelectItem>
                                   </>
                                 )}
                               </Select>
@@ -374,7 +416,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                           </Button>
                         )}
 
-                        {!((leave.status === 'Pending First Level' && (!isHR || isSuperAdmin)) || (leave.status === 'Pending HR' && isHR) || (leave.leave_type === 'Sick Leave' && (isHR || isSuperAdmin)) || (leave.status === 'Approved' && isHR)) && (
+                        {!((leave.status === 'Pending First Level' && (!isHR || isSuperAdmin)) || (leave.status === 'Pending HR' && isHR) || (leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && (isHR || isSuperAdmin)) || (leave.status === 'Approved' && isHR)) && (
                           <div className="text-center text-xs text-slate-400 font-bold uppercase tracking-wider py-4">
                             No Actions
                           </div>
@@ -395,24 +437,36 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
           <h2 className="text-xl font-bold text-slate-800">Upload Medical Certificate</h2>
         </div>
         <div className="space-y-4 pt-4">
-          <div className="border-2 border-dashed border-orange-200 bg-white rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center relative">
+          <div className="border-2 border-dashed border-orange-200 bg-white rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center relative overflow-hidden">
             <input
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               onChange={(e) => setCertFile(e.target.files?.[0] || null)}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              disabled={uploading}
             />
-            <UploadCloud className="w-8 h-8 text-orange-400" />
-            <div className="text-sm text-slate-600">
+            {uploading && (
+                <div 
+                  className="absolute bottom-0 left-0 h-1 bg-orange-500 transition-all duration-300 ease-out" 
+                  style={{ width: `${uploadProgress}%` }}
+                />
+            )}
+            <UploadCloud className={`w-8 h-8 text-orange-400 ${uploading ? 'animate-pulse' : ''}`} />
+            <div className="text-sm text-slate-600 relative z-20">
               {certFile ? (
                 <span className="font-medium text-orange-600">{certFile.name}</span>
               ) : (
                 <span><span className="font-semibold text-orange-600">Click to upload</span> or drag and drop</span>
               )}
             </div>
+            {uploading && (
+              <div className="text-xs font-bold text-orange-600 mt-2 relative z-20">
+                {Math.round(uploadProgress)}% Uploading...
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" onClick={() => { setUploadingCertFor(null); setCertFile(null); }} disabled={uploading}>Cancel</Button>
+            <Button variant="ghost" onClick={() => { setUploadingCertFor(null); setCertFile(null); setUploadProgress(0); }} disabled={uploading}>Cancel</Button>
             <Button className="bg-orange-600 hover:bg-orange-700 text-white" onClick={handleUploadAndVerify} disabled={uploading || !certFile}>
               {uploading ? "Uploading..." : "Upload & Verify"}
             </Button>

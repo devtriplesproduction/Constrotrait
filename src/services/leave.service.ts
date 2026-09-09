@@ -158,7 +158,7 @@ export async function approveLeaveFirstLevel(leaveId: string) {
     // Fetch leave first to validate
     const { data: leave, error: fetchError } = await supabase
       .from("leave_requests")
-      .select("*")
+      .select("id")
       .eq("id", leaveId)
       .single();
 
@@ -197,7 +197,7 @@ export async function approveLeaveHR(leaveId: string) {
     const supabase = await createClient() as unknown as AppSupabaseClient;
     const { data: leave, error: fetchError } = await supabase
       .from("leave_requests")
-      .select("*")
+      .select("id, status, leave_type, medical_certificate_url")
       .eq("id", leaveId)
       .single();
 
@@ -271,7 +271,7 @@ export async function cancelApprovedLeave(leaveId: string) {
     const supabase = await createClient() as unknown as AppSupabaseClient;
     const { data: leave, error: fetchError } = await supabase
       .from("leave_requests")
-      .select("*")
+      .select("id, status")
       .eq("id", leaveId)
       .single();
 
@@ -365,7 +365,7 @@ export async function getLeaves() {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("leave_requests")
-      .select("*")
+      .select("id, status, start_date, leave_type, end_date, is_half_day, reason, rejection_reason, is_paid")
       .eq("employee_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -384,7 +384,7 @@ export async function getLeavesToApprove() {
 
     const supabase = await createClient();
 
-    let query = supabase.from("leave_requests").select("*, profiles!leave_requests_employee_id_fkey(first_name, last_name, branch_id, reporting_manager_id)");
+    let query = supabase.from("leave_requests").select("id, status, leave_type, start_date, end_date, is_half_day, is_paid, reason, medical_certificate_url, certificate_verified_by, profiles!leave_requests_employee_id_fkey(first_name, last_name, branch_id, reporting_manager_id)");
 
     if (isHR(user.roles) || isSuperAdmin(user.roles)) {
       // HR sees everything pending HR, or everything if they want, but pending HR is the action items
