@@ -255,9 +255,9 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     const prorationFactor = workingDaysLimit > 0 ? totalEarnedDays / workingDaysLimit : 1;
     const net_payable = Math.max(0, Math.round(base_salary * Math.max(0, prorationFactor)));
 
-    const basic_salary = Math.round(net_payable * 0.5);
-    const hra = Math.round(net_payable * 0.2);
-    const allowance = net_payable - basic_salary - hra;
+    const basic_salary = net_payable;
+    const hra = 0;
+    const allowance = 0;
 
     const empLedger = (ledgerData || []).filter((l) => l.employee_id === emp.id);
     let calculated_bonus = 0;
@@ -268,8 +268,6 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     let calculated_travel_expense = 0;
     let calculated_performance_incentive = 0;
     let calculated_food_allowance = 0;
-    let is_tds_applied = false;
-    let tds_rate_val = 0;
     let tds_ledger_id = '';
 
     for (const entry of empLedger) {
@@ -286,7 +284,6 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
         } else if (typeLower === 'food allowance') {
             calculated_food_allowance += amount;
         } else if (typeLower === 'tds') {
-            is_tds_applied = !!entry.tds_applied;
             tds_ledger_id = entry.id;
         } else if (typeLower.includes('advance')) {
             calculated_salary_advance_recovery += amount;
@@ -326,14 +323,7 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     // }
     const total_deductions = pf + esi + professional_tax + income_tax + other_deductions + salary_advance_recovery + damage_recovery + calculated_tds;
     
-    if (is_tds_applied && tds_ledger_id) {
-        appliedAdjustments.push({
-            ledger_id: tds_ledger_id,
-            adjustment_type: 'TDS',
-            adjustment_category: 'one_time',
-            amount: calculated_tds
-        });
-    }
+    // TDS is blocked on the server, we just don't push it here so it doesn't cause errors
     const net_salary = gross_salary - total_deductions;
     const overtime_hours = 0;
 

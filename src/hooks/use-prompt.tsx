@@ -30,7 +30,7 @@ export function usePrompt() {
     }
   };
 
-  const PromptComponent = () => (
+  const PromptComponent = (
     <Modal isOpen={isOpen} onClose={handleCancel} className="max-w-md">
       <div className="text-left">
         <h3 className="text-lg font-semibold mb-4 text-slate-800">{config?.title}</h3>

@@ -90,6 +90,8 @@ export function PayrollClient({
   const [adjVehicleType, setAdjVehicleType] = useState("Two-wheeler");
   const [adjTdsApplied, setAdjTdsApplied] = useState(false);
   const [adjTdsRate, setAdjTdsRate] = useState("1");
+  const [adjMealsCount, setAdjMealsCount] = useState("");
+  const [adjMealAmount, setAdjMealAmount] = useState("150");
   const [isSubmittingAdj, setIsSubmittingAdj] = useState(false);
 
   const { toast } = useToast();
@@ -208,6 +210,8 @@ export function PayrollClient({
       finalAmount = 1; 
     } else if (adjType === "TDS") {
       finalAmount = 0;
+    } else if (adjType === "Food Allowance") {
+      finalAmount = Number(adjMealsCount) * Number(adjMealAmount);
     }
     
     if (!adjEmployeeId || isNaN(finalAmount) || (adjType !== "TDS" && finalAmount <= 0)) {
@@ -231,6 +235,7 @@ export function PayrollClient({
         setIsAdjustmentModalOpen(false);
         setAdjAmount("");
         setAdjDesc("");
+        setAdjMealsCount("");
         // Reload data to recalculate adjustments
         loadData(month, year, selectedBranchId);
       } else {
@@ -734,7 +739,34 @@ export function PayrollClient({
                   )}
                 </>
               )}
-              {adjType !== "TDS" && (adjType !== "Travel Expense" || adjVehicleType === "Car") && (
+              {adjType === "Food Allowance" && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Meals Count</label>
+                      <Input
+                        type="number"
+                        required
+                        value={adjMealsCount}
+                        onChange={(e) => setAdjMealsCount(e.target.value)}
+                        placeholder="e.g. 5"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Meal Amount (₹)</label>
+                      <Input
+                        type="number"
+                        required
+                        value={adjMealAmount}
+                        onChange={(e) => setAdjMealAmount(e.target.value)}
+                        placeholder="e.g. 150"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 font-medium">Total Amount: ₹{(Number(adjMealsCount) * Number(adjMealAmount)).toFixed(2)}</p>
+                </>
+              )}
+              {adjType !== "TDS" && (adjType !== "Travel Expense" || adjVehicleType === "Car") && adjType !== "Food Allowance" && (
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Amount (₹)</label>
                   <Input

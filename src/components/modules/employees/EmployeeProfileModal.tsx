@@ -1513,7 +1513,7 @@ export function EmployeeProfileModal({
           </div>
         </div>
       )}
-      <PromptComponent />
+      {PromptComponent}
     </div>
   );
 

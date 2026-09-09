@@ -89,7 +89,7 @@ export function EODReviewTable({ eods }: { eods: (EODReport & { profiles: { firs
           ))}
         </tbody>
       </table>
-      <PromptComponent />
+      {PromptComponent}
     </div>
   );
 }

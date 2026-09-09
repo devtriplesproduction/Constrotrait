@@ -430,7 +430,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
           )}
         </div>
       )}
-      <PromptComponent />
+      {PromptComponent}
 
       <Modal isOpen={!!uploadingCertFor} onClose={() => setUploadingCertFor(null)}>
         <div className="mb-4">

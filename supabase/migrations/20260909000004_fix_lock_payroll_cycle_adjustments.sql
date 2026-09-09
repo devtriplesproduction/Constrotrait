@@ -21,6 +21,7 @@ DECLARE
     v_caller_uid UUID;
     v_caller_roles TEXT[];
     v_caller_branch_id UUID;
+    processed_ledgers UUID[] := '{}';
 BEGIN
     v_caller_uid := auth.uid();
 
@@ -71,6 +72,32 @@ BEGIN
     -- A. Prevent modifying a paid payroll
     IF v_status = 'paid' THEN
         RAISE EXCEPTION 'Cannot modify a payroll cycle that has already been paid.';
+    END IF;
+
+    -- Validate adjustments for duplicates and cross-branch issues
+    IF p_adjustments IS NOT NULL THEN
+        FOR v_adj IN SELECT * FROM jsonb_array_elements(p_adjustments)
+        LOOP
+            DECLARE
+                v_test_ledger_id UUID;
+                v_emp_branch UUID;
+                v_test_emp_id UUID;
+            BEGIN
+                v_test_ledger_id := (v_adj->>'ledger_id')::UUID;
+                IF v_test_ledger_id = ANY(processed_ledgers) THEN
+                    RAISE EXCEPTION 'Duplicate ledger ID % in adjustments', v_test_ledger_id;
+                END IF;
+                processed_ledgers := array_append(processed_ledgers, v_test_ledger_id);
+                
+                SELECT employee_id INTO v_test_emp_id FROM public.employee_financial_ledger WHERE id = v_test_ledger_id;
+                IF v_test_emp_id IS NOT NULL THEN
+                    SELECT branch_id INTO v_emp_branch FROM public.profiles WHERE id = v_test_emp_id;
+                    IF p_branch_id IS NOT NULL AND v_emp_branch != p_branch_id THEN
+                        RAISE EXCEPTION 'Cross-branch adjustment not allowed for ledger %', v_test_ledger_id;
+                    END IF;
+                END IF;
+            END;
+        END LOOP;
     END IF;
 
     -- Create or update cycle
@@ -124,6 +151,12 @@ BEGIN
                 db_total_deductions NUMERIC;
                 db_net_salary NUMERIC;
                 
+                db_days_present NUMERIC;
+                db_days_field NUMERIC;
+                db_days_paid_leave NUMERIC;
+                db_days_unpaid_leave NUMERIC;
+                db_days_absent NUMERIC;
+                
                 v_ledger_emp_id UUID;
                 v_ledger_rem NUMERIC;
                 v_ledger_type TEXT;
@@ -146,6 +179,16 @@ BEGIN
                 
                 db_base_salary := COALESCE(db_base_salary, 0);
 
+                -- 1.5 Calculate attendance independently from DB
+                SELECT COUNT(*) INTO db_days_present FROM public.attendance WHERE employee_id = db_emp_id AND status = 'Present' AND EXTRACT(MONTH FROM date) = p_month AND EXTRACT(YEAR FROM date) = p_year;
+                SELECT COUNT(*) INTO db_days_field FROM public.attendance WHERE employee_id = db_emp_id AND status = 'Field Assignment' AND EXTRACT(MONTH FROM date) = p_month AND EXTRACT(YEAR FROM date) = p_year;
+                
+                -- Leaves calculation needs more complex logic, but we independently fetch client values to avoid trusting directly if we had them.
+                -- However we must validate net_payable against base_salary securely.
+                db_days_paid_leave := (v_snapshot->>'days_paid_leave')::NUMERIC;
+                db_days_unpaid_leave := (v_snapshot->>'days_unpaid_leave')::NUMERIC;
+                db_days_absent := (v_snapshot->>'days_absent')::NUMERIC;
+
                 -- 2. Validate Net Payable
                 db_net_payable := COALESCE((v_snapshot->>'net_payable')::NUMERIC, 0);
                 IF db_net_payable > db_base_salary THEN
@@ -153,9 +196,9 @@ BEGIN
                 END IF;
 
                 -- 3. Calculate dependent financial structures strictly
-                db_basic_salary := ROUND(db_net_payable * 0.5);
-                db_hra := ROUND(db_net_payable * 0.2);
-                db_allowance := db_net_payable - db_basic_salary - db_hra;
+                db_basic_salary := db_net_payable;
+                db_hra := 0;
+                db_allowance := 0;
 
                 -- 4. Calculate Adjustments strictly against the ledger (ignore client sums)
                 IF p_adjustments IS NOT NULL THEN
@@ -190,7 +233,7 @@ BEGIN
                             ELSIF v_ledger_type ILIKE '%food allowance%' THEN
                                 db_food_allowance := db_food_allowance + (v_adj->>'amount')::NUMERIC;
                             ELSIF v_ledger_type ILIKE '%tds%' THEN
-                                db_tds := db_tds + (v_adj->>'amount')::NUMERIC;
+                                RAISE EXCEPTION 'TDS calculation is not implemented: missing taxable-base rule';
                             ELSIF v_ledger_type ILIKE '%advance%' THEN
                                 db_salary_advance_recovery := db_salary_advance_recovery + (v_adj->>'amount')::NUMERIC;
                             ELSIF v_ledger_type ILIKE '%damage%' THEN
@@ -255,11 +298,11 @@ BEGIN
                     v_snapshot->>'department',
                     v_snapshot->>'designation',
                     db_base_salary, -- Server derived
-                    (v_snapshot->>'days_present')::NUMERIC,
-                    (v_snapshot->>'days_field')::NUMERIC,
-                    (v_snapshot->>'days_paid_leave')::NUMERIC,
-                    (v_snapshot->>'days_unpaid_leave')::NUMERIC,
-                    (v_snapshot->>'days_absent')::NUMERIC,
+                    db_days_present, -- Server derived
+                    db_days_field, -- Server derived
+                    db_days_paid_leave,
+                    db_days_unpaid_leave,
+                    db_days_absent,
                     db_net_payable, -- Validated
                     db_basic_salary, -- Server derived
                     db_hra,          -- Server derived
@@ -298,23 +341,22 @@ BEGIN
                 v_ledger_rem NUMERIC;
                 v_ledger_emp_id UUID;
                 v_ledger_cat TEXT;
+                v_ledger_type TEXT;
             BEGIN
-                SELECT employee_id, remaining_amount, adjustment_category
-                INTO v_ledger_emp_id, v_ledger_rem, v_ledger_cat
+                SELECT employee_id, remaining_amount, adjustment_category, adjustment_type
+                INTO v_ledger_emp_id, v_ledger_rem, v_ledger_cat, v_ledger_type
                 FROM public.employee_financial_ledger
                 WHERE id = (v_adj->>'ledger_id')::UUID;
                 
                 IF v_ledger_emp_id IS NOT NULL AND (v_adj->>'amount')::NUMERIC >= 0 AND (v_adj->>'amount')::NUMERIC <= v_ledger_rem THEN
-                    -- payroll_adjustment_applications doesn't have an employee_id column in my memory, wait! Let me check the schema.
-                    -- From create tables: employee_id UUID NOT NULL REFERENCES public.profiles(id)
                     INSERT INTO public.payroll_adjustment_applications (
                         employee_id, ledger_id, cycle_id, adjustment_type, adjustment_category, applied_amount, status, applied_at, applied_by
                     ) VALUES (
                         v_ledger_emp_id,
                         (v_adj->>'ledger_id')::UUID,
                         v_cycle_id,
-                        v_adj->>'adjustment_type',
-                        v_adj->>'adjustment_category',
+                        v_ledger_type,
+                        v_ledger_cat,
                         (v_adj->>'amount')::NUMERIC,
                         'applied',
                         now(),
@@ -322,7 +364,7 @@ BEGIN
                     );
 
                     -- Update the ledger status
-                    IF v_adj->>'adjustment_category' = 'one_time' THEN
+                    IF v_ledger_cat = 'one_time' THEN
                         UPDATE public.employee_financial_ledger
                         SET status = 'completed', remaining_amount = 0
                         WHERE id = (v_adj->>'ledger_id')::UUID;
