@@ -5,10 +5,14 @@ export const holidayFormSchema = z.object({
   date: z.string().min(1, "Date is required"),
   description: z.string().optional(),
   departments: z.array(z.string()).optional(),
-  branch_id: z.string().optional(),
-}).refine(data => (data.departments && data.departments.length > 0) || data.branch_id, {
+  branches: z.array(z.string()).optional(),
+}).refine(data => {
+  const hasDept = data.departments && data.departments.length > 0;
+  const hasBranch = data.branches && data.branches.length > 0;
+  return hasDept || hasBranch;
+}, {
   message: "A holiday must apply to either a branch or a department",
-  path: ["departments"], 
+  path: ["branches"], 
 });
 
 export type HolidayFormData = z.infer<typeof holidayFormSchema>;

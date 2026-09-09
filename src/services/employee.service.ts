@@ -200,7 +200,7 @@ export async function getAllEmployees(options?: { compact?: boolean, branchId?: 
       } else {
         const { data, error } = await supabase
           .from("profiles")
-          .select("id, email, first_name, last_name, phone_number, employee_id, department, designation, joining_date, status, is_active, created_at, updated_at, roles, dob, gender, salary, experience, employment_type, profile_photo, documents, personal_email, residential_address, emergency_contact_name, emergency_contact_relation, emergency_contact_number, branch_id, deleted_at")
+          .select("id, email, first_name, last_name, phone_number, employee_id, department, designation, joining_date, status, is_active, created_at, updated_at, roles, dob, gender, salary, experience, employment_type, profile_photo, documents, personal_email, residential_address, emergency_contact_name, emergency_contact_relation, emergency_contact_number, branch_id, deleted_at, reporting_manager_id")
           .eq("id", currentUser.id);
         if (error) {
           console.error("Database query failed:", error);
@@ -239,7 +239,7 @@ export async function getAllEmployees(options?: { compact?: boolean, branchId?: 
     } else {
       let query = supabase
         .from("profiles")
-        .select("id, email, first_name, last_name, phone_number, employee_id, department, designation, joining_date, status, is_active, created_at, updated_at, roles, dob, gender, salary, experience, employment_type, profile_photo, documents, personal_email, residential_address, emergency_contact_name, emergency_contact_relation, emergency_contact_number, branch_id, deleted_at")
+        .select("id, email, first_name, last_name, phone_number, employee_id, department, designation, joining_date, status, is_active, created_at, updated_at, roles, dob, gender, salary, experience, employment_type, profile_photo, documents, personal_email, residential_address, emergency_contact_name, emergency_contact_relation, emergency_contact_number, branch_id, deleted_at, reporting_manager_id")
         .order("created_at", { ascending: false });
 
       if (!isSuperAdmin && (isBranchManager || isHR || isAdminInwardCRE)) {

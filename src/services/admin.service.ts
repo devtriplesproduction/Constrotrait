@@ -420,6 +420,7 @@ export async function updateEmployeeProfile(userId: string, data: Partial<Profil
         emergency_contact_name: data.emergency_contact_name || null,
         emergency_contact_relation: data.emergency_contact_relation || null,
         emergency_contact_number: data.emergency_contact_number || null,
+        reporting_manager_id: data.reporting_manager_id !== undefined ? data.reporting_manager_id : null,
         ...(newBranchId !== undefined && { branch_id: newBranchId }),
         updated_at: new Date().toISOString()
       })

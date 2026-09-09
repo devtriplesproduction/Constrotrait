@@ -43,8 +43,6 @@ export function ExportExcelButton({ employees }: ExportExcelButtonProps) {
     const dataToExport = employees.map((emp) => ({
       "System ID": emp.id,
       "Employee ID": emp.employee_id || "N/A",
-      "First Name": emp.first_name,
-      "Last Name": emp.last_name,
       "Full Name": `${emp.first_name} ${emp.last_name}`,
       "Work Email": emp.email,
       "Personal Email": emp.personal_email || "N/A",

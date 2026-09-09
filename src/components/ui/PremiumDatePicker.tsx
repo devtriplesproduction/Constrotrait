@@ -13,7 +13,7 @@ interface PremiumDatePickerProps {
   onChange?: (date: string) => void;
   className?: string;
   align?: 'left' | 'right';
-  side?: 'bottom' | 'right';
+  side?: 'bottom' | 'right' | 'left';
   disabled?: boolean;
   triggerClassName?: string;
   minDate?: string | Date;
@@ -49,6 +49,14 @@ export function PremiumDatePicker({ value, onChange, className, align = 'left', 
         setCoords({
           top: triggerCenterY - calendarHeight / 2,
           left: rect.right + window.scrollX + 8,
+        });
+      } else if (side === 'left') {
+        // Position to the left, centered vertically on the trigger
+        const calendarHeight = 320;
+        const triggerCenterY = rect.top + rect.height / 2 + window.scrollY;
+        setCoords({
+          top: triggerCenterY - calendarHeight / 2,
+          left: rect.left + window.scrollX - popupWidth - 8,
         });
       } else {
         // Position below the trigger
@@ -153,7 +161,7 @@ export function PremiumDatePicker({ value, onChange, className, align = 'left', 
             left: coords.left,
             width: '300px',
           }}
-          className="z-[99999] glass-card p-4 border-slate-200/60  shadow-[0_8px_30px_rgb(0,0,0,0.12)] bg-white/80  backdrop-blur-3xl rounded-2xl"
+          className="z-[99999] glass-card p-4 border-slate-200/60  shadow-[0_8px_30px_rgb(0,0,0,0.12)] bg-white rounded-2xl"
         >
           <div className="flex items-center justify-between mb-4 px-1 gap-2">
             <div className="flex items-center gap-1.5">

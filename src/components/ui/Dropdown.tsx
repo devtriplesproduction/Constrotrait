@@ -22,6 +22,7 @@ export interface DropdownProps {
   id?: string;
   iconClassName?: string;
   align?: "left" | "right";
+  isClearable?: boolean;
 }
 
 export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
@@ -41,6 +42,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
       id,
       iconClassName,
       align,
+      isClearable,
     },
     ref
   ) => {
@@ -67,6 +69,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
           )}
           iconClassName={iconClassName}
           align={align}
+          isClearable={isClearable}
         >
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>

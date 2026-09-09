@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { BranchFormModal } from "./BranchFormModal";
 import { Database } from "@/types/database";
 import { BranchFormData } from "@/lib/validations/branch";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, AlertTriangle } from "lucide-react";
 
 type BranchRow = Database["public"]["Tables"]["branches"]["Row"];
 
@@ -152,18 +152,21 @@ export function BranchTable({ branches }: BranchTableProps) {
 
       {branchToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isDeleting && setBranchToDelete(null)} />
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden p-6 animate-in zoom-in-95 duration-200">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-bold text-slate-900">Delete Branch?</h3>
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => !isDeleting && setBranchToDelete(null)} />
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden p-8 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-5 ring-8 ring-red-50/50">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Delete Branch?</h3>
+              <p className="text-slate-500 mb-8 leading-relaxed">
+                You are about to permanently delete <strong className="text-slate-900">{branchToDelete.name}</strong> and all records associated with this branch. This action cannot be undone.
+              </p>
             </div>
-            <p className="text-sm text-slate-600 mb-6">
-              You are about to permanently delete <strong>{branchToDelete.name}</strong> and all records associated with this branch. This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
+            <div className="flex gap-3 w-full">
               <Button
                 variant="outline"
-                className="rounded-xl"
+                className="flex-1 rounded-xl h-12 font-semibold text-slate-600 border-slate-200 hover:bg-slate-50"
                 onClick={() => setBranchToDelete(null)}
                 disabled={isDeleting}
               >
@@ -171,7 +174,7 @@ export function BranchTable({ branches }: BranchTableProps) {
               </Button>
               <Button
                 variant="destructive"
-                className="rounded-xl bg-red-600 hover:bg-red-700"
+                className="flex-1 rounded-xl h-12 font-semibold bg-red-600 hover:bg-red-700 shadow-sm shadow-red-200"
                 onClick={handleDelete}
                 disabled={isDeleting}
               >

@@ -142,7 +142,7 @@ export function ReviewDashboard({
           <h3 className="font-semibold">Filter Reports</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-4 items-end">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Search</label>
             <div className="relative">
@@ -184,27 +184,26 @@ export function ReviewDashboard({
             />
           </div>
 
-          <div className="flex gap-2 items-end">
-            <div className="flex-1 space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">To</label>
-              <PremiumDatePicker
-                value={toDate}
-                onChange={(date) => setToDate(date)}
-                triggerClassName="h-11 bg-slate-50 border-slate-200 rounded-xl"
-                className="w-full"
-              />
-            </div>
-            <div className="shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleRefresh}
-                className="h-11 px-4 bg-orange-50 border-orange-100 text-orange-700 hover:bg-orange-100 rounded-xl"
-              >
-                <RefreshCcw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">To</label>
+            <PremiumDatePicker
+              value={toDate}
+              onChange={(date) => setToDate(date)}
+              triggerClassName="h-11 bg-slate-50 border-slate-200 rounded-xl"
+              className="w-full"
+            />
+          </div>
+          
+          <div className="shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleRefresh}
+              className="h-11 px-4 bg-orange-50 border-orange-100 text-orange-700 hover:bg-orange-100 rounded-xl"
+            >
+              <RefreshCcw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
         </div>
       </div>

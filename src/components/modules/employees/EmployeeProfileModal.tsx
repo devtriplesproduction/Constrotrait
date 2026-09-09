@@ -22,6 +22,8 @@ import {
   Trash2,
   EyeOff,
   Clock,
+  Copy,
+  FileImage,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -45,6 +47,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { APP_ROLES, ONBOARDING_ROLES } from "@/config/roles";
 import { DEPARTMENTS, getDesignationsForDepartment } from "@/config/departments";
 import { usePrompt } from "@/hooks/use-prompt";
+import { useConfirm } from "@/hooks/use-confirm";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -87,6 +90,7 @@ export function EmployeeProfileModal({
 }) {
   const { toast } = useToast();
   const { prompt, PromptComponent } = usePrompt();
+  const { confirm: customConfirm, ConfirmComponent } = useConfirm();
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<
     "personal" | "professional" | "documents" | "salary" | "security"
@@ -227,6 +231,18 @@ export function EmployeeProfileModal({
     if (!files || files.length === 0) return;
 
     Array.from(files).forEach((file: File) => {
+      const extMatch = file.name.match(/\\.([^.]+)$/);
+      const fileExt = extMatch ? extMatch[1].toLowerCase() : '';
+      if (!['pdf', 'jpg', 'jpeg', 'png'].includes(fileExt)) {
+        toast({ title: "Invalid File Type", description: "Only PDF, JPG, and PNG files are allowed.", variant: "error" });
+        return;
+      }
+
+      if (file.size > 3 * 1024 * 1024) {
+        toast({ title: "File too large", description: "Please upload a file smaller than 3MB.", variant: "error" });
+        return;
+      }
+
       const f = file;
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -241,25 +257,25 @@ export function EmployeeProfileModal({
         };
 
         setUploadProgress((prev) => ({ ...prev, [fileId]: 0 }));
-        setDocumentsList((prev) => {
-          const newList = [...prev, newFileObj];
-          let progress = 0;
-          const interval = setInterval(() => {
-            progress += 25;
-            setUploadProgress((p) => ({ ...p, [fileId]: progress }));
-            if (progress >= 100) {
-              clearInterval(interval);
-              toast({
-                title: `${f.name} successfully encrypted and staged.`,
-                variant: "success",
-              });
-            }
-          }, 80);
-          return newList;
-        });
+        setDocumentsList((prev) => [...prev, newFileObj]);
+
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 25;
+          setUploadProgress((p) => ({ ...p, [fileId]: progress }));
+          if (progress >= 100) {
+            clearInterval(interval);
+            toast({
+              title: `${f.name} successfully encrypted and staged.`,
+              variant: "success",
+            });
+          }
+        }, 80);
       };
       reader.readAsDataURL(f);
     });
+
+    e.target.value = "";
   };
 
   const removeFile = (id: string) => {
@@ -441,29 +457,29 @@ export function EmployeeProfileModal({
   // Danger Zone Helpers
 
   const handleOffboard = async () => {
-    if (!confirm(`Are you sure you want to offboard ${employee.first_name}?`))
-      return;
+    const isConfirmed = await customConfirm("Offboard Employee", `Are you sure you want to offboard ${employee.first_name}?`);
+    if (!isConfirmed) return;
     const res = await offboardEmployeeAction(employee.id!);
     if (res.success) onClose();
-    else alert(res.error);
+    else toast({ title: res.error as string, variant: "error" });
   };
 
   const handleOnboard = async () => {
-    if (!confirm(`Are you sure you want to onboard ${employee.first_name}?`))
-      return;
+    const isConfirmed = await customConfirm("Onboard Employee", `Are you sure you want to onboard ${employee.first_name}?`);
+    if (!isConfirmed) return;
     const res = await onboardEmployeeAction(employee.id!);
     if (res.success) onClose();
-    else alert(res.error);
+    else toast({ title: res.error as string, variant: "error" });
   };
 
   const handleDelete = async () => {
     const confirmStr = await prompt(
-      `Type "DELETE" to permanently archive ${employee.first_name}'s account.`,
+      `Type "TERMINATE" to permanently archive ${employee.first_name}'s account.`,
     );
-    if (confirmStr !== "DELETE") return;
+    if (confirmStr !== "TERMINATE") return;
     const res = await deleteEmployeeAction(employee.id!);
     if (res.success) onClose();
-    else alert(res.error);
+    else toast({ title: res.error as string, variant: "error" });
   };
 
   const modalContent = (
@@ -473,7 +489,7 @@ export function EmployeeProfileModal({
         onClick={handleClose}
       />
 
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-4xl h-[85vh] min-h-[700px] max-h-[90vh] bg-white rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="shrink-0 p-8 pb-6 border-b border-slate-100 flex items-start justify-between">
           <div className="flex gap-5 items-center">
@@ -595,12 +611,12 @@ export function EmployeeProfileModal({
                     value={formData.first_name || ""}
                     onChange={(e) => {
                       const newFirstName = e.target.value;
-                      setFormData({ 
-                        ...formData, 
+                      setFormData({
+                        ...formData,
                         first_name: newFirstName,
                       });
                     }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
+                    className="w-full h-12 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
                   />
                 </div>
                 <div className="space-y-1">
@@ -611,12 +627,12 @@ export function EmployeeProfileModal({
                     value={formData.last_name || ""}
                     onChange={(e) => {
                       const newLastName = e.target.value;
-                      setFormData({ 
-                        ...formData, 
+                      setFormData({
+                        ...formData,
                         last_name: newLastName,
                       });
                     }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
+                    className="w-full h-12 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
                   />
                 </div>
               </div>
@@ -672,7 +688,7 @@ export function EmployeeProfileModal({
                     onChange={(e) =>
                       setFormData({ ...formData, phone_number: e.target.value })
                     }
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
+                    className="w-full h-12 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
                   />
                 </div>
                 <div className="space-y-1">
@@ -688,7 +704,7 @@ export function EmployeeProfileModal({
                       })
                     }
                     placeholder="E.g. personal@gmail.com"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
+                    className="w-full h-12 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
                   />
                 </div>
               </div>
@@ -733,7 +749,7 @@ export function EmployeeProfileModal({
                           emergency_contact_name: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
+                      className="w-full h-12 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
                     />
                   </div>
                   <div className="space-y-1">
@@ -749,7 +765,7 @@ export function EmployeeProfileModal({
                         })
                       }
                       placeholder="e.g. Spouse, Parent"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
+                      className="w-full h-12 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
                     />
                   </div>
                   <div className="space-y-1 sm:col-span-2">
@@ -775,7 +791,7 @@ export function EmployeeProfileModal({
                           emergency_contact_number: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
+                      className="w-full h-12 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
                     />
                   </div>
                 </div>
@@ -815,7 +831,7 @@ export function EmployeeProfileModal({
                       const primaryDesignation = mappedDesignations.find(d => formData.roles?.includes(d.id));
                       const designationValue = primaryDesignation ? primaryDesignation.id : "";
                       const additionalRoles = formData.roles?.filter(r => r !== designationValue) || [];
-                      
+
                       const newRoles = [...additionalRoles];
                       if (val) newRoles.push(val);
                       setFormData({ ...formData, roles: newRoles });
@@ -849,15 +865,16 @@ export function EmployeeProfileModal({
                       const mappedDesignations = formData.department ? getDesignationsForDepartment(formData.department) : [];
                       const primaryDesignation = mappedDesignations.find(d => formData.roles?.includes(d.id));
                       const designationValue = primaryDesignation ? primaryDesignation.id : "";
-                      
+
                       const newRoles = [...val];
                       if (designationValue) newRoles.push(designationValue);
                       setFormData((prev) => ({ ...prev, roles: newRoles }));
                     }}
                     placeholder="Select Additional Roles"
+                    buttonClassName="w-full px-4 py-3 h-12 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-200"
                   />
                 </div>
-                
+
                 {isSuperAdmin && (
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500">
@@ -908,7 +925,7 @@ export function EmployeeProfileModal({
                         experience: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
+                    className="w-full h-12 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
                   />
                 </div>
               </div>
@@ -918,18 +935,17 @@ export function EmployeeProfileModal({
                   <label className="text-xs font-bold text-slate-500">
                     Reporting Manager
                   </label>
-                  <Select
-                    value={formData.reporting_manager_id || ""}
-                    onValueChange={(val) =>
+                  <Dropdown
+                    value={formData.reporting_manager_id || "none"}
+                    onChange={(val) =>
                       setFormData({ ...formData, reporting_manager_id: val === "none" ? null : val })
                     }
                     buttonClassName="w-full px-4 py-3 h-12 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700"
-                  >
-                    <SelectItem value="none">None</SelectItem>
-                    {employees.map(e => (
-                      <SelectItem key={e.id} value={e.id}>{e.first_name} {e.last_name}</SelectItem>
-                    ))}
-                  </Select>
+                    options={[
+                      { label: "None", value: "none" },
+                      ...employees.map(e => ({ label: `${e.first_name} ${e.last_name}`, value: e.id }))
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -950,7 +966,7 @@ export function EmployeeProfileModal({
                           salary: parseFloat(e.target.value) || 0,
                         })
                       }
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
+                      className="w-full h-12 pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:border-orange-500 outline-none"
                     />
                   </div>
                 </div>
@@ -988,6 +1004,7 @@ export function EmployeeProfileModal({
                 id="profile-file-input"
                 type="file"
                 multiple
+                accept=".pdf,.jpg,.jpeg,.png"
                 className="hidden"
                 onChange={handleFileUpload}
               />
@@ -1001,18 +1018,24 @@ export function EmployeeProfileModal({
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className="p-3 bg-orange-100 rounded-xl text-orange-600 shrink-0">
-                          <FileText className="w-5 h-5" />
+                          {doc.name.toLowerCase().endsWith('.pdf') ? <FileText className="w-5 h-5" /> : <FileImage className="w-5 h-5" />}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <Input
-                            type="text"
-                            value={doc.name || ""}
-                            onChange={(e) =>
-                              handleDocumentNameChange(doc.id, e.target.value)
-                            }
-                            placeholder="Document name..."
-                            className="w-full text-sm font-bold text-slate-800 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-orange-400 outline-none transition-all pb-0.5"
-                          />
+                          <div className="flex items-center w-full group">
+                            <input
+                              type="text"
+                              value={doc.name.lastIndexOf('.') !== -1 ? doc.name.substring(0, doc.name.lastIndexOf('.')) : doc.name}
+                              onChange={(e) => {
+                                const ext = doc.name.lastIndexOf('.') !== -1 ? doc.name.substring(doc.name.lastIndexOf('.')) : '';
+                                handleDocumentNameChange(doc.id, e.target.value + ext);
+                              }}
+                              placeholder={doc.name.lastIndexOf('.') !== -1 ? doc.name.substring(0, doc.name.lastIndexOf('.')) : doc.name}
+                              className="text-sm font-bold text-slate-800 bg-transparent border-b border-transparent group-hover:border-slate-200 focus:border-orange-400 outline-none transition-all pb-0.5 flex-1 min-w-0"
+                            />
+                            <span className="text-sm font-bold text-slate-500 pb-0.5 ml-0.5">
+                              {doc.name.lastIndexOf('.') !== -1 ? doc.name.substring(doc.name.lastIndexOf('.')) : ''}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-2 mt-1">
                             <p className="text-xs text-slate-500 font-medium">
                               {((doc.size || 0) / 1024).toFixed(1)} KB
@@ -1101,10 +1124,10 @@ export function EmployeeProfileModal({
 
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">
+                  <h4 className="text-lg font-black text-slate-900">
                     Salary & Hike Management
                   </h4>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-sm text-slate-500 mt-1">
                     Current compensation and timeline of salary increments
                   </p>
                 </div>
@@ -1170,6 +1193,7 @@ export function EmployeeProfileModal({
                         value={incrementEffectiveDate}
                         onChange={(val) => setIncrementEffectiveDate(val)}
                         triggerClassName="w-full h-12 bg-white border-slate-200 rounded-xl"
+                        side="left"
                       />
                     </div>
                   </div>
@@ -1200,10 +1224,10 @@ export function EmployeeProfileModal({
                       <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mb-3">
                         <IndianRupee className="w-5 h-5" />
                       </div>
-                      <p className="text-[10px] font-black tracking-widest text-orange-600 uppercase mb-1">
+                      <p className="text-xs font-black tracking-widest text-orange-600 uppercase mb-1">
                         Current Salary
                       </p>
-                      <h3 className="text-2xl font-black text-slate-800">
+                      <h3 className="text-3xl font-black text-slate-800">
                         ₹{(formData.salary || 0).toLocaleString("en-IN")}
                       </h3>
                     </div>
@@ -1214,10 +1238,10 @@ export function EmployeeProfileModal({
                       <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
                         <Calendar className="w-5 h-5" />
                       </div>
-                      <p className="text-[10px] font-black tracking-widest text-emerald-600 uppercase mb-1">
+                      <p className="text-xs font-black tracking-widest text-emerald-600 uppercase mb-1">
                         Next Hike
                       </p>
-                      <h3 className="text-lg font-bold text-slate-500">
+                      <h3 className="text-xl font-bold text-slate-500">
                         Not set
                       </h3>
                     </div>
@@ -1228,10 +1252,10 @@ export function EmployeeProfileModal({
                       <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3">
                         <TrendingUp className="w-5 h-5" />
                       </div>
-                      <p className="text-[10px] font-black tracking-widest text-purple-600 uppercase mb-1">
+                      <p className="text-xs font-black tracking-widest text-purple-600 uppercase mb-1">
                         Last Hike
                       </p>
-                      <h3 className="text-lg font-bold text-slate-500">
+                      <h3 className="text-xl font-bold text-slate-500">
                         {salaryHikes.length > 0
                           ? `₹${salaryHikes[0].new_salary?.toLocaleString("en-IN")}`
                           : "No history yet"}
@@ -1240,7 +1264,7 @@ export function EmployeeProfileModal({
                   </div>
 
                   <div className="mt-10">
-                    <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-6">
+                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-6">
                       Salary Increment History
                     </h4>
 
@@ -1327,17 +1351,36 @@ export function EmployeeProfileModal({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-1.5 sm:col-span-2">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500">
                       Work Email (System Access) *
                     </label>
-                    <Input
-                      value={formData.email ?? ""}
-                      disabled
-                      className="w-full h-11 px-4 py-2 bg-slate-100 text-slate-400 border border-slate-200 rounded-2xl text-sm font-medium"
-                    />
+                    <div className="relative">
+                      <Input
+                        value={formData.email ?? ""}
+                        disabled
+                        className="w-full h-11 px-4 py-2 bg-slate-100 text-slate-400 border border-slate-200 rounded-2xl text-sm font-medium pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (formData.email) {
+                            navigator.clipboard.writeText(formData.email);
+                            toast({
+                              title: "Copied!",
+                              description: "Work email copied to clipboard.",
+                            });
+                          }
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-all"
+                        title="Copy work email"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="space-y-1.5 sm:col-span-2">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500">
                       Account Status Override *
                     </label>
@@ -1384,7 +1427,7 @@ export function EmployeeProfileModal({
                         type={
                           resetPasswordState.showPassword ? "text" : "password"
                         }
-                        placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special"
+                        placeholder="Enter New Password"
                         value={resetPasswordState.newPassword}
                         onChange={(e) =>
                           setResetPasswordState((prev) => ({
@@ -1536,6 +1579,7 @@ export function EmployeeProfileModal({
         </div>
       )}
       {PromptComponent}
+      <ConfirmComponent />
     </div>
   );
 

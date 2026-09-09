@@ -37,8 +37,8 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
       name: holiday?.name || "",
       date: holiday?.date || "",
       description: holiday?.description || "",
-      departments: holiday ? (holiday.department ? holiday.department.split(',') : ["all"]) : [],
-      branch_id: holiday?.branch_id || "",
+      departments: holiday ? (holiday.department && holiday.department !== 'ALL' ? holiday.department.split(',') : ["all"]) : [],
+      branches: holiday ? (holiday.branch_id ? [holiday.branch_id] : ["all"]) : [],
     },
   });
 
@@ -48,8 +48,8 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
         name: holiday?.name || "",
         date: holiday?.date || "",
         description: holiday?.description || "",
-        departments: holiday ? (holiday.department ? holiday.department.split(',') : ["all"]) : [],
-        branch_id: holiday?.branch_id || "",
+        departments: holiday ? (holiday.department && holiday.department !== 'ALL' ? holiday.department.split(',') : ["all"]) : [],
+        branches: holiday ? (holiday.branch_id ? [holiday.branch_id] : ["all"]) : [],
       });
     }
   }, [isOpen, holiday, reset]);
@@ -60,12 +60,18 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
       const isAllDepts = data.departments?.includes("all");
       const finalDepartments = isAllDepts ? [] : data.departments;
 
+      const isAllBranches = data.branches?.includes("all");
+      const finalBranches = isAllBranches ? [] : data.branches;
+
+      // If multiple branches are selected (and not all), we create/update multiple records or handle it in the action
+      // But wait, the backend createHolidayAction currently takes a single branch_id
       const payload = {
         name: data.name,
         date: data.date,
         description: data.description || null,
-        department: finalDepartments && finalDepartments.length > 0 ? finalDepartments.join(',') : null,
-        branch_id: data.branch_id || null,
+        department: finalDepartments && finalDepartments.length > 0 ? finalDepartments.join(',') : 'ALL',
+        branch_id: finalBranches && finalBranches.length > 0 ? finalBranches[0] : null, // Fallback, we'll fix this in action
+        branches: finalBranches, // Pass the array to action
         is_active: holiday ? holiday.is_active : true
       };
 
@@ -135,15 +141,16 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
         {isSuperAdmin && (
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1">Branch Scope</label>
-            <FormSelect
-              name="branch_id"
+            <FormMultiSelect
+              name="branches"
               control={control as any}
               options={[
-                { value: "", label: "All Branches (Requires Department)" },
+                { value: "all", label: "All Branches (Requires Department)" },
                 ...branches.map((b) => ({ value: b.id, label: b.name })),
               ]}
-              placeholder="Select Branch"
+              placeholder="Select Branches"
             />
+            {errors.branches && <p className="text-red-500 text-xs mt-1">{errors.branches.message}</p>}
           </div>
         )}
 

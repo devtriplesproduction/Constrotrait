@@ -234,7 +234,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                           <span className="text-xl font-black leading-none mt-0.5">{leave.start_date ? format(new Date(leave.start_date), "dd") : ""}</span>
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-slate-900 group-hover:text-orange-600 transition-colors">{leave.leave_type}</h3>
+                          <h3 className="text-lg font-bold text-slate-900">{leave.leave_type}</h3>
                           <p className="text-sm font-medium text-slate-500">
                             {leave.start_date ? format(new Date(leave.start_date), "MMM dd, yyyy") : ""}
                             {!leave.is_half_day && leave.end_date && ` - ${format(new Date(leave.end_date), "MMM dd, yyyy")}`}
@@ -319,7 +319,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                               <UserCircle2 className="w-7 h-7" />
                             </div>
                             <div>
-                              <h3 className="text-lg font-bold text-slate-900 group-hover:text-orange-600 transition-colors">
+                              <h3 className="text-lg font-bold text-slate-900">
                                 {leave.profiles?.first_name || 'Unknown'} {leave.profiles?.last_name || 'User'}
                               </h3>
                               <p className="text-sm font-bold text-orange-600">{leave.leave_type}</p>

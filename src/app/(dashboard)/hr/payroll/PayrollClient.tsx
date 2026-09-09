@@ -71,7 +71,8 @@ export function PayrollClient({
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(isSA ? "" : (userBranchId || ""));
+  const initialWaiBranchId = isSA ? branches.find(b => b.name.toLowerCase() === "wai")?.id : "";
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(isSA ? (initialWaiBranchId || "") : (userBranchId || ""));
 
   const totalEmployees = data.length;
   const grossPayroll = data.reduce((acc, curr) => acc + (curr.gross_salary || 0), 0);
@@ -327,16 +328,38 @@ export function PayrollClient({
             </div>
           )}
 
-          <div className="flex items-center bg-orange-600 text-white rounded-xl border shadow-sm p-1 border-orange-600 h-[42px] transition-colors hover:bg-orange-700 hover:border-orange-700">
-            <Button variant="ghost" size="sm" onClick={handlePrevMonth} disabled={loading || actionLoading} className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white">
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <div className="px-4 font-medium text-sm w-32 text-center text-white">
-              {months[month - 1]} {year}
+          <div className="flex items-center gap-3">
+            <div className="w-36">
+              <Dropdown
+                options={months.map((m, idx) => ({ label: m, value: (idx + 1).toString() }))}
+                value={month.toString()}
+                onChange={(val) => {
+                  const newM = parseInt(val, 10);
+                  setMonth(newM);
+                  loadData(newM, year, selectedBranchId);
+                }}
+                disabled={loading || actionLoading}
+                placeholder="Month"
+                buttonClassName="h-[42px] rounded-xl bg-white border border-orange-500 hover:border-orange-600 font-medium"
+              />
             </div>
-            <Button variant="ghost" size="sm" onClick={handleNextMonth} disabled={loading || actionLoading} className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white">
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+            <div className="w-32">
+              <Dropdown
+                options={Array.from({ length: 11 }, (_, i) => {
+                  const y = (new Date().getFullYear() - 5 + i).toString();
+                  return { label: y, value: y };
+                })}
+                value={year.toString()}
+                onChange={(val) => {
+                  const newY = parseInt(val, 10);
+                  setYear(newY);
+                  loadData(month, newY, selectedBranchId);
+                }}
+                disabled={loading || actionLoading}
+                placeholder="Year"
+                buttonClassName="h-[42px] rounded-xl bg-white border border-orange-500 hover:border-orange-600 font-medium"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -666,45 +689,45 @@ export function PayrollClient({
             <form onSubmit={handleAddAdjustment} className="px-6 py-6 overflow-y-auto space-y-4">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Employee</label>
-                <Select
+                <Dropdown
                   value={adjEmployeeId}
-                  onValueChange={setAdjEmployeeId}
+                  onChange={setAdjEmployeeId}
                   placeholder="Select Employee"
-                >
-                  {data.map(emp => (
-                    <SelectItem key={emp.employee_id} value={emp.employee_id}>
-                      {emp.employee_name}
-                    </SelectItem>
-                  ))}
-                </Select>
+                  options={data.map(emp => ({ label: emp.employee_name || '', value: emp.employee_id }))}
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Adjustment Type</label>
-                <Select
+                <Dropdown
                   value={adjType}
-                  onValueChange={setAdjType}
-                >
-                  <SelectItem value="Bonus">Bonus</SelectItem>
-                  <SelectItem value="Medical Allowance">Medical Allowance</SelectItem>
-                  <SelectItem value="Travel Expense">Travel Expense</SelectItem>
-                  <SelectItem value="Performance Incentive">Performance Incentive</SelectItem>
-                  <SelectItem value="Food Allowance">Food Allowance</SelectItem>
-                  <SelectItem value="TDS">TDS</SelectItem>
-                  <SelectItem value="Damage Recovery">Damage Recovery</SelectItem>
-                  <SelectItem value="Salary Advance">Salary Advance Deduction</SelectItem>
-                  <SelectItem value="Other Deduction">Other Deduction</SelectItem>
-                </Select>
+                  onChange={setAdjType}
+                  options={[
+                    { label: "Bonus", value: "Bonus" },
+                    { label: "Medical Allowance", value: "Medical Allowance" },
+                    { label: "Travel Expense", value: "Travel Expense" },
+                    { label: "Performance Incentive", value: "Performance Incentive" },
+                    { label: "Food Allowance", value: "Food Allowance" },
+                    { label: "TDS", value: "TDS" },
+                    { label: "Damage Recovery", value: "Damage Recovery" },
+                    { label: "Salary Advance Deduction", value: "Salary Advance" },
+                    { label: "Other Deduction", value: "Other Deduction" }
+                  ]}
+                />
               </div>
 
               {adjType === "Travel Expense" && (
                 <>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">Vehicle Type</label>
-                    <Select value={adjVehicleType} onValueChange={setAdjVehicleType}>
-                      <SelectItem value="Two-wheeler">Two-wheeler</SelectItem>
-                      <SelectItem value="Car">Car</SelectItem>
-                    </Select>
+                    <Dropdown 
+                      value={adjVehicleType} 
+                      onChange={setAdjVehicleType}
+                      options={[
+                        { label: "Two-wheeler", value: "Two-wheeler" },
+                        { label: "Car", value: "Car" }
+                      ]}
+                    />
                   </div>
                   {adjVehicleType === "Two-wheeler" && (
                     <div className="grid grid-cols-2 gap-4">

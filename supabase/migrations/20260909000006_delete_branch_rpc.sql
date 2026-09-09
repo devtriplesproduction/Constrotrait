@@ -8,7 +8,7 @@ SECURITY DEFINER
 SET search_path = public, auth
 AS $$
 DECLARE
-    v_admin_roles JSONB;
+    v_admin_roles public.user_role[];
     v_has_super_admin BOOLEAN;
     v_deleted_users_count INT := 0;
     v_deleted_users UUID[];
@@ -19,14 +19,14 @@ BEGIN
     FROM public.profiles
     WHERE id = p_admin_id;
 
-    IF v_admin_roles IS NULL OR NOT v_admin_roles @> '["SUPER_ADMIN"]' THEN
+    IF v_admin_roles IS NULL OR NOT 'SUPER_ADMIN' = ANY(v_admin_roles) THEN
         RETURN jsonb_build_object('success', false, 'error', 'Unauthorized: Only Super Admins can delete a branch');
     END IF;
 
     -- 2. Prevent deletion if any SUPER_ADMIN belongs to this branch
     SELECT EXISTS (
         SELECT 1 FROM public.profiles
-        WHERE branch_id = p_branch_id AND roles @> '["SUPER_ADMIN"]'
+        WHERE branch_id = p_branch_id AND 'SUPER_ADMIN' = ANY(roles)
     ) INTO v_has_super_admin;
 
     IF v_has_super_admin THEN

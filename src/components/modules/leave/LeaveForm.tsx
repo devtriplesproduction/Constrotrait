@@ -150,7 +150,16 @@ export function LeaveForm({ onSuccess, onCancel }: LeaveFormProps) {
               <input 
                 type="file" 
                 accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => setMedicalCertificate(e.target.files?.[0] || null)} 
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file && file.size > 3 * 1024 * 1024) {
+                    toast({ title: "File too large", description: "Please upload a file smaller than 3MB.", variant: "error" });
+                    e.target.value = "";
+                    setMedicalCertificate(null);
+                  } else {
+                    setMedicalCertificate(file || null);
+                  }
+                }} 
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
               <div className="border-2 border-dashed border-orange-200 bg-white rounded-lg p-4 flex flex-col items-center justify-center gap-2 text-center group-hover:border-orange-400 transition-colors">
@@ -162,7 +171,7 @@ export function LeaveForm({ onSuccess, onCancel }: LeaveFormProps) {
                     <span><span className="font-semibold text-orange-600">Click to upload</span> or drag and drop</span>
                   )}
                 </div>
-                <div className="text-xs text-slate-400">PDF, JPG, PNG up to 5MB</div>
+                <div className="text-xs text-slate-400">PDF, JPG, PNG up to 3MB</div>
               </div>
             </div>
             <p className="text-xs text-orange-600/80 mt-1 flex items-center gap-1.5">

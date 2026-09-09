@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -19,6 +19,7 @@ export interface SelectProps {
   id?: string;
   iconClassName?: string;
   align?: "left" | "right";
+  isClearable?: boolean;
 }
 
 const SelectContext = React.createContext<{
@@ -28,7 +29,7 @@ const SelectContext = React.createContext<{
   setOpen: (open: boolean) => void;
 } | null>(null);
 
-export function Select({ value, onValueChange, placeholder, children, className, buttonClassName, disabled, id, iconClassName }: SelectProps) {
+export function Select({ value, onValueChange, placeholder, children, className, buttonClassName, disabled, id, iconClassName, align = "left", isClearable = false }: SelectProps) {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
   const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0, right: 0 });
@@ -148,7 +149,20 @@ export function Select({ value, onValueChange, placeholder, children, className,
           <span className={cn("truncate", !value && "text-slate-400  font-normal")}>
             {selectedChild ? selectedChild.props.children : placeholder}
           </span>
-          <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform duration-300 flex-shrink-0 ml-2", open && "rotate-180 text-orange-500", iconClassName)} />
+          <div className="flex items-center gap-1 ml-2">
+            {isClearable && value && (
+              <div 
+                className="p-0.5 rounded-md hover:bg-slate-200/50 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onValueChange("");
+                }}
+              >
+                <X className="h-4 w-4 flex-shrink-0" />
+              </div>
+            )}
+            <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform duration-300 flex-shrink-0", open && "rotate-180 text-orange-500", iconClassName)} />
+          </div>
         </Button>
         
         {mounted && createPortal(dropdown, document.body)}

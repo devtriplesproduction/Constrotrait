@@ -5,7 +5,7 @@ import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   X, User, Loader2, Lock, Building2, Copy, ChevronRight, FileText, Trash2,
-  IndianRupee, UserCheck, Camera, Eye, EyeOff
+  IndianRupee, UserCheck, Camera, Eye, EyeOff, FileImage
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -117,6 +117,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
     setValue,
     trigger,
     control,
+    getValues,
     formState: { errors, },
     reset
   } = useForm<OnboardFormData>({
@@ -219,13 +220,26 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
     if (!files || files.length === 0) return;
 
     Array.from(files).forEach((file: File) => {
+      const extMatch = file.name.match(/\\.([^.]+)$/);
+      const fileExt = extMatch ? extMatch[1].toLowerCase() : '';
+      if (!['pdf', 'jpg', 'jpeg', 'png'].includes(fileExt)) {
+        toast({ title: "Invalid File Type", description: "Only PDF, JPG, and PNG files are allowed.", variant: "error" });
+        return;
+      }
+      
+      if (file.size > 3 * 1024 * 1024) {
+        toast({ title: "File too large", description: "Please upload a file smaller than 3MB.", variant: "error" });
+        return;
+      }
+      
       const fileId = `file-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
       const reader = new FileReader();
       reader.onloadend = () => {
+        const baseName = file.name.substring(0, file.name.lastIndexOf('.'));
         const newFileObj = {
           id: fileId,
           name: file.name,
-          label: "",
+          label: baseName,
           size: file.size,
           uploaded_at: new Date().toISOString(),
           url: reader.result as string,
@@ -274,14 +288,18 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
         roles: combinedRoles,
         emergency_contact: emergencyContactParts.length > 0 ? emergencyContactParts.join(" - ") : "",
         profile_photo: selectedAvatar,
-        documents: uploadedFiles.map(f => ({
-          id: f.id,
-          name: f.label || f.name,
-          size: f.size,
-          url: f.url,
-          uploaded_at: f.uploaded_at,
-          type: "other"
-        })),
+        documents: uploadedFiles.map(f => {
+          const ext = f.name.substring(f.name.lastIndexOf('.'));
+          const finalName = f.label ? `${f.label}${ext}` : f.name;
+          return {
+            id: f.id,
+            name: finalName,
+            size: f.size,
+            url: f.url,
+            uploaded_at: f.uploaded_at,
+            type: "other"
+          };
+        }),
         reporting_manager_id: data.reporting_manager || null,
         department_head_id: data.department_head ? data.reporting_manager || null : null,
         approval_authority: combinedRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE"),
@@ -496,9 +514,9 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
               {/* STEP 1: PERSONAL INFO */}
               {step === 1 && (
                 <div className="space-y-5 animate-in fade-in duration-300">
-                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-zinc-50/20 p-5 rounded-2xl border border-zinc-100 backdrop-blur-md">
+                  <div className="flex flex-col sm:flex-row gap-6">
                     {/* Dotted Photo Upload/Placeholder Block */}
-                    <div className="flex flex-col items-center shrink-0">
+                    <div className="flex flex-col items-center shrink-0 mt-2 sm:mt-0">
                       <Input
                         type="file"
                         id="profile-photo-upload"
@@ -508,18 +526,18 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       />
                       <div
                         onClick={() => document.getElementById("profile-photo-upload")?.click()}
-                        className="relative w-24 h-24 rounded-2xl border-2 border-dashed border-zinc-300 flex flex-col items-center justify-center bg-zinc-500/[0.03] hover:border-orange-600 transition-all group overflow-hidden cursor-pointer shadow-sm"
+                        className="relative w-32 h-32 rounded-2xl border-2 border-dashed border-zinc-300 flex flex-col items-center justify-center bg-zinc-50/50 hover:border-orange-600 transition-all group overflow-hidden cursor-pointer shadow-sm"
                       >
                         {selectedAvatar ? (
-                          <Image width={96} height={96}
+                          <Image width={128} height={128}
                             src={selectedAvatar}
                             alt="Avatar Preview"
                             className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform"
                           />
                         ) : (
                           <div className="flex flex-col items-center justify-center text-zinc-400 group-hover:text-orange-600 transition-colors p-2 text-center">
-                            <Camera className="w-6 h-6 mb-1 text-zinc-400 " />
-                            <span className="text-xs font-bold uppercase tracking-wider">Upload Photo</span>
+                            <Camera className="w-8 h-8 mb-1 text-zinc-400 " />
+                            <span className="text-[10px] font-bold uppercase tracking-wider mt-1">Upload Photo</span>
                           </div>
                         )}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity text-white text-xs font-bold">
@@ -527,72 +545,63 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                           {selectedAvatar ? "CHANGE" : "UPLOAD"}
                         </div>
                       </div>
-                      <span className="text-xs font-bold tracking-widest text-zinc-400 mt-2">PHOTO</span>
+                      <span className="text-[10px] font-bold tracking-widest text-zinc-400 mt-2">JPG, PNG. MAX 2MB</span>
                     </div>
 
-                    {/* Profile Photo Upload Header */}
-                    <div className="flex-1 space-y-1 w-full sm:pt-1 text-left">
-                      <div className="flex items-center gap-2 text-orange-600 ">
-                        <User className="w-4 h-4" />
-                        <h4 className="text-sm font-bold tracking-tight text-zinc-800 ">Profile Photo Upload</h4>
-                      </div>
-                      <p className="text-sm text-zinc-400 leading-relaxed font-semibold">
-                        Upload a professional portrait (JPG, PNG. Max 2MB).
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 ">First Name *</label>
-                      <Input
-                        {...register("first_name")}
-                        placeholder="John"
-                        className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
-                      />
-                      {errors.first_name && <p className="text-xs text-rose-500 font-bold mt-1">{errors.first_name.message}</p>}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 ">Last Name *</label>
-                      <Input
-                        {...register("last_name")}
-                        placeholder="Doe"
-                        className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
-                      />
-                      {errors.last_name && <p className="text-xs text-rose-500 font-bold mt-1">{errors.last_name.message}</p>}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 ">Date of Birth</label>
-                      <Controller
-                        control={control as any}
-                        name="dob"
-                        render={({ field }) => (
-                          <PremiumDatePicker
-                            value={field.value}
-                            onChange={(date) => field.onChange(date)}
-                            side="right"
+                    <div className="flex-1 space-y-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-zinc-500 ">First Name *</label>
+                          <Input
+                            {...register("first_name")}
+                            placeholder="John"
+                            className="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                           />
-                        )}
-                      />
-                    </div>
+                          {errors.first_name && <p className="text-xs text-rose-500 font-bold mt-1">{errors.first_name.message}</p>}
+                        </div>
 
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 ">Gender</label>
-                      <div className="relative">
-                        <FormSelect
-                          name="gender"
-                          control={control as any}
-                          options={[
-                            { value: "male", label: "Male" },
-                            { value: "female", label: "Female" },
-                            { value: "other", label: "Other" }
-                          ]}
-                          buttonClassName="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
-                        />
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-zinc-500 ">Last Name *</label>
+                          <Input
+                            {...register("last_name")}
+                            placeholder="Doe"
+                            className="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                          />
+                          {errors.last_name && <p className="text-xs text-rose-500 font-bold mt-1">{errors.last_name.message}</p>}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-zinc-500 ">Date of Birth</label>
+                          <Controller
+                            control={control as any}
+                            name="dob"
+                            render={({ field }) => (
+                              <PremiumDatePicker
+                                value={field.value}
+                                onChange={(date) => field.onChange(date)}
+                                side="right"
+                              />
+                            )}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-zinc-500 ">Gender</label>
+                          <div className="relative">
+                            <FormSelect
+                              name="gender"
+                              control={control as any}
+                              options={[
+                                { value: "male", label: "Male" },
+                                { value: "female", label: "Female" },
+                                { value: "other", label: "Other" }
+                              ]}
+                              buttonClassName="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -614,7 +623,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                           }
                         }}
                         placeholder="10-digit number"
-                        className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                        className="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                       />
                       {errors.phone_number && <p className="text-xs text-rose-500 font-bold mt-1">{errors.phone_number.message}</p>}
                     </div>
@@ -625,7 +634,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         {...register("personal_email")}
                         type="email"
                         placeholder="personal@email.com"
-                        className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                        className="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                       />
                       {errors.personal_email && <p className="text-xs text-rose-500 font-bold mt-1">{errors.personal_email.message}</p>}
                     </div>
@@ -647,12 +656,12 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       <Input
                         {...register("emergency_name")}
                         placeholder="Name"
-                        className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                        className="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                       />
                       <Input
                         {...register("emergency_relationship")}
                         placeholder="Relationship"
-                        className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                        className="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                       />
                       <div>
                         <Input
@@ -669,7 +678,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                             }
                           }}
                           placeholder="Phone"
-                          className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                          className="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                         />
                         {errors.emergency_phone && <p className="text-xs text-rose-500 font-bold mt-1">{errors.emergency_phone.message}</p>}
                       </div>
@@ -700,7 +709,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         control={control as any}
                         options={DEPARTMENTS.map(d => ({ value: d.id, label: d.name }))}
                         placeholder="Select Department"
-                        buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                        buttonClassName="w-full h-12 px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                         onChange={() => {
                           setValue("designation", "");
                         }}
@@ -714,7 +723,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         control={control as any}
                         options={getDesignationsForDepartment(watchedDepartment || "").map(r => ({ value: r.id, label: r.name }))}
                         placeholder="— Select Role —"
-                        buttonClassName={cn("w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all", !watchedDepartment && "opacity-50 cursor-not-allowed pointer-events-none")}
+                        buttonClassName={cn("w-full h-12 px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all", !watchedDepartment && "opacity-50 cursor-not-allowed pointer-events-none")}
                         onChange={(val) => {
                           const mappedRole = getSystemRoleForDesignation(watchedDepartment, val);
                           if (mappedRole !== "SUPER_ADMIN") {
@@ -732,7 +741,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         control={control as any}
                         options={ONBOARDING_ROLES.map(r => ({ value: r.id, label: r.name }))}
                         placeholder="— Select Additional Roles —"
-                        buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                        buttonClassName="w-full h-12 px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                       />
                     </div>
 
@@ -741,7 +750,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         <label className="text-xs font-bold text-zinc-500 ">
                           Branch Assignment {isBranchManager ? "*" : ""}
                         </label>
-                        <FormSelect name="branch_id" control={control as any} options={activeBranches.map(b => ({ value: b.id, label: `${b.name} (${b.code})` }))} placeholder="— Select Branch —" buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all" />
+                        <FormSelect name="branch_id" control={control as any} options={activeBranches.map(b => ({ value: b.id, label: `${b.name} (${b.code})` }))} placeholder="— Select Branch —" buttonClassName="w-full h-12 px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all" />
                         {errors?.branch_id && <p className="text-xs text-rose-500 font-bold mt-1">{errors.branch_id.message}</p>}
                       </div>
                     )}
@@ -753,7 +762,8 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         control={control as any} 
                         options={employees.map(e => ({ value: e.id, label: `${e.first_name} ${e.last_name}` }))} 
                         placeholder="— Select Manager —" 
-                        buttonClassName="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all" 
+                        buttonClassName="w-full h-12 px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all" 
+                        isClearable
                       />
                     </div>
 
@@ -771,7 +781,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                             { value: "intern", label: "Intern" }
                           ]}
                           placeholder="— Select Type —"
-                          buttonClassName="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                          buttonClassName="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                         />
                       </div>
                       {errors.employment_type && <p className="text-xs text-rose-500 font-bold mt-1">{errors.employment_type.message}</p>}
@@ -786,7 +796,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                           min="0"
                           {...register("salary")}
                           placeholder="0"
-                          className="w-full pl-10 pr-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                          className="w-full h-12 pl-10 pr-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                         />
                       </div>
                       {errors.salary && <p className="text-xs text-rose-500 font-bold mt-1">{errors.salary.message}</p>}
@@ -800,7 +810,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                         min="0"
                         {...register("experience")}
                         placeholder="0"
-                        className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                        className="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                       />
                       {errors.experience && <p className="text-xs text-rose-500 font-bold mt-1">{errors.experience.message}</p>}
                     </div>
@@ -854,6 +864,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       id="wizard-file-input"
                       type="file"
                       multiple
+                      accept=".pdf,.jpg,.jpeg,.png"
                       className="hidden"
                       onChange={handleFileUpload}
                     />
@@ -861,7 +872,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       <span className="text-xl font-bold">+</span>
                     </div>
                     <p className="text-sm font-bold text-zinc-800 ">Click or drag to upload</p>
-                    <p className="text-sm text-zinc-400 font-semibold">PDF, JPG, PNG up to 4MB</p>
+                    <p className="text-sm text-zinc-400 font-semibold">PDF, JPG, PNG up to 3MB</p>
                   </div>
 
                   {/* Empty staged list */}
@@ -883,16 +894,21 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                           >
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div className="p-2.5 bg-orange-500/10 rounded-xl text-orange-600 shrink-0">
-                                <FileText className="w-5 h-5" />
+                                {file.name.toLowerCase().endsWith('.pdf') ? <FileText className="w-5 h-5" /> : <FileImage className="w-5 h-5" />}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <Input
-                                  type="text"
-                                  value={file.label || ""}
-                                  onChange={(e) => handleDocumentNameChange(file.id, e.target.value)}
-                                  placeholder={file.name}
-                                  className="w-full text-xs font-bold text-zinc-900 bg-transparent border-b border-transparent hover:border-zinc-200 focus:border-orange-400 outline-none transition-all pb-0.5"
-                                />
+                                <div className="flex items-center w-full group">
+                                  <input
+                                    type="text"
+                                    value={file.label}
+                                    onChange={(e) => handleDocumentNameChange(file.id, e.target.value)}
+                                    placeholder={file.name.substring(0, file.name.lastIndexOf('.'))}
+                                    className="text-xs font-bold text-zinc-900 bg-transparent border-b border-transparent group-hover:border-zinc-200 focus:border-orange-400 outline-none transition-all pb-0.5 flex-1 min-w-0"
+                                  />
+                                  <span className="text-xs font-bold text-zinc-500 pb-0.5 ml-0.5">
+                                    {file.name.substring(file.name.lastIndexOf('.'))}
+                                  </span>
+                                </div>
                                 <p className="text-xs text-zinc-400 font-bold uppercase mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
                               </div>
                             </div>
@@ -945,24 +961,64 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-zinc-500 ">Unique Employee ID (Auto-Generated) *</label>
-                      <Input
-                        {...register("employee_id")}
-                        readOnly
-                        placeholder="MH-EMP-XXXXX"
-                        className="w-full px-4 py-3 bg-zinc-100/80 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-500 cursor-not-allowed opacity-75 outline-none transition-all "
-                      />
+                      <div className="relative">
+                        <Input
+                          {...register("employee_id")}
+                          readOnly
+                          placeholder="MH-EMP-XXXXX"
+                          className="w-full pl-4 pr-11 py-3 bg-zinc-100/80 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-500 cursor-not-allowed opacity-75 outline-none transition-all "
+                        />
+                        <Button
+                          variant="ghost"
+                          type="button"
+                          onClick={() => {
+                            const empId = getValues("employee_id");
+                            if (empId) {
+                              navigator.clipboard.writeText(empId);
+                              toast({
+                                title: "Employee ID copied",
+                                description: "Employee ID copied to clipboard",
+                                variant: "default"
+                              });
+                            }
+                          }}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
                       {errors.employee_id && <p className="text-xs text-rose-500 font-bold mt-1">{errors.employee_id.message}</p>}
                     </div>
 
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-zinc-500 ">Work Email Address * (Auto-Generated)</label>
-                      <Input
-                        {...register("email")}
-                        type="email"
-                        readOnly
-                        placeholder="employee@agency.com"
-                        className="w-full px-4 py-3 bg-zinc-100/80 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-500 cursor-not-allowed opacity-75 outline-none transition-all"
-                      />
+                      <div className="relative">
+                        <Input
+                          {...register("email")}
+                          type="email"
+                          readOnly
+                          placeholder="employee@agency.com"
+                          className="w-full pl-4 pr-11 py-3 bg-zinc-100/80 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-500 cursor-not-allowed opacity-75 outline-none transition-all"
+                        />
+                        <Button
+                          variant="ghost"
+                          type="button"
+                          onClick={() => {
+                            const email = getValues("email");
+                            if (email) {
+                              navigator.clipboard.writeText(email);
+                              toast({
+                                title: "Email copied",
+                                description: "Work email address copied to clipboard",
+                                variant: "default"
+                              });
+                            }
+                          }}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
                       {showStep4Errors && errors.email && <p className="text-xs text-rose-500 font-bold mt-1">{errors.email.message}</p>}
                     </div>
                   </div>

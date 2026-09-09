@@ -21,6 +21,7 @@ export interface FormSelectProps<T extends FieldValues> {
   align?: "left" | "right";
   id?: string;
   onChange?: (value: string) => void;
+  isClearable?: boolean;
 }
 
 export function FormSelect<T extends FieldValues>({
@@ -34,6 +35,7 @@ export function FormSelect<T extends FieldValues>({
   id,
   align,
   onChange,
+  isClearable,
 }: FormSelectProps<T>) {
   return (
     <Controller
@@ -53,6 +55,7 @@ export function FormSelect<T extends FieldValues>({
           disabled={disabled || field.disabled}
           options={options}
           align={align}
+          isClearable={isClearable}
         />
       )}
     />

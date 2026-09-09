@@ -99,11 +99,35 @@ export async function createHoliday(input: CreateHolidayInput) {
       input.branch_id = user.branch_id;
     }
 
-    if (!input.department && !input.branch_id) {
+    if (!superAdmin && !input.department && !input.branch_id) {
       return { success: false, error: "A holiday must be specific to a branch or department." };
     }
 
     const supabase = await createClient();
+
+    // Check for existing holidays on the same date and name
+    const { data: existingHolidays } = await supabase
+      .from("holidays")
+      .select("id, branch_id, department, branches(name)")
+      .eq("date", input.date)
+      .eq("name", input.name)
+      .eq("is_active", true);
+
+    if (existingHolidays && existingHolidays.length > 0) {
+      for (const existing of existingHolidays) {
+        if (!input.branch_id && existing.branch_id) {
+          const branchName = existing.branches?.name || "a specific branch";
+          return { success: false, error: `This holiday is already given for ${branchName}.` };
+        }
+        if (input.branch_id && !existing.branch_id) {
+          return { success: false, error: `An all-branches holiday already exists for this date and event.` };
+        }
+        if (input.branch_id === existing.branch_id && input.department === existing.department) {
+          return { success: false, error: `A holiday with this date and scope already exists.` };
+        }
+      }
+    }
+
     const { data, error } = await supabase
       .from("holidays")
       .insert({
@@ -143,8 +167,10 @@ export async function updateHoliday(id: string, input: UpdateHolidayInput) {
       return { success: false, error: "Insufficient permissions to update holidays." };
     }
 
+    const superAdmin = isSuperAdmin(user.roles);
+
     // Validate scope if attempting to update it
-    if (input.department === null && input.branch_id === null) {
+    if (!superAdmin && input.department === null && input.branch_id === null) {
       return { success: false, error: "A holiday must be specific to a branch or department." };
     }
 
@@ -159,6 +185,36 @@ export async function updateHoliday(id: string, input: UpdateHolidayInput) {
 
     if (fetchError || !oldHoliday) {
       return { success: false, error: "Holiday not found" };
+    }
+
+    // Prepare updated values for collision check
+    const newDate = input.date !== undefined ? input.date : oldHoliday.date;
+    const newName = input.name !== undefined ? input.name : oldHoliday.name;
+    const newBranchId = input.branch_id !== undefined ? input.branch_id : oldHoliday.branch_id;
+    const newDepartment = input.department !== undefined ? input.department : oldHoliday.department;
+
+    // Check for existing holidays on the same date and name (excluding this holiday)
+    const { data: existingHolidays } = await supabase
+      .from("holidays")
+      .select("id, branch_id, department, branches(name)")
+      .eq("date", newDate)
+      .eq("name", newName)
+      .neq("id", id)
+      .eq("is_active", true);
+
+    if (existingHolidays && existingHolidays.length > 0) {
+      for (const existing of existingHolidays) {
+        if (!newBranchId && existing.branch_id) {
+          const branchName = existing.branches?.name || "a specific branch";
+          return { success: false, error: `This holiday is already given for ${branchName}.` };
+        }
+        if (newBranchId && !existing.branch_id) {
+          return { success: false, error: `An all-branches holiday already exists for this date and event.` };
+        }
+        if (newBranchId === existing.branch_id && newDepartment === existing.department) {
+          return { success: false, error: `A holiday with this date and scope already exists.` };
+        }
+      }
     }
 
     const { data, error } = await supabase
@@ -325,9 +381,9 @@ export async function isWorkingDayForEmployee(employeeId: string, targetDateStr:
   for (const holiday of holidays) {
     let applies = false;
     const matchesBranch = holiday.branch_id === profile.branch_id;
-    const matchesDepartment = holiday.department && profile.department 
+    const matchesDepartment = holiday.department === 'ALL' || (holiday.department && profile.department 
       ? holiday.department.split(',').map(d => d.trim()).includes(profile.department) 
-      : false;
+      : false);
 
     if (holiday.branch_id && holiday.department) {
       if (matchesBranch && matchesDepartment) applies = true;

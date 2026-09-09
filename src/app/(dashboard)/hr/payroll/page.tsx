@@ -28,7 +28,8 @@ export default async function PayrollPage() {
   const initialMonth = currentDate.getMonth() + 1;
   const initialYear = currentDate.getFullYear();
   
-  const branchId = isSA ? undefined : user?.branch_id;
+  const waiBranchId = isSA ? branches.find(b => b.name.toLowerCase() === "wai")?.id : undefined;
+  const branchId = isSA ? waiBranchId : user?.branch_id;
   
   let initialData: PayrollSnapshot[] = [];
   let initialIsLocked = false;
