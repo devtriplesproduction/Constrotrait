@@ -91,6 +91,10 @@ BEGIN
                 
                 SELECT employee_id INTO v_test_emp_id FROM public.employee_financial_ledger WHERE id = v_test_ledger_id;
                 IF v_test_emp_id IS NOT NULL THEN
+                    IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements(p_snapshots) AS s WHERE (s->>'employee_id')::UUID = v_test_emp_id) THEN
+                        RAISE EXCEPTION 'Adjustment for employee % who is not in the current payroll snapshots', v_test_emp_id;
+                    END IF;
+                    
                     SELECT branch_id INTO v_emp_branch FROM public.profiles WHERE id = v_test_emp_id;
                     IF p_branch_id IS NOT NULL AND v_emp_branch != p_branch_id THEN
                         RAISE EXCEPTION 'Cross-branch adjustment not allowed for ledger %', v_test_ledger_id;
@@ -161,6 +165,16 @@ BEGIN
                 v_ledger_rem NUMERIC;
                 v_ledger_type TEXT;
                 v_ledger_cat TEXT;
+
+                v_emp_name TEXT;
+                v_emp_external_id TEXT;
+                v_emp_dept TEXT;
+                v_emp_desig TEXT;
+                db_standard_holidays NUMERIC := 0;
+                db_effective_holidays NUMERIC := 0;
+                db_accounted_days NUMERIC := 0;
+                db_total_earned_days NUMERIC := 0;
+                db_proration_factor NUMERIC := 1;
             BEGIN
                 db_emp_id := (v_snapshot->>'employee_id')::UUID;
                 
@@ -182,15 +196,63 @@ BEGIN
                 -- 1.5 Calculate attendance independently from DB
                 SELECT COUNT(*) INTO db_days_present FROM public.attendance WHERE employee_id = db_emp_id AND status = 'Present' AND EXTRACT(MONTH FROM date) = p_month AND EXTRACT(YEAR FROM date) = p_year;
                 SELECT COUNT(*) INTO db_days_field FROM public.attendance WHERE employee_id = db_emp_id AND status = 'Field Assignment' AND EXTRACT(MONTH FROM date) = p_month AND EXTRACT(YEAR FROM date) = p_year;
-                
-                -- Leaves calculation needs more complex logic, but we independently fetch client values to avoid trusting directly if we had them.
-                -- However we must validate net_payable against base_salary securely.
-                db_days_paid_leave := (v_snapshot->>'days_paid_leave')::NUMERIC;
-                db_days_unpaid_leave := (v_snapshot->>'days_unpaid_leave')::NUMERIC;
-                db_days_absent := (v_snapshot->>'days_absent')::NUMERIC;
 
-                -- 2. Validate Net Payable
-                db_net_payable := COALESCE((v_snapshot->>'net_payable')::NUMERIC, 0);
+                -- 1.6 Derive metadata securely from profiles
+                SELECT first_name || ' ' || last_name, employee_id, department, designation
+                INTO v_emp_name, v_emp_external_id, v_emp_dept, v_emp_desig
+                FROM public.profiles
+                WHERE id = db_emp_id;
+
+                -- 1.7 Calculate Holidays
+                SELECT COUNT(*) INTO db_standard_holidays
+                FROM public.holidays
+                WHERE is_active = true 
+                  AND date >= make_date(p_year, p_month, 1) 
+                  AND date <= v_end_date
+                  AND (branch_id IS NULL OR branch_id = p_branch_id)
+                  AND (department IS NULL OR v_emp_dept IS NULL OR department ILIKE '%' || v_emp_dept || '%');
+
+                -- 1.8 Calculate Leaves
+                SELECT 
+                    COALESCE(SUM(CASE WHEN lr.is_paid THEN (CASE WHEN lr.is_half_day THEN 0.5 ELSE 1.0 END) ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN NOT lr.is_paid THEN (CASE WHEN lr.is_half_day THEN 0.5 ELSE 1.0 END) ELSE 0 END), 0)
+                INTO db_days_paid_leave, db_days_unpaid_leave
+                FROM public.leave_requests lr,
+                     generate_series(
+                         GREATEST(lr.start_date, make_date(p_year, p_month, 1)),
+                         LEAST(lr.end_date, v_end_date),
+                         '1 day'::interval
+                     ) d
+                WHERE lr.employee_id = db_emp_id
+                  AND lr.status = 'Approved'
+                  AND extract(dow from d) NOT IN (0, 6)
+                  AND NOT EXISTS (
+                      SELECT 1 FROM public.holidays h 
+                      WHERE h.date = d::date 
+                        AND h.is_active = true
+                        AND (h.branch_id IS NULL OR h.branch_id = p_branch_id)
+                        AND (h.department IS NULL OR v_emp_dept IS NULL OR h.department ILIKE '%' || v_emp_dept || '%')
+                  );
+
+                -- 1.9 Derive net payable and absences strictly on the server
+                IF (db_days_present + db_days_field + db_days_paid_leave) > 0 THEN
+                    db_effective_holidays := db_standard_holidays;
+                ELSE
+                    db_effective_holidays := 0;
+                END IF;
+
+                db_accounted_days := db_days_present + db_days_field + db_days_paid_leave + db_days_unpaid_leave + db_effective_holidays;
+                db_days_absent := GREATEST(0, 26 - db_accounted_days);
+
+                db_total_earned_days := LEAST(26, db_days_present + db_days_field + db_days_paid_leave + db_effective_holidays);
+                db_proration_factor := db_total_earned_days / 26.0;
+                db_net_payable := GREATEST(0, ROUND(db_base_salary * GREATEST(0, db_proration_factor)));
+
+                -- 2. Input Validation
+                IF db_net_payable < 0 THEN
+                    RAISE EXCEPTION 'Security error: net_payable cannot be negative';
+                END IF;
+
                 IF db_net_payable > db_base_salary THEN
                     RAISE EXCEPTION 'Security error: net_payable (%) exceeds base_salary (%) for employee %', db_net_payable, db_base_salary, db_emp_id;
                 END IF;
@@ -293,10 +355,10 @@ BEGIN
                 ) VALUES (
                     v_cycle_id,
                     db_emp_id,
-                    v_snapshot->>'employee_name',
-                    v_snapshot->>'employee_id_external',
-                    v_snapshot->>'department',
-                    v_snapshot->>'designation',
+                    v_emp_name,
+                    v_emp_external_id,
+                    v_emp_dept,
+                    v_emp_desig,
                     db_base_salary, -- Server derived
                     db_days_present, -- Server derived
                     db_days_field, -- Server derived

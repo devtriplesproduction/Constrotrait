@@ -625,18 +625,18 @@ export function PayrollClient({
       {/* Custom Lock Modal */}
       {lockModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="bg-white/90 backdrop-blur-2xl border border-white/80 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-slate-100/50 flex justify-between items-center bg-white/50">
               <h2 className="text-xl font-bold text-slate-900">Lock Payroll</h2>
-              <Button onClick={() => setLockModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+              <Button onClick={() => setLockModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1.5 shadow-sm border border-slate-200">
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            <div className="px-6 py-6 text-slate-600 text-sm leading-relaxed">
+            <div className="px-6 py-6 text-slate-600 text-sm leading-relaxed bg-white/40">
               Are you sure you want to lock the payroll for <span className="font-bold text-slate-900">{months[month - 1]} {year}</span>?
               This action will finalize calculations and prevent further draft changes.
             </div>
-            <div className="px-6 py-5 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
+            <div className="px-6 py-5 bg-white/50 border-t border-slate-100/50 flex justify-end gap-3">
               <Button variant="outline" onClick={() => setLockModalOpen(false)} className="rounded-xl font-bold border-slate-200 hover:bg-slate-100">
                 Cancel
               </Button>
@@ -652,8 +652,8 @@ export function PayrollClient({
       {/* Adjustment Modal */}
       {isAdjustmentModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
-            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="bg-white/90 backdrop-blur-2xl border border-white/80 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+            <div className="px-6 py-5 border-b border-slate-100/50 flex justify-between items-center bg-white/50">
               <h2 className="text-xl font-bold text-slate-900">Add Payroll Adjustment</h2>
               <Button onClick={() => setIsAdjustmentModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1.5 shadow-sm border border-slate-200">
                 <X className="w-5 h-5" />
@@ -809,8 +809,8 @@ export function PayrollClient({
       {/* Custom Employee Details Modal */}
       {employeeDetailsOpen && selectedEmployee && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="bg-white/90 backdrop-blur-2xl border border-white/80 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            <div className="px-6 py-5 border-b border-slate-100/50 flex justify-between items-center bg-white/50">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Payroll Details</h2>
                 <p className="text-sm font-medium text-slate-500 mt-0.5">{selectedEmployee.employee_name}</p>
@@ -867,7 +867,7 @@ export function PayrollClient({
                     )}
                   </div>
 
-                  <div className="mt-3 flex justify-between items-center px-4 py-3 bg-slate-100 rounded-2xl">
+                  <div className="mt-3 flex justify-between items-center px-4 py-3 bg-white/60 border border-slate-100 rounded-2xl">
                     <span className="font-bold text-slate-600 text-sm">Gross Salary</span>
                     <span className="font-black text-slate-900">₹{(selectedEmployee.gross_salary || 0).toLocaleString()}</span>
                   </div>
@@ -889,19 +889,19 @@ export function PayrollClient({
                   </div>
                 </div>
 
-                <div className="p-5 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl flex justify-between items-center shadow-lg shadow-slate-900/20">
+                <div className="p-5 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl flex justify-between items-center shadow-lg shadow-orange-500/20">
                   <div>
-                    <span className="font-bold text-slate-400 text-sm uppercase tracking-wider block mb-1">Net Salary</span>
+                    <span className="font-bold text-orange-100 text-sm uppercase tracking-wider block mb-1">Net Salary</span>
                     <span className="text-3xl font-black text-white">₹{(selectedEmployee.net_salary || 0).toLocaleString()}</span>
                   </div>
-                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
-                    <DollarSign className="w-6 h-6 text-emerald-400" />
+                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center border border-white/30 backdrop-blur-sm">
+                    <DollarSign className="w-6 h-6 text-white" />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap gap-3 justify-between items-center">
+            <div className="px-6 py-4 border-t border-slate-100/50 bg-white/50 flex flex-wrap gap-3 justify-between items-center">
               <div className="flex gap-2">
                 {isLocked && (
                   <>
@@ -909,7 +909,7 @@ export function PayrollClient({
                       onClick={() => handleGenerateSlip(selectedEmployee.id)}
                       disabled={actionLoading}
                       variant="outline"
-                      className="rounded-xl font-bold border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                      className="rounded-xl font-bold border-orange-200 text-orange-700 hover:bg-orange-50"
                       size="sm"
                     >
                       {actionLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
