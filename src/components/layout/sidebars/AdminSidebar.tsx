@@ -25,17 +25,15 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
       href: "/eod",
       icon: ClipboardList,
     },
-    {
-      title: "Leave",
-      href: "/leave",
-      icon: CalendarDays,
-    },
-    {
-      title: "Holidays",
-      href: "/holidays",
-      icon: Calendar,
-    },
   ];
+
+  if (role?.includes('SUPER_ADMIN')) {
+    adminLinks.push({
+      title: "Branch Management",
+      href: "/branches",
+      icon: Building2,
+    });
+  }
 
   if (isEmployeeManagementAllowed) {
     adminLinks.push({
@@ -51,19 +49,24 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
     });
   }
 
+  adminLinks.push(
+    {
+      title: "Leave",
+      href: "/leave",
+      icon: CalendarDays,
+    },
+    {
+      title: "Holidays",
+      href: "/holidays",
+      icon: Calendar,
+    }
+  );
+
   if (isPayrollAllowed) {
     adminLinks.push({
       title: "Payroll",
       href: "/hr/payroll",
       icon: Banknote,
-    });
-  }
-
-  if (role?.includes('SUPER_ADMIN')) {
-    adminLinks.push({
-      title: "Branch Management",
-      href: "/branches",
-      icon: Building2,
     });
   }
 
