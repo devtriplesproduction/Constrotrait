@@ -74,6 +74,24 @@ BEGIN
         RAISE EXCEPTION 'Cannot modify a payroll cycle that has already been paid.';
     END IF;
 
+    -- Validate all snapshot employees against the requested branch
+    IF p_snapshots IS NOT NULL THEN
+        FOR v_snapshot IN SELECT * FROM jsonb_array_elements(p_snapshots)
+        LOOP
+            DECLARE
+                v_test_emp_id UUID;
+                v_emp_branch UUID;
+            BEGIN
+                v_test_emp_id := (v_snapshot->>'employee_id')::UUID;
+                SELECT branch_id INTO v_emp_branch FROM public.profiles WHERE id = v_test_emp_id;
+                
+                IF v_emp_branch IS DISTINCT FROM p_branch_id THEN
+                    RAISE EXCEPTION 'Security error: Snapshot employee % does not belong to the requested branch', v_test_emp_id;
+                END IF;
+            END;
+        END LOOP;
+    END IF;
+
     -- Validate adjustments for duplicates and cross-branch issues
     IF p_adjustments IS NOT NULL THEN
         FOR v_adj IN SELECT * FROM jsonb_array_elements(p_adjustments)

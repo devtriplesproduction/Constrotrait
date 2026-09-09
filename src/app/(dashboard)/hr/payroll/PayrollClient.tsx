@@ -28,7 +28,10 @@ import {
   Clock,
   FileSpreadsheet,
   X,
-  Plus
+  Plus,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/modules/PageHeader";
@@ -808,100 +811,147 @@ export function PayrollClient({
 
       {/* Custom Employee Details Modal */}
       {employeeDetailsOpen && selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white/90 backdrop-blur-2xl border border-white/80 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-            <div className="px-6 py-5 border-b border-slate-100/50 flex justify-between items-center bg-white/50">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Payroll Details</h2>
-                <p className="text-sm font-medium text-slate-500 mt-0.5">{selectedEmployee.employee_name}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col max-h-[90vh] border border-white/40 ring-1 ring-slate-900/5">
+            {/* Header */}
+            <div className="relative px-8 pt-8 pb-6 bg-gradient-to-br from-slate-50 to-white overflow-hidden">
+              <div className="absolute top-0 right-0 p-32 bg-orange-50 rounded-full blur-3xl opacity-50 -mr-16 -mt-16 pointer-events-none"></div>
+              <div className="absolute top-0 left-0 p-24 bg-blue-50 rounded-full blur-3xl opacity-50 -ml-12 -mt-12 pointer-events-none"></div>
+              
+              <div className="relative z-10 flex justify-between items-start">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl flex items-center justify-center border border-orange-100 shadow-inner">
+                    <span className="text-xl font-black text-orange-600">{selectedEmployee.employee_name.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">{selectedEmployee.employee_name}</h2>
+                    <p className="text-sm font-medium text-slate-500 mt-0.5 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      Payroll Summary
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setEmployeeDetailsOpen(false)} 
+                  className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors rounded-full p-2"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <Button onClick={() => setEmployeeDetailsOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1.5 shadow-sm border border-slate-200">
-                <X className="w-5 h-5" />
-              </Button>
             </div>
 
-            <div className="px-6 py-6 overflow-y-auto">
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Earnings</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                      <p className="text-slate-500 font-medium text-xs mb-1">Basic Salary</p>
-                      <p className="font-bold text-slate-900">₹{(selectedEmployee.basic_salary || 0).toLocaleString()}</p>
+            <div className="px-8 py-6 overflow-y-auto bg-white flex-1 custom-scrollbar space-y-8">
+              
+              {/* Earnings Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-1.5 bg-emerald-100 rounded-lg text-emerald-600">
+                    <ArrowUpRight className="w-4 h-4" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Earnings</h4>
+                </div>
+                
+                <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="divide-y divide-slate-50">
+                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
+                      <span className="text-slate-600 font-medium text-sm">Basic Salary</span>
+                      <span className="font-bold text-slate-900">₹{(selectedEmployee.basic_salary || 0).toLocaleString()}</span>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                      <p className="text-slate-500 font-medium text-xs mb-1">HRA</p>
-                      <p className="font-bold text-slate-900">₹{(selectedEmployee.hra || 0).toLocaleString()}</p>
+                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
+                      <span className="text-slate-600 font-medium text-sm">HRA</span>
+                      <span className="font-bold text-slate-900">₹{(selectedEmployee.hra || 0).toLocaleString()}</span>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                      <p className="text-slate-500 font-medium text-xs mb-1">Allowance</p>
-                      <p className="font-bold text-slate-900">₹{(selectedEmployee.allowance || 0).toLocaleString()}</p>
+                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
+                      <span className="text-slate-600 font-medium text-sm">Allowance</span>
+                      <span className="font-bold text-slate-900">₹{(selectedEmployee.allowance || 0).toLocaleString()}</span>
                     </div>
-                    <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
-                      <p className="text-emerald-700 font-medium text-xs mb-1">Bonus</p>
-                      <p className="font-black text-emerald-700">+₹{(selectedEmployee.bonus || 0).toLocaleString()}</p>
-                    </div>
+                    {!!selectedEmployee.bonus && (
+                      <div className="flex justify-between items-center p-4 bg-emerald-50/30 hover:bg-emerald-50 transition-colors">
+                        <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Bonus</span>
+                        <span className="font-bold text-emerald-700">+₹{(selectedEmployee.bonus || 0).toLocaleString()}</span>
+                      </div>
+                    )}
                     {!!selectedEmployee.medical_allowance && (
-                      <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
-                        <p className="text-emerald-700 font-medium text-xs mb-1">Medical Allowance</p>
-                        <p className="font-black text-emerald-700">+₹{selectedEmployee.medical_allowance.toLocaleString()}</p>
+                      <div className="flex justify-between items-center p-4 bg-emerald-50/30 hover:bg-emerald-50 transition-colors">
+                        <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Medical</span>
+                        <span className="font-bold text-emerald-700">+₹{selectedEmployee.medical_allowance.toLocaleString()}</span>
                       </div>
                     )}
                     {!!selectedEmployee.travel_expense && (
-                      <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
-                        <p className="text-emerald-700 font-medium text-xs mb-1">Travel Expense</p>
-                        <p className="font-black text-emerald-700">+₹{selectedEmployee.travel_expense.toLocaleString()}</p>
+                      <div className="flex justify-between items-center p-4 bg-emerald-50/30 hover:bg-emerald-50 transition-colors">
+                        <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Travel</span>
+                        <span className="font-bold text-emerald-700">+₹{selectedEmployee.travel_expense.toLocaleString()}</span>
                       </div>
                     )}
                     {!!selectedEmployee.performance_incentive && (
-                      <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
-                        <p className="text-emerald-700 font-medium text-xs mb-1">Perf. Incentive</p>
-                        <p className="font-black text-emerald-700">+₹{selectedEmployee.performance_incentive.toLocaleString()}</p>
+                      <div className="flex justify-between items-center p-4 bg-emerald-50/30 hover:bg-emerald-50 transition-colors">
+                        <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Perf. Incentive</span>
+                        <span className="font-bold text-emerald-700">+₹{selectedEmployee.performance_incentive.toLocaleString()}</span>
                       </div>
                     )}
                     {!!selectedEmployee.food_allowance && (
-                      <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
-                        <p className="text-emerald-700 font-medium text-xs mb-1">Food Allowance</p>
-                        <p className="font-black text-emerald-700">+₹{selectedEmployee.food_allowance.toLocaleString()}</p>
+                      <div className="flex justify-between items-center p-4 bg-emerald-50/30 hover:bg-emerald-50 transition-colors">
+                        <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Food</span>
+                        <span className="font-bold text-emerald-700">+₹{selectedEmployee.food_allowance.toLocaleString()}</span>
                       </div>
                     )}
                   </div>
-
-                  <div className="mt-3 flex justify-between items-center px-4 py-3 bg-white/60 border border-slate-100 rounded-2xl">
-                    <span className="font-bold text-slate-600 text-sm">Gross Salary</span>
-                    <span className="font-black text-slate-900">₹{(selectedEmployee.gross_salary || 0).toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Deductions</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    {!!selectedEmployee.tds && (
-                      <div className="bg-red-50/50 p-3 rounded-2xl border border-red-100/50">
-                        <p className="text-red-700 font-medium text-xs mb-1">TDS</p>
-                        <p className="font-black text-red-700">-₹{selectedEmployee.tds.toLocaleString()}</p>
-                      </div>
-                    )}
-                    <div className="bg-red-50/50 p-3 rounded-2xl border border-red-100/50">
-                      <p className="text-red-700 font-medium text-xs mb-1">Total Deductions</p>
-                      <p className="font-black text-red-700">-₹{(selectedEmployee.total_deductions || 0).toLocaleString()}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-5 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl flex justify-between items-center shadow-lg shadow-orange-500/20">
-                  <div>
-                    <span className="font-bold text-orange-100 text-sm uppercase tracking-wider block mb-1">Net Salary</span>
-                    <span className="text-3xl font-black text-white">₹{(selectedEmployee.net_salary || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center border border-white/30 backdrop-blur-sm">
-                    <DollarSign className="w-6 h-6 text-white" />
+                  
+                  <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-between items-center">
+                    <span className="font-bold text-slate-700">Gross Salary</span>
+                    <span className="font-black text-lg text-slate-900">₹{(selectedEmployee.gross_salary || 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
+
+              {/* Deductions Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-1.5 bg-red-100 rounded-lg text-red-600">
+                    <ArrowDownRight className="w-4 h-4" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Deductions</h4>
+                </div>
+                
+                <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="divide-y divide-slate-50">
+                    {!!selectedEmployee.tds && (
+                      <div className="flex justify-between items-center p-4 bg-red-50/30 hover:bg-red-50 transition-colors">
+                        <span className="text-red-700 font-medium text-sm flex items-center gap-1.5"><Minus className="w-3 h-3"/> TDS</span>
+                        <span className="font-bold text-red-700">-₹{selectedEmployee.tds.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="bg-red-50/50 p-4 border-t border-red-100 flex justify-between items-center">
+                    <span className="font-bold text-red-700">Total Deductions</span>
+                    <span className="font-black text-lg text-red-700">-₹{(selectedEmployee.total_deductions || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Net Salary Section */}
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 p-6 text-white shadow-xl shadow-orange-500/30 transform transition-all hover:scale-[1.02]">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-xl -ml-8 -mb-8 pointer-events-none"></div>
+                
+                <div className="relative z-10 flex justify-between items-center">
+                  <div>
+                    <span className="font-medium text-orange-100 uppercase tracking-widest text-xs mb-1 block">Net Salary</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-black tracking-tight">₹{(selectedEmployee.net_salary || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/30 shadow-inner">
+                    <DollarSign className="w-7 h-7 text-white" />
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100/50 bg-white/50 flex flex-wrap gap-3 justify-between items-center">
+            {/* Footer */}
+            <div className="px-8 py-5 border-t border-slate-100 bg-slate-50 flex flex-wrap gap-3 justify-between items-center rounded-b-[2rem]">
               <div className="flex gap-2">
                 {isLocked && (
                   <>
