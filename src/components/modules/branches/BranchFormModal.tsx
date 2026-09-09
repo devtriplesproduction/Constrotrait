@@ -129,7 +129,18 @@ export function BranchFormModal({ branch, onClose }: BranchFormModalProps) {
                 <label className="text-xs font-bold text-slate-500">Phone</label>
                 <Input
                   {...register("phone")}
-                  placeholder="e.g. +1 234 567 8900"
+                  type="number"
+                  placeholder="e.g. 1234567890"
+                  onKeyDown={(e) => {
+                    if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onInput={(e) => {
+                    if (e.currentTarget.value.length > 10) {
+                      e.currentTarget.value = e.currentTarget.value.slice(0, 10);
+                    }
+                  }}
                   className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-700 outline-none ${
                     errors.phone ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                   }`}
@@ -143,6 +154,7 @@ export function BranchFormModal({ branch, onClose }: BranchFormModalProps) {
                 <Input
                   {...register("gst_number")}
                   placeholder="e.g. 22AAAAA0000A1Z5"
+                  maxLength={15}
                   className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-700 outline-none ${
                     errors.gst_number ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                   }`}

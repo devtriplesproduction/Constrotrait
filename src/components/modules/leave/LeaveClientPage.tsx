@@ -114,7 +114,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
       case 'Rejected':
       case 'Cancelled':
         return { color: 'bg-red-50/80 text-red-700 border-red-100/50', icon: XCircle };
-      case 'Pending First Level':
+      case 'Pending Level':
       case 'Pending HR':
       default:
         return { color: 'bg-amber-50/80 text-amber-700 border-amber-100/50', icon: Clock };
@@ -355,7 +355,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                       </div>
 
                       <div className="flex flex-row md:flex-col gap-2 md:min-w-[140px] justify-center md:border-l border-slate-200/60 md:pl-6">
-                        {leave.status === 'Pending First Level' && (!isHR || isSuperAdmin) && (
+                        {leave.status === 'Pending Level' && (!isHR || isSuperAdmin) && (
                           <>
                             <Button className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 shadow-sm" onClick={() => handleAction(approveLeaveFirstLevelAction as any, leave.id as string)}>
                               Approve
@@ -387,28 +387,28 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                           </Button>
                         )}
                         {leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && leave.medical_certificate_url && (isHR || isSuperAdmin) && (
-                            <div className="w-full relative">
-                              <Select
-                                value=""
-                                onValueChange={(val) => {
-                                  if (val === 'view') setViewingCertUrl(leave.medical_certificate_url as string);
-                                  else if (val === 'delete') handleAction(deleteMedicalCertificateAction as any, leave.id as string);
-                                  else if (val === 'valid') handleAction(verifyMedicalCertificateAction as any, leave.id as string);
-                                  else if (val === 'invalid') handleAction(rejectMedicalCertificateAction as any, leave.id as string);
-                                }}
-                                placeholder="Cert Actions"
-                                buttonClassName="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm flex justify-center items-center font-bold"
-                              >
-                                <SelectItem value="view" className="text-orange-700 hover:bg-orange-50 font-semibold">View</SelectItem>
-                                <SelectItem value="delete" className="text-orange-700 hover:bg-orange-50 font-semibold">Delete</SelectItem>
-                                {!leave.certificate_verified_by && (
-                                  <>
-                                    <SelectItem value="valid" className="text-orange-700 hover:bg-orange-50 font-semibold">Valid</SelectItem>
-                                    <SelectItem value="invalid" className="text-orange-700 hover:bg-orange-50 font-semibold">Invalid</SelectItem>
-                                  </>
-                                )}
-                              </Select>
-                            </div>
+                          <div className="w-full relative">
+                            <Select
+                              value=""
+                              onValueChange={(val) => {
+                                if (val === 'view') setViewingCertUrl(leave.medical_certificate_url as string);
+                                else if (val === 'delete') handleAction(deleteMedicalCertificateAction as any, leave.id as string);
+                                else if (val === 'valid') handleAction(verifyMedicalCertificateAction as any, leave.id as string);
+                                else if (val === 'invalid') handleAction(rejectMedicalCertificateAction as any, leave.id as string);
+                              }}
+                              placeholder="Cert Actions"
+                              buttonClassName="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm flex justify-center items-center font-bold"
+                            >
+                              <SelectItem value="view" className="text-orange-700 hover:bg-orange-50 font-semibold">View</SelectItem>
+                              <SelectItem value="delete" className="text-orange-700 hover:bg-orange-50 font-semibold">Delete</SelectItem>
+                              {!leave.certificate_verified_by && (
+                                <>
+                                  <SelectItem value="valid" className="text-orange-700 hover:bg-orange-50 font-semibold">Valid</SelectItem>
+                                  <SelectItem value="invalid" className="text-orange-700 hover:bg-orange-50 font-semibold">Invalid</SelectItem>
+                                </>
+                              )}
+                            </Select>
+                          </div>
                         )}
                         {leave.status === 'Approved' && isHR && (
                           <Button variant="outline" className="w-full rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={() => handleAction(cancelApprovedLeaveAction as any, leave.id as string)}>
@@ -416,7 +416,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                           </Button>
                         )}
 
-                        {!((leave.status === 'Pending First Level' && (!isHR || isSuperAdmin)) || (leave.status === 'Pending HR' && isHR) || (leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && (isHR || isSuperAdmin)) || (leave.status === 'Approved' && isHR)) && (
+                        {!((leave.status === 'Pending Level' && (!isHR || isSuperAdmin)) || (leave.status === 'Pending HR' && isHR) || (leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && (isHR || isSuperAdmin)) || (leave.status === 'Approved' && isHR)) && (
                           <div className="text-center text-xs text-slate-400 font-bold uppercase tracking-wider py-4">
                             No Actions
                           </div>
@@ -446,10 +446,10 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
               disabled={uploading}
             />
             {uploading && (
-                <div 
-                  className="absolute bottom-0 left-0 h-1 bg-orange-500 transition-all duration-300 ease-out" 
-                  style={{ width: `${uploadProgress}%` }}
-                />
+              <div
+                className="absolute bottom-0 left-0 h-1 bg-orange-500 transition-all duration-300 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              />
             )}
             <UploadCloud className={`w-8 h-8 text-orange-400 ${uploading ? 'animate-pulse' : ''}`} />
             <div className="text-sm text-slate-600 relative z-20">
@@ -482,17 +482,17 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
             icon={FileText}
           />
         </div>
-        
+
         <div className="w-full h-[65vh] min-h-[400px] p-2 bg-slate-50/80 rounded-2xl border border-slate-200/60 shadow-inner">
-          <iframe 
-            src={viewingCertUrl ? `${viewingCertUrl}#toolbar=0&view=FitH` : ''} 
-            className="w-full h-full rounded-xl bg-white shadow-sm" 
-            title="Medical Certificate" 
+          <iframe
+            src={viewingCertUrl ? `${viewingCertUrl}#toolbar=0&view=FitH` : ''}
+            className="w-full h-full rounded-xl bg-white shadow-sm"
+            title="Medical Certificate"
           />
         </div>
-        
+
         <div className="flex justify-end gap-3 pt-6">
-          <Button 
+          <Button
             className="rounded-xl px-6 bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-orange-500/50 hover:-translate-y-0.5"
             onClick={() => setViewingCertUrl(null)}
           >

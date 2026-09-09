@@ -90,6 +90,7 @@ export function PayrollClient({
   const [adjAmount, setAdjAmount] = useState("");
   const [adjDesc, setAdjDesc] = useState("");
   const [adjKilometers, setAdjKilometers] = useState("");
+  const [adjRatePerKm, setAdjRatePerKm] = useState("4.5");
   const [adjVehicleType, setAdjVehicleType] = useState("Two-wheeler");
   const [adjTdsApplied, setAdjTdsApplied] = useState(false);
   const [adjTdsRate, setAdjTdsRate] = useState("1");
@@ -209,8 +210,7 @@ export function PayrollClient({
     e.preventDefault();
     let finalAmount = Number(adjAmount);
     if (adjType === "Travel Expense" && adjVehicleType === "Two-wheeler") {
-      // Server will definitively calculate this: kilometers * 4.50
-      finalAmount = 1; 
+      finalAmount = Number(adjKilometers) * Number(adjRatePerKm); 
     } else if (adjType === "TDS") {
       finalAmount = 0;
     } else if (adjType === "Food Allowance") {
@@ -707,16 +707,31 @@ export function PayrollClient({
                     </Select>
                   </div>
                   {adjVehicleType === "Two-wheeler" && (
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">Kilometers</label>
-                      <Input
-                        type="number"
-                        required
-                        value={adjKilometers}
-                        onChange={(e) => setAdjKilometers(e.target.value)}
-                        placeholder="e.g. 10"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">Amount: ₹{(Number(adjKilometers) * 4.50).toFixed(2)} (Auto-calculated)</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Kilometers</label>
+                        <Input
+                          type="number"
+                          required
+                          value={adjKilometers}
+                          onChange={(e) => setAdjKilometers(e.target.value)}
+                          placeholder="e.g. 10"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Rate per km (₹)</label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          required
+                          value={adjRatePerKm}
+                          onChange={(e) => setAdjRatePerKm(e.target.value)}
+                          placeholder="e.g. 4.5"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs text-slate-500 mt-1 font-medium">Total Amount: ₹{(Number(adjKilometers) * Number(adjRatePerKm)).toFixed(2)}</p>
+                      </div>
                     </div>
                   )}
                 </>

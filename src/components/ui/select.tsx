@@ -16,9 +16,9 @@ export interface SelectProps {
   className?: string;
   buttonClassName?: string;
   disabled?: boolean;
-  align?: "left" | "right";
   id?: string;
   iconClassName?: string;
+  align?: "left" | "right";
 }
 
 const SelectContext = React.createContext<{
@@ -31,7 +31,7 @@ const SelectContext = React.createContext<{
 export function Select({ value, onValueChange, placeholder, children, className, buttonClassName, disabled, id, iconClassName }: SelectProps) {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
-  const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0 });
+  const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0, right: 0 });
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -48,6 +48,7 @@ export function Select({ value, onValueChange, placeholder, children, className,
         top: rect.bottom + window.scrollY + 8,
         left: rect.left + window.scrollX,
         width: rect.width,
+        right: window.innerWidth - (rect.right + window.scrollX),
       });
     }
   };
@@ -102,7 +103,7 @@ export function Select({ value, onValueChange, placeholder, children, className,
           style={{
             position: "absolute",
             top: coords.top,
-            left: coords.left,
+            ...(align === "right" ? { right: coords.right } : { left: coords.left }),
             width: coords.width,
             zIndex: 99999
           }}
@@ -171,13 +172,14 @@ export function SelectItem({
   return (
     <Button variant="custom" type="button" onClick={() => { context?.onValueChange(value); context?.setOpen(false); }}
       className={cn(
-        "relative flex w-full justify-start text-left cursor-pointer select-none items-center rounded-lg py-2.5 pl-9 pr-4 text-sm font-medium outline-none transition-all duration-200",
+        "relative flex w-full justify-between items-center text-left cursor-pointer select-none rounded-lg py-2.5 px-3.5 text-sm font-medium outline-none transition-all duration-200",
         "text-slate-600  hover:bg-slate-100 hover:text-slate-900",
         isSelected && "text-orange-600  font-semibold bg-orange-50/80 ",
         className
       )}
     >
-      <span className="absolute left-3 flex h-4 w-4 items-center justify-center">
+      <span className="truncate flex-1 text-left">{children}</span>
+      <span className="flex h-4 w-4 items-center justify-center shrink-0 ml-2">
         {isSelected && (
           <motion.div
             initial={{ scale: 0 }}
@@ -188,7 +190,6 @@ export function SelectItem({
           </motion.div>
         )}
       </span>
-      <span className="truncate flex-1 text-left">{children}</span>
     </Button>
   );
 }

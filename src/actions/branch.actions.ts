@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
 import { branchSchema, BranchFormData } from "@/lib/validations/branch";
-import { createBranch, updateBranch, toggleBranchActive, getActiveBranches } from "@/services/branch.service";
+import { createBranch, updateBranch, toggleBranchActive, getActiveBranches, deleteBranch } from "@/services/branch.service";
 
 export async function getActiveBranchesAction() {
   const user = await getAuthenticatedUserWithRoles();
@@ -85,6 +85,27 @@ export async function toggleBranchActiveAction(id: string, isActive: boolean) {
   }
 
   const result = await toggleBranchActive(id, isActive);
+  if (result.success) {
+    revalidatePath("/branches", "page");
+  }
+  return result;
+}
+
+export async function deleteBranchAction(id: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user) {
+    return { success: false, error: "Unauthorized. Please log in." };
+  }
+
+  if (!id || typeof id !== "string") {
+    return { success: false, error: "Invalid branch ID." };
+  }
+
+  if (!user.roles.includes("SUPER_ADMIN")) {
+    return { success: false, error: "Forbidden. Only Super Admins can delete branches." };
+  }
+
+  const result = await deleteBranch(id);
   if (result.success) {
     revalidatePath("/branches", "page");
   }

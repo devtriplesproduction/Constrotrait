@@ -63,7 +63,7 @@ BEGIN
     END IF;
 
     -- Only first-level pending leaves can be approved.
-    IF v_leave.status <> 'Pending First Level' THEN
+    IF v_leave.status <> 'Pending Level' THEN
         RAISE EXCEPTION 'Leave is not pending first-level approval';
     END IF;
 
@@ -125,7 +125,7 @@ $$;
 --   Reporting Manager -> own reports
 --
 -- Valid source states:
---   Pending First Level
+--   Pending Level
 --   Pending HR
 -- ============================================================
 
@@ -163,7 +163,7 @@ BEGIN
     END IF;
 
     IF v_leave.status NOT IN (
-        'Pending First Level',
+        'Pending Level',
         'Pending HR'
     ) THEN
         RAISE EXCEPTION 'Leave cannot be rejected in its current state';
@@ -749,4 +749,4 @@ USING (
         WHERE employee.id = leave_requests.employee_id
           AND employee.reporting_manager_id = (select auth.uid())
     )
-);
+);

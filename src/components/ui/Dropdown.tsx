@@ -21,6 +21,7 @@ export interface DropdownProps {
   buttonClassName?: string;
   id?: string;
   iconClassName?: string;
+  align?: "left" | "right";
 }
 
 export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
@@ -39,6 +40,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
       buttonClassName,
       id,
       iconClassName,
+      align,
     },
     ref
   ) => {
@@ -64,6 +66,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
             buttonClassName
           )}
           iconClassName={iconClassName}
+          align={align}
         >
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>

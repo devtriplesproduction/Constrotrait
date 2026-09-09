@@ -658,6 +658,17 @@ export function EmployeeProfileModal({
                   </label>
                   <Input
                     value={formData.phone_number || ""}
+                    type="number"
+                    onKeyDown={(e) => {
+                      if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onInput={(e) => {
+                      if (e.currentTarget.value.length > 10) {
+                        e.currentTarget.value = e.currentTarget.value.slice(0, 10);
+                      }
+                    }}
                     onChange={(e) =>
                       setFormData({ ...formData, phone_number: e.target.value })
                     }
@@ -747,6 +758,17 @@ export function EmployeeProfileModal({
                     </label>
                     <Input
                       value={formData.emergency_contact_number || ""}
+                      type="number"
+                      onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onInput={(e) => {
+                        if (e.currentTarget.value.length > 10) {
+                          e.currentTarget.value = e.currentTarget.value.slice(0, 10);
+                        }
+                      }}
                       onChange={(e) =>
                         setFormData({
                           ...formData,

@@ -418,9 +418,7 @@ export async function addManualLedgerEntry(
   const supabase = await createClient();
 
   let finalAmount = amount;
-  if (type.toLowerCase() === 'travel expense' && vehicle_type === 'two-wheeler') {
-    finalAmount = (kilometers || 0) * 4.50;
-  } else if (type.toLowerCase() === 'tds') {
+  if (type.toLowerCase() === 'tds') {
     finalAmount = 0;
   }
 

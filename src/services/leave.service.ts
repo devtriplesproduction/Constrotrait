@@ -92,15 +92,15 @@ export async function submitLeave(input: CreateLeaveInput) {
       }
     }
 
-    
+
 
     const supabase = await createClient();
     let data;
     let error;
-    
+
     if (input.leave_type === "Compensatory Off") {
       const { data: rpcData, error: rpcError } = await (supabase as unknown as AppSupabaseClient).rpc(
-        "submit_comp_off_leave", 
+        "submit_comp_off_leave",
         {
           p_start_date: input.start_date,
           p_end_date: input.end_date,
@@ -108,7 +108,7 @@ export async function submitLeave(input: CreateLeaveInput) {
           p_reason: input.reason
         }
       );
-      
+
       data = rpcData ? { id: rpcData } : null;
       error = rpcError;
     } else {
@@ -122,12 +122,12 @@ export async function submitLeave(input: CreateLeaveInput) {
           is_half_day: input.is_half_day,
           reason: input.reason,
           medical_certificate_url: input.medical_certificate_url || null,
-          status: "Pending First Level",
+          status: "Pending Level",
           is_paid: false // Sick leave is unpaid until cert verified. Casual/Unpaid are unpaid.
         })
         .select()
         .single();
-        
+
       data = res.data;
       error = res.error;
     }
@@ -154,7 +154,7 @@ export async function approveLeaveFirstLevel(leaveId: string) {
     }
 
     const supabase = await createClient() as unknown as AppSupabaseClient;
-    
+
     // Fetch leave first to validate
     const { data: leave, error: fetchError } = await supabase
       .from("leave_requests")
@@ -164,7 +164,7 @@ export async function approveLeaveFirstLevel(leaveId: string) {
 
     if (fetchError || !leave) return { success: false, error: "Leave not found" };
 
-    
+
 
     const { error } = await supabase.rpc("approve_leave_first_level", {
       p_leave_id: leaveId,
@@ -325,7 +325,7 @@ export async function deleteMedicalCertificate(leaveId: string) {
 
     const supabase = await createClient() as unknown as AppSupabaseClient;
     const { error: rpcError } = await supabase.rpc("delete_medical_certificate", { p_leave_id: leaveId });
-    
+
     if (rpcError) {
       console.error("Failed to delete medical certificate via RPC:", rpcError);
       return { success: false, error: "Failed to delete medical certificate" };
@@ -345,7 +345,7 @@ export async function rejectMedicalCertificate(leaveId: string) {
 
     const supabase = await createClient() as unknown as AppSupabaseClient;
     const { error: rpcError } = await supabase.rpc("reject_medical_certificate", { p_leave_id: leaveId });
-    
+
     if (rpcError) {
       console.error("Failed to reject medical certificate via RPC:", rpcError);
       return { success: false, error: "Failed to reject medical certificate" };
@@ -388,9 +388,9 @@ export async function getLeavesToApprove() {
 
     if (isHR(user.roles) || isSuperAdmin(user.roles)) {
       // HR sees everything pending HR, or everything if they want, but pending HR is the action items
-      query = query.in("status", ["Pending First Level", "Pending HR", "Approved", "Rejected", "Cancelled"]);
+      query = query.in("status", ["Pending Level", "Pending HR", "Approved", "Rejected", "Cancelled"]);
     } else if (isBranchManager(user.roles)) {
-      // Branch manager sees their branch's pending First level, or others for history
+      // Branch manager sees their branch's pending level, or others for history
       // We just fetch all for their branch in JS
     }
 

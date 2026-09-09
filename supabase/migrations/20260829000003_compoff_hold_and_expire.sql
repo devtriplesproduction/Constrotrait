@@ -107,7 +107,7 @@ BEGIN
         p_end_date,
         p_is_half_day,
         p_reason,
-        'Pending First Level',
+        'Pending Level',
         true
     ) RETURNING id INTO v_leave_id;
 
@@ -233,7 +233,7 @@ BEGIN
     SELECT * INTO v_leave FROM public.leave_requests WHERE id = p_leave_id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'Leave not found'; END IF;
 
-    IF v_leave.status NOT IN ('Pending First Level', 'Pending HR') THEN
+    IF v_leave.status NOT IN ('Pending Level', 'Pending HR') THEN
         RAISE EXCEPTION 'Leave cannot be rejected in its current state';
     END IF;
 
@@ -340,7 +340,7 @@ BEGIN
         SELECT id, employee_id 
         FROM public.leave_requests
         WHERE leave_type = 'Compensatory Off'
-          AND status IN ('Pending First Level', 'Pending HR')
+          AND status IN ('Pending Level', 'Pending HR')
           AND created_at < NOW() - INTERVAL '72 hours'
         FOR UPDATE SKIP LOCKED
     LOOP

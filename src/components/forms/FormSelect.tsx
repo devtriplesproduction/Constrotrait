@@ -32,6 +32,7 @@ export function FormSelect<T extends FieldValues>({
   buttonClassName,
   disabled,
   id,
+  align,
   onChange,
 }: FormSelectProps<T>) {
   return (
@@ -51,6 +52,7 @@ export function FormSelect<T extends FieldValues>({
           buttonClassName={cn("glass-input", buttonClassName)}
           disabled={disabled || field.disabled}
           options={options}
+          align={align}
         />
       )}
     />

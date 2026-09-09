@@ -602,10 +602,16 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       <label className="text-xs font-bold text-zinc-500 ">Phone Number</label>
                       <Input
                         {...register("phone_number")}
-                        type="tel"
-                        maxLength={10}
+                        type="number"
+                        onKeyDown={(e) => {
+                          if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
                         onInput={(e) => {
-                          e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '');
+                          if (e.currentTarget.value.length > 10) {
+                            e.currentTarget.value = e.currentTarget.value.slice(0, 10);
+                          }
                         }}
                         placeholder="10-digit number"
                         className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
@@ -651,10 +657,16 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                       <div>
                         <Input
                           {...register("emergency_phone")}
-                          type="tel"
-                          maxLength={10}
+                          type="number"
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
                           onInput={(e) => {
-                            e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '');
+                            if (e.currentTarget.value.length > 10) {
+                              e.currentTarget.value = e.currentTarget.value.slice(0, 10);
+                            }
                           }}
                           placeholder="Phone"
                           className="w-full px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"

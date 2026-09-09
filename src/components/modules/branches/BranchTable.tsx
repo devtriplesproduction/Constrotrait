@@ -3,12 +3,13 @@
 import React, { useState, useTransition } from "react";
 import { Building2, Edit2, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { toggleBranchActiveAction } from "@/actions/branch.actions";
+import { toggleBranchActiveAction, deleteBranchAction } from "@/actions/branch.actions";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { BranchFormModal } from "./BranchFormModal";
 import { Database } from "@/types/database";
 import { BranchFormData } from "@/lib/validations/branch";
+import { Loader2, Trash2 } from "lucide-react";
 
 type BranchRow = Database["public"]["Tables"]["branches"]["Row"];
 
@@ -18,7 +19,9 @@ interface BranchTableProps {
 
 export function BranchTable({ branches }: BranchTableProps) {
   const [selectedBranch, setSelectedBranch] = useState<(BranchFormData & { id: string }) | null>(null);
+  const [branchToDelete, setBranchToDelete] = useState<{ id: string, name: string } | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   const handleToggleStatus = (id: string, currentStatus: boolean | null) => {
@@ -31,6 +34,19 @@ export function BranchTable({ branches }: BranchTableProps) {
         toast({ title: res.error || "Failed to update branch status.", variant: "error" });
       }
     });
+  };
+
+  const handleDelete = async () => {
+    if (!branchToDelete) return;
+    setIsDeleting(true);
+    const res = await deleteBranchAction(branchToDelete.id);
+    setIsDeleting(false);
+    if (res.success) {
+      toast({ title: res.message || "Branch deleted successfully.", variant: "success" });
+      setBranchToDelete(null);
+    } else {
+      toast({ title: res.error || "Failed to delete branch.", variant: "error" });
+    }
   };
 
   return (
@@ -108,6 +124,16 @@ export function BranchTable({ branches }: BranchTableProps) {
                       >
                         {branch.is_active ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setBranchToDelete({ id: branch.id, name: branch.name })}
+                        disabled={isPending || isDeleting}
+                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                        title="Delete Branch"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -122,6 +148,39 @@ export function BranchTable({ branches }: BranchTableProps) {
           branch={selectedBranch}
           onClose={() => setSelectedBranch(null)}
         />
+      )}
+
+      {branchToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isDeleting && setBranchToDelete(null)} />
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden p-6 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-900">Delete Branch?</h3>
+            </div>
+            <p className="text-sm text-slate-600 mb-6">
+              You are about to permanently delete <strong>{branchToDelete.name}</strong> and all records associated with this branch. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setBranchToDelete(null)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="rounded-xl bg-red-600 hover:bg-red-700"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                Delete Branch
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
