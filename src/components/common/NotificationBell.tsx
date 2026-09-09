@@ -78,7 +78,7 @@ export function NotificationBell() {
     e.stopPropagation();
     const res = await markNotificationAsReadAction(id);
     if (res.success) {
-      setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setNotifications(notifications.filter(n => n.id !== id));
       setUnreadCount(Math.max(0, unreadCount - 1));
     }
   };
@@ -86,7 +86,7 @@ export function NotificationBell() {
   const handleMarkAllAsRead = async () => {
     const res = await markAllNotificationsAsReadAction();
     if (res.success) {
-      setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+      setNotifications([]);
       setUnreadCount(0);
     }
   };

@@ -661,6 +661,11 @@ export type Database = {
           net_salary: number | null
           overtime_hours: number | null
           overtime_pay: number | null
+          medical_allowance: number | null
+          travel_expense: number | null
+          performance_incentive: number | null
+          food_allowance: number | null
+          tds: number | null
           is_reviewed: boolean | null
           remarks: string | null
           calculated_at: string | null
@@ -696,6 +701,11 @@ export type Database = {
           net_salary?: number | null
           overtime_hours?: number | null
           overtime_pay?: number | null
+          medical_allowance?: number | null
+          travel_expense?: number | null
+          performance_incentive?: number | null
+          food_allowance?: number | null
+          tds?: number | null
           is_reviewed?: boolean | null
           remarks?: string | null
           calculated_at?: string | null
@@ -731,6 +741,11 @@ export type Database = {
           net_salary?: number | null
           overtime_hours?: number | null
           overtime_pay?: number | null
+          medical_allowance?: number | null
+          travel_expense?: number | null
+          performance_incentive?: number | null
+          food_allowance?: number | null
+          tds?: number | null
           is_reviewed?: boolean | null
           remarks?: string | null
           calculated_at?: string | null
@@ -835,6 +850,10 @@ export type Database = {
           updated_by: string | null
           created_at: string | null
           updated_at: string | null
+          kilometers: number | null
+          vehicle_type: string | null
+          tds_applied: boolean | null
+          tds_rate: number | null
         }
         Insert: {
           id?: string
@@ -851,6 +870,10 @@ export type Database = {
           updated_by?: string | null
           created_at?: string | null
           updated_at?: string | null
+          kilometers?: number | null
+          vehicle_type?: string | null
+          tds_applied?: boolean | null
+          tds_rate?: number | null
         }
         Update: {
           id?: string
@@ -867,6 +890,10 @@ export type Database = {
           updated_by?: string | null
           created_at?: string | null
           updated_at?: string | null
+          kilometers?: number | null
+          vehicle_type?: string | null
+          tds_applied?: boolean | null
+          tds_rate?: number | null
         }
         Relationships: [
           {

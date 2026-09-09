@@ -86,6 +86,10 @@ export function PayrollClient({
   const [adjType, setAdjType] = useState("Bonus");
   const [adjAmount, setAdjAmount] = useState("");
   const [adjDesc, setAdjDesc] = useState("");
+  const [adjKilometers, setAdjKilometers] = useState("");
+  const [adjVehicleType, setAdjVehicleType] = useState("Two-wheeler");
+  const [adjTdsApplied, setAdjTdsApplied] = useState(false);
+  const [adjTdsRate, setAdjTdsRate] = useState("1");
   const [isSubmittingAdj, setIsSubmittingAdj] = useState(false);
 
   const { toast } = useToast();
@@ -198,13 +202,30 @@ export function PayrollClient({
 
   const handleAddAdjustment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adjEmployeeId || !adjAmount || isNaN(Number(adjAmount))) {
+    let finalAmount = Number(adjAmount);
+    if (adjType === "Travel Expense" && adjVehicleType === "Two-wheeler") {
+      // Server will definitively calculate this: kilometers * 4.50
+      finalAmount = 1; 
+    } else if (adjType === "TDS") {
+      finalAmount = 0;
+    }
+    
+    if (!adjEmployeeId || isNaN(finalAmount) || (adjType !== "TDS" && finalAmount <= 0)) {
       toast({ title: "Error", description: "Please enter valid adjustment details.", variant: "error" });
       return;
     }
     setIsSubmittingAdj(true);
     try {
-      const res = await addManualLedgerEntryAction(adjEmployeeId, adjType, Number(adjAmount), adjDesc);
+      const res = await addManualLedgerEntryAction(
+        adjEmployeeId, 
+        adjType, 
+        finalAmount, 
+        adjDesc,
+        adjType === "Travel Expense" ? Number(adjKilometers) : undefined,
+        adjType === "Travel Expense" ? adjVehicleType : undefined,
+        adjType === "TDS" ? adjTdsApplied : undefined,
+        adjType === "TDS" ? Number(adjTdsRate) : undefined
+      );
       if (res.success) {
         toast({ title: "Success", description: res.message, variant: "success" });
         setIsAdjustmentModalOpen(false);
@@ -657,24 +678,76 @@ export function PayrollClient({
                   onValueChange={setAdjType}
                 >
                   <SelectItem value="Bonus">Bonus</SelectItem>
+                  <SelectItem value="Medical Allowance">Medical Allowance</SelectItem>
+                  <SelectItem value="Travel Expense">Travel Expense</SelectItem>
+                  <SelectItem value="Performance Incentive">Performance Incentive</SelectItem>
+                  <SelectItem value="Food Allowance">Food Allowance</SelectItem>
+                  <SelectItem value="TDS">TDS</SelectItem>
                   <SelectItem value="Damage Recovery">Damage Recovery</SelectItem>
                   <SelectItem value="Salary Advance">Salary Advance Deduction</SelectItem>
                   <SelectItem value="Other Deduction">Other Deduction</SelectItem>
                 </Select>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Amount (₹)</label>
-                <Input
-                  type="number"
-                  step="1"
-                  min="1"
-                  required
-                  value={adjAmount}
-                  onChange={(e) => setAdjAmount(e.target.value)}
-                  placeholder="e.g. 5000"
-                />
-              </div>
+              {adjType === "Travel Expense" && (
+                <>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Vehicle Type</label>
+                    <Select value={adjVehicleType} onValueChange={setAdjVehicleType}>
+                      <SelectItem value="Two-wheeler">Two-wheeler</SelectItem>
+                      <SelectItem value="Car">Car</SelectItem>
+                    </Select>
+                  </div>
+                  {adjVehicleType === "Two-wheeler" && (
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Kilometers</label>
+                      <Input
+                        type="number"
+                        required
+                        value={adjKilometers}
+                        onChange={(e) => setAdjKilometers(e.target.value)}
+                        placeholder="e.g. 10"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">Amount: ₹{(Number(adjKilometers) * 4.50).toFixed(2)} (Auto-calculated)</p>
+                    </div>
+                  )}
+                </>
+              )}
+              {adjType === "TDS" && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Apply TDS</label>
+                    <input type="checkbox" checked={adjTdsApplied} onChange={e => setAdjTdsApplied(e.target.checked)} className="w-4 h-4" />
+                  </div>
+                  {adjTdsApplied && (
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">TDS Rate (%)</label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        required
+                        value={adjTdsRate}
+                        onChange={(e) => setAdjTdsRate(e.target.value)}
+                        placeholder="e.g. 1"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+              {adjType !== "TDS" && (adjType !== "Travel Expense" || adjVehicleType === "Car") && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Amount (₹)</label>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="1"
+                    required
+                    value={adjAmount}
+                    onChange={(e) => setAdjAmount(e.target.value)}
+                    placeholder="e.g. 5000"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Description (Optional)</label>
@@ -736,6 +809,30 @@ export function PayrollClient({
                       <p className="text-emerald-700 font-medium text-xs mb-1">Bonus</p>
                       <p className="font-black text-emerald-700">+₹{(selectedEmployee.bonus || 0).toLocaleString()}</p>
                     </div>
+                    {!!selectedEmployee.medical_allowance && (
+                      <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
+                        <p className="text-emerald-700 font-medium text-xs mb-1">Medical Allowance</p>
+                        <p className="font-black text-emerald-700">+₹{selectedEmployee.medical_allowance.toLocaleString()}</p>
+                      </div>
+                    )}
+                    {!!selectedEmployee.travel_expense && (
+                      <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
+                        <p className="text-emerald-700 font-medium text-xs mb-1">Travel Expense</p>
+                        <p className="font-black text-emerald-700">+₹{selectedEmployee.travel_expense.toLocaleString()}</p>
+                      </div>
+                    )}
+                    {!!selectedEmployee.performance_incentive && (
+                      <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
+                        <p className="text-emerald-700 font-medium text-xs mb-1">Perf. Incentive</p>
+                        <p className="font-black text-emerald-700">+₹{selectedEmployee.performance_incentive.toLocaleString()}</p>
+                      </div>
+                    )}
+                    {!!selectedEmployee.food_allowance && (
+                      <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
+                        <p className="text-emerald-700 font-medium text-xs mb-1">Food Allowance</p>
+                        <p className="font-black text-emerald-700">+₹{selectedEmployee.food_allowance.toLocaleString()}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-3 flex justify-between items-center px-4 py-3 bg-slate-100 rounded-2xl">
@@ -747,6 +844,12 @@ export function PayrollClient({
                 <div>
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Deductions</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
+                    {!!selectedEmployee.tds && (
+                      <div className="bg-red-50/50 p-3 rounded-2xl border border-red-100/50">
+                        <p className="text-red-700 font-medium text-xs mb-1">TDS</p>
+                        <p className="font-black text-red-700">-₹{selectedEmployee.tds.toLocaleString()}</p>
+                      </div>
+                    )}
                     <div className="bg-red-50/50 p-3 rounded-2xl border border-red-100/50">
                       <p className="text-red-700 font-medium text-xs mb-1">Total Deductions</p>
                       <p className="font-black text-red-700">-₹{(selectedEmployee.total_deductions || 0).toLocaleString()}</p>

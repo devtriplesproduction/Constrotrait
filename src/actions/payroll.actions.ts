@@ -78,7 +78,11 @@ export async function addManualLedgerEntryAction(
   employeeId: string,
   type: string,
   amount: number,
-  description?: string
+  description?: string,
+  kilometers?: number,
+  vehicle_type?: string,
+  tds_applied?: boolean,
+  tds_rate?: number
 ) {
   try {
     const user = await getAuthenticatedUserWithRoles();
@@ -87,7 +91,7 @@ export async function addManualLedgerEntryAction(
       return { success: false, error: "Unauthorized" };
     }
 
-    await import("@/services/payroll.service").then(m => m.addManualLedgerEntry(employeeId, type, amount, description, user.id));
+    await import("@/services/payroll.service").then(m => m.addManualLedgerEntry(employeeId, type, amount, description, user.id, kilometers, vehicle_type, tds_applied, tds_rate));
 
     return { success: true, message: "Adjustment added successfully." };
   } catch (error) {

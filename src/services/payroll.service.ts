@@ -46,7 +46,7 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     // Return existing snapshots isolated by branch
     const { data: cycleSnapshots, error: snapshotsError } = await supabase
       .from('payroll_snapshots')
-      .select('id, cycle_id, employee_id, employee_name, employee_id_external, department, designation, base_salary, days_present, days_field, days_paid_leave, days_unpaid_leave, days_absent, net_payable, basic_salary, hra, allowance, bonus, gross_salary, pf, esi, professional_tax, income_tax, other_deductions, damage_recovery, salary_advance_recovery, total_deductions, net_salary, overtime_hours, overtime_pay, is_reviewed, remarks, calculated_at, salary_slips(emailed, status)')
+      .select('id, cycle_id, employee_id, employee_name, employee_id_external, department, designation, base_salary, days_present, days_field, days_paid_leave, days_unpaid_leave, days_absent, net_payable, basic_salary, hra, allowance, bonus, medical_allowance, travel_expense, performance_incentive, food_allowance, tds, gross_salary, pf, esi, professional_tax, income_tax, other_deductions, damage_recovery, salary_advance_recovery, total_deductions, net_salary, overtime_hours, overtime_pay, is_reviewed, remarks, calculated_at, salary_slips(emailed, status)')
       .eq('cycle_id', existingCycle.id)
       .in('employee_id', branchEmpIds);
 
@@ -132,7 +132,7 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
   // 6. Fetch all active ledger entries up to this month
   const { data: ledgerData, error: ledgerError } = await supabase
     .from('employee_financial_ledger')
-    .select('id, employee_id, adjustment_type, adjustment_category, remaining_amount')
+    .select('id, employee_id, adjustment_type, adjustment_category, remaining_amount, tds_applied, tds_rate')
     .in('status', ['pending', 'partially_recovered'])
     .lte('effective_date', endOfMonth);
     
@@ -264,30 +264,52 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     let calculated_other_deductions = 0;
     let calculated_salary_advance_recovery = 0;
     let calculated_damage_recovery = 0;
+    let calculated_medical_allowance = 0;
+    let calculated_travel_expense = 0;
+    let calculated_performance_incentive = 0;
+    let calculated_food_allowance = 0;
+    let is_tds_applied = false;
+    let tds_rate_val = 0;
+    let tds_ledger_id = '';
 
     for (const entry of empLedger) {
         const amount = Number(entry.remaining_amount);
-        if (entry.adjustment_type.toLowerCase().includes('bonus')) {
+        const typeLower = entry.adjustment_type.toLowerCase();
+        if (typeLower.includes('bonus')) {
             calculated_bonus += amount;
-        } else if (entry.adjustment_type.toLowerCase().includes('advance')) {
+        } else if (typeLower === 'medical allowance') {
+            calculated_medical_allowance += amount;
+        } else if (typeLower === 'travel expense') {
+            calculated_travel_expense += amount;
+        } else if (typeLower === 'performance incentive') {
+            calculated_performance_incentive += amount;
+        } else if (typeLower === 'food allowance') {
+            calculated_food_allowance += amount;
+        } else if (typeLower === 'tds') {
+            is_tds_applied = !!entry.tds_applied;
+            tds_ledger_id = entry.id;
+        } else if (typeLower.includes('advance')) {
             calculated_salary_advance_recovery += amount;
-        } else if (entry.adjustment_type.toLowerCase().includes('damage')) {
+        } else if (typeLower.includes('damage')) {
             calculated_damage_recovery += amount;
         } else {
             calculated_other_deductions += amount;
         }
         
-        appliedAdjustments.push({
-            ledger_id: entry.id,
-            adjustment_type: entry.adjustment_type,
-            adjustment_category: entry.adjustment_category,
-            amount: amount
-        });
+        // Don't push TDS here, push it after TDS calculation
+        if (entry.adjustment_type.toLowerCase() !== 'tds') {
+            appliedAdjustments.push({
+                ledger_id: entry.id,
+                adjustment_type: entry.adjustment_type,
+                adjustment_category: entry.adjustment_category,
+                amount: amount
+            });
+        }
     }
 
     const bonus = calculated_bonus;
     const overtime_pay = 0; // ConstroTrait overtime -> Comp-Off
-    const gross_salary = basic_salary + hra + allowance + bonus + overtime_pay;
+    const gross_salary = basic_salary + hra + allowance + bonus + overtime_pay + calculated_medical_allowance + calculated_travel_expense + calculated_performance_incentive + calculated_food_allowance;
     
     const pf = 0;
     const esi = 0;
@@ -296,8 +318,22 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     const other_deductions = calculated_other_deductions;
     const salary_advance_recovery = calculated_salary_advance_recovery;
     const damage_recovery = calculated_damage_recovery;
-    const total_deductions = pf + esi + professional_tax + income_tax + other_deductions + salary_advance_recovery + damage_recovery;
+    const calculated_tds = 0;
+    // UNKNOWN: Taxable base for TDS is not defined in the repository.
+    // Cannot assume gross_salary. Therefore, TDS calculation is deferred.
+    // if (is_tds_applied) {
+    //     calculated_tds = Math.round(UNKNOWN_BASE * (tds_rate_val / 100));
+    // }
+    const total_deductions = pf + esi + professional_tax + income_tax + other_deductions + salary_advance_recovery + damage_recovery + calculated_tds;
     
+    if (is_tds_applied && tds_ledger_id) {
+        appliedAdjustments.push({
+            ledger_id: tds_ledger_id,
+            adjustment_type: 'TDS',
+            adjustment_category: 'one_time',
+            amount: calculated_tds
+        });
+    }
     const net_salary = gross_salary - total_deductions;
     const overtime_hours = 0;
 
@@ -320,6 +356,11 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
       hra,
       allowance,
       bonus,
+      medical_allowance: calculated_medical_allowance,
+      travel_expense: calculated_travel_expense,
+      performance_incentive: calculated_performance_incentive,
+      food_allowance: calculated_food_allowance,
+      tds: calculated_tds,
       gross_salary,
       pf,
       esi,
@@ -371,7 +412,11 @@ export async function addManualLedgerEntry(
   type: string,
   amount: number,
   description?: string,
-  createdBy?: string
+  createdBy?: string,
+  kilometers?: number,
+  vehicle_type?: string,
+  tds_applied?: boolean,
+  tds_rate?: number
 ) {
   if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
     throw new Error("Validation failed");
@@ -382,17 +427,28 @@ export async function addManualLedgerEntry(
 
   const supabase = await createClient();
 
+  let finalAmount = amount;
+  if (type.toLowerCase() === 'travel expense' && vehicle_type === 'two-wheeler') {
+    finalAmount = (kilometers || 0) * 4.50;
+  } else if (type.toLowerCase() === 'tds') {
+    finalAmount = 0;
+  }
+
   const { error } = await supabase
     .from("employee_financial_ledger")
     .insert({
       employee_id: employeeId,
       adjustment_type: type,
       adjustment_category: "one_time",
-      original_amount: amount,
-      remaining_amount: amount,
+      original_amount: finalAmount,
+      remaining_amount: finalAmount,
       description,
       status: "pending",
       created_by: createdBy,
+      kilometers,
+      vehicle_type,
+      tds_applied,
+      tds_rate,
     });
 
   if (error) throw error;

@@ -6,6 +6,9 @@ import { EmployeeTable } from "@/components/modules/employees/EmployeeTable";
 import { OnboardEmployeeButton } from "@/components/modules/employees/OnboardEmployeeButton";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { ExportExcelButton } from "@/components/modules/employees/ExportExcelButton";
+import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
+import { isSuperAdmin } from "@/config/roles";
+import { getBranches } from "@/services/branch.service";
 
 export const metadata = {
   title: "Employees | ConstroTrait",
@@ -17,6 +20,17 @@ export const dynamic = "force-dynamic";
 export default async function EmployeesPage() {
   const { data, success, error } = await getAllEmployees();
   const employees = data as Database['public']['Tables']['profiles']['Row'][];
+
+  const user = await getAuthenticatedUserWithRoles();
+  const superAdmin = user ? isSuperAdmin(user.roles) : false;
+  
+  let branches: { id: string; name: string }[] = [];
+  if (superAdmin) {
+    const branchesRes = await getBranches();
+    if (branchesRes.success && branchesRes.data) {
+      branches = branchesRes.data;
+    }
+  }
 
   return (
     <div className="w-full space-y-4 animate-in fade-in duration-500">
@@ -81,7 +95,7 @@ export default async function EmployeesPage() {
       )}
 
       {success && employees && employees.length > 0 ? (
-        <EmployeeTable employees={employees} />
+        <EmployeeTable employees={employees} branches={branches} isSuperAdmin={superAdmin} />
       ) : (
         /* Empty State */
         <div className="border border-dashed border-zinc-200  rounded-3xl p-12 flex flex-col items-center justify-center text-center bg-zinc-50/50">

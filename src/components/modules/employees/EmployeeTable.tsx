@@ -66,16 +66,20 @@ type EmployeeProfile = {
   emergency_contact_name?: string | null;
   emergency_contact_relation?: string | null;
   emergency_contact_number?: string | null;
+  branch_id?: string | null;
 };
 
 interface EmployeeTableProps {
   employees: EmployeeProfile[];
+  branches?: { id: string; name: string }[];
+  isSuperAdmin?: boolean;
 }
 
-export function EmployeeTable({ employees }: EmployeeTableProps) {
+export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }: EmployeeTableProps) {
   const [activeTab, setActiveTab] = useState<"directory" | "security" | "birthdays">("directory");
   const [searchQuery, setSearchQuery] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("All");
+  const [branchFilter, setBranchFilter] = useState("All");
 
   const [isPending, startTransition] = useTransition();
   const [securityInputs, setSecurityInputs] = useState<Record<string, { value: string; show: boolean }>>({});
@@ -91,13 +95,14 @@ export function EmployeeTable({ employees }: EmployeeTableProps) {
         (emp.employee_id && emp.employee_id.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesDept = departmentFilter === "All" || emp.department === departmentFilter;
+      const matchesBranch = branchFilter === "All" || emp.branch_id === branchFilter;
 
       // Hide super admins from standard view to prevent clutter/accidents
       // const notSuperAdmin = !emp.roles.includes('SUPER_ADMIN');
 
-      return matchesSearch && matchesDept;
+      return matchesSearch && matchesDept && matchesBranch;
     });
-  }, [employees, searchQuery, departmentFilter]);
+  }, [employees, searchQuery, departmentFilter, branchFilter]);
 
   // Extract unique departments for filter
   const departments = useMemo(() => {
@@ -215,6 +220,18 @@ export function EmployeeTable({ employees }: EmployeeTableProps) {
                 buttonClassName="h-10 px-4 bg-white border-zinc-200"
                 options={departments.map(dept => ({ label: dept === "All" ? "All Departments" : dept, value: dept }))}
               />
+              {isSuperAdmin && branches.length > 0 && (
+                <Dropdown
+                  value={branchFilter}
+                  onChange={(val) => setBranchFilter(val)}
+                  className="w-56"
+                  buttonClassName="h-10 px-4 bg-white border-zinc-200"
+                  options={[
+                    { label: "All Branches", value: "All" },
+                    ...branches.map(b => ({ label: b.name, value: b.id }))
+                  ]}
+                />
+              )}
             </div>
           </div>
 
