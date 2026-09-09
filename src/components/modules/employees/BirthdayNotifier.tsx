@@ -40,9 +40,15 @@ export function BirthdayNotifier({ currentUserProfile, todayBirthdays }: Birthda
     if (!currentUserProfile) return;
     if (todayBirthdays.length === 0) return;
 
+    const today = new Date().toISOString().split('T')[0];
+    const storageKey = `birthday_notified_${currentUserProfile.id}_${today}`;
+    
+    if (localStorage.getItem(storageKey)) return;
+
     if (myBirthday || showColleagues) {
       const timer = setTimeout(() => {
         setIsOpen(true);
+        localStorage.setItem(storageKey, "true");
       }, 500);
       return () => clearTimeout(timer);
     }
