@@ -181,37 +181,8 @@ export async function deleteBranch(id: string) {
     const adminId = currentUser.id;
     const supabaseAdmin = createAdminClient();
 
-    // 1. Fetch all employees associated with this branch to clean up their storage files
-    const { data: employees, error: empError } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("branch_id", id);
-
-    if (empError) {
-      console.error("Failed to fetch branch employees:", empError);
-      return { success: false, error: "Failed to verify branch employees for cleanup." };
-    }
-
-    // 2. Cleanup Storage files (eod_photos, medical-certificates) for these employees
-    if (employees && employees.length > 0) {
-      const employeeIds = employees.map(emp => emp.id);
-      
-      // A helper to delete all files in a folder path
-      const cleanupUserFolder = async (bucket: string, userId: string) => {
-        const { data: files } = await supabaseAdmin.storage.from(bucket).list(userId);
-        if (files && files.length > 0) {
-          const filePaths = files.map(f => `${userId}/${f.name}`);
-          await supabaseAdmin.storage.from(bucket).remove(filePaths);
-        }
-      };
-
-      for (const empId of employeeIds) {
-        await cleanupUserFolder('eod_photos', empId);
-        await cleanupUserFolder('medical-certificates', empId);
-      }
-    }
-
-    // 3. Call the secure RPC to perform transactional deletion
+    // 1. Call the secure RPC to perform transactional deletion
+    // The RPC will enforce that the branch cannot be deleted if it has active employees.
     const { data: rpcResult, error: rpcError } = await supabaseAdmin
       .rpc('delete_branch_transaction', { p_branch_id: id, p_admin_id: adminId });
 
