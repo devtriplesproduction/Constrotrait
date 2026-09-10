@@ -122,7 +122,7 @@ export async function submitLeave(input: CreateLeaveInput) {
           is_half_day: input.is_half_day,
           reason: input.reason,
           medical_certificate_url: input.medical_certificate_url || null,
-          status: "Pending Level",
+          status: "Pending First Level",
           is_paid: false // Sick leave is unpaid until cert verified. Casual/Unpaid are unpaid.
         })
         .select()
@@ -370,6 +370,15 @@ export async function getLeaves() {
       .order("created_at", { ascending: false });
 
     if (error) return { success: false, error: "Failed to fetch leaves" };
+    
+    if (data) {
+      data.forEach((d: any) => {
+        if (d.status === "Pending First Level") {
+          d.status = "Pending Level";
+        }
+      });
+    }
+    
     return { success: true, data };
   } catch (e: unknown) {
     console.error("Error fetching leaves:", e);
@@ -388,7 +397,7 @@ export async function getLeavesToApprove() {
 
     if (isHR(user.roles) || isSuperAdmin(user.roles)) {
       // HR sees everything pending HR, or everything if they want, but pending HR is the action items
-      query = query.in("status", ["Pending Level", "Pending HR", "Approved", "Rejected", "Cancelled"]);
+      query = query.in("status", ["Pending First Level", "Pending HR", "Approved", "Rejected", "Cancelled"]);
     } else if (isBranchManager(user.roles)) {
       // Branch manager sees their branch's pending level, or others for history
       // We just fetch all for their branch in JS
@@ -396,6 +405,14 @@ export async function getLeavesToApprove() {
 
     const { data, error } = await query.order("created_at", { ascending: false });
     if (error) return { success: false, error: "Failed to fetch pending leaves" };
+
+    if (data) {
+      data.forEach((d: any) => {
+        if (d.status === "Pending First Level") {
+          d.status = "Pending Level";
+        }
+      });
+    }
 
     let finalData = data;
     if (!isHR(user.roles) && !isSuperAdmin(user.roles)) {

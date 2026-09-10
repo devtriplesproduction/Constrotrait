@@ -220,7 +220,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
     if (!files || files.length === 0) return;
 
     Array.from(files).forEach((file: File) => {
-      const extMatch = file.name.match(/\\.([^.]+)$/);
+      const extMatch = file.name.match(/\.([^.]+)$/);
       const fileExt = extMatch ? extMatch[1].toLowerCase() : '';
       if (!['pdf', 'jpg', 'jpeg', 'png'].includes(fileExt)) {
         toast({ title: "Invalid File Type", description: "Only PDF, JPG, and PNG files are allowed.", variant: "error" });
