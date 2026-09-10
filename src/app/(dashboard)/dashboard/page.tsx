@@ -1,6 +1,7 @@
 import React from "react";
 import { getAuthenticatedUser } from "@/services/auth.service";
 import { PageHeader } from "@/components/modules/PageHeader";
+import { ComingSoonModal } from "@/components/modules/ComingSoonModal";
 
 export default async function DashboardPage() {
   const user = await getAuthenticatedUser();
@@ -8,6 +9,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <ComingSoonModal />
       <PageHeader
         title={`Welcome back, ${firstName}`}
         subtitle="Here's an overview of your workspace today."

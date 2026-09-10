@@ -134,7 +134,7 @@ export async function submitLeave(input: CreateLeaveInput) {
 
     if (error) {
       console.error("Failed to submit leave:", error);
-      return { success: false, error: "Failed to submit leave" };
+      return { success: false, error: error.message || error.details || "Failed to submit leave" };
     }
 
     // TODO: Send notification

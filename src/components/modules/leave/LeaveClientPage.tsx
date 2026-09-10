@@ -151,14 +151,16 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
             <div className="flex p-1.5 space-x-1.5 bg-white/40 backdrop-blur-xl rounded-2xl shrink-0 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
               {!isSuperAdmin && (
                 <Button
-                  className={`py-2.5 px-4 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'mine' ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'}`}
+                  variant="ghost"
+                  className={`py-2.5 px-4 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'mine' ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 hover:text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'}`}
                   onClick={() => setActiveTab('mine')}
                 >
                   My Leaves
                 </Button>
               )}
               <Button
-                className={`py-2.5 px-4 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'approve' ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'}`}
+                variant="ghost"
+                className={`py-2.5 px-4 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'approve' ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 hover:text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'}`}
                 onClick={() => setActiveTab('approve')}
               >
                 <div className="flex items-center justify-center gap-2">
