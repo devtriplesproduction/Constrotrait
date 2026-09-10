@@ -302,7 +302,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
         setProvisionedCreds({
           email: data.email,
           pass: data.password,
-          id: (result as any).data?.employee_id || "PENDING"
+          id: ('data' in result && result.data ? result.data.employee_id : "PENDING")
         });
         if (onSuccess) onSuccess();
       } else {
