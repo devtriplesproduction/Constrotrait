@@ -159,20 +159,6 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
 
   const isBranchManager = watchedRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE") || watchedAdditionalRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE");
 
-  useEffect(() => {
-    if (phoneNumber) {
-      const digits = phoneNumber.replace(/\D/g, '');
-      if (digits.length >= 5) {
-        const last5 = digits.slice(-5);
-        setValue("employee_id", `EMP-${last5}`);
-      } else {
-        setValue("employee_id", `EMP-${digits.padEnd(5, '0')}`);
-      }
-    } else {
-      setValue("employee_id", `EMP-${Math.floor(10000 + Math.random() * 90000)}`); // Fallback if no phone
-    }
-  }, [phoneNumber, setValue]);
-
   // Auto-generate email based on name
   useEffect(() => {
     if (firstName && lastName) {
@@ -316,7 +302,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
         setProvisionedCreds({
           email: data.email,
           pass: data.password,
-          id: data.employee_id
+          id: (result as any).data?.employee_id || "PENDING"
         });
         if (onSuccess) onSuccess();
       } else {

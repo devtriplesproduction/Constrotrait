@@ -30,7 +30,7 @@ export const onboardSchema = z.object({
 
   // Login & Access (Step 4)
   email: z.string().email("Invalid work email"),
-  employee_id: z.string().min(4, "Employee ID is required"),
+  employee_id: z.string().optional(),
   status: z.enum(["Probation", "Confirmed", "Resigned", "Terminated", "Notice Period", "Inactive"]).default("Probation"),
   reporting_manager: z.string().optional(),
   branch_id: z.string().optional(),

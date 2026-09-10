@@ -106,6 +106,16 @@ export async function onboardEmployee(data: OnboardFormData) {
     // Thanks to the new RLS policy for INSERT on public.profiles
     const supabase = await createClient();
 
+    const { data: newEmployeeId, error: rpcError } = await (supabase as any).rpc('generate_employee_id', {
+      p_branch_id: targetBranchId
+    });
+
+    if (rpcError || !newEmployeeId) {
+      console.error("Failed to generate employee ID:", rpcError);
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      return { success: false, error: "Failed to generate sequence for Employee ID." };
+    }
+
     const { error: profileError } = await supabase.from("profiles").insert({
       id: userId,
       email: data.email,
@@ -113,7 +123,7 @@ export async function onboardEmployee(data: OnboardFormData) {
       last_name: data.last_name,
       branch_id: targetBranchId,
       phone_number: data.phone_number || null,
-      employee_id: data.employee_id,
+      employee_id: newEmployeeId,
       joining_date: data.joining_date,
       status: data.status,
       is_active: isActive,
@@ -156,7 +166,7 @@ export async function onboardEmployee(data: OnboardFormData) {
 
     return {
       success: true,
-      data: { id: userId, email: data.email },
+      data: { id: userId, email: data.email, employee_id: newEmployeeId },
       message: `Employee ${data.first_name} onboarded successfully.`
     };
   } catch (err: unknown) {
