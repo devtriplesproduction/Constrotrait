@@ -80,7 +80,7 @@ export default async function EmployeesPage() {
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Admins</p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {employees.filter(e => e.roles.includes('SUPER_ADMIN') || e.roles.includes('ADMIN_INWARD_CRE')).length}
+                  {employees.filter(e => (e.roles || []).includes('SUPER_ADMIN') || (e.roles || []).includes('ADMIN_INWARD_CRE')).length}
                 </p>
               </div>
             </div>

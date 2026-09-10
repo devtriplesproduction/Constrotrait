@@ -1,6 +1,6 @@
 "use server";
 
-import { submitLeave, approveLeaveFirstLevel, approveLeaveHR, rejectLeave, cancelApprovedLeave, verifyMedicalCertificate, deleteMedicalCertificate, rejectMedicalCertificate, CreateLeaveInput } from "@/services/leave.service";
+import { submitLeave, approveLeave, rejectLeave, cancelApprovedLeave, verifyMedicalCertificate, deleteMedicalCertificate, rejectMedicalCertificate, CreateLeaveInput } from "@/services/leave.service";
 import { revalidatePath } from "next/cache";
 
 export async function submitLeaveAction(input: CreateLeaveInput) {
@@ -11,16 +11,8 @@ export async function submitLeaveAction(input: CreateLeaveInput) {
     return res;
 }
 
-export async function approveLeaveFirstLevelAction(leaveId: string) {
-    const res = await approveLeaveFirstLevel(leaveId);
-    if (res.success) {
-        revalidatePath("/leave");
-    }
-    return res;
-}
-
-export async function approveLeaveHRAction(leaveId: string) {
-    const res = await approveLeaveHR(leaveId);
+export async function approveLeaveAction(leaveId: string) {
+    const res = await approveLeave(leaveId);
     if (res.success) {
         revalidatePath("/leave");
     }

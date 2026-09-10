@@ -90,8 +90,8 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
       const matchesSearch =
-        `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        `${emp.first_name || ''} ${emp.last_name || ''}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (emp.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (emp.employee_id && emp.employee_id.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesDept = departmentFilter === "All" || emp.department === departmentFilter;
@@ -253,7 +253,7 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar
-                            initials={`${emp.first_name[0]}${emp.last_name[0]}`}
+                            initials={`${emp.first_name?.[0] || '?'}${emp.last_name?.[0] || '?'}`}
                             imageUrl={emp.profile_photo}
                             className="w-10 h-10 bg-orange-100 "
                             textClassName="text-orange-600  font-bold"

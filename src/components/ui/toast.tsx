@@ -50,8 +50,10 @@ function ToastItem({
         </div>
       </div>
       <Button
+        variant="ghost"
+        size="icon"
         onClick={onDismiss}
-        className="absolute right-2 top-2 rounded-lg p-1 opacity-50 transition-opacity hover:opacity-100 hover:bg-slate-100 text-slate-400 "
+        className="absolute right-2 top-2 h-6 w-6 rounded-md p-1 opacity-50 transition-opacity hover:opacity-100 hover:bg-slate-100 text-slate-400 "
       >
         <X className="h-4 w-4" />
       </Button>

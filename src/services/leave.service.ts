@@ -7,7 +7,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 type AppSupabaseClient = SupabaseClient<Database> & {
   rpc: (
-    fn: "approve_leave_first_level" | "approve_comp_off_leave" | "reject_leave" | "cancel_comp_off_leave" | "verify_medical_certificate" | "submit_comp_off_leave" | "delete_medical_certificate" | "reject_medical_certificate",
+    fn: "submit_leave" | "approve_leave" | "reject_leave" | "cancel_leave" | "verify_medical_certificate" | "delete_medical_certificate" | "reject_medical_certificate",
     args?: Record<string, unknown>
   ) => Promise<{ error: { message: string, code?: string } | null; data: unknown }>;
 };
@@ -94,43 +94,22 @@ export async function submitLeave(input: CreateLeaveInput) {
 
 
 
-    const supabase = await createClient();
-    let data;
-    let error;
+    const supabase = await createClient() as unknown as AppSupabaseClient;
 
-    if (input.leave_type === "Compensatory Off") {
-      const { data: rpcData, error: rpcError } = await (supabase as unknown as AppSupabaseClient).rpc(
-        "submit_comp_off_leave",
-        {
-          p_start_date: input.start_date,
-          p_end_date: input.end_date,
-          p_is_half_day: input.is_half_day,
-          p_reason: input.reason
-        }
-      );
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      "submit_leave",
+      {
+        p_leave_type: input.leave_type,
+        p_start_date: input.start_date,
+        p_end_date: input.end_date,
+        p_is_half_day: input.is_half_day,
+        p_reason: input.reason,
+        p_medical_certificate_url: input.medical_certificate_url || null
+      }
+    );
 
-      data = rpcData ? { id: rpcData } : null;
-      error = rpcError;
-    } else {
-      const res = await supabase
-        .from("leave_requests")
-        .insert({
-          employee_id: user.id,
-          leave_type: input.leave_type,
-          start_date: input.start_date,
-          end_date: input.end_date,
-          is_half_day: input.is_half_day,
-          reason: input.reason,
-          medical_certificate_url: input.medical_certificate_url || null,
-          status: "Pending First Level",
-          is_paid: false // Sick leave is unpaid until cert verified. Casual/Unpaid are unpaid.
-        })
-        .select()
-        .single();
-
-      data = res.data;
-      error = res.error;
-    }
+    let data = rpcData ? { id: rpcData } : null;
+    let error = rpcError;
 
     if (error) {
       console.error("Failed to submit leave:", error);
@@ -146,7 +125,7 @@ export async function submitLeave(input: CreateLeaveInput) {
   }
 }
 
-export async function approveLeaveFirstLevel(leaveId: string) {
+export async function approveLeave(leaveId: string) {
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) {
@@ -155,18 +134,7 @@ export async function approveLeaveFirstLevel(leaveId: string) {
 
     const supabase = await createClient() as unknown as AppSupabaseClient;
 
-    // Fetch leave first to validate
-    const { data: leave, error: fetchError } = await supabase
-      .from("leave_requests")
-      .select("id")
-      .eq("id", leaveId)
-      .single();
-
-    if (fetchError || !leave) return { success: false, error: "Leave not found" };
-
-
-
-    const { error } = await supabase.rpc("approve_leave_first_level", {
+    const { error } = await supabase.rpc("approve_leave", {
       p_leave_id: leaveId,
     });
 
@@ -185,43 +153,6 @@ export async function approveLeaveFirstLevel(leaveId: string) {
       success: false,
       error: "An unexpected error occurred",
     };
-  }
-}
-
-export async function approveLeaveHR(leaveId: string) {
-  try {
-    const user = await getAuthenticatedUserWithRoles();
-    if (!user) return { success: false, error: "Unauthorized" };
-    if (!isHR(user.roles) && !isSuperAdmin(user.roles)) return { success: false, error: "Unauthorized" };
-
-    const supabase = await createClient() as unknown as AppSupabaseClient;
-    const { data: leave, error: fetchError } = await supabase
-      .from("leave_requests")
-      .select("id, status, leave_type, medical_certificate_url")
-      .eq("id", leaveId)
-      .single();
-
-    if (fetchError || !leave) return { success: false, error: "Leave not found" };
-    if (leave.status !== "Pending HR") return { success: false, error: "Leave is not pending HR approval." };
-
-    const { error: rpcError } = await supabase.rpc("approve_comp_off_leave", {
-      p_leave_id: leaveId
-    });
-
-    if (!rpcError && leave.leave_type === "Sick Leave" && leave.medical_certificate_url) {
-      await supabase.rpc("verify_medical_certificate", { p_leave_id: leaveId });
-    }
-
-    if (rpcError) {
-      console.error("Failed to approve leave via RPC:", rpcError);
-      return { success: false, error: "Failed to approve leave" };
-    }
-
-    // Since RPC doesn't return data, we can just fetch it if needed, or return success
-    return { success: true };
-  } catch (error) {
-    console.error("Error approving leave:", error);
-    return { success: false, error: "An unexpected error occurred" };
   }
 }
 
@@ -278,7 +209,7 @@ export async function cancelApprovedLeave(leaveId: string) {
     if (fetchError || !leave) return { success: false, error: "Leave not found" };
     if (leave.status !== "Approved") return { success: false, error: "Only approved leaves can be cancelled." };
 
-    const { error: rpcError } = await supabase.rpc("cancel_comp_off_leave", {
+    const { error: rpcError } = await supabase.rpc("cancel_leave", {
       p_leave_id: leaveId
     });
 
@@ -371,13 +302,7 @@ export async function getLeaves() {
 
     if (error) return { success: false, error: "Failed to fetch leaves" };
     
-    if (data) {
-      data.forEach((d: any) => {
-        if (d.status === "Pending First Level") {
-          d.status = "Pending Level";
-        }
-      });
-    }
+    // Status mapping removed since we use Pending Level natively
     
     return { success: true, data };
   } catch (e: unknown) {
@@ -397,7 +322,7 @@ export async function getLeavesToApprove() {
 
     if (isHR(user.roles) || isSuperAdmin(user.roles)) {
       // HR sees everything pending HR, or everything if they want, but pending HR is the action items
-      query = query.in("status", ["Pending First Level", "Pending HR", "Approved", "Rejected", "Cancelled"]);
+      query = query.in("status", ["Pending Level", "Approved", "Rejected", "Cancelled"]);
     } else if (isBranchManager(user.roles)) {
       // Branch manager sees their branch's pending level, or others for history
       // We just fetch all for their branch in JS
@@ -405,14 +330,6 @@ export async function getLeavesToApprove() {
 
     const { data, error } = await query.order("created_at", { ascending: false });
     if (error) return { success: false, error: "Failed to fetch pending leaves" };
-
-    if (data) {
-      data.forEach((d: any) => {
-        if (d.status === "Pending First Level") {
-          d.status = "Pending Level";
-        }
-      });
-    }
 
     let finalData = data;
     if (!isHR(user.roles) && !isSuperAdmin(user.roles)) {

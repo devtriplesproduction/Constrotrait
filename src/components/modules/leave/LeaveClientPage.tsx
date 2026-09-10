@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectItem } from "@/components/ui/select";
 import { LeaveForm } from "./LeaveForm";
-import { approveLeaveFirstLevelAction, approveLeaveHRAction, rejectLeaveAction, cancelApprovedLeaveAction, verifyMedicalCertificateAction, deleteMedicalCertificateAction, rejectMedicalCertificateAction } from "@/actions/leave.actions";
+import { approveLeaveAction, rejectLeaveAction, cancelApprovedLeaveAction, verifyMedicalCertificateAction, deleteMedicalCertificateAction, rejectMedicalCertificateAction } from "@/actions/leave.actions";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, FileText, UserCircle2, Ban, Plus } from "lucide-react";
@@ -115,7 +115,6 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
       case 'Cancelled':
         return { color: 'bg-red-50/80 text-red-700 border-red-100/50', icon: XCircle };
       case 'Pending Level':
-      case 'Pending HR':
       default:
         return { color: 'bg-amber-50/80 text-amber-700 border-amber-100/50', icon: Clock };
     }
@@ -357,22 +356,9 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                       </div>
 
                       <div className="flex flex-row md:flex-col gap-2 md:min-w-[140px] justify-center md:border-l border-slate-200/60 md:pl-6">
-                        {leave.status === 'Pending Level' && (!isHR || isSuperAdmin) && (
+                        {leave.status === 'Pending Level' && (
                           <>
-                            <Button className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 shadow-sm" onClick={() => handleAction(approveLeaveFirstLevelAction as any, leave.id as string)}>
-                              Approve
-                            </Button>
-                            <Button variant="outline" className="w-full rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={async () => {
-                              const reason = await prompt("Rejection reason:");
-                              if (reason) handleAction(rejectLeaveAction as any, leave.id as string, reason);
-                            }}>
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {leave.status === 'Pending HR' && isHR && (
-                          <>
-                            <Button className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 shadow-sm" onClick={() => handleAction(approveLeaveHRAction as any, leave.id as string)}>
+                            <Button className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 shadow-sm" onClick={() => handleAction(approveLeaveAction as any, leave.id as string)}>
                               Approve
                             </Button>
                             <Button variant="outline" className="w-full rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={async () => {
@@ -418,7 +404,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                           </Button>
                         )}
 
-                        {!((leave.status === 'Pending Level' && (!isHR || isSuperAdmin)) || (leave.status === 'Pending HR' && isHR) || (leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && (isHR || isSuperAdmin)) || (leave.status === 'Approved' && isHR)) && (
+                        {!((leave.status === 'Pending Level') || (leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && (isHR || isSuperAdmin)) || (leave.status === 'Approved' && isHR)) && (
                           <div className="text-center text-xs text-slate-400 font-bold uppercase tracking-wider py-4">
                             No Actions
                           </div>
