@@ -311,10 +311,16 @@ BEGIN
     IF v_caller.roles @> ARRAY['SUPER_ADMIN']::public.user_role[] THEN
         NULL;
     ELSIF v_caller.roles @> ARRAY['BRANCH_MANAGER_ADMINISTRATIVE']::public.user_role[] THEN
+        IF v_employee.roles @> ARRAY['SUPER_ADMIN']::public.user_role[] OR v_employee.roles @> ARRAY['BRANCH_MANAGER_ADMINISTRATIVE']::public.user_role[] THEN
+            RAISE EXCEPTION 'Unauthorized: ADMIN cannot cancel ADMIN or SUPER_ADMIN leaves';
+        END IF;
         IF v_caller.branch_id IS DISTINCT FROM v_employee.branch_id THEN
             RAISE EXCEPTION 'Unauthorized: cross-branch cancellation is not permitted';
         END IF;
     ELSIF v_caller.roles @> ARRAY['HR']::public.user_role[] THEN
+        IF v_employee.roles @> ARRAY['SUPER_ADMIN']::public.user_role[] OR v_employee.roles @> ARRAY['BRANCH_MANAGER_ADMINISTRATIVE']::public.user_role[] OR v_employee.roles @> ARRAY['HR']::public.user_role[] THEN
+            RAISE EXCEPTION 'Unauthorized: HR can only cancel regular employee leaves';
+        END IF;
         IF v_caller.branch_id IS DISTINCT FROM v_employee.branch_id THEN
             RAISE EXCEPTION 'Unauthorized: cross-branch cancellation is not permitted';
         END IF;
