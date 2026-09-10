@@ -28,7 +28,7 @@ export default async function HolidaysPage() {
   const canEditDelete = isSuperAdminUser || isHRUser;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div>
       <HolidayList 
         initialHolidays={holidaysResult.data || []} 
         branches={branchesResult.data || []}

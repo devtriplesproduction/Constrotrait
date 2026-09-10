@@ -27,7 +27,7 @@ export default async function LeavePage() {
   const leavesToApprove = toApproveRes.success && toApproveRes.data ? toApproveRes.data : [];
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <LeaveClientPage
         myLeaves={myLeaves}
         canApprove={canApprove}
