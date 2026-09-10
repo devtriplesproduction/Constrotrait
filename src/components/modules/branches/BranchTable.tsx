@@ -173,7 +173,7 @@ export function BranchTable({ branches }: BranchTableProps) {
                 Cancel
               </Button>
               <Button
-                variant="destructive"
+                variant="danger"
                 className="flex-1 rounded-xl h-12 font-semibold bg-red-600 hover:bg-red-700 shadow-sm shadow-red-200"
                 onClick={handleDelete}
                 disabled={isDeleting}

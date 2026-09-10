@@ -859,10 +859,10 @@ export function PayrollClient({
               <div className="relative z-10 flex justify-between items-start">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl flex items-center justify-center border border-orange-100 shadow-inner">
-                    <span className="text-xl font-black text-orange-600">{selectedEmployee.employee_name.charAt(0)}</span>
+                    <span className="text-xl font-black text-orange-600">{(selectedEmployee.employee_name || '?').charAt(0)}</span>
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">{selectedEmployee.employee_name}</h2>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">{selectedEmployee.employee_name || 'Unknown Employee'}</h2>
                     <p className="text-sm font-medium text-slate-500 mt-0.5 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                       Payroll Summary

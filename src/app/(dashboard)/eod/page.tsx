@@ -107,7 +107,7 @@ export default async function EODPage({ searchParams }: PageProps) {
         actions={
           <div className="flex items-center gap-3">
             {canReview && (
-              <EodTabsClient activeTab={activeTab} isSuperAdmin={isSuperAdmin} />
+              <EodTabsClient activeTab={activeTab} isSuperAdmin={!!isSuperAdmin} />
             )}
 
             {activeTab === 'review' ? (

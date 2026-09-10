@@ -89,7 +89,7 @@ export function HolidayFormDialog({ isOpen, onClose, holiday, branches, isSuperA
       } else {
         toast({
           title: "Error",
-          description: result.error || "An error occurred.",
+          description: (result as any).error || "An error occurred.",
           variant: "error",
         });
       }

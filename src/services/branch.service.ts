@@ -184,15 +184,15 @@ export async function deleteBranch(id: string) {
     // 1. Call the secure RPC to perform transactional deletion
     // The RPC will enforce that the branch cannot be deleted if it has active employees.
     const { data: rpcResult, error: rpcError } = await supabaseAdmin
-      .rpc('delete_branch_transaction', { p_branch_id: id, p_admin_id: adminId });
+      .rpc('delete_branch_transaction' as any, { p_branch_id: id, p_admin_id: adminId });
 
     if (rpcError) {
       console.error("Failed to execute delete_branch_transaction:", rpcError);
       return { success: false, error: "Database transaction failed during branch deletion." };
     }
 
-    if (rpcResult && !rpcResult.success) {
-      return { success: false, error: rpcResult.error || "Failed to delete branch." };
+    if (rpcResult && !(rpcResult as any).success) {
+      return { success: false, error: (rpcResult as any).error || "Failed to delete branch." };
     }
 
     // Attempt to log audit
@@ -200,7 +200,7 @@ export async function deleteBranch(id: string) {
       const { logAdminAudit } = await import("./admin.service");
       await logAdminAudit(
         'BRANCH_DELETED',
-        { branch_id: id, deleted_users_count: rpcResult?.deleted_users_count || 0 },
+        { branch_id: id, deleted_users_count: (rpcResult as any)?.deleted_users_count || 0 },
         'critical'
       );
     } catch (e) {
@@ -209,7 +209,7 @@ export async function deleteBranch(id: string) {
 
     return { 
       success: true, 
-      message: `Branch successfully deleted along with ${rpcResult?.deleted_users_count || 0} associated users.` 
+      message: `Branch successfully deleted along with ${(rpcResult as any)?.deleted_users_count || 0} associated users.` 
     };
   } catch (err: unknown) {
     console.error("Failed to delete branch:", err);
