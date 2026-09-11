@@ -930,18 +930,7 @@ export function PayrollClient({
                       <span className="text-slate-600 font-medium text-sm">Base Salary</span>
                       <span className="font-bold text-slate-900">₹{(selectedEmployee.base_salary || 0).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-slate-600 font-medium text-sm">Basic Salary</span>
-                      <span className="font-bold text-slate-900">₹{(selectedEmployee.basic_salary || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-slate-600 font-medium text-sm">HRA</span>
-                      <span className="font-bold text-slate-900">₹{(selectedEmployee.hra || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-slate-600 font-medium text-sm">Allowance</span>
-                      <span className="font-bold text-slate-900">₹{(selectedEmployee.allowance || 0).toLocaleString()}</span>
-                    </div>
+
                     <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
                       <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Bonus</span>
                       <span className="font-bold text-emerald-700">+₹{(selectedEmployee.bonus || 0).toLocaleString()}</span>
