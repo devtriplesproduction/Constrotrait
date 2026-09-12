@@ -13,7 +13,7 @@ import {
 } from "@/actions/payroll_slips.actions";
 import type { Database } from "@/types/database";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
@@ -211,13 +211,13 @@ export function PayrollClient({
     e.preventDefault();
     let finalAmount = Number(adjAmount);
     if (adjType === "Travel Expense" && adjVehicleType === "Two-wheeler") {
-      finalAmount = Number(adjKilometers) * Number(adjRatePerKm); 
+      finalAmount = Number(adjKilometers) * Number(adjRatePerKm);
     } else if (adjType === "TDS") {
       finalAmount = 0;
     } else if (adjType === "Food Allowance") {
       finalAmount = Number(adjMealsCount) * Number(adjMealAmount);
     }
-    
+
     if (!adjEmployeeId || isNaN(finalAmount) || (adjType !== "TDS" && finalAmount <= 0)) {
       toast({ title: "Error", description: "Please enter valid adjustment details.", variant: "error" });
       return;
@@ -225,9 +225,9 @@ export function PayrollClient({
     setIsSubmittingAdj(true);
     try {
       const res = await addManualLedgerEntryAction(
-        adjEmployeeId, 
-        adjType, 
-        finalAmount, 
+        adjEmployeeId,
+        adjType,
+        finalAmount,
         adjDesc,
         adjType === "Travel Expense" ? Number(adjKilometers) : undefined,
         adjType === "Travel Expense" ? adjVehicleType : undefined,
@@ -720,8 +720,8 @@ export function PayrollClient({
                 <>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">Vehicle Type</label>
-                    <Dropdown 
-                      value={adjVehicleType} 
+                    <Dropdown
+                      value={adjVehicleType}
                       onChange={setAdjVehicleType}
                       options={[
                         { label: "Two-wheeler", value: "Two-wheeler" },
@@ -855,7 +855,7 @@ export function PayrollClient({
             <div className="relative px-8 pt-8 pb-6 bg-gradient-to-br from-slate-50 to-white overflow-hidden">
               <div className="absolute top-0 right-0 p-32 bg-orange-50 rounded-full blur-3xl opacity-50 -mr-16 -mt-16 pointer-events-none"></div>
               <div className="absolute top-0 left-0 p-24 bg-blue-50 rounded-full blur-3xl opacity-50 -ml-12 -mt-12 pointer-events-none"></div>
-              
+
               <div className="relative z-10 flex justify-between items-start">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl flex items-center justify-center border border-orange-100 shadow-inner">
@@ -869,8 +869,8 @@ export function PayrollClient({
                     </p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setEmployeeDetailsOpen(false)} 
+                <button
+                  onClick={() => setEmployeeDetailsOpen(false)}
                   className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors rounded-full p-2"
                 >
                   <X className="w-5 h-5" />
@@ -878,158 +878,155 @@ export function PayrollClient({
               </div>
             </div>
 
-            <div className="px-8 py-6 overflow-y-auto bg-white flex-1 custom-scrollbar space-y-8">
+            <div className="px-6 py-6 overflow-y-auto flex-1 custom-scrollbar space-y-6 bg-slate-50/50">
               
               {/* Attendance Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600">
-                    <Clock className="w-4 h-4" />
+              <Card className="border-border shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Clock className="w-5 h-5" />
+                    <CardTitle className="text-base uppercase tracking-wide">Attendance</CardTitle>
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Attendance</h4>
-                </div>
-                
-                <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="divide-y divide-slate-50">
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-slate-600 font-medium text-sm">Days Present</span>
-                      <span className="font-bold text-slate-900">{selectedEmployee.days_present || 0}</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-muted-foreground mb-1">Present</span>
+                      <span className="text-xl font-bold text-foreground">{selectedEmployee.days_present || 0}</span>
                     </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-slate-600 font-medium text-sm">Days Field</span>
-                      <span className="font-bold text-slate-900">{selectedEmployee.days_field || 0}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-muted-foreground mb-1">Field</span>
+                      <span className="text-xl font-bold text-foreground">{selectedEmployee.days_field || 0}</span>
                     </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-slate-600 font-medium text-sm">Days Paid Leave</span>
-                      <span className="font-bold text-slate-900">{selectedEmployee.days_paid_leave || 0}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-muted-foreground mb-1">Paid Leave</span>
+                      <span className="text-xl font-bold text-foreground">{selectedEmployee.days_paid_leave || 0}</span>
                     </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-slate-600 font-medium text-sm">Days Unpaid Leave</span>
-                      <span className="font-bold text-slate-900">{selectedEmployee.days_unpaid_leave || 0}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-muted-foreground mb-1">Unpaid Leave</span>
+                      <span className="text-xl font-bold text-foreground">{selectedEmployee.days_unpaid_leave || 0}</span>
                     </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-slate-600 font-medium text-sm">Days Absent</span>
-                      <span className="font-bold text-slate-900">{selectedEmployee.days_absent || 0}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-destructive mb-1">Absent</span>
+                      <span className="text-xl font-bold text-destructive">{selectedEmployee.days_absent || 0}</span>
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Earnings Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="p-1.5 bg-emerald-100 rounded-lg text-emerald-600">
-                    <ArrowUpRight className="w-4 h-4" />
+              <Card className="border-border shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2 text-emerald-600">
+                    <ArrowUpRight className="w-5 h-5" />
+                    <CardTitle className="text-base uppercase tracking-wide">Earnings</CardTitle>
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Earnings</h4>
-                </div>
-                
-                <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="divide-y divide-slate-50">
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-slate-600 font-medium text-sm">Base Salary</span>
-                      <span className="font-bold text-slate-900">₹{(selectedEmployee.base_salary || 0).toLocaleString()}</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center pb-4 border-b border-border">
+                      <span className="text-sm font-medium text-muted-foreground">Base Salary</span>
+                      <span className="font-bold text-foreground text-lg">₹{(selectedEmployee.base_salary || 0).toLocaleString()}</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-y-4 gap-x-6">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Bonus</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.bonus || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Medical</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.medical_allowance || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Travel</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.travel_expense || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Incentive</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.performance_incentive || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center col-span-2 sm:col-span-1">
+                        <span className="text-sm font-medium text-muted-foreground">Food</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.food_allowance || 0).toLocaleString()}</span>
+                      </div>
                     </div>
 
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Bonus</span>
-                      <span className="font-bold text-emerald-700">+₹{(selectedEmployee.bonus || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Medical</span>
-                      <span className="font-bold text-emerald-700">+₹{(selectedEmployee.medical_allowance || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Travel</span>
-                      <span className="font-bold text-emerald-700">+₹{(selectedEmployee.travel_expense || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Perf. Incentive</span>
-                      <span className="font-bold text-emerald-700">+₹{(selectedEmployee.performance_incentive || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-emerald-700 font-medium text-sm flex items-center gap-1.5"><Plus className="w-3 h-3"/> Food</span>
-                      <span className="font-bold text-emerald-700">+₹{(selectedEmployee.food_allowance || 0).toLocaleString()}</span>
+                    <div className="flex justify-between items-center pt-4 border-t border-border mt-4 bg-slate-50/50 p-4 rounded-lg">
+                      <span className="text-sm font-bold text-foreground uppercase tracking-wide">Gross Salary</span>
+                      <span className="font-bold text-foreground text-xl">₹{(selectedEmployee.gross_salary || 0).toLocaleString()}</span>
                     </div>
                   </div>
-                  
-                  <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-between items-center">
-                    <span className="font-bold text-slate-700">Gross Salary</span>
-                    <span className="font-black text-lg text-slate-900">₹{(selectedEmployee.gross_salary || 0).toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Deductions Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="p-1.5 bg-red-100 rounded-lg text-red-600">
-                    <ArrowDownRight className="w-4 h-4" />
+              <Card className="border-border shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2 text-rose-600">
+                    <ArrowDownRight className="w-5 h-5" />
+                    <CardTitle className="text-base uppercase tracking-wide">Deductions</CardTitle>
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Deductions</h4>
-                </div>
-                
-                <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="divide-y divide-slate-50">
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-red-700 font-medium text-sm flex items-center gap-1.5"><Minus className="w-3 h-3"/> PF</span>
-                      <span className="font-bold text-red-700">-₹{(selectedEmployee.pf || 0).toLocaleString()}</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-y-4 gap-x-6">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">PF</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.pf || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">ESI</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.esi || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Prof. Tax</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.professional_tax || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Income Tax</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.income_tax || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">TDS</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.tds || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Sal. Advance</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.salary_advance_recovery || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Damage</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.damage_recovery || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Other</span>
+                        <span className="font-semibold text-foreground">₹{(selectedEmployee.other_deductions || 0).toLocaleString()}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-red-700 font-medium text-sm flex items-center gap-1.5"><Minus className="w-3 h-3"/> ESI</span>
-                      <span className="font-bold text-red-700">-₹{(selectedEmployee.esi || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-red-700 font-medium text-sm flex items-center gap-1.5"><Minus className="w-3 h-3"/> Professional Tax</span>
-                      <span className="font-bold text-red-700">-₹{(selectedEmployee.professional_tax || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-red-700 font-medium text-sm flex items-center gap-1.5"><Minus className="w-3 h-3"/> Income Tax</span>
-                      <span className="font-bold text-red-700">-₹{(selectedEmployee.income_tax || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-red-700 font-medium text-sm flex items-center gap-1.5"><Minus className="w-3 h-3"/> TDS</span>
-                      <span className="font-bold text-red-700">-₹{(selectedEmployee.tds || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-red-700 font-medium text-sm flex items-center gap-1.5"><Minus className="w-3 h-3"/> Salary Advance Recovery</span>
-                      <span className="font-bold text-red-700">-₹{(selectedEmployee.salary_advance_recovery || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-red-700 font-medium text-sm flex items-center gap-1.5"><Minus className="w-3 h-3"/> Damage Recovery</span>
-                      <span className="font-bold text-red-700">-₹{(selectedEmployee.damage_recovery || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                      <span className="text-red-700 font-medium text-sm flex items-center gap-1.5"><Minus className="w-3 h-3"/> Other Deductions</span>
-                      <span className="font-bold text-red-700">-₹{(selectedEmployee.other_deductions || 0).toLocaleString()}</span>
+                    
+                    <div className="flex justify-between items-center pt-4 border-t border-border mt-4 bg-rose-50/50 p-4 rounded-lg">
+                      <span className="text-sm font-bold text-rose-700 uppercase tracking-wide">Total Deductions</span>
+                      <span className="font-bold text-rose-700 text-xl">-₹{(selectedEmployee.total_deductions || 0).toLocaleString()}</span>
                     </div>
                   </div>
-                  
-                  <div className="bg-red-50/50 p-4 border-t border-red-100 flex justify-between items-center">
-                    <span className="font-bold text-red-700">Total Deductions</span>
-                    <span className="font-black text-lg text-red-700">-₹{(selectedEmployee.total_deductions || 0).toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Net Salary Section */}
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 p-6 text-white shadow-xl shadow-orange-500/30 transform transition-all hover:scale-[1.02]">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-xl -ml-8 -mb-8 pointer-events-none"></div>
-                
-                <div className="relative z-10 flex justify-between items-center">
-                  <div>
-                    <span className="font-medium text-orange-100 uppercase tracking-widest text-xs mb-1 block">Net Salary</span>
-                    <div className="flex items-baseline gap-1">
+              <Card className="border-border shadow-md bg-gradient-to-r from-primary to-blue-600 text-primary-foreground border-none">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-semibold text-primary-foreground/80 tracking-widest text-xs mb-1 block uppercase">Net Salary</span>
                       <span className="text-4xl font-black tracking-tight">₹{(selectedEmployee.net_salary || 0).toLocaleString()}</span>
                     </div>
+                    <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/30">
+                      <DollarSign className="w-8 h-8 text-white" />
+                    </div>
                   </div>
-                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/30 shadow-inner">
-                    <DollarSign className="w-7 h-7 text-white" />
-                  </div>
-                </div>
-              </div>
-
+                </CardContent>
+              </Card>
             </div>
 
             {/* Footer */}
@@ -1038,7 +1035,7 @@ export function PayrollClient({
                 {isLocked && (
                   <>
                     <Button
-                      onClick={() => handleGenerateSlip(selectedEmployee.id)}
+                      onClick={() => selectedEmployee && handleGenerateSlip(selectedEmployee.id)}
                       disabled={actionLoading}
                       variant="outline"
                       className="rounded-xl font-bold border-orange-200 text-orange-700 hover:bg-orange-50"
@@ -1048,10 +1045,10 @@ export function PayrollClient({
                       Generate Slip
                     </Button>
 
-                    {selectedEmployee.slip_status === 'generated' || selectedEmployee.slip_status === 'sent' ? (
+                    {selectedEmployee?.slip_status === 'generated' || selectedEmployee?.slip_status === 'sent' ? (
                       <>
                         <Button
-                          onClick={() => handleViewSlip(selectedEmployee.id)}
+                          onClick={() => selectedEmployee && handleViewSlip(selectedEmployee.id)}
                           disabled={actionLoading}
                           variant="outline"
                           className="rounded-xl font-bold"
@@ -1060,7 +1057,7 @@ export function PayrollClient({
                           View
                         </Button>
                         <Button
-                          onClick={() => handleDownloadSlip(selectedEmployee.employee_id)}
+                          onClick={() => selectedEmployee && handleDownloadSlip(selectedEmployee.employee_id)}
                           disabled={actionLoading}
                           variant="outline"
                           className="rounded-xl font-bold"
@@ -1071,11 +1068,11 @@ export function PayrollClient({
                       </>
                     ) : null}
 
-                    <span className={`text-xs font-bold px-2 py-1 rounded-md self-center ${selectedEmployee.slip_status === 'generated' || selectedEmployee.slip_status === 'sent'
+                    <span className={`text-xs font-bold px-2 py-1 rounded-md self-center ${selectedEmployee?.slip_status === 'generated' || selectedEmployee?.slip_status === 'sent'
                       ? 'bg-emerald-100 text-emerald-700'
                       : 'bg-slate-200 text-slate-600'
                       }`}>
-                      {selectedEmployee.slip_status === 'generated' || selectedEmployee.slip_status === 'sent' ? 'Generated' : 'Not Generated'}
+                      {selectedEmployee?.slip_status === 'generated' || selectedEmployee?.slip_status === 'sent' ? 'Generated' : 'Not Generated'}
                     </span>
                   </>
                 )}

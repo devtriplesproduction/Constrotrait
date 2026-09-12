@@ -540,6 +540,9 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                           <label className="text-xs font-bold text-zinc-500 ">First Name *</label>
                           <Input
                             {...register("first_name")}
+                            onKeyDown={(e) => {
+                              if (e.key === ".") e.preventDefault();
+                            }}
                             placeholder="John"
                             className="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                           />
@@ -550,6 +553,9 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
                           <label className="text-xs font-bold text-zinc-500 ">Last Name *</label>
                           <Input
                             {...register("last_name")}
+                            onKeyDown={(e) => {
+                              if (e.key === ".") e.preventDefault();
+                            }}
                             placeholder="Doe"
                             className="w-full h-12 px-4 py-3 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-700 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                           />
