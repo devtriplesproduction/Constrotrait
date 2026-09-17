@@ -30,4 +30,4 @@ export const updateEmployeeProfileSchema = z.object({
   emergency_contact_number: z.string().regex(/^\d{10}$/, "Emergency phone must be exactly 10 digits").or(z.literal("")).nullable().optional(),
   reporting_manager_id: z.string().nullable().optional(),
   branch_id: z.string().uuid().optional(),
-}).strip(); // strip to prevent arbitrary columns while allowing extra client state
+}).strip();  
