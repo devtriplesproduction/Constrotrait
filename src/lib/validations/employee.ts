@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { APP_ROLE_KEYS } from "@/config/roles";
 
 export const updateEmployeeProfileSchema = z.object({
   first_name: z.string().min(2, "First name is too short").optional(),
@@ -30,4 +31,5 @@ export const updateEmployeeProfileSchema = z.object({
   emergency_contact_number: z.string().regex(/^\d{10}$/, "Emergency phone must be exactly 10 digits").or(z.literal("")).nullable().optional(),
   reporting_manager_id: z.string().nullable().optional(),
   branch_id: z.string().uuid().optional(),
-}).strip();  
+  roles: z.array(z.enum(APP_ROLE_KEYS)).optional(),
+}).strip();

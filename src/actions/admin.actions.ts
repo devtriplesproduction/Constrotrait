@@ -100,7 +100,8 @@ export async function updateEmployeeProfileAction(userId: string, data: Record<s
 
   const parsedData = updateEmployeeProfileSchema.safeParse(data);
   if (!parsedData.success) {
-    return { success: false, error: "Invalid profile data provided" };
+    const errorMessages = parsedData.error.errors.map((err: any) => `${err.path.join('.')}: ${err.message}`).join(', ');
+    return { success: false, error: `Validation failed: ${errorMessages}` };
   }
 
   const { updateEmployeeProfile } = await import("@/services/admin.service");

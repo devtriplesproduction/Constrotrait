@@ -35,7 +35,11 @@ import {
   getSalaryHikesAction,
   resetEmployeePasswordAction,
 } from "@/actions/admin.actions";
-import { getAllEmployeesAction, getCurrentUserProfileAction } from "@/actions/employee.actions";
+import {
+  getAllEmployeesAction,
+  getCurrentUserProfileAction,
+  uploadEmployeeFileAction,
+} from "@/actions/employee.actions";
 import { getActiveBranchesAction } from "@/actions/branch.actions";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Avatar } from "@/components/common/Avatar";
@@ -99,13 +103,16 @@ export function EmployeeProfileModal({
   interface DocumentItem {
     id: string;
     name: string;
-    url: string;
+    url?: string;
+    path?: string;
     size?: number;
     type?: string;
     uploaded_at?: string;
+    file?: File;
     [key: string]: unknown;
   }
 
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
   const [selectedAvatar, setSelectedAvatar] = useState<string>(
     employee.profile_photo || "",
   );
@@ -220,6 +227,7 @@ export function EmployeeProfileModal({
       reader.onloadend = () => {
         if (typeof reader.result === "string") {
           setSelectedAvatar(reader.result);
+          setSelectedAvatarFile(file);
         }
       };
       reader.readAsDataURL(file);
@@ -252,13 +260,14 @@ export function EmployeeProfileModal({
       const reader = new FileReader();
       reader.onloadend = () => {
         const fileId = `file-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-        const newFileObj = {
+        const newFileObj: DocumentItem = {
           id: fileId,
           name: f.name,
           size: f.size,
           type: "other",
           uploaded_at: new Date().toISOString(),
           url: reader.result as string,
+          file: f,
         };
 
         setUploadProgress((prev) => ({ ...prev, [fileId]: 0 }));
@@ -410,10 +419,54 @@ export function EmployeeProfileModal({
       }
 
       // 3. Save Profile
+      let uploadedAvatarPath = selectedAvatar;
+      if (selectedAvatarFile) {
+        const formData = new FormData();
+        formData.append("file", selectedAvatarFile);
+        if (employee.branch_id) formData.append("branch_id", employee.branch_id);
+        const uploadRes = await uploadEmployeeFileAction(formData);
+        if (!uploadRes.success) {
+          toast({ title: (uploadRes.error as string) || "Photo Upload Failed", variant: "error" });
+          return;
+        }
+        uploadedAvatarPath = uploadRes.path as string;
+      }
+
+      const finalDocuments = [];
+      for (const doc of documentsList) {
+        if (doc.file) {
+          const formData = new FormData();
+          formData.append("file", doc.file);
+          if (employee.branch_id) formData.append("branch_id", employee.branch_id);
+          const uploadRes = await uploadEmployeeFileAction(formData);
+          if (!uploadRes.success) {
+            toast({ title: (uploadRes.error as string) || "Document Upload Failed", variant: "error" });
+            return;
+          }
+          finalDocuments.push({
+            id: doc.id,
+            name: doc.name,
+            size: doc.size,
+            path: uploadRes.path,
+            uploaded_at: doc.uploaded_at,
+            type: doc.type
+          });
+        } else {
+          finalDocuments.push({
+            id: doc.id,
+            name: doc.name,
+            size: doc.size,
+            path: doc.path || doc.url,
+            uploaded_at: doc.uploaded_at,
+            type: doc.type
+          });
+        }
+      }
+
       const payload = {
         ...formData,
-        profile_photo: selectedAvatar,
-        documents: documentsList,
+        profile_photo: uploadedAvatarPath,
+        documents: finalDocuments,
       };
       const result = await updateEmployeeProfileAction(employee.id!, payload);
       if (result.success) {
@@ -425,6 +478,7 @@ export function EmployeeProfileModal({
         });
         setInitialFormData({ ...formData });
         setPendingHike(null);
+        setSelectedAvatarFile(null);
         setShowInlineHikeForm(false);
         setResetPasswordState({
           newPassword: "",

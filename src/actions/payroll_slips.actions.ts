@@ -15,7 +15,7 @@ function getStoragePathFromUrl(pdfUrl: string): string {
     if (bucketIndex !== -1) {
       return decodeURIComponent(urlObj.pathname.substring(bucketIndex + bucketStr.length));
     }
-  } catch(e) {}
+  } catch (e) { }
   const parts = pdfUrl.split('?')[0].split('/');
   return decodeURIComponent(parts[parts.length - 1]);
 }
@@ -26,7 +26,7 @@ export async function getMySalarySlipsAction() {
     if (!user) return { success: false, error: "Unauthorized" };
 
     const supabaseAdmin = createAdminClient();
-    
+
     const { data: slips, error } = await supabaseAdmin
       .from('salary_slips')
       .select(`
@@ -42,7 +42,7 @@ export async function getMySalarySlipsAction() {
       .order('generated_at', { ascending: false });
 
     if (error) throw error;
-    
+
     const formattedData = (slips || []).map((s) => ({
       id: s.id,
       month: s.cycle?.month,
@@ -87,12 +87,12 @@ export async function generateSalarySlipAction(snapshotId: string, month: number
       return { success: false, error: "Unauthorized access to another branch's data." };
     }
 
-    // 3. Generate PDF Buffer
+
     const pdfBuffer = await generateSalarySlipPdfBuffer(snapshot as unknown as PayrollSnapshot, month, year);
 
-    // 4. Upload to Storage
+
     const fileName = `${year}/${month}/${snapshot.employee_id}/salary-slip.pdf`;
-    
+
     const { error: uploadError } = await supabaseAdmin.storage
       .from('salary_slips')
       .upload(fileName, pdfBuffer, {
@@ -263,7 +263,7 @@ export async function markSalarySlipSharedAction(snapshotId: string) {
       .eq('snapshot_id', snapshotId);
 
     if (error) throw error;
-    
+
     return { success: true };
   } catch (error: unknown) {
     console.error("Error marking salary slip as shared:", error);
@@ -303,7 +303,7 @@ export async function downloadSalarySlipAction(employeeId: string, month: number
     const { data: signedUrlData, error } = await supabaseAdmin.storage
       .from('salary_slips')
       .createSignedUrl(fileName, 60, { download: true });
-      
+
     if (error || !signedUrlData) return { success: false, error: "Failed to generate download URL." };
 
     return { success: true, signedUrl: signedUrlData.signedUrl };
