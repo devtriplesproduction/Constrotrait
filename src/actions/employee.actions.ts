@@ -110,3 +110,47 @@ export async function uploadEmployeeFileAction(formData: FormData) {
 
   return { success: true, path: finalName, size: file.size, name: file.name };
 }
+
+export async function getEmployeeDocumentUrlAction(path: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageEmployees(user.roles)) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  if (!path || typeof path !== "string" || path.includes("..")) {
+    return { success: false, error: "Invalid path format" };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage
+    .from('employee-documents')
+    .createSignedUrl(path, 3600);
+
+  if (error || !data) {
+    return { success: false, error: "Failed to generate URL or unauthorized" };
+  }
+
+  return { success: true, url: data.signedUrl };
+}
+
+export async function deleteEmployeeDocumentAction(path: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageEmployees(user.roles)) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  if (!path || typeof path !== "string" || path.includes("..")) {
+    return { success: false, error: "Invalid path format" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.storage
+    .from('employee-documents')
+    .remove([path]);
+
+  if (error) {
+    return { success: false, error: "Failed to delete document or unauthorized" };
+  }
+
+  return { success: true };
+}

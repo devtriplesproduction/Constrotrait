@@ -40,6 +40,8 @@ import {
   getAllEmployeesAction,
   getCurrentUserProfileAction,
   uploadEmployeeFileAction,
+  getEmployeeDocumentUrlAction,
+  deleteEmployeeDocumentAction,
 } from "@/actions/employee.actions";
 import { getActiveBranchesAction } from "@/actions/branch.actions";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -245,7 +247,7 @@ export function EmployeeProfileModal({
       const extMatch = file.name.match(/\.([^.]+)$/);
       const fileExt = extMatch ? extMatch[1].toLowerCase() : '';
       const fileType = file.type.toLowerCase();
-      
+
       const isValidExt = ['pdf', 'jpg', 'jpeg', 'png'].includes(fileExt);
       const isValidType = fileType.includes('pdf') || fileType.includes('jpeg') || fileType.includes('jpg') || fileType.includes('png');
 
@@ -295,11 +297,50 @@ export function EmployeeProfileModal({
     e.target.value = "";
   };
 
-  const removeFile = (id: string) => {
+  const removeFile = async (id: string) => {
+    const doc = documentsList.find(d => d.id === id);
+    if (doc?.path) {
+      const isConfirmed = await customConfirm("Delete Document", `Are you sure you want to delete ${doc.name}?`);
+      if (!isConfirmed) return;
+
+      const res = await deleteEmployeeDocumentAction(doc.path);
+      if (!res.success) {
+        toast({ title: (res.error as string) || "Failed to delete document", variant: "error" });
+        return;
+      }
+    }
+
     setDocumentsList((prev) =>
       prev.filter((f) => f.id !== id),
     );
     toast({ title: "Document deleted.", variant: "success" });
+  };
+
+  const handleDownloadFile = async (doc: DocumentItem) => {
+    if (doc.url) {
+      const link = document.createElement("a");
+      link.href = doc.url;
+      link.download = doc.name || "document";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    if (doc.path) {
+      const res = await getEmployeeDocumentUrlAction(doc.path);
+      if (res.success && res.url) {
+        const link = document.createElement("a");
+        link.href = res.url;
+        link.download = doc.name || "document";
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        toast({ title: (res.error as string) || "Failed to get document URL", variant: "error" });
+      }
+    }
   };
 
   const handleDocumentNameChange = (id: string, newName: string) => {
@@ -1042,6 +1083,7 @@ export function EmployeeProfileModal({
                     onChange={(val) =>
                       setFormData({ ...formData, joining_date: val })
                     }
+                    side="right"
                     triggerClassName="w-full h-12 bg-slate-50 border-slate-200 rounded-xl"
                   />
                 </div>
@@ -1119,16 +1161,15 @@ export function EmployeeProfileModal({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        {doc.url && (
+                        {(doc.url || doc.path) && (
                           <>
-                            <a
-                              href={doc.url}
-                              download={doc.name || "document"}
+                            <button
+                              onClick={() => handleDownloadFile(doc)}
                               className="p-2.5 bg-white hover:bg-orange-50 rounded-xl transition-all border border-slate-200 text-slate-500"
                               title="Download document"
                             >
                               <Download className="w-4 h-4" />
-                            </a>
+                            </button>
                             <Button
                               onClick={() => removeFile(doc.id)}
                               variant="outline" size="sm" className="text-rose-500 border-rose-200 hover:bg-rose-50 hover:text-rose-600"
