@@ -100,7 +100,7 @@ export async function updateEmployeeProfileAction(userId: string, data: Record<s
 
   const parsedData = updateEmployeeProfileSchema.safeParse(data);
   if (!parsedData.success) {
-    const errorMessages = parsedData.error.errors.map((err: any) => `${err.path.join('.')}: ${err.message}`).join(', ');
+    const errorMessages = parsedData.error.errors.map((err) => `${err.path.join('.')}: ${err.message}`).join(', ');
     return { success: false, error: `Validation failed: ${errorMessages}` };
   }
 

@@ -61,6 +61,7 @@ type EmployeeProfile = {
   experience?: number | null;
   employment_type?: string | null;
   profile_photo?: string | null;
+  display_profile_photo?: string | null;
   documents?: Json;
   residential_address?: string | null;
   emergency_contact_name?: string | null;
@@ -254,7 +255,7 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
                         <div className="flex items-center gap-3">
                           <Avatar
                             initials={`${emp.first_name?.[0] || '?'}${emp.last_name?.[0] || '?'}`}
-                            imageUrl={emp.profile_photo}
+                            imageUrl={emp.display_profile_photo || emp.profile_photo}
                             className="w-10 h-10 bg-orange-100 "
                             textClassName="text-orange-600  font-bold"
                           />
@@ -321,7 +322,7 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
                             <div className="relative">
                               <Avatar
                                 initials={`${emp.first_name[0]}${emp.last_name[0]}`}
-                                imageUrl={emp.profile_photo}
+                                imageUrl={emp.display_profile_photo || emp.profile_photo}
                                 className="w-10 h-10 bg-orange-50"
                                 textClassName="text-orange-600 font-bold text-sm"
                               />

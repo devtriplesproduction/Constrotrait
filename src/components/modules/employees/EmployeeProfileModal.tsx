@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import {
   X,
   AlertCircle,
@@ -74,6 +75,7 @@ export interface EmployeeFormData {
   is_active?: boolean | null;
   updated_at?: string | null;
   profile_photo?: string | null;
+  display_profile_photo?: string | null;
   documents?: Json;
   personal_email?: string | null;
   residential_address?: string | null;
@@ -93,6 +95,7 @@ export function EmployeeProfileModal({
   onClose: () => void;
 }) {
   const { toast } = useToast();
+  const router = useRouter();
   const { prompt, PromptComponent } = usePrompt();
   const { confirm: customConfirm, ConfirmComponent } = useConfirm();
   const [isPending, startTransition] = useTransition();
@@ -114,7 +117,7 @@ export function EmployeeProfileModal({
 
   const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
   const [selectedAvatar, setSelectedAvatar] = useState<string>(
-    employee.profile_photo || "",
+    employee.display_profile_photo || employee.profile_photo || "",
   );
   const [documentsList, setDocumentsList] = useState<DocumentItem[]>(
     (employee.documents as unknown as DocumentItem[]) || [],
@@ -347,7 +350,7 @@ export function EmployeeProfileModal({
       hasChanges = true;
     }
 
-    if (selectedAvatar !== (employee.profile_photo || "")) hasChanges = true;
+    if (selectedAvatar !== (employee.display_profile_photo || employee.profile_photo || "")) hasChanges = true;
     if (
       JSON.stringify(documentsList) !== JSON.stringify(employee.documents || [])
     )
@@ -419,7 +422,7 @@ export function EmployeeProfileModal({
       }
 
       // 3. Save Profile
-      let uploadedAvatarPath = selectedAvatar;
+      let uploadedAvatarPath = selectedAvatar ? employee.profile_photo : null;
       if (selectedAvatarFile) {
         const formData = new FormData();
         formData.append("file", selectedAvatarFile);
@@ -485,6 +488,7 @@ export function EmployeeProfileModal({
           confirmPassword: "",
           showPassword: false,
         });
+        router.refresh();
         onClose();
       } else {
         toast({

@@ -229,6 +229,21 @@ export async function getAllEmployees(options?: { compact?: boolean, branchId?: 
           console.error("Database query failed:", error);
           return { success: false, error: "Failed to fetch employees" };
         }
+
+        if (data && data.length > 0) {
+          const pathsToSign = [...new Set(data.map((e: { profile_photo?: string | null }) => e.profile_photo).filter((p: string | null) => p && !p.startsWith('http') && !p.startsWith('data:')))];
+          if (pathsToSign.length > 0) {
+            const { data: signedUrls } = await supabase.storage.from('employee-documents').createSignedUrls(pathsToSign, 60 * 60);
+            if (signedUrls) {
+              const urlMap = Object.fromEntries(signedUrls.map(s => [s.path, s.signedUrl]));
+              data.forEach((e: { profile_photo?: string | null; display_profile_photo?: string | null }) => {
+                if (e.profile_photo && urlMap[e.profile_photo]) {
+                  e.display_profile_photo = urlMap[e.profile_photo];
+                }
+              });
+            }
+          }
+        }
         return { success: true, data };
       }
     }
@@ -258,6 +273,7 @@ export async function getAllEmployees(options?: { compact?: boolean, branchId?: 
         console.error("Database query failed:", error);
         return { success: false, error: "Failed to fetch employees" };
       }
+
       return { success: true, data };
     } else {
       let query = supabase
@@ -282,6 +298,21 @@ export async function getAllEmployees(options?: { compact?: boolean, branchId?: 
       if (error) {
         console.error("Database query failed:", error);
         return { success: false, error: "Failed to fetch employees" };
+      }
+
+      if (data && data.length > 0) {
+        const pathsToSign = [...new Set(data.map((e: { profile_photo?: string | null }) => e.profile_photo).filter((p: string | null) => p && !p.startsWith('http') && !p.startsWith('data:')))];
+        if (pathsToSign.length > 0) {
+          const { data: signedUrls } = await supabase.storage.from('employee-documents').createSignedUrls(pathsToSign, 60 * 60);
+          if (signedUrls) {
+            const urlMap = Object.fromEntries(signedUrls.map(s => [s.path, s.signedUrl]));
+            data.forEach((e: { profile_photo?: string | null; display_profile_photo?: string | null }) => {
+              if (e.profile_photo && urlMap[e.profile_photo]) {
+                e.display_profile_photo = urlMap[e.profile_photo];
+              }
+            });
+          }
+        }
       }
       return { success: true, data };
     }
