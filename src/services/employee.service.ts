@@ -231,7 +231,7 @@ export async function getAllEmployees(options?: { compact?: boolean, branchId?: 
         }
 
         if (data && data.length > 0) {
-          const pathsToSign = [...new Set(data.map((e: { profile_photo?: string | null }) => e.profile_photo).filter((p: string | null) => p && !p.startsWith('http') && !p.startsWith('data:')))];
+          const pathsToSign = [...new Set(data.map((e: { profile_photo?: string | null }) => e.profile_photo).filter((p): p is string => typeof p === 'string' && !p.startsWith('http') && !p.startsWith('data:')))];
           if (pathsToSign.length > 0) {
             const { data: signedUrls } = await supabase.storage.from('employee-documents').createSignedUrls(pathsToSign, 60 * 60);
             if (signedUrls) {
@@ -301,7 +301,7 @@ export async function getAllEmployees(options?: { compact?: boolean, branchId?: 
       }
 
       if (data && data.length > 0) {
-        const pathsToSign = [...new Set(data.map((e: { profile_photo?: string | null }) => e.profile_photo).filter((p: string | null) => p && !p.startsWith('http') && !p.startsWith('data:')))];
+        const pathsToSign = [...new Set(data.map((e: { profile_photo?: string | null }) => e.profile_photo).filter((p): p is string => typeof p === 'string' && !p.startsWith('http') && !p.startsWith('data:')))];
         if (pathsToSign.length > 0) {
           const { data: signedUrls } = await supabase.storage.from('employee-documents').createSignedUrls(pathsToSign, 60 * 60);
           if (signedUrls) {
