@@ -108,7 +108,7 @@ export async function offboardEmployee(userId: string, authUser?: User) {
       return { success: false, error: "Unauthorized: Cross-branch operations are not permitted" };
     }
 
-    if (targetProfile?.roles?.some(r => (r as string) === 'developer') || targetProfile?.roles?.includes('SUPER_ADMIN')) {
+    if (targetProfile?.roles?.some((r: any) => (r as string) === 'developer') || targetProfile?.roles?.includes('SUPER_ADMIN')) {
       return { success: false, error: 'Cannot offboard a developer or super admin account' };
     }
 
@@ -211,7 +211,7 @@ export async function deleteEmployee(userId: string, authUser?: User) {
     }
 
     const { data: targetProfile } = await supabaseAdmin.from("profiles").select("email, roles, first_name, last_name").eq("id", userId).maybeSingle();
-    if (targetProfile?.roles?.some(r => (r as string) === 'developer') || targetProfile?.roles?.includes('SUPER_ADMIN')) {
+    if (targetProfile?.roles?.some((r: any) => (r as string) === 'developer') || targetProfile?.roles?.includes('SUPER_ADMIN')) {
       return { success: false, error: 'Cannot delete developer or super admin account' };
     }
 
@@ -436,6 +436,7 @@ export async function updateEmployeeProfile(userId: string, data: Partial<Profil
         dob: data.dob || null,
         gender: data.gender || null,
         department: data.department || null,
+          designation: data.designation || null,
         employment_type: data.employment_type || null,
         salary: data.salary || 0,
         experience: data.experience || 0,
@@ -560,5 +561,6 @@ export async function addSalaryHike(employeeId: string, previousSalary: number, 
     return { success: false, error: 'An unexpected error occurred' };
   }
 }
+
 
 

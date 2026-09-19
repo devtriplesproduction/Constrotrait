@@ -10,7 +10,10 @@ async function runMigrations() {
   const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
 
   const password = process.env.SUPABASE_DB_PASSWORD;
-  const dbUrl = `postgresql://postgres:${password}@db.nxvghafschdniemrpqkn.supabase.co:5432/postgres`;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const projectIdMatch = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/);
+  const projectId = projectIdMatch ? projectIdMatch[1] : 'nxvghafschdniemrpqkn';
+  const dbUrl = `postgresql://postgres:${password}@db.${projectId}.supabase.co:5432/postgres`;
 
   const client = new Client({
     connectionString: dbUrl

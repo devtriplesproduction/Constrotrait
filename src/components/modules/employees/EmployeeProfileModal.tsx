@@ -507,7 +507,10 @@ export function EmployeeProfileModal({
         }
       }
 
+      const mappedDesignations = formData.department ? getDesignationsForDepartment(formData.department) : [];
+      const primaryDesignation = mappedDesignations.find(d => formData.roles?.includes(d.id));
       const payload = {
+        designation: primaryDesignation ? primaryDesignation.id : null,
         ...formData,
         profile_photo: uploadedAvatarPath,
         documents: finalDocuments,
@@ -1689,3 +1692,4 @@ export function EmployeeProfileModal({
 
   return createPortal(modalContent, document.body);
 }
+

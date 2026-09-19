@@ -984,6 +984,7 @@ export type Database = {
           technique_equipment: string
           is_nabl: boolean
           category: string
+          additional_details: string[] | null
           created_at: string
           updated_at: string
           created_by: string | null
@@ -1000,6 +1001,7 @@ export type Database = {
           technique_equipment: string
           is_nabl?: boolean
           category: string
+          additional_details?: string[] | null
           created_at?: string
           updated_at?: string
           created_by?: string | null
@@ -1016,6 +1018,7 @@ export type Database = {
           technique_equipment?: string
           is_nabl?: boolean
           category?: string
+          additional_details?: string[] | null
           created_at?: string
           updated_at?: string
           created_by?: string | null

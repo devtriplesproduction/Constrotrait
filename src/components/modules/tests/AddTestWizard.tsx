@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { createTestSchema, CreateTestInput } from "@/lib/validations/test";
-import { createTestMasterAction } from "@/actions/test.actions";
+import { createTestMasterAction, updateTestMasterAction } from "@/actions/test.actions";
+import { TestMaster } from "@/services/test.service";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { Select, SelectItem } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 
 const steps = [
@@ -19,31 +21,59 @@ const steps = [
   { id: "step3", title: "Additional Details" },
 ];
 
-export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
+export function AddTestWizard({ 
+  onSuccess,
+  initialData 
+}: { 
+  onSuccess?: () => void,
+  initialData?: TestMaster 
+}) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const [details, setDetails] = useState<string[]>([""]);
+  const [details, setDetails] = useState<string[]>(
+    initialData?.additional_details && initialData.additional_details.length > 0 
+      ? initialData.additional_details 
+      : [""]
+  );
 
   const {
     register,
     handleSubmit,
     trigger,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<CreateTestInput>({
     resolver: zodResolver(createTestSchema),
     defaultValues: {
-      additional_details: [],
+      additional_details: initialData?.additional_details || [],
+      category: initialData?.category || "Construction",
+      discipline_group: initialData?.discipline_group || "",
+      material_product: initialData?.material_product || "",
+      component_parameter: initialData?.component_parameter || "",
+      test_method: initialData?.test_method || "",
     },
   });
+
+  const category = watch("category");
+
+  const [submitEnabled, setSubmitEnabled] = useState(false);
+  
+  useEffect(() => {
+    if (currentStep === steps.length - 1) {
+      setSubmitEnabled(false);
+      const timer = setTimeout(() => setSubmitEnabled(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
 
   const handleNext = async () => {
     let fieldsToValidate: (keyof CreateTestInput)[] = [];
     
     if (currentStep === 0) {
-      fieldsToValidate = ["discipline_group", "material_product"];
+      fieldsToValidate = ["category", "discipline_group", "material_product"];
     } else if (currentStep === 1) {
       fieldsToValidate = ["component_parameter", "test_method"];
     } else if (currentStep === 2) {
@@ -60,6 +90,19 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
     setCurrentStep((prev) => prev - 1);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") {
+      e.preventDefault(); // Completely prevent Enter key from submitting in inputs
+    }
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (currentStep === steps.length - 1 && submitEnabled) {
+      handleSubmit(onSubmit)(e);
+    }
+  };
+
   const onSubmit = async (data: CreateTestInput) => {
     setIsSubmitting(true);
     try {
@@ -67,25 +110,32 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
       const validDetails = details.filter(d => d.trim() !== "");
       data.additional_details = validDetails;
 
-      const result = await createTestMasterAction(data);
+      let result;
+      if (initialData) {
+        result = await updateTestMasterAction(initialData.id, data);
+      } else {
+        result = await createTestMasterAction(data);
+      }
+
       if (result.success) {
         toast({
-          title: "Test Master Created",
-          description: "The test has been successfully registered.",
+          title: `Test Master ${initialData ? "Updated" : "Created"}`,
+          description: `The test has been successfully ${initialData ? "updated" : "registered"}.`,
         });
         onSuccess?.();
       } else {
         toast({
           variant: "error",
           title: "Error",
-          description: result.error || "Failed to create test master",
+          description: result.error || `Failed to ${initialData ? "update" : "create"} test master`,
         });
       }
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       toast({
         variant: "error",
         title: "Error",
-        description: error.message || "An unexpected error occurred",
+        description: err.message || "An unexpected error occurred",
       });
     } finally {
       setIsSubmitting(false);
@@ -113,7 +163,7 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
     <Card className="w-full max-w-2xl mx-auto shadow-lg border border-zinc-800 bg-zinc-900/50 backdrop-blur-xl">
       <CardHeader>
         <CardTitle className="text-xl font-semibold text-zinc-100 flex items-center justify-between">
-          <span>Add Test Master</span>
+          <span>{initialData ? "Edit" : "Add"} Test Master</span>
           <span className="text-sm font-normal text-zinc-400">
             Step {currentStep + 1} of {steps.length}: {steps[currentStep].title}
           </span>
@@ -129,7 +179,7 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
       </CardHeader>
       
       <CardContent className="min-h-[300px] mt-4 relative overflow-hidden">
-        <form id="add-test-form" onSubmit={handleSubmit(onSubmit)}>
+        <form id="add-test-form" onSubmit={handleFormSubmit} onKeyDown={handleKeyDown}>
           <AnimatePresence mode="wait">
             {currentStep === 0 && (
               <motion.div
@@ -140,6 +190,18 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
+                <div>
+                  <label className="text-sm font-medium text-zinc-300">Category <span className="text-red-500">*</span></label>
+                  <Select 
+                    value={category || "Construction"} 
+                    onValueChange={(val) => setValue("category", val as "Construction" | "Environmental")}
+                  >
+                    <SelectItem value="Construction">Construction</SelectItem>
+                    <SelectItem value="Environmental">Environmental</SelectItem>
+                  </Select>
+                  {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
+                </div>
+
                 <div>
                   <label className="text-sm font-medium text-zinc-300">Discipline / Group <span className="text-red-500">*</span></label>
                   <Input {...register("discipline_group")} placeholder="e.g. Mechanical, Chemical..." className="mt-1" />
@@ -224,7 +286,7 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
                   
                   {details.length === 0 && (
                     <div className="text-center py-6 text-sm text-zinc-500 border border-dashed border-zinc-800 rounded-md">
-                      No additional details added. Click "Add Detail" to include more information.
+                      No additional details added. Click &quot;Add Detail&quot; to include more information.
                     </div>
                   )}
                 </div>

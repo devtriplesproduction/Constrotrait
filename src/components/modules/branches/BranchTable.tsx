@@ -42,7 +42,7 @@ export function BranchTable({ branches }: BranchTableProps) {
     const res = await deleteBranchAction(branchToDelete.id);
     setIsDeleting(false);
     if (res.success) {
-      toast({ title: res.message || "Branch deleted successfully.", variant: "success" });
+      toast({ title: "message" in res ? res.message : "Branch deleted successfully.", variant: "success" });
       setBranchToDelete(null);
     } else {
       toast({ title: res.error || "Failed to delete branch.", variant: "error" });

@@ -23,3 +23,26 @@ export async function createTestMasterAction(data: CreateTestInput) {
 export async function getTestsAction() {
   return await testService.getTests();
 }
+
+export async function updateTestMasterAction(id: string, data: CreateTestInput) {
+  const validationResult = createTestSchema.safeParse(data);
+  if (!validationResult.success) {
+    return { success: false, error: "Invalid test data provided" };
+  }
+
+  const result = await testService.updateTestMaster(id, validationResult.data);
+  
+  if (result.success) {
+    revalidatePath("/tests");
+  }
+  
+  return result;
+}
+
+export async function deleteTestMasterAction(id: string) {
+  const result = await testService.deleteTestMaster(id);
+  if (result.success) {
+    revalidatePath("/tests");
+  }
+  return result;
+}

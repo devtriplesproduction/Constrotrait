@@ -193,6 +193,7 @@ BEGIN
                 db_accounted_days NUMERIC := 0;
                 db_total_earned_days NUMERIC := 0;
                 db_proration_factor NUMERIC := 1;
+                d DATE;
             BEGIN
                 db_emp_id := (v_snapshot->>'employee_id')::UUID;
                 

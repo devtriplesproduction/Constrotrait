@@ -13,6 +13,7 @@ export interface TestMaster {
   technique_equipment: string;
   is_nabl: boolean | null;
   category: "Construction" | "Environmental" | null;
+  additional_details: string[] | null;
   created_at: string;
   created_by: string | null;
   updated_at: string;
@@ -47,6 +48,7 @@ export const testService = {
           technique_equipment: data.technique_equipment || "",
           is_nabl: data.is_nabl ?? false,
           category: data.category || "",
+          additional_details: data.additional_details || [],
           created_by: user.id,
           updated_by: user.id,
         })
@@ -59,7 +61,7 @@ export const testService = {
       }
 
       return { success: true, data: testData as TestMaster };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating test master:", error);
       return { success: false, error: "An unexpected error occurred" };
     }
@@ -73,7 +75,7 @@ export const testService = {
       const supabase = await createClient();
       const { data, error } = await supabase
         .from("test_master")
-        .select("id, serial_no, discipline_group, material_product, component_parameter, specific_test, test_method, technique_equipment, is_nabl, category, created_at, created_by, updated_at, updated_by")
+        .select("id, serial_no, discipline_group, material_product, component_parameter, specific_test, test_method, technique_equipment, is_nabl, category, additional_details, created_at, created_by, updated_at, updated_by")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -82,8 +84,69 @@ export const testService = {
       }
 
       return { success: true, data: data as TestMaster[] };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching tests:", error);
+      return { success: false, error: "An unexpected error occurred" };
+    }
+  },
+
+  async updateTestMaster(id: string, data: CreateTestInput) {
+    try {
+      const user = await getAuthenticatedUserWithRoles();
+      if (!user) return { success: false, error: "Unauthorized" };
+
+      const supabase = await createClient();
+
+      const { data: testData, error } = await supabase
+        .from("test_master")
+        .update({
+          discipline_group: data.discipline_group,
+          material_product: data.material_product,
+          component_parameter: data.component_parameter,
+          specific_test: data.specific_test || "",
+          test_method: data.test_method,
+          technique_equipment: data.technique_equipment || "",
+          is_nabl: data.is_nabl ?? false,
+          category: data.category || "",
+          additional_details: data.additional_details || [],
+          updated_at: new Date().toISOString(),
+          updated_by: user.id,
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating test master:", error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: testData as TestMaster };
+    } catch (error) {
+      console.error("Error updating test master:", error);
+      return { success: false, error: "An unexpected error occurred" };
+    }
+  },
+
+  async deleteTestMaster(id: string) {
+    try {
+      const user = await getAuthenticatedUserWithRoles();
+      if (!user) return { success: false, error: "Unauthorized" };
+
+      const supabase = await createClient();
+      const { error } = await supabase
+        .from("test_master")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error("Error deleting test master:", error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting test master:", error);
       return { success: false, error: "An unexpected error occurred" };
     }
   }

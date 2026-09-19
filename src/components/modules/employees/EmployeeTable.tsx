@@ -17,7 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar } from "@/components/common/Avatar";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { resetEmployeePasswordAction } from "@/actions/admin.actions";
-import { EmployeeProfileModal } from "./EmployeeProfileModal";
+import { EmployeeProfileModal } from './EmployeeProfileModal';
+import { DEPARTMENTS } from '@/config/departments';
 import { Dropdown } from "../../ui/Dropdown";
 
 import { Input } from "@/components/ui/input";
@@ -267,13 +268,13 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
                       </td>
                       <td className="px-6 py-4">
                         <span className="inline-flex px-3 py-1 text-xs font-semibold text-orange-700 bg-orange-50 rounded-full">
-                          {emp.designation || (emp.roles && emp.roles.map(r => r.replace(/_/g, " ")).join(", "))}
+                          {(emp.designation ? emp.designation.replace(/_/g, " ") : null) || (emp.roles && emp.roles.map(r => r.replace(/_/g, " ")).join(", "))}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         {emp.department ? (
                           <span className="inline-flex px-3 py-1 text-xs font-semibold text-purple-700 bg-purple-50 rounded-full">
-                            {emp.department}
+                            {DEPARTMENTS.find((d) => d.id === emp.department)?.name || emp.department}
                           </span>
                         ) : (
                           <span className="text-sm text-zinc-400">-</span>
@@ -434,7 +435,7 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
                       <td className="px-4 py-3">
                         {emp.department ? (
                           <span className="inline-flex px-3 py-1 text-xs font-semibold text-purple-700 bg-purple-50 rounded-full">
-                            {emp.department}
+                            {DEPARTMENTS.find((d) => d.id === emp.department)?.name || emp.department}
                           </span>
                         ) : (
                           <span className="text-sm text-slate-400">-</span>
@@ -479,4 +480,7 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
     </div>
   );
 }
+
+
+
 

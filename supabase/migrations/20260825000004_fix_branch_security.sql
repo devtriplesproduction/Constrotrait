@@ -2,10 +2,12 @@
 DROP POLICY IF EXISTS "Super Admins and HR can insert branches" ON public.branches;
 DROP POLICY IF EXISTS "Super Admins and HR can update branches" ON public.branches;
 
+DROP POLICY IF EXISTS "Super Admins can insert branches" ON public.branches;
 CREATE POLICY "Super Admins can insert branches"
 ON public.branches FOR INSERT
 WITH CHECK ((auth.jwt() -> 'app_metadata' -> 'roles') ?| array['SUPER_ADMIN']);
 
+DROP POLICY IF EXISTS "Super Admins can update branches" ON public.branches;
 CREATE POLICY "Super Admins can update branches"
 ON public.branches FOR UPDATE
 USING ((auth.jwt() -> 'app_metadata' -> 'roles') ?| array['SUPER_ADMIN']);
