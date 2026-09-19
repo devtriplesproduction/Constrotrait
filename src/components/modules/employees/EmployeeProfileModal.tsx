@@ -367,6 +367,7 @@ export function EmployeeProfileModal({
         "gender",
         "phone_number",
         "department",
+        "designation",
         "employment_type",
         "salary",
         "experience",
@@ -938,7 +939,7 @@ export function EmployeeProfileModal({
 
                       const newRoles = [...additionalRoles];
                       if (val) newRoles.push(val);
-                      setFormData({ ...formData, roles: newRoles });
+                      setFormData({ ...formData, roles: newRoles, designation: val });
                     }}
                     buttonClassName="w-full px-4 py-3 h-12 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700"
                   >

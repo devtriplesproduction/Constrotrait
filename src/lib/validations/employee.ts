@@ -8,6 +8,7 @@ export const updateEmployeeProfileSchema = z.object({
   dob: z.string().nullable().optional(),
   gender: z.string().nullable().optional(),
   department: z.string().nullable().optional(),
+  designation: z.string().nullable().optional(),
   employment_type: z.string().nullable().optional(),
   salary: z.coerce.number().min(0, "Salary must be non-negative").optional(),
   experience: z.coerce.number().min(0, "Experience must be non-negative").optional(),

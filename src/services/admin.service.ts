@@ -436,6 +436,7 @@ export async function updateEmployeeProfile(userId: string, data: Partial<Profil
         dob: data.dob || null,
         gender: data.gender || null,
         department: data.department || null,
+        designation: data.designation || null,
         employment_type: data.employment_type || null,
         salary: data.salary || 0,
         experience: data.experience || 0,
