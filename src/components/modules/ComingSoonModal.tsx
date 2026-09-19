@@ -8,7 +8,7 @@ export function ComingSoonModal() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Show popup shortly after component mounts
+
     const timer = setTimeout(() => {
       setIsOpen(true);
     }, 1000);

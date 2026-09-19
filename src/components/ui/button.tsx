@@ -42,7 +42,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         "bg-transparent hover:bg-background text-foreground focus-visible:ring-primary",
       danger:
         "bg-error text-error-foreground hover:bg-red-700 focus-visible:ring-error",
-      custom: "", // Allows fully custom Tailwind styling via className
+      custom: "",
     };
 
     const sizeStyles = {
@@ -53,7 +53,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       none: "",
     };
 
-    // Apply custom inline colors if provided
+
     const dynamicStyle: React.CSSProperties = {
       ...(customColor ? { backgroundColor: customColor, borderColor: customColor } : {}),
       ...(customTextColor ? { color: customTextColor } : {}),
