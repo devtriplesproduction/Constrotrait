@@ -17,8 +17,8 @@ export default async function TestsPage() {
   const result = await getTestsAction();
   
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <>
       <TestMasterClient initialTests={result.success && result.data ? result.data : []} />
-    </div>
+    </>
   );
 }

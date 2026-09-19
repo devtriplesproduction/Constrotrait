@@ -16,9 +16,8 @@ import { Select, SelectItem } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 
 const steps = [
-  { id: "step1", title: "Classification & Subject" },
-  { id: "step2", title: "Testing Methodology" },
-  { id: "step3", title: "Additional Details" },
+  { id: "step1", title: "Test Details" },
+  { id: "step2", title: "Additional Details" },
 ];
 
 export function AddTestWizard({ 
@@ -73,10 +72,8 @@ export function AddTestWizard({
     let fieldsToValidate: (keyof CreateTestInput)[] = [];
     
     if (currentStep === 0) {
-      fieldsToValidate = ["category", "discipline_group", "material_product"];
+      fieldsToValidate = ["category", "discipline_group", "material_product", "component_parameter", "test_method"];
     } else if (currentStep === 1) {
-      fieldsToValidate = ["component_parameter", "test_method"];
-    } else if (currentStep === 2) {
       fieldsToValidate = ["additional_details"];
     }
 
@@ -160,17 +157,17 @@ export function AddTestWizard({
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-lg border border-zinc-800 bg-zinc-900/50 backdrop-blur-xl">
-      <CardHeader>
-        <CardTitle className="text-xl font-semibold text-zinc-100 flex items-center justify-between">
+    <Card className="w-full max-w-4xl mx-auto shadow-xl border border-slate-200 bg-white rounded-2xl overflow-hidden">
+      <CardHeader className="bg-slate-50 border-b border-slate-100 pb-4">
+        <CardTitle className="text-xl font-bold text-slate-900 flex items-center justify-between">
           <span>{initialData ? "Edit" : "Add"} Test Master</span>
-          <span className="text-sm font-normal text-zinc-400">
+          <span className="text-sm font-medium text-slate-500">
             Step {currentStep + 1} of {steps.length}: {steps[currentStep].title}
           </span>
         </CardTitle>
-        <div className="flex w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-4">
+        <div className="flex w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-4">
           <motion.div
-            className="h-full bg-blue-500"
+            className="h-full bg-orange-500"
             initial={{ width: `${((currentStep) / steps.length) * 100}%` }}
             animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
             transition={{ duration: 0.3 }}
@@ -188,10 +185,10 @@ export function AddTestWizard({
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -50, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-4"
+                className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 px-4 md:px-6"
               >
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Category <span className="text-red-500">*</span></label>
+                <div className="flex flex-col justify-end gap-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Category <span className="text-red-500">*</span></label>
                   <Select 
                     value={category || "Construction"} 
                     onValueChange={(val) => setValue("category", val as "Construction" | "Environmental")}
@@ -199,19 +196,31 @@ export function AddTestWizard({
                     <SelectItem value="Construction">Construction</SelectItem>
                     <SelectItem value="Environmental">Environmental</SelectItem>
                   </Select>
-                  {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
+                  {errors.category && <p className="text-red-500 text-xs">{errors.category.message}</p>}
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Discipline / Group <span className="text-red-500">*</span></label>
-                  <Input {...register("discipline_group")} placeholder="e.g. Mechanical, Chemical..." className="mt-1" />
-                  {errors.discipline_group && <p className="text-red-500 text-xs mt-1">{errors.discipline_group.message}</p>}
+                <div className="flex flex-col justify-end gap-1.5">
+                  <label className="text-sm font-semibold text-slate-700 leading-tight">Discipline / Group <span className="text-red-500">*</span></label>
+                  <Input {...register("discipline_group")} placeholder="e.g. Mechanical, Chemical..." />
+                  {errors.discipline_group && <p className="text-red-500 text-xs">{errors.discipline_group.message}</p>}
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Materials or Products tested <span className="text-red-500">*</span></label>
-                  <Input {...register("material_product")} placeholder="e.g. Cement, Soil..." className="mt-1" />
-                  {errors.material_product && <p className="text-red-500 text-xs mt-1">{errors.material_product.message}</p>}
+                <div className="flex flex-col justify-end gap-1.5">
+                  <label className="text-sm font-semibold text-slate-700 leading-tight">Materials or Products tested <span className="text-red-500">*</span></label>
+                  <Input {...register("material_product")} placeholder="e.g. Cement, Soil..." />
+                  {errors.material_product && <p className="text-red-500 text-xs">{errors.material_product.message}</p>}
+                </div>
+
+                <div className="flex flex-col justify-end gap-1.5">
+                  <label className="text-sm font-semibold text-slate-700 leading-tight">Component, parameter or characteristic tested <span className="text-red-500">*</span></label>
+                  <Input {...register("component_parameter")} placeholder="e.g. Compressive Strength..." />
+                  {errors.component_parameter && <p className="text-red-500 text-xs">{errors.component_parameter.message}</p>}
+                </div>
+
+                <div className="flex flex-col justify-end gap-1.5 md:col-span-2">
+                  <label className="text-sm font-semibold text-slate-700 leading-tight">Test Method Specification & Techniques <span className="text-red-500">*</span></label>
+                  <Input {...register("test_method")} placeholder="e.g. IS 516 / Compression Testing Machine" />
+                  {errors.test_method && <p className="text-red-500 text-xs">{errors.test_method.message}</p>}
                 </div>
               </motion.div>
             )}
@@ -223,39 +232,16 @@ export function AddTestWizard({
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -50, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Component, parameter or characteristic tested <span className="text-red-500">*</span></label>
-                  <Input {...register("component_parameter")} placeholder="e.g. Compressive Strength..." className="mt-1" />
-                  {errors.component_parameter && <p className="text-red-500 text-xs mt-1">{errors.component_parameter.message}</p>}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Test Method Specification & Techniques <span className="text-red-500">*</span></label>
-                  <Input {...register("test_method")} placeholder="e.g. IS 516 / Compression Testing Machine" className="mt-1" />
-                  {errors.test_method && <p className="text-red-500 text-xs mt-1">{errors.test_method.message}</p>}
-                </div>
-              </motion.div>
-            )}
-
-            {currentStep === 2 && (
-              <motion.div
-                key="step3"
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -50, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
+                className="space-y-4 px-4 md:px-6"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-zinc-300">Additional Details Required for Testing (Optional)</label>
+                  <label className="text-sm font-semibold text-slate-700">Additional Details Required for Testing (Optional)</label>
                   <Button 
                     type="button" 
                     variant="outline" 
                     size="sm" 
                     onClick={addDetail}
-                    className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:text-white"
+                    className="border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 shadow-sm"
                   >
                     <Plus className="w-4 h-4 mr-1" /> Add Detail
                   </Button>
@@ -263,13 +249,13 @@ export function AddTestWizard({
                 
                 <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
                   {details.map((detail, index) => (
-                    <div key={index} className="flex items-start gap-2 bg-zinc-900/50 p-2 rounded-md border border-zinc-800">
+                    <div key={index} className="flex items-start gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 shadow-sm">
                       <div className="flex-1">
                         <Input 
                           value={detail}
                           onChange={(e) => updateDetail(index, e.target.value)}
                           placeholder={`Detail ${index + 1}`} 
-                          className="h-8 text-sm"
+                          className="h-9 text-sm bg-white"
                         />
                       </div>
                       <Button 
@@ -277,7 +263,7 @@ export function AddTestWizard({
                         variant="ghost" 
                         size="icon" 
                         onClick={() => removeDetail(index)}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-400/10 h-8 w-8"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 h-9 w-9 shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -285,7 +271,7 @@ export function AddTestWizard({
                   ))}
                   
                   {details.length === 0 && (
-                    <div className="text-center py-6 text-sm text-zinc-500 border border-dashed border-zinc-800 rounded-md">
+                    <div className="text-center py-8 text-sm text-slate-500 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
                       No additional details added. Click &quot;Add Detail&quot; to include more information.
                     </div>
                   )}
@@ -296,23 +282,23 @@ export function AddTestWizard({
         </form>
       </CardContent>
       
-      <CardFooter className="flex justify-between border-t border-zinc-800 pt-4">
+      <CardFooter className="flex justify-between border-t border-slate-100 bg-slate-50 p-4">
         <Button
           type="button"
           variant="outline"
           onClick={handlePrev}
           disabled={currentStep === 0 || isSubmitting}
-          className="border-zinc-700 hover:bg-zinc-800"
+          className="border-slate-200 hover:bg-slate-100 text-slate-700 font-medium px-6"
         >
           Previous
         </Button>
 
         {currentStep < steps.length - 1 ? (
-          <Button type="button" onClick={handleNext} className="bg-blue-600 hover:bg-blue-700">
+          <Button type="button" onClick={handleNext} className="bg-orange-600 hover:bg-orange-700 text-white font-medium px-8 shadow-sm">
             Next
           </Button>
         ) : (
-          <Button type="submit" form="add-test-form" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
+          <Button type="submit" form="add-test-form" disabled={isSubmitting} className="bg-orange-600 hover:bg-orange-700 text-white font-medium px-8 shadow-sm">
             {isSubmitting ? (
               <>
                 <Spinner className="mr-2" /> Submitting...
