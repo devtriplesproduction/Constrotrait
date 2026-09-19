@@ -972,6 +972,57 @@ export type Database = {
           }
         ]
       }
+      test_master: {
+        Row: {
+          id: string
+          serial_no: string
+          discipline_group: string
+          material_product: string
+          component_parameter: string
+          specific_test: string
+          test_method: string
+          technique_equipment: string
+          is_nabl: boolean
+          category: string
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          serial_no: string
+          discipline_group: string
+          material_product: string
+          component_parameter: string
+          specific_test: string
+          test_method: string
+          technique_equipment: string
+          is_nabl?: boolean
+          category: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          serial_no?: string
+          discipline_group?: string
+          material_product?: string
+          component_parameter?: string
+          specific_test?: string
+          test_method?: string
+          technique_equipment?: string
+          is_nabl?: boolean
+          category?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
