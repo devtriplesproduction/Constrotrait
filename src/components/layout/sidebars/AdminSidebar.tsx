@@ -59,6 +59,11 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
       title: "Holidays",
       href: "/holidays",
       icon: Calendar,
+    },
+    {
+      title: "Test Master",
+      href: "/tests",
+      icon: ClipboardList,
     }
   );
 

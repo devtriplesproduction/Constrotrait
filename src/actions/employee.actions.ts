@@ -124,7 +124,7 @@ export async function getEmployeeDocumentUrlAction(path: string) {
   const supabase = await createClient();
   const { data, error } = await supabase.storage
     .from('employee-documents')
-    .createSignedUrl(path, 3600);
+    .createSignedUrl(path, 3600, { download: true });
 
   if (error || !data) {
     return { success: false, error: "Failed to generate URL or unauthorized" };

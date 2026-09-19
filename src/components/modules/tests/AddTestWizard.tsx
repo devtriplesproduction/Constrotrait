@@ -5,19 +5,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { createTestSchema, CreateTestInput } from "@/lib/validations/test";
-import { testService } from "@/services/test.service";
+import { createTestMasterAction } from "@/actions/test.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { FormSelect } from "@/components/forms/FormSelect";
 import { Spinner } from "@/components/ui/spinner";
-import { Checkbox } from "@/components/ui/checkbox"; // Assuming Checkbox exists, or fallback to input type="checkbox"
+import { Plus, Trash2 } from "lucide-react";
 
 const steps = [
-  { id: "step1", title: "Basic Classification" },
-  { id: "step2", title: "Test Subject" },
-  { id: "step3", title: "Methodology" },
+  { id: "step1", title: "Classification & Subject" },
+  { id: "step2", title: "Testing Methodology" },
+  { id: "step3", title: "Additional Details" },
 ];
 
 export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
@@ -25,17 +24,18 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  const [details, setDetails] = useState<string[]>([""]);
+
   const {
     register,
     handleSubmit,
-    control,
     trigger,
+    setValue,
     formState: { errors },
   } = useForm<CreateTestInput>({
     resolver: zodResolver(createTestSchema),
     defaultValues: {
-      is_nabl: true,
-      category: "Construction",
+      additional_details: [],
     },
   });
 
@@ -43,9 +43,11 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
     let fieldsToValidate: (keyof CreateTestInput)[] = [];
     
     if (currentStep === 0) {
-      fieldsToValidate = ["category", "discipline_group"];
+      fieldsToValidate = ["discipline_group", "material_product"];
     } else if (currentStep === 1) {
-      fieldsToValidate = ["serial_no", "material_product", "component_parameter"];
+      fieldsToValidate = ["component_parameter", "test_method"];
+    } else if (currentStep === 2) {
+      fieldsToValidate = ["additional_details"];
     }
 
     const isValid = await trigger(fieldsToValidate);
@@ -61,21 +63,50 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
   const onSubmit = async (data: CreateTestInput) => {
     setIsSubmitting(true);
     try {
-      await testService.createTestMaster(data);
-      toast({
-        title: "Test Master Created",
-        description: "The test has been successfully registered.",
-      });
-      onSuccess?.();
+      // Filter out empty details
+      const validDetails = details.filter(d => d.trim() !== "");
+      data.additional_details = validDetails;
+
+      const result = await createTestMasterAction(data);
+      if (result.success) {
+        toast({
+          title: "Test Master Created",
+          description: "The test has been successfully registered.",
+        });
+        onSuccess?.();
+      } else {
+        toast({
+          variant: "error",
+          title: "Error",
+          description: result.error || "Failed to create test master",
+        });
+      }
     } catch (error: any) {
       toast({
         variant: "error",
         title: "Error",
-        description: error.message || "Failed to create test master",
+        description: error.message || "An unexpected error occurred",
       });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const updateDetail = (index: number, value: string) => {
+    const newDetails = [...details];
+    newDetails[index] = value;
+    setDetails(newDetails);
+    setValue("additional_details", newDetails.filter(d => d.trim() !== ""));
+  };
+
+  const addDetail = () => {
+    setDetails([...details, ""]);
+  };
+
+  const removeDetail = (index: number) => {
+    const newDetails = details.filter((_, i) => i !== index);
+    setDetails(newDetails);
+    setValue("additional_details", newDetails.filter(d => d.trim() !== ""));
   };
 
   return (
@@ -110,34 +141,15 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
                 className="space-y-4"
               >
                 <div>
-                  <label className="text-sm font-medium text-zinc-300">Category</label>
-                  <FormSelect
-                    control={control}
-                    name="category"
-                    options={[
-                      { label: "Construction", value: "Construction" },
-                      { label: "Environmental", value: "Environmental" },
-                    ]}
-                  />
-                  {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Discipline / Group</label>
+                  <label className="text-sm font-medium text-zinc-300">Discipline / Group <span className="text-red-500">*</span></label>
                   <Input {...register("discipline_group")} placeholder="e.g. Mechanical, Chemical..." className="mt-1" />
                   {errors.discipline_group && <p className="text-red-500 text-xs mt-1">{errors.discipline_group.message}</p>}
                 </div>
 
-                <div className="flex items-center space-x-2 mt-6">
-                  <input
-                    type="checkbox"
-                    id="is_nabl"
-                    className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-blue-600 focus:ring-blue-500 focus:ring-offset-zinc-900"
-                    {...register("is_nabl")}
-                  />
-                  <label htmlFor="is_nabl" className="text-sm font-medium text-zinc-300 cursor-pointer">
-                    Is NABL Accredited?
-                  </label>
+                <div>
+                  <label className="text-sm font-medium text-zinc-300">Materials or Products tested <span className="text-red-500">*</span></label>
+                  <Input {...register("material_product")} placeholder="e.g. Cement, Soil..." className="mt-1" />
+                  {errors.material_product && <p className="text-red-500 text-xs mt-1">{errors.material_product.message}</p>}
                 </div>
               </motion.div>
             )}
@@ -152,21 +164,15 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
                 className="space-y-4"
               >
                 <div>
-                  <label className="text-sm font-medium text-zinc-300">S.No</label>
-                  <Input {...register("serial_no")} placeholder="Enter S.No" className="mt-1" />
-                  {errors.serial_no && <p className="text-red-500 text-xs mt-1">{errors.serial_no.message}</p>}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Materials or Products Tested</label>
-                  <Input {...register("material_product")} placeholder="e.g. Cement, Soil..." className="mt-1" />
-                  {errors.material_product && <p className="text-red-500 text-xs mt-1">{errors.material_product.message}</p>}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Component / Parameter Tested</label>
+                  <label className="text-sm font-medium text-zinc-300">Component, parameter or characteristic tested <span className="text-red-500">*</span></label>
                   <Input {...register("component_parameter")} placeholder="e.g. Compressive Strength..." className="mt-1" />
                   {errors.component_parameter && <p className="text-red-500 text-xs mt-1">{errors.component_parameter.message}</p>}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-zinc-300">Test Method Specification & Techniques <span className="text-red-500">*</span></label>
+                  <Input {...register("test_method")} placeholder="e.g. IS 516 / Compression Testing Machine" className="mt-1" />
+                  {errors.test_method && <p className="text-red-500 text-xs mt-1">{errors.test_method.message}</p>}
                 </div>
               </motion.div>
             )}
@@ -180,22 +186,47 @@ export function AddTestWizard({ onSuccess }: { onSuccess?: () => void }) {
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Specific Test Performed</label>
-                  <Input {...register("specific_test")} placeholder="Type of test performed" className="mt-1" />
-                  {errors.specific_test && <p className="text-red-500 text-xs mt-1">{errors.specific_test.message}</p>}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-zinc-300">Additional Details Required for Testing (Optional)</label>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={addDetail}
+                    className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> Add Detail
+                  </Button>
                 </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Test Method Specification</label>
-                  <Input {...register("test_method")} placeholder="e.g. IS 516" className="mt-1" />
-                  {errors.test_method && <p className="text-red-500 text-xs mt-1">{errors.test_method.message}</p>}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-300">Technique / Equipment used</label>
-                  <Input {...register("technique_equipment")} placeholder="e.g. Compression Testing Machine" className="mt-1" />
-                  {errors.technique_equipment && <p className="text-red-500 text-xs mt-1">{errors.technique_equipment.message}</p>}
+                
+                <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
+                  {details.map((detail, index) => (
+                    <div key={index} className="flex items-start gap-2 bg-zinc-900/50 p-2 rounded-md border border-zinc-800">
+                      <div className="flex-1">
+                        <Input 
+                          value={detail}
+                          onChange={(e) => updateDetail(index, e.target.value)}
+                          placeholder={`Detail ${index + 1}`} 
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => removeDetail(index)}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-400/10 h-8 w-8"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  
+                  {details.length === 0 && (
+                    <div className="text-center py-6 text-sm text-zinc-500 border border-dashed border-zinc-800 rounded-md">
+                      No additional details added. Click "Add Detail" to include more information.
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
