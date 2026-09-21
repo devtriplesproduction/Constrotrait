@@ -25,6 +25,7 @@ import {
   Clock,
   Copy,
   FileImage,
+  Pencil,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -42,6 +43,7 @@ import {
   uploadEmployeeFileAction,
   getEmployeeDocumentUrlAction,
   deleteEmployeeDocumentAction,
+  updateEmployeeWorkEmailAction,
 } from "@/actions/employee.actions";
 import { getActiveBranchesAction } from "@/actions/branch.actions";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -587,6 +589,23 @@ export function EmployeeProfileModal({
     const res = await deleteEmployeeAction(employee.id!);
     if (res.success) onClose();
     else toast({ title: res.error as string, variant: "error" });
+  };
+
+  const handleEditWorkEmail = async () => {
+    if (!employee.id) return;
+    const newEmail = await prompt(`Enter new work email for ${employee.first_name}:`);
+    if (!newEmail || newEmail === formData.email) return;
+
+    startTransition(async () => {
+      const res = await updateEmployeeWorkEmailAction(employee.id!, newEmail);
+      if (res.success) {
+        toast({ title: "Work email updated successfully", variant: "success" });
+        setFormData(prev => ({ ...prev, email: newEmail }));
+        if (onSuccess) onSuccess();
+      } else {
+        toast({ title: res.error as string || "Failed to update work email", variant: "error" });
+      }
+    });
   };
 
   const modalContent = (
@@ -1466,25 +1485,38 @@ export function EmployeeProfileModal({
                       <Input
                         value={formData.email ?? ""}
                         disabled
-                        className="w-full h-11 px-4 py-2 bg-slate-100 text-slate-400 border border-slate-200 rounded-2xl text-sm font-medium pr-10"
+                        className="w-full h-11 px-4 py-2 bg-slate-100 text-slate-400 border border-slate-200 rounded-2xl text-sm font-medium pr-20"
                       />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (formData.email) {
-                            navigator.clipboard.writeText(formData.email);
-                            toast({
-                              title: "Copied!",
-                              description: "Work email copied to clipboard.",
-                            });
-                          }
-                        }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-all"
-                        title="Copy work email"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (formData.email) {
+                              navigator.clipboard.writeText(formData.email);
+                              toast({
+                                title: "Copied!",
+                                description: "Work email copied to clipboard.",
+                              });
+                            }
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-all"
+                          title="Copy work email"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleEditWorkEmail();
+                          }}
+                          className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Edit work email"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-1.5">

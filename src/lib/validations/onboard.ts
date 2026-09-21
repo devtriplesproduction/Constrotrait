@@ -1,6 +1,17 @@
 import * as z from "zod";
 import { ONBOARDING_ROLE_KEYS } from "@/config/roles";
 
+export const workEmailSchema = z.string().email("Invalid work email").refine(
+  (val) => val.endsWith("@constrotrait.com"),
+  "Work email must end with @constrotrait.com"
+).refine(
+  (val) => {
+    const localPart = val.split('@')[0];
+    return /^[a-z0-9]+(\.[a-z0-9]+)*$/.test(localPart);
+  },
+  "Work email must contain only lowercase letters, numbers, and single periods"
+);
+
 export const onboardSchema = z.object({
   // Personal Info (Step 1)
   first_name: z.string().min(2, "First name is too short"),
@@ -38,16 +49,7 @@ export const onboardSchema = z.object({
   location: z.enum(["office", "remote", "hybrid"]).default("office"),
 
   // Login & Access (Step 4)
-  email: z.string().email("Invalid work email").refine(
-    (val) => val.endsWith("@constrotrait.com"),
-    "Work email must end with @constrotrait.com"
-  ).refine(
-    (val) => {
-      const localPart = val.split('@')[0];
-      return /^[a-z0-9]+(\.[a-z0-9]+)*$/.test(localPart);
-    },
-    "Work email must contain only lowercase letters, numbers, and single periods"
-  ),
+  email: workEmailSchema,
   employee_id: z.string().optional(),
   status: z.enum(["Probation", "Confirmed", "Resigned", "Terminated", "Notice Period", "Inactive"]).default("Probation"),
   reporting_manager: z.string().optional(),

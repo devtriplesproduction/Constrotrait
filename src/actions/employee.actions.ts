@@ -154,3 +154,27 @@ export async function deleteEmployeeDocumentAction(path: string) {
 
   return { success: true };
 }
+
+export async function updateEmployeeWorkEmailAction(employeeId: string, newEmail: string) {
+  const { workEmailSchema } = await import("@/lib/validations/onboard");
+  
+  // Validate email format
+  const validationResult = workEmailSchema.safeParse(newEmail);
+  if (!validationResult.success) {
+    return { success: false, error: validationResult.error.errors[0].message };
+  }
+
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || (!canManageEmployees(user.roles) && !user.roles.includes("BRANCH_MANAGER_ADMINISTRATIVE"))) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const { updateEmployeeWorkEmail } = await import("@/services/employee.service");
+  const result = await updateEmployeeWorkEmail(employeeId, newEmail);
+  
+  if (result.success) {
+    revalidatePath("/employees", "page");
+  }
+  
+  return result;
+}
