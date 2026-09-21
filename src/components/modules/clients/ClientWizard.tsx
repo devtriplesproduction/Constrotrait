@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2 } from "lucide-react";
 import { Database } from "@/types/database";
 
@@ -152,16 +153,20 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
     });
   };
 
-  const toggleTestSelection = (test: TestMaster) => {
-    const isSelected = selectedTests.includes(test.id);
-    if (isSelected) {
-      setValue("selectedTests", selectedTests.filter((id) => id !== test.id));
-      // Remove from jobEntryTests
-      const indexToRemove = jobEntryFields.findIndex(f => f.test_master_id === test.id);
+  const handleMultiSelectChange = (newSelectedIds: string[]) => {
+    // Find removed IDs
+    const removedIds = selectedTests.filter(id => !newSelectedIds.includes(id));
+    removedIds.forEach(id => {
+      const indexToRemove = jobEntryFields.findIndex(f => f.test_master_id === id);
       if (indexToRemove !== -1) remove(indexToRemove);
-    } else {
-      setValue("selectedTests", [...selectedTests, test.id]);
-      // Add to jobEntryTests
+    });
+
+    // Find added IDs
+    const addedIds = newSelectedIds.filter(id => !selectedTests.includes(id));
+    addedIds.forEach(id => {
+      const test = availableTests.find(t => t.id === id);
+      if (!test) return;
+
       const initialAdditionalDetails: Record<string, string> = {};
       if (test.additional_details) {
         test.additional_details.forEach(detail => {
@@ -179,7 +184,9 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
         testing_day: "",
         additional_details_values: initialAdditionalDetails,
       });
-    }
+    });
+
+    setValue("selectedTests", newSelectedIds);
   };
 
   const handleNext = async () => {
@@ -413,69 +420,32 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -50, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="flex flex-col h-full"
+                className="flex flex-col h-full min-h-[300px]"
               >
-                <div className="mb-4">
-                  <div className="relative">
-                    <SearchIcon className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                    <Input 
-                      placeholder="Search tests by material, parameter, or discipline..." 
-                      className="pl-9"
-                      value={testSearchQuery}
-                      onChange={(e) => setTestSearchQuery(e.target.value)}
-                    />
-                  </div>
-                </div>
-
                 {isLoadingTests ? (
                   <div className="flex justify-center items-center py-20">
                     <Spinner className="w-8 h-8 text-orange-500" />
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2 pb-4">
-                    {filteredTests.map((test) => {
-                      const isSelected = selectedTests.includes(test.id);
-                      return (
-                        <div 
-                          key={test.id}
-                          onClick={() => toggleTestSelection(test)}
-                          className={`
-                            p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
-                            ${isSelected 
-                              ? 'border-orange-500 bg-orange-50 shadow-md' 
-                              : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                            }
-                          `}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <span className="text-xs font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded-md">
-                              {test.discipline_group}
-                            </span>
-                            {isSelected && <CheckCircle2 className="w-5 h-5 text-orange-500" />}
-                          </div>
-                          <h4 className="font-semibold text-slate-900 leading-tight mb-1">
-                            {test.component_parameter || test.specific_test}
-                          </h4>
-                          <p className="text-sm text-slate-500 mb-2">{test.material_product}</p>
-                          <div className="text-xs text-slate-400 bg-white inline-block px-2 py-1 rounded border border-slate-100">
-                            {test.test_method}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {filteredTests.length === 0 && (
-                      <div className="col-span-full py-12 text-center text-slate-500">
-                        No tests found matching your search.
-                      </div>
-                    )}
+                  <div className="space-y-4 max-w-2xl">
+                    <label className="text-sm font-semibold text-slate-700 block">Select Test(s) <span className="text-red-500">*</span></label>
+                    <MultiSelect
+                      options={availableTests.map((test) => ({
+                        value: test.id,
+                        label: `${test.component_parameter || test.specific_test} - ${test.material_product} (${test.test_method})`
+                      }))}
+                      value={selectedTests}
+                      onChange={handleMultiSelectChange}
+                      placeholder="Search and select tests..."
+                    />
+                    
+                    <div className="mt-8 p-4 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
+                      <span className="text-sm font-medium text-slate-700">
+                        {selectedTests.length} test(s) selected
+                      </span>
+                    </div>
                   </div>
                 )}
-                
-                <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-700">
-                    {selectedTests.length} test(s) selected
-                  </span>
-                </div>
               </motion.div>
             )}
 
@@ -503,32 +473,37 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
                           <p className="text-sm text-slate-500">Method: {field.test_method}</p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-semibold text-slate-700">Material ID <span className="text-red-500">*</span></label>
-                            <Input {...register(`jobEntryTests.${index}.material_id`)} placeholder="Material ID" />
-                            {errors.jobEntryTests?.[index]?.material_id && <p className="text-red-500 text-xs">{errors.jobEntryTests[index].material_id?.message}</p>}
-                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-slate-700">MATERIAL ID <span className="text-red-500">*</span></label>
+                              <Input {...register(`jobEntryTests.${index}.material_id`)} placeholder="Material ID" />
+                              {errors.jobEntryTests?.[index]?.material_id && <p className="text-red-500 text-xs">{errors.jobEntryTests[index].material_id?.message}</p>}
+                            </div>
 
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-semibold text-slate-700">Sample Quantity</label>
-                            <Input {...register(`jobEntryTests.${index}.sample_quantity`)} placeholder="Quantity" />
-                          </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-slate-700">MATERIAL DETAILS / Location</label>
+                              <Input {...register(`jobEntryTests.${index}.material_details_location`)} placeholder="Location / Details" />
+                            </div>
 
-                          <div className="flex flex-col gap-1.5 md:col-span-2">
-                            <label className="text-sm font-semibold text-slate-700">Material Details / Location</label>
-                            <Input {...register(`jobEntryTests.${index}.material_details_location`)} placeholder="Location / Details" />
-                          </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-slate-700">NUMBER OF SAMPLE / QTY</label>
+                              <Input {...register(`jobEntryTests.${index}.sample_quantity`)} placeholder="Quantity" />
+                            </div>
 
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-semibold text-slate-700">Grade</label>
-                            <Input {...register(`jobEntryTests.${index}.grade`)} placeholder="Grade" />
-                          </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-slate-700">GRADE</label>
+                              <Input {...register(`jobEntryTests.${index}.grade`)} placeholder="Grade" />
+                            </div>
 
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-semibold text-slate-700">Testing Day</label>
-                            <Input {...register(`jobEntryTests.${index}.testing_day`)} placeholder="Testing Day" />
-                          </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-slate-700">Testing Day</label>
+                              <Input {...register(`jobEntryTests.${index}.testing_day`)} placeholder="Testing Day" />
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-slate-700">Test Method</label>
+                              <Input {...register(`jobEntryTests.${index}.test_method`)} readOnly className="bg-slate-100 text-slate-500" />
+                            </div>
                           
                           {/* Render dynamic additional details inputs if available */}
                           {testMaster?.additional_details && testMaster.additional_details.length > 0 && (
