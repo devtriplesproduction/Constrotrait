@@ -20,20 +20,23 @@ export const clientDetailsSchema = z.object({
 export type ClientDetailsValues = z.infer<typeof clientDetailsSchema>;
 
 export const testDetailsSchema = z.object({
+  test_master_id: z.string().min(1, "Test must be selected"),
+  test_name: z.string().optional(), // For UI purposes
+  test_method: z.string().optional(), // Auto-filled from test master
   material_id: z.string().min(1, "Material ID is required"),
   material_details_location: z.string().optional(),
   sample_quantity: z.string().optional(),
-  test_to_be_performed: z.string().min(1, "Test to be performed is required"),
   grade: z.string().optional(),
   testing_day: z.string().optional(),
-  test_method: z.string().optional(),
+  additional_details_values: z.record(z.string(), z.string()).optional(),
 });
 
 export type TestDetailsValues = z.infer<typeof testDetailsSchema>;
 
 export const clientWizardSchema = z.object({
   client: clientDetailsSchema,
-  testRequest: testDetailsSchema,
+  selectedTests: z.array(z.string().uuid()).min(1, "Select at least one test"),
+  jobEntryTests: z.array(testDetailsSchema).min(1, "Provide details for at least one test"),
 });
 
 export type ClientWizardValues = z.infer<typeof clientWizardSchema>;

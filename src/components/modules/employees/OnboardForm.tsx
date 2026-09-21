@@ -187,7 +187,7 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
           const supabase = createClient();
           const branchIdToPass = isSuperAdmin ? watchedBranchId : undefined;
           const { data, error } = await supabase.rpc('generate_employee_id', {
-            p_branch_id: branchIdToPass || null,
+            p_branch_id: (branchIdToPass || "") as string,
             p_is_preview: true
           });
           

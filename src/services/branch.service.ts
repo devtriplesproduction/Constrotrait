@@ -40,7 +40,7 @@ export async function getBranches() {
 
     const { data, error } = await supabase
       .from("branches")
-      .select("id, name, code, address, email, phone, gst_number, is_active, created_at, updated_at")
+      .select("id, name, code, address, email, phone, gst_number, branch_number, is_active, created_at, updated_at")
       .order("created_at", { ascending: false });
 
     if (error) {

@@ -49,19 +49,25 @@ export async function submitClientWizard(data: ClientWizardValues) {
       throw new Error("Failed to resolve client ID.");
     }
 
-    // 2. Create Job Entry
-    await JobEntryService.createJobEntry({
+    // 2. Create Job Entry and Job Entry Tests
+    const jobData = {
       client_id: clientId,
-      material_id: data.testRequest.material_id,
-      material_details_location: data.testRequest.material_details_location,
-      sample_quantity: data.testRequest.sample_quantity,
-      test_to_be_performed: data.testRequest.test_to_be_performed,
-      grade: data.testRequest.grade,
-      testing_day: data.testRequest.testing_day,
-      test_method: data.testRequest.test_method,
-    });
+    };
 
-    revalidatePath("/dashboard"); // Adjust if there's a specific route
+    const testsData = data.jobEntryTests.map((t) => ({
+      test_master_id: t.test_master_id,
+      material_id: t.material_id,
+      material_details_location: t.material_details_location,
+      sample_quantity: t.sample_quantity,
+      grade: t.grade,
+      testing_day: t.testing_day,
+      test_method: t.test_method,
+      additional_details_values: t.additional_details_values || {},
+    }));
+
+    await JobEntryService.createJobEntryWithTests(jobData, testsData);
+
+    revalidatePath("/dashboard"); 
 
     return { success: true };
   } catch (error) {

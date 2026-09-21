@@ -123,7 +123,7 @@ export async function reviewEOD(eodId: string, action: 'Approve' | 'Reject', rej
     const { error } = await supabase.rpc('review_eod_rpc', {
       p_eod_id: eodId,
       p_status: newStatus,
-      p_rejection_reason: action === 'Approve' ? null : (rejectionReason || null)
+      p_rejection_reason: action === 'Approve' ? "" : (rejectionReason || "")
     });
 
     if (error) {

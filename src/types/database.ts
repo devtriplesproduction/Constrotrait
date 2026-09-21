@@ -539,14 +539,7 @@ export type Database = {
           client_id: string
           created_at: string
           created_by: string | null
-          grade: string | null
           id: string
-          material_details_location: string | null
-          material_id: string
-          sample_quantity: string | null
-          test_method: string | null
-          test_to_be_performed: string
-          testing_day: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -554,14 +547,7 @@ export type Database = {
           client_id: string
           created_at?: string
           created_by?: string | null
-          grade?: string | null
           id?: string
-          material_details_location?: string | null
-          material_id: string
-          sample_quantity?: string | null
-          test_method?: string | null
-          test_to_be_performed: string
-          testing_day?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -569,14 +555,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           created_by?: string | null
-          grade?: string | null
           id?: string
-          material_details_location?: string | null
-          material_id?: string
-          sample_quantity?: string | null
-          test_method?: string | null
-          test_to_be_performed?: string
-          testing_day?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -586,6 +565,72 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_entry_tests: {
+        Row: {
+          additional_details_values: Json | null
+          created_at: string
+          created_by: string | null
+          grade: string | null
+          id: string
+          job_entry_id: string
+          material_details_location: string | null
+          material_id: string
+          sample_quantity: string | null
+          test_master_id: string
+          test_method: string | null
+          testing_day: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          additional_details_values?: Json | null
+          created_at?: string
+          created_by?: string | null
+          grade?: string | null
+          id?: string
+          job_entry_id: string
+          material_details_location?: string | null
+          material_id: string
+          sample_quantity?: string | null
+          test_master_id: string
+          test_method?: string | null
+          testing_day?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          additional_details_values?: Json | null
+          created_at?: string
+          created_by?: string | null
+          grade?: string | null
+          id?: string
+          job_entry_id?: string
+          material_details_location?: string | null
+          material_id?: string
+          sample_quantity?: string | null
+          test_master_id?: string
+          test_method?: string | null
+          testing_day?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_entry_tests_job_entry_id_fkey"
+            columns: ["job_entry_id"]
+            isOneToOne: false
+            referencedRelation: "job_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_entry_tests_test_master_id_fkey"
+            columns: ["test_master_id"]
+            isOneToOne: false
+            referencedRelation: "test_master"
             referencedColumns: ["id"]
           },
         ]

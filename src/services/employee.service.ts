@@ -107,7 +107,7 @@ export async function onboardEmployee(data: OnboardFormData) {
     const supabase = await createClient();
 
     const { data: newEmployeeId, error: rpcError } = await supabase.rpc('generate_employee_id', {
-      p_branch_id: targetBranchId
+      p_branch_id: (targetBranchId || "") as string
     });
 
     if (rpcError || !newEmployeeId) {
