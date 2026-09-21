@@ -427,7 +427,7 @@ export async function updateEmployeeWorkEmail(employeeId: string, newEmail: stri
     // but updating someone else's profile requires admin client or special RLS.
     // The onboarding uses standard client for INSERT but we might need admin for UPDATE if RLS restricts it.
     // Let's use standard client, but if we have issues, we use admin.
-    const { error: profileError } = await supabase
+    const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .update({ email: newEmail })
       .eq("id", employeeId);

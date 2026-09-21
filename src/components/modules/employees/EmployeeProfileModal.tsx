@@ -135,6 +135,12 @@ export function EmployeeProfileModal({
     ...employee,
   });
 
+  useEffect(() => {
+    setFormData({ ...employee });
+    setInitialFormData({ ...employee });
+  }, [employee]);
+
+
   const [employees, setEmployees] = useState<{ id: string, first_name: string, last_name: string }[]>([]);
   const [activeBranches, setActiveBranches] = useState<{ id: string, name: string, code: string }[]>([]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -601,7 +607,7 @@ export function EmployeeProfileModal({
       if (res.success) {
         toast({ title: "Work email updated successfully", variant: "success" });
         setFormData(prev => ({ ...prev, email: newEmail }));
-        if (onSuccess) onSuccess();
+        router.refresh();
       } else {
         toast({ title: res.error as string || "Failed to update work email", variant: "error" });
       }

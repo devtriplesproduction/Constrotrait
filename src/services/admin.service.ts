@@ -457,6 +457,19 @@ export async function updateEmployeeProfile(userId: string, data: Partial<Profil
       
     if (updateError) throw updateError;
 
+    // Sync Auth user_metadata if name changed
+    if (data.first_name !== undefined || data.last_name !== undefined) {
+      const metadataUpdate: { first_name?: string; last_name?: string } = {};
+      if (data.first_name !== undefined) metadataUpdate.first_name = data.first_name;
+      if (data.last_name !== undefined) metadataUpdate.last_name = data.last_name;
+      
+      await supabaseAdmin.auth.admin.updateUserById(userId, {
+        user_metadata: metadataUpdate,
+      }).catch((err) => {
+        console.error("Failed to sync auth user_metadata:", err);
+      });
+    }
+
     // Optional: Log audit
     await logAdminAudit('PROFILE_UPDATED', { updated_fields: Object.keys(data) }, 'info', userId);
 
