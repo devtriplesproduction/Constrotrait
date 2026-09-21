@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { createTestSchema, CreateTestInput } from "@/lib/validations/test";
 import { createTestMasterAction, updateTestMasterAction } from "@/actions/test.actions";
 import { TestMaster } from "@/services/test.service";
@@ -30,6 +31,7 @@ export function AddTestWizard({
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const [details, setDetails] = useState<string[]>(
     initialData?.additional_details && initialData.additional_details.length > 0
@@ -72,7 +74,7 @@ export function AddTestWizard({
     let fieldsToValidate: (keyof CreateTestInput)[] = [];
 
     if (currentStep === 0) {
-      fieldsToValidate = ["category", "discipline_group", "material_product", "component_parameter", "test_method"];
+      fieldsToValidate = ["discipline_group", "material_product", "component_parameter", "test_method"];
     } else if (currentStep === 1) {
       fieldsToValidate = ["additional_details"];
     }
@@ -119,6 +121,7 @@ export function AddTestWizard({
           title: `Test Master ${initialData ? "Updated" : "Created"}`,
           description: `The test has been successfully ${initialData ? "updated" : "registered"}.`,
         });
+        router.refresh();
         onSuccess?.();
       } else {
         toast({
@@ -188,7 +191,7 @@ export function AddTestWizard({
                 className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 px-2 md:px-2"
               >
                 <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Category <span className="text-red-500">*</span></label>
+                  <label className="text-sm font-semibold text-slate-700">Category</label>
                   <Select
                     value={category || "Construction"}
                     onValueChange={(val) => setValue("category", val as "Construction" | "Environmental")}

@@ -73,3 +73,8 @@ export function canReviewEOD(roles?: string[] | null): boolean {
   return roles.includes("SUPER_ADMIN") || roles.includes("HR") || roles.includes("BRANCH_MANAGER_ADMINISTRATIVE");
 }
 
+export function canManageTestMaster(roles?: string[] | null): boolean {
+  if (!roles) return false;
+  return roles.includes("SUPER_ADMIN") || roles.includes("QUALITY_MANAGER") || roles.includes("TECHNICAL_MANAGER") || roles.includes("BRANCH_MANAGER_ADMINISTRATIVE") || roles.includes("ADMIN_INWARD_CRE");
+}
+

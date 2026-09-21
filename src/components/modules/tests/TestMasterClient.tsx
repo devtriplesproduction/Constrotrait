@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
 import { deleteTestMasterAction } from "@/actions/test.actions";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 interface TestMasterClientProps {
   initialTests: TestMaster[];
@@ -22,6 +23,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleEdit = (test: TestMaster) => {
     setEditingTest(test);
@@ -31,6 +33,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingTest(null);
+    router.refresh();
   };
 
   const handleDelete = () => {
@@ -43,6 +46,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
           title: "Test Master Deleted",
           description: "The test has been successfully deleted.",
         });
+        router.refresh();
       } else {
         toast({
           variant: "error",
