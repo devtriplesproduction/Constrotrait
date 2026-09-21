@@ -20,20 +20,20 @@ const steps = [
   { id: "step2", title: "Additional Details" },
 ];
 
-export function AddTestWizard({ 
+export function AddTestWizard({
   onSuccess,
-  initialData 
-}: { 
+  initialData
+}: {
   onSuccess?: () => void,
-  initialData?: TestMaster 
+  initialData?: TestMaster
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const [details, setDetails] = useState<string[]>(
-    initialData?.additional_details && initialData.additional_details.length > 0 
-      ? initialData.additional_details 
+    initialData?.additional_details && initialData.additional_details.length > 0
+      ? initialData.additional_details
       : [""]
   );
 
@@ -59,7 +59,7 @@ export function AddTestWizard({
   const category = watch("category");
 
   const [submitEnabled, setSubmitEnabled] = useState(false);
-  
+
   useEffect(() => {
     if (currentStep === steps.length - 1) {
       setSubmitEnabled(false);
@@ -70,7 +70,7 @@ export function AddTestWizard({
 
   const handleNext = async () => {
     let fieldsToValidate: (keyof CreateTestInput)[] = [];
-    
+
     if (currentStep === 0) {
       fieldsToValidate = ["category", "discipline_group", "material_product", "component_parameter", "test_method"];
     } else if (currentStep === 1) {
@@ -174,7 +174,7 @@ export function AddTestWizard({
           />
         </div>
       </CardHeader>
-      
+
       <CardContent className="min-h-[300px] mt-4 relative overflow-hidden">
         <form id="add-test-form" onSubmit={handleFormSubmit} onKeyDown={handleKeyDown}>
           <AnimatePresence mode="wait">
@@ -185,12 +185,12 @@ export function AddTestWizard({
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -50, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 px-4 md:px-6"
+                className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 px-2 md:px-2"
               >
                 <div className="flex flex-col justify-end gap-1.5">
                   <label className="text-sm font-semibold text-slate-700">Category <span className="text-red-500">*</span></label>
-                  <Select 
-                    value={category || "Construction"} 
+                  <Select
+                    value={category || "Construction"}
                     onValueChange={(val) => setValue("category", val as "Construction" | "Environmental")}
                   >
                     <SelectItem value="Construction">Construction</SelectItem>
@@ -236,32 +236,32 @@ export function AddTestWizard({
               >
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-semibold text-slate-700">Additional Details Required for Testing (Optional)</label>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={addDetail}
                     className="border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 shadow-sm"
                   >
                     <Plus className="w-4 h-4 mr-1" /> Add Detail
                   </Button>
                 </div>
-                
+
                 <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
                   {details.map((detail, index) => (
                     <div key={index} className="flex items-start gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 shadow-sm">
                       <div className="flex-1">
-                        <Input 
+                        <Input
                           value={detail}
                           onChange={(e) => updateDetail(index, e.target.value)}
-                          placeholder={`Detail ${index + 1}`} 
+                          placeholder={`Detail ${index + 1}`}
                           className="h-9 text-sm bg-white"
                         />
                       </div>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => removeDetail(index)}
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 h-9 w-9 shrink-0"
                       >
@@ -269,7 +269,7 @@ export function AddTestWizard({
                       </Button>
                     </div>
                   ))}
-                  
+
                   {details.length === 0 && (
                     <div className="text-center py-8 text-sm text-slate-500 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
                       No additional details added. Click &quot;Add Detail&quot; to include more information.
@@ -281,7 +281,7 @@ export function AddTestWizard({
           </AnimatePresence>
         </form>
       </CardContent>
-      
+
       <CardFooter className="flex justify-between border-t border-slate-100 bg-slate-50 p-4">
         <Button
           type="button"
