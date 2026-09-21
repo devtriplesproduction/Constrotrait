@@ -163,7 +163,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex sm:flex-col items-center gap-2.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="flex flex-row items-center justify-center gap-2.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-300">
                     <button
                       onClick={() => handleEdit(test)}
                       className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 shadow-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 hover:shadow transition-all"
