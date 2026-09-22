@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BarChart2, Send, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface EodTabsClientProps {
   activeTab: string;
@@ -36,7 +37,8 @@ export function EodTabsClient({ activeTab, isSuperAdmin }: EodTabsClientProps) {
 
   return (
     <div className="flex bg-slate-100 p-1 rounded-xl h-[48px] items-center">
-      <button
+      <Button
+        variant="custom" size="none"
         onClick={() => handleTabChange('review')}
         disabled={isPending}
         className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
@@ -45,9 +47,10 @@ export function EodTabsClient({ activeTab, isSuperAdmin }: EodTabsClientProps) {
       >
         {isPending && clickedTab === 'review' ? <Loader2 className="w-4 h-4 animate-spin" /> : <BarChart2 className="w-4 h-4" />}
         Review EOD
-      </button>
+      </Button>
       {!isSuperAdmin && (
-        <button
+        <Button
+          variant="custom" size="none"
           onClick={() => handleTabChange('submit')}
           disabled={isPending}
           className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
@@ -56,7 +59,7 @@ export function EodTabsClient({ activeTab, isSuperAdmin }: EodTabsClientProps) {
         >
           {isPending && clickedTab === 'submit' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Submit EOD
-        </button>
+        </Button>
       )}
     </div>
   );

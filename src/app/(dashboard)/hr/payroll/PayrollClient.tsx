@@ -442,24 +442,27 @@ export function PayrollClient({
 
           <div className="bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl overflow-hidden">
             <div className="flex border-b border-gray-100">
-              <button
+              <Button
+                variant="custom" size="none"
                 className={`flex-1 py-4 px-6 text-sm font-bold transition-colors outline-none focus:outline-none ${activeTab === 'attendance' ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/30' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'}`}
                 onClick={() => setActiveTab('attendance')}
               >
                 Attendance Summary
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="custom" size="none"
                 className={`flex-1 py-4 px-6 text-sm font-bold transition-colors outline-none focus:outline-none ${activeTab === 'adjustments' ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/30' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'}`}
                 onClick={() => setActiveTab('adjustments')}
               >
                 Payroll Adjustments
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="custom" size="none"
                 className={`flex-1 py-4 px-6 text-sm font-bold transition-colors outline-none focus:outline-none ${activeTab === 'history' ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/30' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'}`}
                 onClick={() => setActiveTab('history')}
               >
                 Payroll History
-              </button>
+              </Button>
             </div>
 
             <div className="p-0">
@@ -843,12 +846,13 @@ export function PayrollClient({
                     </p>
                   </div>
                 </div>
-                <button
+                <Button
+                  variant="custom" size="none"
                   onClick={() => setEmployeeDetailsOpen(false)}
                   className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors rounded-full p-2"
                 >
                   <X className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
             </div>
 

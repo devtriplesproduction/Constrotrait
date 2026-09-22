@@ -54,16 +54,21 @@ export async function submitClientWizard(data: ClientWizardValues) {
       client_id: clientId,
     };
 
-    const testsData = data.jobEntryTests.map((t) => ({
-      test_master_id: t.test_master_id,
-      material_id: t.material_id,
-      material_details_location: t.material_details_location,
-      sample_quantity: t.sample_quantity,
-      grade: t.grade,
-      testing_day: t.testing_day,
-      test_method: t.test_method,
-      additional_details_values: t.additional_details_values || {},
-    }));
+    const testsData = [{
+      test_master_id: data.jobEntryTest.test_master_id,
+      material_id: data.jobEntryTest.material_id,
+      material_details_location: data.jobEntryTest.material_details_location,
+      sample_quantity: data.jobEntryTest.sample_quantity,
+      grade: data.jobEntryTest.grade,
+      testing_day: data.jobEntryTest.testing_day,
+      test_method: data.jobEntryTest.test_method,
+      date_of_receiving: data.jobEntryTest.date_of_receiving,
+      date_of_casting: data.jobEntryTest.date_of_casting,
+      testing_age: data.jobEntryTest.testing_age,
+      date_of_testing: data.jobEntryTest.date_of_testing,
+      material_description: data.jobEntryTest.material_description,
+      additional_details_values: data.jobEntryTest.additional_details_values || {},
+    }];
 
     await JobEntryService.createJobEntryWithTests(jobData, testsData);
 

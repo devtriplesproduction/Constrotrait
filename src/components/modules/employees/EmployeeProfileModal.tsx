@@ -1191,13 +1191,14 @@ export function EmployeeProfileModal({
                       <div className="flex items-center gap-2 shrink-0">
                         {(doc.url || doc.path) && (
                           <>
-                            <button
+                            <Button
+                              variant="custom" size="none"
                               onClick={() => handleDownloadFile(doc)}
                               className="p-2.5 bg-white hover:bg-orange-50 rounded-xl transition-all border border-slate-200 text-slate-500"
                               title="Download document"
                             >
                               <Download className="w-4 h-4" />
-                            </button>
+                            </Button>
                             <Button
                               onClick={() => removeFile(doc.id)}
                               variant="outline" size="sm" className="text-rose-500 border-rose-200 hover:bg-rose-50 hover:text-rose-600"
@@ -1494,7 +1495,8 @@ export function EmployeeProfileModal({
                         className="w-full h-11 px-4 py-2 bg-slate-100 text-slate-400 border border-slate-200 rounded-2xl text-sm font-medium pr-20"
                       />
                       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                        <button
+                        <Button
+                          variant="custom" size="none"
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();
@@ -1510,8 +1512,9 @@ export function EmployeeProfileModal({
                           title="Copy work email"
                         >
                           <Copy className="w-4 h-4" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="custom" size="none"
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();
@@ -1521,7 +1524,7 @@ export function EmployeeProfileModal({
                           title="Edit work email"
                         >
                           <Pencil className="w-4 h-4" />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>

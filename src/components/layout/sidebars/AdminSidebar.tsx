@@ -66,7 +66,7 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
       icon: ClipboardList,
     },
     {
-      title: "Client Management",
+      title: "Client Inwoard",
       icon: UserSquare,
       subLinks: [
         {

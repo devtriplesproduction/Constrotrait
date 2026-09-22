@@ -574,15 +574,21 @@ export type Database = {
           additional_details_values: Json | null
           created_at: string
           created_by: string | null
+          date_of_casting: string | null
+          date_of_receiving: string | null
+          date_of_testing: string | null
           grade: string | null
           id: string
           job_entry_id: string
+          material_description: string | null
           material_details_location: string | null
           material_id: string
           sample_quantity: string | null
           test_master_id: string
           test_method: string | null
+          testing_age: string | null
           testing_day: string | null
+          uid: number
           updated_at: string
           updated_by: string | null
         }
@@ -590,15 +596,21 @@ export type Database = {
           additional_details_values?: Json | null
           created_at?: string
           created_by?: string | null
+          date_of_casting?: string | null
+          date_of_receiving?: string | null
+          date_of_testing?: string | null
           grade?: string | null
           id?: string
           job_entry_id: string
+          material_description?: string | null
           material_details_location?: string | null
           material_id: string
           sample_quantity?: string | null
           test_master_id: string
           test_method?: string | null
+          testing_age?: string | null
           testing_day?: string | null
+          uid?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -606,15 +618,21 @@ export type Database = {
           additional_details_values?: Json | null
           created_at?: string
           created_by?: string | null
+          date_of_casting?: string | null
+          date_of_receiving?: string | null
+          date_of_testing?: string | null
           grade?: string | null
           id?: string
           job_entry_id?: string
+          material_description?: string | null
           material_details_location?: string | null
           material_id?: string
           sample_quantity?: string | null
           test_master_id?: string
           test_method?: string | null
+          testing_age?: string | null
           testing_day?: string | null
+          uid?: number
           updated_at?: string
           updated_by?: string | null
         }

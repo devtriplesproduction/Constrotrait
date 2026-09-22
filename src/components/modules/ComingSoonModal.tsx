@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function ComingSoonModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,12 +40,13 @@ export function ComingSoonModal() {
               <div className="relative h-32 bg-gradient-to-br from-orange-500 to-orange-400 p-6 flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
                 <Sparkles className="w-12 h-12 text-white animate-pulse" />
-                <button
+                <Button
+                  variant="custom" size="none"
                   onClick={() => setIsOpen(false)}
                   className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/20 p-1.5 rounded-full transition-colors"
                 >
                   <X className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
 
               {/* Content */}
@@ -55,12 +57,13 @@ export function ComingSoonModal() {
                 <p className="text-zinc-500 leading-relaxed">
                   We&apos;re working hard on new tools to supercharge your workspace. Stay tuned for some amazing updates in the next release.
                 </p>
-                <button
+                <Button
+                  variant="custom" size="none"
                   onClick={() => setIsOpen(false)}
                   className="mt-6 w-full py-3 px-4 bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded-xl transition-colors shadow-sm active:scale-[0.98]"
                 >
-                  Got it, thanks!
-                </button>
+                  Got it
+                </Button>
               </div>
             </motion.div>
           </motion.div>

@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, Beaker, FileText, XCircle, Pencil, Trash2, AlertTriangle, Loader2, Search } from "lucide-react";
+import { Plus, Beaker, FileText, XCircle, Pencil, Trash2, AlertTriangle, Loader2, Search, ChevronLeft, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { TestMaster } from "@/services/test.service";
 import { AddTestWizard } from "./AddTestWizard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils/cn";
 import { deleteTestMasterAction } from "@/actions/test.actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
 
 interface TestMasterClientProps {
   initialTests: TestMaster[];
@@ -21,9 +22,18 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
   const [editingTest, setEditingTest] = useState<TestMaster | null>(null);
   const [deletingTest, setDeletingTest] = useState<TestMaster | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [nablFilter, setNablFilter] = useState<"all" | "nabl" | "non-nabl">("all");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "Construction" | "Environmental">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, nablFilter, categoryFilter]);
 
   const handleEdit = (test: TestMaster) => {
     setEditingTest(test);
@@ -59,6 +69,10 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
   };
 
   const filteredTests = initialTests.filter(test => {
+    if (nablFilter === "nabl" && test.is_nabl !== true) return false;
+    if (nablFilter === "non-nabl" && test.is_nabl === true) return false;
+    if (categoryFilter !== "all" && test.category !== categoryFilter) return false;
+
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -69,6 +83,9 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
       (test.additional_details && test.additional_details.some(d => d.toLowerCase().includes(query)))
     );
   });
+
+  const totalPages = Math.ceil(filteredTests.length / pageSize);
+  const paginatedTests = filteredTests.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="flex flex-col gap-4">
@@ -82,21 +99,41 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
               </div>
-              <input
+              <Input
                 type="text"
                 placeholder="Search tests..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full h-[40px] pl-10 pr-4 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 placeholder-slate-400 text-slate-700 shadow-sm transition-all hover:border-slate-300"
+                className="pl-10 h-[40px] border-slate-200 bg-white hover:border-slate-300 focus:ring-orange-500/20 focus:border-orange-500"
               />
             </div>
-            <button
+            <select
+              value={nablFilter}
+              onChange={(e) => setNablFilter(e.target.value as any)}
+              className="h-[40px] rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 shadow-sm transition-all hover:border-slate-300"
+            >
+              <option value="all">All NABL</option>
+              <option value="nabl">NABL</option>
+              <option value="non-nabl">NON-NABL</option>
+            </select>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value as any)}
+              className="h-[40px] rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 shadow-sm transition-all hover:border-slate-300"
+            >
+              <option value="all">All Categories</option>
+              <option value="Construction">Construction</option>
+              <option value="Environmental">Environmental</option>
+            </select>
+            <Button
+              variant="custom"
+              size="none"
               onClick={() => setIsModalOpen(true)}
               className="h-[40px] bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-5 shadow-sm text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-colors"
             >
               <Plus className="w-4 h-4" />
               Add Test
-            </button>
+            </Button>
           </div>
         }
       />
@@ -104,12 +141,14 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="relative w-full max-w-4xl my-auto">
-            <button
+            <Button
+              variant="custom"
+              size="none"
               onClick={handleCloseModal}
               className="absolute -top-3 -right-3 bg-white text-slate-500 hover:text-slate-800 border border-slate-200 shadow-md rounded-full p-1 z-10 transition-colors"
             >
-              <XCircle className="w-6 h-6" />
-            </button>
+              <XCircle className="w-5 h-5" />
+            </Button>
             <AddTestWizard onSuccess={handleCloseModal} initialData={editingTest || undefined} />
           </div>
         </div>
@@ -145,7 +184,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
 
       {filteredTests.length > 0 ? (
         <div className="flex flex-col gap-4">
-          {filteredTests.map((test, index) => (
+          {paginatedTests.map((test, index) => (
             <Card key={test.id} className="relative rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-orange-200 transition-all duration-200 group overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-stretch py-1 pl-1 pr-1 gap-5">
 
@@ -164,20 +203,24 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
 
                   {/* Actions */}
                   <div className="flex flex-row items-center justify-center gap-2.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-300">
-                    <button
+                    <Button
+                      variant="custom"
+                      size="none"
                       onClick={() => handleEdit(test)}
                       className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 shadow-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 hover:shadow transition-all"
                       title="Edit"
                     >
                       <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="custom"
+                      size="none"
                       onClick={() => setDeletingTest(test)}
                       className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:shadow transition-all"
                       title="Delete"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -227,6 +270,36 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
               </div>
             </Card>
           ))}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <span className="text-sm text-slate-500">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredTests.length)} of {filteredTests.length} entries
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Prev
+                </Button>
+                <div className="flex items-center px-3 text-sm font-medium">
+                  Page {currentPage} of {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1"
+                >
+                  Next <ChevronRightIcon className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <Card className="border-slate-200/60 shadow-sm border-dashed">

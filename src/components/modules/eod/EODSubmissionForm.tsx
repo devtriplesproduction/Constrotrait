@@ -268,13 +268,12 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
               ))}
             </div>
           )}
-          <div className="flex gap-2">
-            <input
+          <div className="flex gap-2 items-start">
+            <Input
               type="text"
               value={jobCardInput}
               onChange={(e) => setJobCardInput(e.target.value)}
               onKeyDown={addJobCard}
-              className="flex w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="Type number and press Enter"
             />
             <Button type="button" variant="outline" onClick={addJobCard} className="shrink-0">
