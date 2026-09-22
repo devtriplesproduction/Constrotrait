@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { clientWizardSchema, ClientWizardValues } from "@/lib/validations/client-wizard";
-import { submitClientWizard, searchClientsAction, getNextUidAction } from "@/actions/client-wizard.actions";
+import { submitClientWizard, searchClientsAction, getNextUidAction, updateClientWizardAction } from "@/actions/client-wizard.actions";
 import { getTestsAction } from "@/actions/test.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { MultiSelect } from "@/components/ui/MultiSelect";
-import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft } from "lucide-react";
+import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText } from "lucide-react";
 import { Database } from "@/types/database";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -22,10 +22,10 @@ import { PageHeader } from "@/components/modules/PageHeader";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 
 const steps = [
-  { id: "step1", title: "Customer Basic Details" },
-  { id: "step2", title: "Site / Project Details" },
-  { id: "step3", title: "Select Test" },
-  { id: "step4", title: "Test Details" },
+  { id: "step1", title: "Customer Basic Details", icon: User },
+  { id: "step2", title: "Site / Project Details", icon: Building2 },
+  { id: "step3", title: "Select Test", icon: FlaskConical },
+  { id: "step4", title: "Test Details", icon: FileText },
 ];
 
 const TESTING_AGE_OPTIONS = [
@@ -59,7 +59,16 @@ function calculateTestingDate(castingDateStr: string, testingAgeStr: string): st
 
 type TestMaster = Database["public"]["Tables"]["test_master"]["Row"];
 
-export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
+export interface ClientWizardProps {
+  mode?: "create" | "edit";
+  initialData?: {
+    client: Database["public"]["Tables"]["clients"]["Row"];
+    jobEntryTest: Database["public"]["Tables"]["job_entry_tests"]["Row"];
+  };
+  onSuccess?: () => void;
+}
+
+export function ClientWizard({ mode = "create", initialData, onSuccess }: ClientWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitEnabled, setSubmitEnabled] = useState(false);
@@ -100,7 +109,41 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
     formState: { errors },
   } = useForm<ClientWizardValues>({
     resolver: zodResolver(clientWizardSchema),
-    defaultValues: {
+    defaultValues: initialData ? {
+      client: {
+        id: initialData.client.id,
+        name: initialData.client.name || "",
+        address: initialData.client.address || "",
+        division: initialData.client.division || "",
+        site_name: initialData.client.site_name || "",
+        agency_name: initialData.client.agency_name || "",
+        project_name: initialData.client.project_name || "",
+        dispatch_name: initialData.client.dispatch_name || "",
+        dispatch_address: initialData.client.dispatch_address || "",
+        contact_person: initialData.client.contact_person || "",
+        mobile: initialData.client.mobile || "",
+        email: initialData.client.email || "",
+        collected_by: initialData.client.collected_by || "",
+        gst_no: initialData.client.gst_no || "",
+      },
+      selectedTestId: initialData.jobEntryTest.test_master_id,
+      jobEntryTest: {
+        test_master_id: initialData.jobEntryTest.test_master_id,
+        test_name: "", // Will be updated when tests load
+        test_method: initialData.jobEntryTest.test_method || "",
+        material_id: initialData.jobEntryTest.material_id || "",
+        material_details_location: initialData.jobEntryTest.material_details_location || "",
+        sample_quantity: initialData.jobEntryTest.sample_quantity || "",
+        grade: initialData.jobEntryTest.grade || "",
+        testing_day: initialData.jobEntryTest.testing_day || "",
+        date_of_receiving: initialData.jobEntryTest.date_of_receiving || "",
+        date_of_casting: initialData.jobEntryTest.date_of_casting || "",
+        testing_age: initialData.jobEntryTest.testing_age || "",
+        date_of_testing: initialData.jobEntryTest.date_of_testing || "",
+        material_description: initialData.jobEntryTest.material_description || "",
+        additional_details_values: (initialData.jobEntryTest.additional_details_values as Record<string, string>) || {},
+      },
+    } : {
       client: {
         name: "",
         address: "",
@@ -144,8 +187,8 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
     let timer: NodeJS.Timeout;
     if (currentStep === steps.length - 1) {
       timer = setTimeout(() => setSubmitEnabled(true), 500);
-      // Fetch next UID preview when reaching the last step
-      if (nextUidPreview === null) {
+      // Fetch next UID preview when reaching the last step, only if creating
+      if (mode !== "edit" && nextUidPreview === null) {
         getNextUidAction().then(res => {
           if (res.success && res.nextUid) {
             setNextUidPreview(res.nextUid);
@@ -156,7 +199,7 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
       setSubmitEnabled(false);
     }
     return () => clearTimeout(timer);
-  }, [currentStep, nextUidPreview]);
+  }, [currentStep, nextUidPreview, mode]);
 
   // Debounced search for clients
   useEffect(() => {
@@ -179,18 +222,25 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
 
   // Fetch tests when reaching step 2
   useEffect(() => {
-    if (currentStep === 1 && availableTests.length === 0) {
+    if ((currentStep === 1 || mode === "edit") && availableTests.length === 0) {
       const fetchTests = async () => {
         setIsLoadingTests(true);
         const result = await getTestsAction();
         if (result.success && result.data) {
           setAvailableTests(result.data as TestMaster[]);
+          // If in edit mode, set the test name based on the loaded tests
+          if (mode === "edit" && initialData?.jobEntryTest?.test_master_id) {
+            const test = (result.data as TestMaster[]).find(t => t.id === initialData.jobEntryTest.test_master_id);
+            if (test) {
+              setValue("jobEntryTest.test_name", test.component_parameter || test.specific_test || "");
+            }
+          }
         }
         setIsLoadingTests(false);
       };
       fetchTests();
     }
-  }, [currentStep, availableTests.length]);
+  }, [currentStep, availableTests.length, mode, initialData, setValue]);
 
   const handleSelectClient = async (client: Database["public"]["Tables"]["clients"]["Row"]) => {
     setValue("client.id", client.id);
@@ -284,12 +334,21 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
   const onSubmit = async (data: ClientWizardValues) => {
     setIsSubmitting(true);
     try {
-      const result = await submitClientWizard(data);
+      let result;
+      if (mode === "edit" && initialData?.jobEntryTest?.id) {
+        result = await updateClientWizardAction(data, initialData.jobEntryTest.id);
+      } else {
+        result = await submitClientWizard(data);
+      }
 
       if (result.success) {
         toast({
-          title: "Wizard Completed",
-          description: `Client and Test details saved successfully. Generated UID: ${result.uids?.join(", ") || "Unknown"}`,
+          title: mode === "edit" ? "Inward Updated" : "Wizard Completed",
+          description: mode === "edit"
+            ? "Inward test details updated successfully."
+            : ("uids" in result && Array.isArray(result.uids) && result.uids.length > 0)
+              ? `Client and Test details saved successfully. Generated UID: ${result.uids.join(", ")}`
+              : "Client details saved successfully (No test selected).",
         });
         reset();
         setCurrentStep(0);
@@ -354,10 +413,10 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
                   {isActive && (
                     <motion.div layoutId="activeStep" className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500" />
                   )}
-                  <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${isActive ? 'bg-orange-100 text-orange-600' : isCompleted ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
-                    {isCompleted ? <Check className="w-3.5 h-3.5" /> : index + 1}
+                  <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0 ${isActive ? 'bg-orange-100 text-orange-600' : isCompleted ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
+                    {isCompleted ? <Check className="w-3.5 h-3.5" /> : <step.icon className="w-3.5 h-3.5" />}
                   </div>
-                  <span className="text-sm font-bold">{step.title}</span>
+                  <span className="text-sm font-bold truncate">{step.title}</span>
                 </div>
               </div>
             )
@@ -384,9 +443,14 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
                   transition={{ duration: 0.2 }}
                   className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pb-4"
                 >
-                  <div className="col-span-full mb-4 pb-4 border-b border-slate-200/60">
-                    <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Customer Basic Details</h3>
-                    <p className="text-[15px] text-slate-500 mt-1.5 font-medium">Provide the fundamental information about the customer.</p>
+                  <div className="col-span-full mb-4 pb-4 border-b border-slate-200/60 flex items-center gap-3">
+                    <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 text-orange-500 shadow-sm shrink-0">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Customer Basic Details</h3>
+                      <p className="text-[15px] text-slate-500 font-medium">Provide the fundamental information about the customer.</p>
+                    </div>
                   </div>
 
                   <div className="col-span-full mb-2 relative z-50">
@@ -478,9 +542,14 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
                   transition={{ duration: 0.2 }}
                   className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 px-2 md:px-2 pb-4"
                 >
-                  <div className="col-span-full mb-4 pb-4 border-b border-slate-200/60">
-                    <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Site & Project Details</h3>
-                    <p className="text-[15px] text-slate-500 mt-1.5 font-medium">Enter information regarding the site, agency, and project.</p>
+                  <div className="col-span-full mb-4 pb-4 border-b border-slate-200/60 flex items-center gap-3">
+                    <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 text-orange-500 shadow-sm shrink-0">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Site & Project Details</h3>
+                      <p className="text-[15px] text-slate-500 font-medium">Enter information regarding the site, agency, and project.</p>
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Site</label>
@@ -539,9 +608,14 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
                     </div>
                   ) : (
                     <div className="space-y-4 max-w-4xl">
-                      <div className="mb-4 pb-4 border-b border-slate-200/60">
-                        <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Select Test </h3>
-                        <p className="text-[15px] text-slate-500 mt-1.5 font-medium">Search and select the specific test required for this request.</p>
+                      <div className="mb-4 pb-4 border-b border-slate-200/60 flex items-center gap-3">
+                        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 text-orange-500 shadow-sm shrink-0">
+                          <FlaskConical className="w-5 h-5" />
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Select Test </h3>
+                          <p className="text-[15px] text-slate-500 font-medium">Search and select the specific test required for this request.</p>
+                        </div>
                       </div>
 
                       <div className="flex gap-4">
@@ -581,7 +655,7 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
                             }}
                             onFocus={() => setShowTestResults(true)}
                             onBlur={() => setTimeout(() => setShowTestResults(false), 200)}
-                            className="pl-12 h-12 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base"
+                            className="pl-12 h-11 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base"
                           />
                         </div>
 
@@ -689,9 +763,14 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
                   transition={{ duration: 0.2 }}
                   className="space-y-6 pb-6"
                 >
-                  <div className="mb-4 pb-4 border-b border-slate-200/60">
-                    <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Test Details</h3>
-                    <p className="text-[15px] text-slate-500 mt-1.5 font-medium">Enter the specific material and testing details.</p>
+                  <div className="mb-4 pb-4 border-b border-slate-200/60 flex items-center gap-3">
+                    <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 text-orange-500 shadow-sm shrink-0">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Test Details</h3>
+                      <p className="text-[15px] text-slate-500 font-medium">Enter the specific material and testing details.</p>
+                    </div>
                   </div>
                   {!selectedTestId ? (
                     <div className="text-center py-12 text-slate-500">
@@ -707,8 +786,8 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                         <div className="flex flex-col gap-1.5 col-span-full md:col-span-1">
-                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">UID Preview</label>
-                          <Input value={nextUidPreview !== null ? nextUidPreview.toString() : "Loading..."} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">{mode === "edit" ? "UID" : "UID Preview"}</label>
+                          <Input value={mode === "edit" ? initialData?.jobEntryTest.uid : (nextUidPreview !== null ? nextUidPreview.toString() : "Loading...")} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
                         </div>
 
                         <div className="flex flex-col gap-1.5">

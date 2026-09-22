@@ -15,7 +15,8 @@ export async function getActiveBranchesAction() {
     return { success: false, error: "Forbidden. Only Super Admins can list active branches for assignment." };
   }
 
-  return getActiveBranches();
+  const result = await getActiveBranches();
+  return JSON.parse(JSON.stringify(result));
 }
 
 export async function createBranchAction(data: BranchFormData) {

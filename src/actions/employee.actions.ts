@@ -30,21 +30,24 @@ export async function getCurrentUserProfileAction() {
   const user = await getAuthenticatedUser();
   if (!user) return { success: false, error: "Unauthorized" };
   const { getCurrentUserProfile } = await import("@/services/employee.service");
-  return getCurrentUserProfile();
+  const result = await getCurrentUserProfile();
+  return JSON.parse(JSON.stringify(result));
 }
 
 export async function getTodayBirthdaysAction() {
   const user = await getAuthenticatedUser();
   if (!user) return { success: false, error: "Unauthorized" };
   const { getTodayBirthdays } = await import("@/services/employee.service");
-  return getTodayBirthdays();
+  const result = await getTodayBirthdays();
+  return JSON.parse(JSON.stringify(result));
 }
 
 export async function getAllEmployeesAction(options?: { compact?: boolean }) {
   const user = await getAuthenticatedUser();
   if (!user) return { success: false, error: "Unauthorized" };
   const { getAllEmployees } = await import("@/services/employee.service");
-  return getAllEmployees(options);
+  const result = await getAllEmployees(options);
+  return JSON.parse(JSON.stringify(result));
 }
 
 export async function uploadEmployeeFileAction(formData: FormData) {

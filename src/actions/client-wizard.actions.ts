@@ -49,12 +49,73 @@ export async function submitClientWizard(data: ClientWizardValues) {
       throw new Error("Failed to resolve client ID.");
     }
 
-    // 2. Create Job Entry and Job Entry Tests
+    let uids: string[] = [];
+
+    // 2. Create Job Entry
     const jobData = {
       client_id: clientId,
     };
 
-    const testsData = [{
+    let testsData: any[] = [];
+    if (data.jobEntryTest?.test_master_id) {
+      testsData = [{
+        test_master_id: data.jobEntryTest.test_master_id,
+        material_id: data.jobEntryTest.material_id || "",
+        material_details_location: data.jobEntryTest.material_details_location,
+        sample_quantity: data.jobEntryTest.sample_quantity,
+        grade: data.jobEntryTest.grade,
+        testing_day: data.jobEntryTest.testing_day,
+        test_method: data.jobEntryTest.test_method,
+        date_of_receiving: data.jobEntryTest.date_of_receiving,
+        date_of_casting: data.jobEntryTest.date_of_casting,
+        testing_age: data.jobEntryTest.testing_age,
+        date_of_testing: data.jobEntryTest.date_of_testing,
+        material_description: data.jobEntryTest.material_description,
+        additional_details_values: data.jobEntryTest.additional_details_values || {},
+      }];
+    }
+
+    const result = await JobEntryService.createJobEntryWithTests(jobData, testsData);
+    if (result.jobEntryTests && result.jobEntryTests.length > 0) {
+      uids = result.jobEntryTests.map(t => t.uid);
+    }
+
+    revalidatePath("/dashboard"); 
+
+    return { 
+      success: true, 
+      uids
+    };
+  } catch (error) {
+    console.error("Wizard submission error:", error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function updateClientWizardAction(data: ClientWizardValues, testId: string) {
+  try {
+    const clientId = data.client.id;
+    if (!clientId) throw new Error("Client ID is required for updating");
+
+    // 1. Update Client
+    await ClientService.updateClient(clientId, {
+      name: data.client.name,
+      address: data.client.address,
+      division: data.client.division,
+      site_name: data.client.site_name,
+      agency_name: data.client.agency_name,
+      project_name: data.client.project_name,
+      dispatch_name: data.client.dispatch_name,
+      dispatch_address: data.client.dispatch_address,
+      contact_person: data.client.contact_person,
+      mobile: data.client.mobile,
+      email: data.client.email,
+      collected_by: data.client.collected_by,
+      gst_no: data.client.gst_no,
+    });
+
+    // 2. Update Job Entry Test
+    await JobEntryService.updateJobEntryTest(testId, {
       test_master_id: data.jobEntryTest.test_master_id,
       material_id: data.jobEntryTest.material_id,
       material_details_location: data.jobEntryTest.material_details_location,
@@ -68,18 +129,14 @@ export async function submitClientWizard(data: ClientWizardValues) {
       date_of_testing: data.jobEntryTest.date_of_testing,
       material_description: data.jobEntryTest.material_description,
       additional_details_values: data.jobEntryTest.additional_details_values || {},
-    }];
-
-    const result = await JobEntryService.createJobEntryWithTests(jobData, testsData);
+    });
 
     revalidatePath("/dashboard"); 
+    revalidatePath("/clients"); 
 
-    return { 
-      success: true, 
-      uids: result.jobEntryTests.map(t => t.uid)
-    };
+    return { success: true };
   } catch (error) {
-    console.error("Wizard submission error:", error);
+    console.error("Wizard update error:", error);
     return { success: false, error: (error as Error).message };
   }
 }
