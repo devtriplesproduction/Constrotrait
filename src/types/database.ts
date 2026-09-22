@@ -582,9 +582,9 @@ export type Database = {
           job_entry_id: string
           material_description: string | null
           material_details_location: string | null
-          material_id: string
+          material_id: string | null
           sample_quantity: string | null
-          test_master_id: string
+          test_master_id: string | null
           test_method: string | null
           testing_age: string | null
           testing_day: string | null
@@ -604,9 +604,9 @@ export type Database = {
           job_entry_id: string
           material_description?: string | null
           material_details_location?: string | null
-          material_id: string
+          material_id?: string | null
           sample_quantity?: string | null
-          test_master_id: string
+          test_master_id?: string | null
           test_method?: string | null
           testing_age?: string | null
           testing_day?: string | null
@@ -626,9 +626,9 @@ export type Database = {
           job_entry_id?: string
           material_description?: string | null
           material_details_location?: string | null
-          material_id?: string
+          material_id?: string | null
           sample_quantity?: string | null
-          test_master_id?: string
+          test_master_id?: string | null
           test_method?: string | null
           testing_age?: string | null
           testing_day?: string | null

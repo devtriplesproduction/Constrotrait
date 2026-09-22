@@ -126,9 +126,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         collected_by: initialData.client.collected_by || "",
         gst_no: initialData.client.gst_no || "",
       },
-      selectedTestId: initialData.jobEntryTest.test_master_id,
+      selectedTestId: initialData.jobEntryTest.test_master_id || "",
       jobEntryTest: {
-        test_master_id: initialData.jobEntryTest.test_master_id,
+        test_master_id: initialData.jobEntryTest.test_master_id || "",
         test_name: "", // Will be updated when tests load
         test_method: initialData.jobEntryTest.test_method || "",
         material_id: initialData.jobEntryTest.material_id || "",
