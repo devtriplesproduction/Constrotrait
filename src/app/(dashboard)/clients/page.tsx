@@ -15,7 +15,7 @@ export default async function ClientsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Client Inward"
-        description="View all clients and their associated inwards."
+        subtitle="View all clients and their associated inwards."
         actions={<NewInwardModalButton />}
       />
 

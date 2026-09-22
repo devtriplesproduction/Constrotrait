@@ -33,32 +33,54 @@ export class JobEntryService {
       throw new Error("Failed to create job entry");
     }
 
-    // 2. Create the associated tests
-    const testsToInsert = testsData.map((test) => ({
-      ...test,
-      job_entry_id: jobEntry.id,
-    }));
+    let jobEntryTests: any[] | null = [];
 
-    const { data: jobEntryTests, error: testsError } = await supabase
-      .from("job_entry_tests")
-      .insert(testsToInsert)
-      .select();
+    if (testsData && testsData.length > 0) {
+      // Get the maximum UID currently in the database
+      const { data: maxUidData, error: maxUidError } = await supabase
+        .from('job_entry_tests')
+        .select('uid')
+        .order('uid', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (testsError) {
-      console.error("Error creating job entry tests:", testsError);
-      
-      // Rollback: delete the created job entry
-      const { error: rollbackError } = await supabase
-        .from("job_entries")
-        .delete()
-        .eq("id", jobEntry.id);
-        
-      if (rollbackError) {
-        console.error("Failed to rollback job entry after test insertion failure:", rollbackError);
-        throw new Error(`Failed to create job entry tests: ${testsError.message}. Also failed to cleanup: ${rollbackError.message}`);
+      if (maxUidError) {
+        console.error("Error fetching max UID:", maxUidError);
+        throw new Error(maxUidError.message);
       }
-      
-      throw new Error(testsError.message);
+
+      let nextUid = (maxUidData?.uid || 0) + 1;
+
+      // 2. Create the associated tests
+      const testsToInsert = testsData.map((test) => ({
+        ...test,
+        job_entry_id: jobEntry.id,
+        uid: nextUid++,
+      }));
+
+      const { data: insertedTests, error: testsError } = await supabase
+        .from("job_entry_tests")
+        .insert(testsToInsert)
+        .select();
+
+      if (testsError) {
+        console.error("Error creating job entry tests:", testsError);
+        
+        // Rollback: delete the created job entry
+        const { error: rollbackError } = await supabase
+          .from("job_entries")
+          .delete()
+          .eq("id", jobEntry.id);
+          
+        if (rollbackError) {
+          console.error("Failed to rollback job entry after test insertion failure:", rollbackError);
+          throw new Error(`Failed to create job entry tests: ${testsError.message}. Also failed to cleanup: ${rollbackError.message}`);
+        }
+        
+        throw new Error(testsError.message);
+      }
+
+      jobEntryTests = insertedTests;
     }
 
     return { jobEntry, jobEntryTests };
