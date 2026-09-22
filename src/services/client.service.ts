@@ -96,4 +96,25 @@ export class ClientService {
 
     return data;
   }
+
+  /**
+   * Get all clients
+   */
+  static async getAllClients() {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching clients:", error);
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
 }

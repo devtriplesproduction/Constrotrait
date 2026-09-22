@@ -85,4 +85,37 @@ export class JobEntryService {
 
     return data;
   }
+
+  /**
+   * Update an existing job entry test (inward)
+   * Note: uid is excluded from the update type to enforce immutability
+   */
+  static async updateJobEntryTest(
+    id: string,
+    testData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Update"], "uid">
+  ) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+    if (!canManageClientsAndJobs(user.roles)) throw new Error("Unauthorized: You do not have permission to manage job entries");
+
+    const supabase = await createClient();
+    
+    // Explicitly ensure uid is not passed even if typescript is bypassed
+    const dataToUpdate = { ...testData } as any;
+    delete dataToUpdate.uid;
+
+    const { data, error } = await supabase
+      .from("job_entry_tests")
+      .update(dataToUpdate)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating job entry test:", error);
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
 }
