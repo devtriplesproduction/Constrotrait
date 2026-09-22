@@ -66,12 +66,12 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
       icon: ClipboardList,
     },
     {
-      title: "Client Inwoard",
+      title: "Client Inward",
       icon: UserSquare,
       subLinks: [
         {
-          title: "New Client",
-          href: "/clients/new",
+          title: "Clients",
+          href: "/clients",
           icon: UserSquare,
         }
       ]

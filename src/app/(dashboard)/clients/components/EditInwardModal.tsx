@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Database } from "@/types/database";
 import { updateJobEntryTestAction } from "@/actions/job-entry.actions";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 
 type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
 
