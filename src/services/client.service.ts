@@ -1,11 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
+import { getAuthenticatedUserWithRoles } from "./auth.service";
+import { canManageClientsAndJobs } from "@/config/roles";
 
 export class ClientService {
   /**
    * Search for clients by name, email, mobile, or GST
    */
   static async searchClients(query: string) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+
     const supabase = await createClient();
     
     // We can use an 'or' filter for search
@@ -27,6 +32,9 @@ export class ClientService {
    * Get client by ID
    */
   static async getClientById(id: string) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("clients")
@@ -46,6 +54,10 @@ export class ClientService {
    * Create a new client
    */
   static async createClient(clientData: Database["public"]["Tables"]["clients"]["Insert"]) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+    if (!canManageClientsAndJobs(user.roles)) throw new Error("Unauthorized: You do not have permission to manage clients");
+
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("clients")
@@ -65,6 +77,10 @@ export class ClientService {
    * Update an existing client
    */
   static async updateClient(id: string, clientData: Database["public"]["Tables"]["clients"]["Update"]) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+    if (!canManageClientsAndJobs(user.roles)) throw new Error("Unauthorized: You do not have permission to manage clients");
+
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("clients")

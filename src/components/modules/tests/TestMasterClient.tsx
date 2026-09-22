@@ -197,7 +197,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-b from-orange-500 to-orange-700 flex flex-col items-center justify-center shadow-[0_8px_16px_-4px_rgba(234,88,12,0.6)] border border-orange-400/50">
                     <span className="text-[9px] font-bold text-orange-100/90 uppercase tracking-widest leading-none mb-1">Test</span>
                     <span className="text-white font-black text-xl leading-none drop-shadow-sm">
-                      {String(index + 1).padStart(2, '0')}
+                      {String((currentPage - 1) * pageSize + index + 1).padStart(2, '0')}
                     </span>
                   </div>
 

@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
+import { getAuthenticatedUserWithRoles } from "./auth.service";
+import { canManageClientsAndJobs } from "@/config/roles";
 
 export class JobEntryService {
   /**
@@ -9,6 +11,10 @@ export class JobEntryService {
     jobData: Database["public"]["Tables"]["job_entries"]["Insert"],
     testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[]
   ) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+    if (!canManageClientsAndJobs(user.roles)) throw new Error("Unauthorized: You do not have permission to manage job entries");
+
     const supabase = await createClient();
 
     // 1. Create the job entry
@@ -40,8 +46,18 @@ export class JobEntryService {
 
     if (testsError) {
       console.error("Error creating job entry tests:", testsError);
-      // We should ideally rollback here or have a transaction if Supabase provides RPC
-      // but without RPC, we'll just throw
+      
+      // Rollback: delete the created job entry
+      const { error: rollbackError } = await supabase
+        .from("job_entries")
+        .delete()
+        .eq("id", jobEntry.id);
+        
+      if (rollbackError) {
+        console.error("Failed to rollback job entry after test insertion failure:", rollbackError);
+        throw new Error(`Failed to create job entry tests: ${testsError.message}. Also failed to cleanup: ${rollbackError.message}`);
+      }
+      
       throw new Error(testsError.message);
     }
 
@@ -52,6 +68,9 @@ export class JobEntryService {
    * Get job entries by client ID
    */
   static async getJobEntriesByClientId(clientId: string) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("job_entries")

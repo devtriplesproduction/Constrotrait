@@ -70,11 +70,14 @@ export async function submitClientWizard(data: ClientWizardValues) {
       additional_details_values: data.jobEntryTest.additional_details_values || {},
     }];
 
-    await JobEntryService.createJobEntryWithTests(jobData, testsData);
+    const result = await JobEntryService.createJobEntryWithTests(jobData, testsData);
 
     revalidatePath("/dashboard"); 
 
-    return { success: true };
+    return { 
+      success: true, 
+      uids: result.jobEntryTests.map(t => t.uid)
+    };
   } catch (error) {
     console.error("Wizard submission error:", error);
     return { success: false, error: (error as Error).message };
@@ -85,6 +88,31 @@ export async function searchClientsAction(query: string) {
   try {
     const clients = await ClientService.searchClients(query);
     return { success: true, data: clients };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function getNextUidAction() {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    
+    // Get the maximum UID currently in the database
+    const { data, error } = await supabase
+      .from('job_entry_tests')
+      .select('uid')
+      .order('uid', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching next UID:", error);
+      return { success: false, error: error.message };
+    }
+
+    const nextUid = (data?.uid || 0) + 1;
+    return { success: true, nextUid };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }

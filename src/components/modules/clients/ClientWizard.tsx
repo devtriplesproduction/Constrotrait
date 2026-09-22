@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { clientWizardSchema, ClientWizardValues } from "@/lib/validations/client-wizard";
-import { submitClientWizard, searchClientsAction } from "@/actions/client-wizard.actions";
+import { submitClientWizard, searchClientsAction, getNextUidAction } from "@/actions/client-wizard.actions";
 import { getTestsAction } from "@/actions/test.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitEnabled, setSubmitEnabled] = useState(false);
+  const [nextUidPreview, setNextUidPreview] = useState<number | null>(null);
 
   // Search state for clients
   const [searchQuery, setSearchQuery] = useState("");
@@ -143,11 +144,19 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
     let timer: NodeJS.Timeout;
     if (currentStep === steps.length - 1) {
       timer = setTimeout(() => setSubmitEnabled(true), 500);
+      // Fetch next UID preview when reaching the last step
+      if (nextUidPreview === null) {
+        getNextUidAction().then(res => {
+          if (res.success && res.nextUid) {
+            setNextUidPreview(res.nextUid);
+          }
+        });
+      }
     } else {
       setSubmitEnabled(false);
     }
     return () => clearTimeout(timer);
-  }, [currentStep]);
+  }, [currentStep, nextUidPreview]);
 
   // Debounced search for clients
   useEffect(() => {
@@ -280,7 +289,7 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
       if (result.success) {
         toast({
           title: "Wizard Completed",
-          description: "Client and Test details saved successfully.",
+          description: `Client and Test details saved successfully. Generated UID: ${result.uids?.join(", ") || "Unknown"}`,
         });
         reset();
         setCurrentStep(0);
@@ -698,8 +707,8 @@ export function ClientWizard({ onSuccess }: { onSuccess?: () => void }) {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                         <div className="flex flex-col gap-1.5 col-span-full md:col-span-1">
-                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">UID</label>
-                          <Input value="Auto-generated on save" readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">UID Preview</label>
+                          <Input value={nextUidPreview !== null ? nextUidPreview.toString() : "Loading..."} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
                         </div>
 
                         <div className="flex flex-col gap-1.5">
