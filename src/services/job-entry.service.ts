@@ -140,4 +140,39 @@ export class JobEntryService {
 
     return data;
   }
+
+  /**
+   * Get all job entry tests (job cards) across all clients with client details
+   */
+  static async getAllJobEntryTests() {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+    if (!canManageClientsAndJobs(user.roles)) throw new Error("Unauthorized: You do not have permission to view job entries");
+
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("job_entry_tests")
+      .select(`
+        *,
+        job_entries (
+          id,
+          created_at,
+          client_id,
+          clients (
+            id,
+            name,
+            email,
+            mobile
+          )
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching all job entry tests:", error);
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
 }

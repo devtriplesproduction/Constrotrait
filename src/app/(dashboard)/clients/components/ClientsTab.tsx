@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Edit, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, User, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getJobEntriesByClientIdAction } from "@/actions/job-entry.actions";
 import { Database } from "@/types/database";
-import { ClientWizard } from "@/components/modules/clients/ClientWizard";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntry = Database["public"]["Tables"]["job_entries"]["Row"];
@@ -16,25 +15,27 @@ interface JobEntryWithTests extends JobEntry {
   job_entry_tests: JobEntryTest[];
 }
 
-export default function ClientsListClient({
+export default function ClientsTab({
   initialClients,
+  onEditClick,
+  triggerRefresh, // Used to re-fetch if needed
 }: {
   initialClients: Client[];
+  onEditClick: (test: JobEntryTest, client: Client) => void;
+  triggerRefresh: number;
 }) {
   const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
   const [jobEntries, setJobEntries] = useState<JobEntryWithTests[]>([]);
   const [isLoadingJobs, setIsLoadingJobs] = useState(false);
-  
-  const [editingTest, setEditingTest] = useState<JobEntryTest | null>(null);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
 
-  const toggleClient = async (clientId: string) => {
-    if (expandedClientId === clientId) {
-      setExpandedClientId(null);
-      return;
+  // Watch for triggerRefresh changes if a client is expanded, to reload
+  React.useEffect(() => {
+    if (expandedClientId && triggerRefresh > 0) {
+      loadJobs(expandedClientId);
     }
+  }, [triggerRefresh]);
 
-    setExpandedClientId(clientId);
+  const loadJobs = async (clientId: string) => {
     setIsLoadingJobs(true);
     try {
       const res = await getJobEntriesByClientIdAction(clientId);
@@ -48,45 +49,64 @@ export default function ClientsListClient({
     }
   };
 
-  const handleEditClick = (test: JobEntryTest, client: Client) => {
-    setEditingTest(test);
-    setEditingClient(client);
-  };
-
-  const onWizardClose = () => {
-    setEditingTest(null);
-    setEditingClient(null);
-    
-    // Refresh the expanded client's job entries
-    if (expandedClientId) {
-      // Small delay to let DB reflect changes
-      setTimeout(() => {
-        toggleClient(expandedClientId).then(() => toggleClient(expandedClientId));
-      }, 500);
+  const toggleClient = async (clientId: string) => {
+    if (expandedClientId === clientId) {
+      setExpandedClientId(null);
+      return;
     }
+    setExpandedClientId(clientId);
+    await loadJobs(clientId);
   };
 
   return (
     <div className="space-y-4">
       {initialClients.map((client) => (
-        <Card key={client.id} className="p-4">
+        <Card key={client.id} className="overflow-hidden border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300">
           <div
-            className="flex items-center justify-between cursor-pointer"
+            className="flex items-center justify-between cursor-pointer p-4 hover:bg-slate-50/80 transition-colors"
             onClick={() => toggleClient(client.id)}
           >
-            <div>
-              <h2 className="text-lg font-semibold">{client.name}</h2>
-              <div className="text-sm text-muted-foreground">
-                {client.email} {client.mobile ? `| ${client.mobile}` : ""}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full pr-4 items-center">
+              <div className="flex flex-col group">
+                <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1 flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-primary/70" /> Client Name
+                </span>
+                <h2 className="text-sm font-semibold text-slate-800 truncate group-hover:text-primary transition-colors" title={client.name}>
+                  {client.name}
+                </h2>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1 flex items-center gap-1.5">
+                  <Mail className="h-3.5 w-3.5 text-primary/70" /> Email
+                </span>
+                <div className="text-sm text-slate-600 truncate font-medium" title={client.email || ""}>
+                  {client.email || "-"}
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1 flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5 text-primary/70" /> Contact Number
+                </span>
+                <div className="text-sm text-slate-600 truncate font-medium" title={client.mobile || ""}>
+                  {client.mobile || "-"}
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary/70" /> Address
+                </span>
+                <div className="text-sm text-slate-600 truncate font-medium" title={client.address || ""}>
+                  {client.address || "-"}
+                </div>
               </div>
             </div>
-            <Button variant="ghost" size="icon">
+            <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-slate-100/80 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors">
               {expandedClientId === client.id ? (
                 <ChevronUp className="h-5 w-5" />
               ) : (
                 <ChevronDown className="h-5 w-5" />
               )}
-            </Button>
+            </div>
           </div>
 
           {expandedClientId === client.id && (
@@ -141,7 +161,7 @@ export default function ClientsListClient({
                                       size="sm"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleEditClick(test, client);
+                                        onEditClick(test, client);
                                       }}
                                       className="h-8"
                                     >
@@ -161,7 +181,7 @@ export default function ClientsListClient({
                                     size="sm"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleEditClick({} as JobEntryTest, client);
+                                      onEditClick({} as JobEntryTest, client);
                                     }}
                                     className="h-8"
                                   >
@@ -181,35 +201,6 @@ export default function ClientsListClient({
           )}
         </Card>
       ))}
-
-      {editingTest && editingClient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-            onClick={onWizardClose}
-          />
-          
-          <div className="relative z-10 w-full max-w-5xl mx-auto shadow-2xl rounded-2xl overflow-hidden bg-white animate-in fade-in zoom-in-95 duration-200">
-            <div className="absolute top-4 right-4 z-[60]">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="rounded-full h-8 w-8 bg-slate-100/50 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors"
-                onClick={onWizardClose}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Close</span>
-              </Button>
-            </div>
-            
-            <ClientWizard 
-              mode="edit" 
-              initialData={{ client: editingClient, jobEntryTest: editingTest }}
-              onSuccess={onWizardClose} 
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

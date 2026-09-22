@@ -23,3 +23,12 @@ export async function getJobEntriesByClientIdAction(clientId: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function getAllJobEntryTestsAction() {
+  try {
+    const data = await JobEntryService.getAllJobEntryTests();
+    return { success: true, data };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
