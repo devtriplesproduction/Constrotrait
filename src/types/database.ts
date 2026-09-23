@@ -653,6 +653,119 @@ export type Database = {
           },
         ]
       }
+      job_assignments: {
+        Row: {
+          id: string
+          job_entry_test_id: string
+          team_id: string | null
+          assigned_to: string | null
+          assigned_by: string | null
+          status: string
+          due_date: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          job_entry_test_id: string
+          team_id?: string | null
+          assigned_to?: string | null
+          assigned_by?: string | null
+          status?: string
+          due_date?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          job_entry_test_id?: string
+          team_id?: string | null
+          assigned_to?: string | null
+          assigned_by?: string | null
+          status?: string
+          due_date?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_assignments_job_entry_test_id_fkey"
+            columns: ["job_entry_test_id"]
+            isOneToOne: false
+            referencedRelation: "job_entry_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      teams: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          branch_id: string | null
+          created_by: string | null
+          created_at: string
+          is_active: boolean
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          branch_id?: string | null
+          created_by?: string | null
+          created_at?: string
+          is_active?: boolean
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          branch_id?: string | null
+          created_by?: string | null
+          created_at?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          id: string
+          team_id: string
+          employee_id: string
+          added_at: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          employee_id: string
+          added_at?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          employee_id?: string
+          added_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       leave_requests: {
         Row: {
           certificate_verified_by: string | null

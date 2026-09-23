@@ -73,6 +73,11 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
           title: "Clients",
           href: "/clients",
           icon: UserSquare,
+        },
+        {
+          title: "Job Assignments",
+          href: "/job-assignments",
+          icon: ClipboardList,
         }
       ]
     }
