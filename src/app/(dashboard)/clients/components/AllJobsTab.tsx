@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Edit, Search } from "lucide-react";
+import { Edit, Search, Download, Loader2, Building2, FlaskConical, CalendarDays, FileText, Activity, Layers, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { getAllJobEntryTestsAction } from "@/actions/job-entry.actions";
+import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
 import { Database } from "@/types/database";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
@@ -34,6 +35,7 @@ export default function AllJobsTab({
 }) {
   const [allJobs, setAllJobs] = useState<JobEntryTestWithRelations[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const [searchUid, setSearchUid] = useState("");
   const [searchClient, setSearchClient] = useState("");
@@ -57,6 +59,41 @@ export default function AllJobsTab({
   useEffect(() => {
     loadAllJobs();
   }, [triggerRefresh]);
+
+  const handleDownloadPdf = async (testId: string, uid: number) => {
+    try {
+      setDownloadingId(testId);
+      const res = await downloadJobCardAction(testId);
+      if (res.success && res.data) {
+        // Convert base64 to blob
+        const byteCharacters = atob(res.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        
+        // Trigger download
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `JobCard_${uid}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        console.error("Failed to download PDF:", res.error);
+        alert("Failed to download Job Card PDF.");
+      }
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      alert("Error generating Job Card.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const filteredJobs = useMemo(() => {
     return allJobs.filter((job) => {
@@ -137,69 +174,110 @@ export default function AllJobsTab({
             No jobs found matching your filters.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-600 border-b border-slate-200/60">
-                <tr>
-                  <th className="px-5 py-4 font-semibold text-xs uppercase tracking-wider">UID</th>
-                  <th className="px-5 py-4 font-semibold text-xs uppercase tracking-wider">Client</th>
-                  <th className="px-5 py-4 font-semibold text-xs uppercase tracking-wider">Material</th>
-                  <th className="px-5 py-4 font-semibold text-xs uppercase tracking-wider">Method</th>
-                  <th className="px-5 py-4 font-semibold text-xs uppercase tracking-wider">Grade</th>
-                  <th className="px-5 py-4 font-semibold text-xs uppercase tracking-wider">Dates</th>
-                  <th className="px-5 py-4 font-semibold text-xs uppercase tracking-wider text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredJobs.map((test) => {
-                  const client = test.job_entries?.clients;
-                  return (
-                    <tr key={test.id} className="hover:bg-orange-50/30 transition-colors group">
-                      <td className="px-5 py-4">
-                        <span className="font-bold text-orange-600 bg-orange-50 px-2.5 py-1.5 rounded-md border border-orange-100">
-                          {test.uid}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="font-medium text-slate-800">{client?.name || "Unknown Client"}</div>
-                        <div className="text-xs text-slate-500 font-medium mt-0.5">
-                          {new Date(test.job_entries?.created_at || "").toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-2">
+            {filteredJobs.map((test) => {
+              const client = test.job_entries?.clients;
+              return (
+                <div key={test.id} className="bg-white rounded-[20px] p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] border border-slate-100 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.1)] hover:border-orange-100 transition-all duration-300 group">
+                  {/* Top Row */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="px-3 py-1 bg-gradient-to-br from-orange-50 to-[#FFF8ED] border border-orange-100/80 rounded-xl text-orange-600 font-extrabold text-[12px] tracking-wide shadow-[0_1px_2px_rgba(249,115,22,0.05)]">
+                        UID: {test.uid}
+                      </div>
+                      <div className="px-3 py-1 bg-slate-50 border border-slate-100/80 rounded-xl text-slate-500 text-[11px] font-semibold flex items-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400/80 shadow-sm"></div>
+                        {new Date(test.job_entries?.created_at || "").toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadPdf(test.id, test.uid);
+                        }}
+                        disabled={downloadingId === test.id}
+                        className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-100 bg-white text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 hover:border-indigo-100 transition-all duration-200 shadow-sm"
+                        title="Download PDF"
+                      >
+                        {downloadingId === test.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (client) {
+                            const mockClient = { ...client } as any;
+                            onEditClick(test, mockClient);
+                          }
+                        }}
+                        className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-100 bg-white text-slate-400 hover:text-orange-500 hover:bg-orange-50 hover:border-orange-100 transition-all duration-200 shadow-sm"
+                        title="Edit"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-100/60 my-4" />
+
+                  {/* Details Section */}
+                  <div className="space-y-4 mb-4 px-1">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="group/item">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-1.5 group-hover/item:text-slate-500 transition-colors">Client</div>
+                        <div className="text-[14px] font-bold text-slate-800 truncate" title={client?.name || "Unknown"}>{client?.name || "Unknown"}</div>
+                      </div>
+
+                      <div className="group/item">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-1.5 group-hover/item:text-slate-500 transition-colors">Material</div>
+                        <div className="text-[14px] font-bold text-slate-700 truncate" title={test.material_description || "-"}>{test.material_description || "-"}</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="col-span-2 group/item">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-1.5 group-hover/item:text-slate-500 transition-colors">Method</div>
+                        <div className="text-[14px] font-bold text-slate-700 truncate" title={test.test_method || "-"}>{test.test_method || "-"}</div>
+                      </div>
+                      <div className="group/item">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-1.5 group-hover/item:text-slate-500 transition-colors">Grade</div>
+                        <div className="inline-flex px-2.5 py-1 bg-slate-50 border border-slate-200/60 rounded-md text-[13px] font-bold text-slate-700 shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-w-[3rem] justify-center">
+                          {test.grade || "-"}
                         </div>
-                      </td>
-                      <td className="px-5 py-4 font-medium text-slate-700">{test.material_description || "-"}</td>
-                      <td className="px-5 py-4 text-slate-600">{test.test_method || "-"}</td>
-                      <td className="px-5 py-4 text-slate-600 font-medium">
-                        {test.grade ? <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs">{test.grade}</span> : "-"}
-                      </td>
-                      <td className="px-5 py-4 text-xs text-slate-500">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5"><span className="w-4 font-semibold text-slate-400">C:</span> {test.date_of_casting ? new Date(test.date_of_casting).toLocaleDateString() : "-"}</div>
-                          <div className="flex items-center gap-1.5"><span className="w-4 font-semibold text-slate-400">R:</span> {test.date_of_receiving ? new Date(test.date_of_receiving).toLocaleDateString() : "-"}</div>
-                          <div className="flex items-center gap-1.5"><span className="w-4 font-semibold text-slate-400">T:</span> {test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : "-"}</div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (client) {
-                              // Reconstruct full client object (we only fetched a few fields, but the Wizard handles partials well)
-                              const mockClient = { ...client } as any;
-                              onEditClick(test, mockClient);
-                            }
-                          }}
-                          className="h-8 text-slate-400 hover:text-orange-600 hover:bg-orange-50 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                        >
-                          <Edit className="h-4 w-4 mr-1.5" /> Edit
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-100/60 my-4" />
+
+                  {/* Dates Section */}
+                  <div className="grid grid-cols-3 gap-2.5 px-0.5">
+                    <div className="flex flex-col items-center justify-center py-2 bg-gradient-to-b from-[#F8FAFC] to-white border border-[#E2E8F0]/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] group-hover:border-blue-100 transition-colors">
+                      <div className="text-[11px] font-extrabold text-blue-600 uppercase tracking-wide mb-0.5">Cast</div>
+                      <div className="text-[13px] font-semibold text-slate-600">
+                        {test.date_of_casting ? new Date(test.date_of_casting).toLocaleDateString() : "-"}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center justify-center py-2 bg-gradient-to-b from-[#F0FDF4] to-white border border-[#DCFCE7]/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] group-hover:border-emerald-100 transition-colors">
+                      <div className="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wide mb-0.5">Recv</div>
+                      <div className="text-[13px] font-semibold text-slate-600">
+                        {test.date_of_receiving ? new Date(test.date_of_receiving).toLocaleDateString() : "-"}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center justify-center py-2 bg-gradient-to-b from-[#FAF5FF] to-white border border-[#F3E8FF]/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] group-hover:border-purple-100 transition-colors">
+                      <div className="text-[11px] font-extrabold text-purple-600 uppercase tracking-wide mb-0.5">Test</div>
+                      <div className="text-[13px] font-semibold text-slate-600">
+                        {test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : "-"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
