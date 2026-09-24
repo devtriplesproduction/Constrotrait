@@ -25,7 +25,7 @@ export class JobAssignmentService {
   }
 
   static async getAssignments(filters?: { team_id?: string; employee_id?: string; status?: string }) {
-    const supabase = createClient();
+    const supabase = await createClient();
     await this.checkPermission(supabase);
 
     let query = supabase
@@ -35,7 +35,7 @@ export class JobAssignmentService {
         job_entry_tests!inner (
           id,
           uid,
-          test_master ( name )
+          test_master ( component_parameter, specific_test, test_method )
         ),
         teams ( id, name ),
         assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),
@@ -63,7 +63,7 @@ export class JobAssignmentService {
     due_date?: string;
     notes?: string;
   }) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const user = await this.checkPermission(supabase);
 
     if (!data.team_id && !data.assigned_to) {
@@ -129,7 +129,7 @@ export class JobAssignmentService {
   }
 
   static async updateAssignmentStatus(id: string, status: string) {
-    const supabase = createClient();
+    const supabase = await createClient();
     // we might want employees to be able to update their own, but for now we enforce the same manager check
     await this.checkPermission(supabase);
 

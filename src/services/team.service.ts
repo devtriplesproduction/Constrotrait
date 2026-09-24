@@ -25,7 +25,7 @@ export class TeamService {
   }
 
   static async getTeams() {
-    const supabase = createClient();
+    const supabase = await createClient();
     await this.checkPermission(supabase);
 
     const { data, error } = await supabase
@@ -52,7 +52,7 @@ export class TeamService {
   }
 
   static async createTeam(data: { name: string; description?: string; branch_id?: string }) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const user = await this.checkPermission(supabase);
 
     const { data: team, error } = await supabase
@@ -76,7 +76,7 @@ export class TeamService {
   }
 
   static async updateTeam(id: string, data: { name?: string; description?: string; is_active?: boolean }) {
-    const supabase = createClient();
+    const supabase = await createClient();
     await this.checkPermission(supabase);
 
     const { data: team, error } = await supabase
@@ -94,7 +94,7 @@ export class TeamService {
   }
 
   static async addTeamMember(teamId: string, employeeId: string) {
-    const supabase = createClient();
+    const supabase = await createClient();
     await this.checkPermission(supabase);
 
     const { data, error } = await supabase
@@ -116,7 +116,7 @@ export class TeamService {
   }
 
   static async removeTeamMember(teamId: string, employeeId: string) {
-    const supabase = createClient();
+    const supabase = await createClient();
     await this.checkPermission(supabase);
 
     const { error } = await supabase
