@@ -9,15 +9,15 @@ export class TeamService {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error("Unauthorized");
 
-    const { data: rolesData, error: rolesError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("roles")
+      .eq("id", user.id)
+      .single();
 
-    if (rolesError) throw new Error("Failed to verify permissions");
+    if (profileError || !profile) throw new Error("Failed to verify permissions");
 
-    const roles = rolesData.map((r: any) => r.role);
-    if (!canManageJobAssignments(roles)) {
+    if (!canManageJobAssignments(profile.roles)) {
       throw new Error("Insufficient permissions to manage teams");
     }
 

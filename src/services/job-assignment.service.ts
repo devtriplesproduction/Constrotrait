@@ -9,15 +9,15 @@ export class JobAssignmentService {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error("Unauthorized");
 
-    const { data: rolesData, error: rolesError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("roles")
+      .eq("id", user.id)
+      .single();
 
-    if (rolesError) throw new Error("Failed to verify permissions");
+    if (profileError || !profile) throw new Error("Failed to verify permissions");
 
-    const roles = rolesData.map((r: any) => r.role);
-    if (!canManageJobAssignments(roles)) {
+    if (!canManageJobAssignments(profile.roles)) {
       throw new Error("Insufficient permissions to manage job assignments");
     }
 
@@ -130,8 +130,39 @@ export class JobAssignmentService {
 
   static async updateAssignmentStatus(id: string, status: string) {
     const supabase = await createClient();
-    // we might want employees to be able to update their own, but for now we enforce the same manager check
-    await this.checkPermission(supabase);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error("Unauthorized");
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("roles")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profile) throw new Error("Failed to verify permissions");
+
+    const isManager = canManageJobAssignments(profile.roles);
+
+    const { data: assignment, error: assignmentError } = await supabase
+      .from("job_assignments")
+      .select("*, teams(team_members(employee_id))")
+      .eq("id", id)
+      .single();
+
+    if (assignmentError || !assignment) throw new Error("Assignment not found");
+
+    let canUpdate = isManager;
+    if (!canUpdate) {
+      if (assignment.assigned_to === user.id) {
+        canUpdate = true;
+      } else if (assignment.teams?.team_members?.some((m: any) => m.employee_id === user.id)) {
+        canUpdate = true;
+      }
+    }
+
+    if (!canUpdate) {
+      throw new Error("Insufficient permissions to update this assignment");
+    }
 
     const { data, error } = await supabase
       .from("job_assignments")

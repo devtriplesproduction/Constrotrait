@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Pencil, User, Mail, Phone, MapPin, FileText, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, User, Mail, Phone, MapPin, FileText, Search, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getJobEntriesByClientIdAction } from "@/actions/job-entry.actions";
+import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
 import { Database } from "@/types/database";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
@@ -29,6 +30,40 @@ export default function ClientsTab({
   const [jobEntries, setJobEntries] = useState<JobEntryWithTests[]>([]);
   const [isLoadingJobs, setIsLoadingJobs] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadPdf = async (testId: string, uid: number) => {
+    try {
+      setDownloadingId(testId);
+      const res = await downloadJobCardAction(testId);
+      if (res.success && res.data) {
+        const byteCharacters = atob(res.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `JobCard_${uid}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        console.error("Failed to download PDF:", res.error);
+        alert("Failed to download Job Card PDF.");
+      }
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      alert("Error generating Job Card.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const filteredClients = initialClients.filter((client) => {
     const query = searchQuery.toLowerCase();
@@ -233,17 +268,35 @@ export default function ClientsTab({
                                 {new Date(job.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditClick(test, client);
-                              }}
-                              className="h-8 w-8 text-slate-400 bg-white hover:text-orange-600 hover:bg-orange-50 border border-slate-200 shadow-sm rounded-full transition-all duration-300"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadPdf(test.id, test.uid);
+                                }}
+                                disabled={downloadingId === test.id}
+                                className="h-8 w-8 text-slate-400 bg-white hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 shadow-sm rounded-full transition-all duration-300"
+                              >
+                                {downloadingId === test.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Download className="h-3.5 w-3.5" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEditClick(test, client);
+                                }}
+                                className="h-8 w-8 text-slate-400 bg-white hover:text-orange-600 hover:bg-orange-50 border border-slate-200 shadow-sm rounded-full transition-all duration-300"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </div>
                           
                           <div className="space-y-3 flex-grow">

@@ -21,6 +21,7 @@ export async function downloadJobCardAction(jobEntryTestId: string) {
       .from("job_entry_tests")
       .select(`
         *,
+        test_master (*),
         job_entries (
           id,
           clients (*)

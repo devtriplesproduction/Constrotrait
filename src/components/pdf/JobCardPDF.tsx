@@ -88,6 +88,13 @@ const formatDate = (dateStr: string | null) => {
 
 export const JobCardPDF = ({ data }: { data: JobCardData }) => {
   const { job, client } = data;
+  
+  // Extract real Sample Code No if available, fallback to material_details_location
+  const sampleCodeNo = job?.additional_details_values?.sample_code_no || job?.material_details_location || '';
+  
+  // Extract real Test Parameters from test_master if available
+  const testParameters = job?.test_master?.specific_test || job?.test_master?.component_parameter || job?.test_parameters || 'As per Method';
+
 
   return (
     <Document>
@@ -206,9 +213,9 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             <View style={[styles.cell, { width: '10%' }]}><Text>{job?.uid || ''}</Text></View>
             <View style={[styles.cell, { width: '25%' }]}><Text>{job?.material_description || ''}</Text></View>
             <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>{job?.testing_day || ''}</Text></View>
-            <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text>{job?.material_details_location || ''}</Text></View>
+            <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text>{sampleCodeNo}</Text></View>
             <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>{job?.sample_quantity || ''}</Text></View>
-            <View style={[styles.cell, { width: '15%' }]}><Text>{job?.test_parameters || 'As per Method'}</Text></View>
+            <View style={[styles.cell, { width: '15%' }]}><Text>{testParameters}</Text></View>
             <View style={[styles.lastCell, { width: '15%' }]}><Text>{job?.test_method || ''}</Text></View>
           </View>
 

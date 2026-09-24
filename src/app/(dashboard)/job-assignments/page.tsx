@@ -5,6 +5,7 @@ import { JobAssignmentsTabsClient } from "@/components/modules/job-assignments/J
 import { TeamsTab } from "@/components/modules/job-assignments/TeamsTab";
 import { AssignJobsTab } from "@/components/modules/job-assignments/AssignJobsTab";
 import { AssignmentsListTab } from "@/components/modules/job-assignments/AssignmentsListTab";
+import { MyAssignmentsTab } from "@/components/modules/job-assignments/MyAssignmentsTab";
 import { getTeamsAction } from "@/actions/team.actions";
 import { getAssignmentsAction } from "@/actions/job-assignment.actions";
 import { getAllEmployeesAction } from "@/actions/employee.actions";
@@ -26,12 +27,14 @@ export default async function JobAssignmentsPage({
     .single();
 
   const roles = profile?.roles || [];
+  const isManager = canManageJobAssignments(roles);
 
-  if (!canManageJobAssignments(roles)) {
-    redirect("/");
+  const defaultTab = isManager ? "teams" : "my";
+  const tab = typeof searchParams.tab === "string" ? searchParams.tab : defaultTab;
+
+  if (!isManager && tab !== "my") {
+    redirect("/job-assignments?tab=my");
   }
-
-  const tab = typeof searchParams.tab === "string" ? searchParams.tab : "teams";
 
   const [teamsRes, assignmentsRes, employeesRes] = await Promise.all([
     getTeamsAction(),
@@ -47,18 +50,21 @@ export default async function JobAssignmentsPage({
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Job Assignments</h1>
-        <JobAssignmentsTabsClient activeTab={tab} />
+        <JobAssignmentsTabsClient activeTab={tab} isManager={isManager} />
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-        {tab === "teams" && (
+        {isManager && tab === "teams" && (
           <TeamsTab initialTeams={teams} employees={employees} />
         )}
-        {tab === "assign" && (
+        {isManager && tab === "assign" && (
           <AssignJobsTab teams={teams} employees={employees} />
         )}
-        {tab === "list" && (
+        {isManager && tab === "list" && (
           <AssignmentsListTab assignments={assignments} teams={teams} employees={employees} />
+        )}
+        {tab === "my" && (
+          <MyAssignmentsTab assignments={assignments} userId={user.id} />
         )}
       </div>
     </div>

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ClipboardList, Calendar } from "lucide-react";
-import { assignJobCardAction } from "@/actions/job-assignment.actions";
+import { ClipboardList, Calendar, CheckCircle2, AlertCircle } from "lucide-react";
+import { assignJobCardAction, getAssignmentsAction } from "@/actions/job-assignment.actions";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export function AssignJobsTab({ teams, employees }: { teams: any[], employees: any[] }) {
   const router = useRouter();
@@ -17,14 +18,42 @@ export function AssignJobsTab({ teams, employees }: { teams: any[], employees: a
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [existingAssignments, setExistingAssignments] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchExisting = async () => {
+      const res = await getAssignmentsAction();
+      if (res.success && res.data) {
+        setExistingAssignments(res.data);
+      }
+    };
+    fetchExisting();
+  }, []);
+
+  const relevantAssignments = existingAssignments.filter(a => {
+    if (dueDate) {
+      if (!a.due_date || !a.due_date.startsWith(dueDate)) return false;
+    }
+    if (assignType === "team" && selectedTeam && a.team_id !== selectedTeam) return false;
+    if (assignType === "employee" && selectedEmployee && a.assigned_to !== selectedEmployee) return false;
+    return true;
+  });
+
   const handleAssign = async () => {
     if (!jobEntryTestId) return alert("Please enter a Job Entry Test ID (UUID) or UID to search (Implementation needed for UID search, currently expects UUID).");
     if (assignType === "team" && !selectedTeam) return alert("Please select a team.");
     if (assignType === "employee" && !selectedEmployee) return alert("Please select an employee.");
 
+    const alreadyAssigned = existingAssignments.find(a => a.job_entry_test_id === jobEntryTestId || (a.job_entry_tests?.uid && a.job_entry_tests.uid.toString() === jobEntryTestId));
+    if (alreadyAssigned) {
+      if (!confirm(`This job is already assigned to ${alreadyAssigned.team_id ? alreadyAssigned.teams?.name : alreadyAssigned.assigned_to_profile?.first_name}. Reassign?`)) {
+        return;
+      }
+    }
+
     setLoading(true);
     const data = {
-      job_entry_test_id: jobEntryTestId,
+      job_entry_test_id: alreadyAssigned ? alreadyAssigned.job_entry_test_id : jobEntryTestId, // In case they entered UID, use real ID if found. (For real implementation, would need backend lookup if UID not in existing list, but instructions say UUID is used for now)
       team_id: assignType === "team" ? selectedTeam : undefined,
       assigned_to: assignType === "employee" ? selectedEmployee : undefined,
       due_date: dueDate || undefined,
@@ -34,7 +63,12 @@ export function AssignJobsTab({ teams, employees }: { teams: any[], employees: a
     const res = await assignJobCardAction(data);
     if (res.success) {
       alert("Job Card assigned successfully!");
-      router.push("/job-assignments?tab=list");
+      // Refresh assignments
+      const refreshRes = await getAssignmentsAction();
+      if (refreshRes.success && refreshRes.data) {
+        setExistingAssignments(refreshRes.data);
+      }
+      setJobEntryTestId("");
     } else {
       alert("Error: " + res.error);
     }
@@ -148,6 +182,30 @@ export function AssignJobsTab({ teams, employees }: { teams: any[], employees: a
           {loading ? "Assigning..." : "Assign Job Card"}
         </Button>
       </div>
+
+      {(selectedTeam || selectedEmployee || dueDate) && (
+        <div className="mt-8 border-t border-slate-200 pt-6">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Current Assignments for Selection</h3>
+          {relevantAssignments.length === 0 ? (
+            <p className="text-slate-500 text-sm">No assignments found for this selection.</p>
+          ) : (
+            <div className="space-y-3">
+              {relevantAssignments.map((a: any) => (
+                <div key={a.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-orange-600 mr-2">UID: {a.job_entry_tests?.uid}</span>
+                    <span className="text-sm font-semibold text-slate-700">Status: {a.status}</span>
+                  </div>
+                  <div className="text-xs text-slate-500 text-right">
+                    Assigned: {new Date(a.created_at).toLocaleDateString()} <br/>
+                    Due: {a.due_date ? new Date(a.due_date).toLocaleDateString() : 'N/A'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

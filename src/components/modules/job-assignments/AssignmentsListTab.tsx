@@ -100,7 +100,7 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
                   <div className="text-xs text-slate-400 mt-1" title={assignment.job_entry_test_id}>UUID: {assignment.job_entry_test_id.slice(0,8)}...</div>
                 </td>
                 <td className="px-6 py-4 text-slate-600">
-                  {assignment.job_entry_tests?.test_master?.name || 'N/A'}
+                  {assignment.job_entry_tests?.test_master ? `${assignment.job_entry_tests.test_master.component_parameter || ''} - ${assignment.job_entry_tests.test_master.specific_test || ''}` : 'N/A'}
                 </td>
                 <td className="px-6 py-4 text-slate-600">
                   {assignment.team_id ? (

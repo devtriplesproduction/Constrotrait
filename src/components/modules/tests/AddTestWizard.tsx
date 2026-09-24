@@ -55,10 +55,12 @@ export function AddTestWizard({
       material_product: initialData?.material_product || "",
       component_parameter: initialData?.component_parameter || "",
       test_method: initialData?.test_method || "",
+      is_nabl: initialData?.is_nabl ?? true,
     },
   });
 
   const category = watch("category");
+  const is_nabl = watch("is_nabl");
 
   const [submitEnabled, setSubmitEnabled] = useState(false);
 
@@ -200,6 +202,18 @@ export function AddTestWizard({
                     <SelectItem value="Environmental">Environmental</SelectItem>
                   </Select>
                   {errors.category && <p className="text-red-500 text-xs">{errors.category.message}</p>}
+                </div>
+
+                <div className="flex flex-col justify-end gap-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Accreditation</label>
+                  <Select
+                    value={is_nabl ? "true" : "false"}
+                    onValueChange={(val) => setValue("is_nabl", val === "true")}
+                  >
+                    <SelectItem value="true">NABL</SelectItem>
+                    <SelectItem value="false">Non-NABL</SelectItem>
+                  </Select>
+                  {errors.is_nabl && <p className="text-red-500 text-xs">{errors.is_nabl.message}</p>}
                 </div>
 
                 <div className="flex flex-col justify-end gap-1.5">
