@@ -8,30 +8,27 @@ import { Button } from "@/components/ui/button";
 interface JobAssignmentsTabsClientProps {
   activeTab: string;
   isManager: boolean;
+  onTabChange?: (tab: string) => void;
 }
 
-export function JobAssignmentsTabsClient({ activeTab, isManager }: JobAssignmentsTabsClientProps) {
+export function JobAssignmentsTabsClient({ activeTab, isManager, onTabChange }: JobAssignmentsTabsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [clickedTab, setClickedTab] = useState<string | null>(null);
-  const [prevActiveTab, setPrevActiveTab] = useState(activeTab);
-
-  if (activeTab !== prevActiveTab) {
-    setPrevActiveTab(activeTab);
-    setClickedTab(null);
-  }
 
   const handleTabChange = (tab: string) => {
     if (tab === activeTab || isPending) return;
-    setClickedTab(tab);
     
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", tab);
-    
-    startTransition(() => {
-      router.push(`?${params.toString()}`);
-    });
+    if (onTabChange) {
+      onTabChange(tab);
+    } else {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", tab);
+      
+      startTransition(() => {
+        router.push(`?${params.toString()}`);
+      });
+    }
   };
 
   return (
@@ -46,7 +43,7 @@ export function JobAssignmentsTabsClient({ activeTab, isManager }: JobAssignment
               activeTab === 'teams' ? 'bg-orange-500 text-white shadow' : 'text-slate-600 hover:text-slate-800'
             } ${isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {isPending && clickedTab === 'teams' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
+            {isPending && !onTabChange ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
             Teams
           </Button>
           
@@ -58,7 +55,7 @@ export function JobAssignmentsTabsClient({ activeTab, isManager }: JobAssignment
               activeTab === 'assign' ? 'bg-orange-500 text-white shadow' : 'text-slate-600 hover:text-slate-800'
             } ${isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {isPending && clickedTab === 'assign' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />}
+            {isPending && !onTabChange ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />}
             Assign Jobs
           </Button>
 
@@ -70,7 +67,7 @@ export function JobAssignmentsTabsClient({ activeTab, isManager }: JobAssignment
               activeTab === 'list' ? 'bg-orange-500 text-white shadow' : 'text-slate-600 hover:text-slate-800'
             } ${isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {isPending && clickedTab === 'list' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListTodo className="w-4 h-4" />}
+            {isPending && !onTabChange ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListTodo className="w-4 h-4" />}
             Assignments
           </Button>
         </>
@@ -84,7 +81,7 @@ export function JobAssignmentsTabsClient({ activeTab, isManager }: JobAssignment
           activeTab === 'my' ? 'bg-orange-500 text-white shadow' : 'text-slate-600 hover:text-slate-800'
         } ${isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
       >
-        {isPending && clickedTab === 'my' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListTodo className="w-4 h-4" />}
+        {isPending && !onTabChange ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListTodo className="w-4 h-4" />}
         My Assignments
       </Button>
     </div>

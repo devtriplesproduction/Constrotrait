@@ -56,13 +56,17 @@ export class JobAssignmentService {
     return data;
   }
 
-  static async getMyAssignments(userId: string) {
+  static async getMyAssignments(userId?: string) {
     const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error("Unauthorized");
+    
+    const actualUserId = user.id;
 
     const { data: userTeams } = await supabase
       .from("team_members")
       .select("team_id")
-      .eq("employee_id", userId);
+      .eq("employee_id", actualUserId);
       
     const teamIds = userTeams?.map(t => t.team_id) || [];
 
@@ -82,9 +86,9 @@ export class JobAssignmentService {
       .order("created_at", { ascending: false });
 
     if (teamIds.length > 0) {
-      query = query.or(`assigned_to.eq.${userId},team_id.in.(${teamIds.join(',')})`);
+      query = query.or(`assigned_to.eq.${actualUserId},team_id.in.(${teamIds.join(',')})`);
     } else {
-      query = query.eq("assigned_to", userId);
+      query = query.eq("assigned_to", actualUserId);
     }
 
     const { data, error } = await query;
@@ -110,13 +114,25 @@ export class JobAssignmentService {
       throw new Error("Must provide either a team_id or an assigned_to employee.");
     }
 
+    // Resolve job_entry_test_id if it's a UID
+    let actualJobEntryTestId = data.job_entry_test_id;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(actualJobEntryTestId)) {
+      const { data: jet, error: jetError } = await supabase
+        .from("job_entry_tests")
+        .select("id")
+        .eq("uid", actualJobEntryTestId)
+        .maybeSingle();
+      if (jetError || !jet) throw new Error(`Could not find job card with UID ${actualJobEntryTestId}`);
+      actualJobEntryTestId = jet.id;
+    }
+
     // Upsert or insert depending on if we want to allow re-assignment by creating new or updating.
     // The requirement says "One job card can have one active assignment (or allow reassign with history – prefer simple: one active)"
     // Let's see if there is an existing assignment
     const { data: existing, error: existingError } = await supabase
       .from("job_assignments")
       .select("id")
-      .eq("job_entry_test_id", data.job_entry_test_id)
+      .eq("job_entry_test_id", actualJobEntryTestId)
       .maybeSingle();
 
     if (existingError) {
@@ -149,7 +165,7 @@ export class JobAssignmentService {
         .from("job_assignments")
         .insert([
           {
-            job_entry_test_id: data.job_entry_test_id,
+            job_entry_test_id: actualJobEntryTestId,
             team_id: data.team_id || null,
             assigned_to: data.assigned_to || null,
             assigned_by: user.id,

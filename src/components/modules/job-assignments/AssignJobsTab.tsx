@@ -40,7 +40,7 @@ export function AssignJobsTab({ teams, employees }: { teams: any[], employees: a
   });
 
   const handleAssign = async () => {
-    if (!jobEntryTestId) return alert("Please enter a Job Entry Test ID (UUID) or UID to search (Implementation needed for UID search, currently expects UUID).");
+    if (!jobEntryTestId) return alert("Please enter a Job Entry Test UID (or UUID).");
     if (assignType === "team" && !selectedTeam) return alert("Please select a team.");
     if (assignType === "employee" && !selectedEmployee) return alert("Please select an employee.");
 
@@ -91,10 +91,10 @@ export function AssignJobsTab({ teams, employees }: { teams: any[], employees: a
           <Input 
             value={jobEntryTestId} 
             onChange={(e) => setJobEntryTestId(e.target.value)} 
-            placeholder="Enter Job Entry Test UUID"
+            placeholder="Enter Job Entry Test UID (e.g., 202609...)"
             className="w-full"
           />
-          <p className="text-xs text-slate-500 mt-1">Note: Enter the exact UUID of the job_entry_tests record for now.</p>
+          <p className="text-xs text-slate-500 mt-1">Note: Enter the numeric UID of the job card. The backend will automatically resolve it.</p>
         </div>
 
         <div>

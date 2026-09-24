@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, isSameDay, isThisWeek, isThisMonth } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,20 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
   
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTeam, setFilterTeam] = useState<string>("all");
+  const [filterDate, setFilterDate] = useState<string>("today");
 
   const filteredAssignments = assignments.filter((a) => {
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
     if (filterTeam !== "all" && a.team_id !== filterTeam) return false;
+    
+    if (filterDate !== "all") {
+      const date = new Date(a.created_at);
+      const today = new Date();
+      if (filterDate === "today" && !isSameDay(date, today)) return false;
+      if (filterDate === "week" && !isThisWeek(date)) return false;
+      if (filterDate === "month" && !isThisMonth(date)) return false;
+    }
+    
     return true;
   });
 
@@ -40,6 +50,10 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">In Progress</Badge>;
       case 'completed':
         return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Completed</Badge>;
+      case 'accepted':
+        return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -60,8 +74,10 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
             >
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="assigned">Assigned</SelectItem>
+              <SelectItem value="accepted">Accepted</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
             </Select>
           </div>
           <div className="w-48">
@@ -75,6 +91,19 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
               {teams.map(t => (
                 <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
               ))}
+            </Select>
+          </div>
+          <div className="w-48">
+            <Select 
+              value={filterDate} 
+              onValueChange={setFilterDate}
+              placeholder="Filter by Date"
+              buttonClassName="bg-white"
+            >
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="all">All Time</SelectItem>
             </Select>
           </div>
         </div>
@@ -132,8 +161,10 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
                     buttonClassName="w-[130px] h-8 text-xs"
                   >
                     <SelectItem value="assigned">Assigned</SelectItem>
+                    <SelectItem value="accepted">Accepted</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
                   </Select>
                 </td>
               </tr>
