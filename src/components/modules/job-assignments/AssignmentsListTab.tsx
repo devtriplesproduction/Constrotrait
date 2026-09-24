@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
 import { useRouter } from "next/navigation";
@@ -52,29 +52,29 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
         
         <div className="flex gap-4">
           <div className="w-48">
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="assigned">Assigned</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
+            <Select 
+              value={filterStatus} 
+              onValueChange={setFilterStatus}
+              placeholder="Filter by Status"
+              buttonClassName="bg-white"
+            >
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="assigned">Assigned</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
             </Select>
           </div>
           <div className="w-48">
-            <Select value={filterTeam} onValueChange={setFilterTeam}>
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Filter by Team" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Teams</SelectItem>
-                {teams.map(t => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                ))}
-              </SelectContent>
+            <Select 
+              value={filterTeam} 
+              onValueChange={setFilterTeam}
+              placeholder="Filter by Team"
+              buttonClassName="bg-white"
+            >
+              <SelectItem value="all">All Teams</SelectItem>
+              {teams.map(t => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
             </Select>
           </div>
         </div>
@@ -128,15 +128,12 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
                     value={assignment.status} 
                     onValueChange={(val) => handleStatusChange(assignment.id, val)}
                     disabled={loading}
+                    placeholder="Update Status"
+                    buttonClassName="w-[130px] h-8 text-xs"
                   >
-                    <SelectTrigger className="w-[130px] h-8 text-xs">
-                      <SelectValue placeholder="Update Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="assigned">Assigned</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
+                    <SelectItem value="assigned">Assigned</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
                   </Select>
                 </td>
               </tr>

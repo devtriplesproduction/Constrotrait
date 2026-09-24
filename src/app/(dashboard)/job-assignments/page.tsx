@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { canManageJobAssignments } from "@/config/roles";
 import { JobAssignmentsTabsClient } from "@/components/modules/job-assignments/JobAssignmentsTabsClient";
 import { TeamsTab } from "@/components/modules/job-assignments/TeamsTab";
@@ -14,17 +14,18 @@ export default async function JobAssignmentsPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
 
-  const { data: rolesData } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("roles")
+    .eq("id", user.id)
+    .single();
 
-  const roles = rolesData?.map(r => r.role) || [];
+  const roles = profile?.roles || [];
 
   if (!canManageJobAssignments(roles)) {
     redirect("/");
