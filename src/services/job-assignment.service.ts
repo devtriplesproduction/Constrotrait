@@ -37,7 +37,7 @@ export class JobAssignmentService {
           uid,
           test_master ( component_parameter, specific_test, test_method )
         ),
-        teams ( id, name ),
+        teams ( id, name, team_members(employee_id) ),
         assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),
         assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name )
       `)
@@ -51,6 +51,46 @@ export class JobAssignmentService {
 
     if (error) {
       console.error("Error fetching job assignments:", error);
+      throw new Error(error.message);
+    }
+    return data;
+  }
+
+  static async getMyAssignments(userId: string) {
+    const supabase = await createClient();
+
+    const { data: userTeams } = await supabase
+      .from("team_members")
+      .select("team_id")
+      .eq("employee_id", userId);
+      
+    const teamIds = userTeams?.map(t => t.team_id) || [];
+
+    let query = supabase
+      .from("job_assignments")
+      .select(`
+        *,
+        job_entry_tests!inner (
+          id,
+          uid,
+          test_master ( component_parameter, specific_test, test_method )
+        ),
+        teams ( id, name, team_members(employee_id) ),
+        assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),
+        assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (teamIds.length > 0) {
+      query = query.or(`assigned_to.eq.${userId},team_id.in.(${teamIds.join(',')})`);
+    } else {
+      query = query.eq("assigned_to", userId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching my assignments:", error);
       throw new Error(error.message);
     }
     return data;

@@ -7,7 +7,7 @@ import { AssignJobsTab } from "@/components/modules/job-assignments/AssignJobsTa
 import { AssignmentsListTab } from "@/components/modules/job-assignments/AssignmentsListTab";
 import { MyAssignmentsTab } from "@/components/modules/job-assignments/MyAssignmentsTab";
 import { getTeamsAction } from "@/actions/team.actions";
-import { getAssignmentsAction } from "@/actions/job-assignment.actions";
+import { getAssignmentsAction, getMyAssignmentsAction } from "@/actions/job-assignment.actions";
 import { getAllEmployeesAction } from "@/actions/employee.actions";
 
 export default async function JobAssignmentsPage({
@@ -36,15 +36,23 @@ export default async function JobAssignmentsPage({
     redirect("/job-assignments?tab=my");
   }
 
-  const [teamsRes, assignmentsRes, employeesRes] = await Promise.all([
-    getTeamsAction(),
-    getAssignmentsAction(),
-    getAllEmployeesAction()
-  ]);
+  let teams: any[] = [];
+  let assignments: any[] = [];
+  let employees: any[] = [];
 
-  const teams = teamsRes.success ? teamsRes.data : [];
-  const assignments = assignmentsRes.success ? assignmentsRes.data : [];
-  const employees = employeesRes.success ? employeesRes.data : [];
+  if (isManager) {
+    const [teamsRes, assignmentsRes, employeesRes] = await Promise.all([
+      getTeamsAction(),
+      getAssignmentsAction(),
+      getAllEmployeesAction()
+    ]);
+    teams = teamsRes.success ? teamsRes.data : [];
+    assignments = assignmentsRes.success ? assignmentsRes.data : [];
+    employees = employeesRes.success ? employeesRes.data : [];
+  } else {
+    const assignmentsRes = await getMyAssignmentsAction(user.id);
+    assignments = assignmentsRes.success ? assignmentsRes.data : [];
+  }
 
   return (
     <div className="p-6">
