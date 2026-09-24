@@ -4,6 +4,7 @@ import { useState } from "react";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
 import { Loader2, Check, X, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/modules/PageHeader";
 
 export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], userId: string }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -25,15 +26,12 @@ export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], 
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-8 flex items-center gap-4">
-        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-          <ClipboardList className="w-6 h-6 text-orange-500" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">My Assignments</h2>
-          <p className="text-slate-500 text-sm mt-1">Jobs assigned to you or your team.</p>
-        </div>
-      </div>
+      <PageHeader 
+        title="My Assignments"
+        subtitle="Jobs assigned to you or your team."
+        icon={ClipboardList}
+        className="mb-8"
+      />
 
       {myAssignments.length === 0 ? (
         <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border border-slate-200 border-dashed">

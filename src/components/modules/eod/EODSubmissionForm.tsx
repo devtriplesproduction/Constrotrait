@@ -129,6 +129,9 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    
     setLoading(true);
     setError('');
     setSuccess('');
@@ -156,7 +159,6 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
         photoPath = uploadData.path; // Store the secure internal path, NOT a public URL
       }
 
-      const formData = new FormData(e.currentTarget);
       formData.append('employee_id', selectedEmployeeId);
       if (photoPath) {
         formData.set('photo_url', photoPath);
@@ -181,7 +183,7 @@ export function EODSubmissionForm({ employeeId, canEditDate = false, employees, 
 
       setSuccess(isUpdate ? 'EOD Updated successfully!' : 'EOD Submitted successfully!');
       if (!isUpdate) {
-        (e.target as HTMLFormElement).reset();
+        form.reset();
         setFile(null);
         setExistingPhotoUrl(null);
         setLocation('Office');

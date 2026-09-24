@@ -3,23 +3,37 @@
 import { useState } from "react";
 import { format, isSameDay, isThisWeek, isThisMonth } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/button";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
 import { useRouter } from "next/navigation";
+import { ClipboardList, X, Search } from "lucide-react";
+import { AssignJobsTab } from "./AssignJobsTab";
+import { PageHeader } from "@/components/modules/PageHeader";
 
-export function AssignmentsListTab({ assignments, teams, employees }: { assignments: any[], teams: any[], employees: any[] }) {
+export function AssignmentsListTab({ assignments, branches, employees, userId }: { assignments: any[], branches: any[], employees: any[], userId?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterTeam, setFilterTeam] = useState<string>("all");
+  const [filterBranch, setFilterBranch] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<string>("today");
+  const [searchEmployee, setSearchEmployee] = useState<string>("");
 
   const filteredAssignments = assignments.filter((a) => {
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
-    if (filterTeam !== "all" && a.team_id !== filterTeam) return false;
-    
+
+    if (filterBranch !== "all") {
+      const emp = employees.find(e => e.id === a.assigned_to);
+      if (!emp || emp.branch_id !== filterBranch) return false;
+    }
+
+    if (searchEmployee.trim() !== "") {
+      const empName = `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`.toLowerCase();
+      if (!empName.includes(searchEmployee.toLowerCase())) return false;
+    }
+
     if (filterDate !== "all") {
       const date = new Date(a.created_at);
       const today = new Date();
@@ -27,7 +41,7 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
       if (filterDate === "week" && !isThisWeek(date)) return false;
       if (filterDate === "month" && !isThisMonth(date)) return false;
     }
-    
+
     return true;
   });
 
@@ -62,50 +76,69 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
   return (
     <div className="p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <h2 className="text-xl font-semibold text-slate-800">Job Assignments</h2>
-        
-        <div className="flex gap-4">
+        <div className="w-full md:w-80 relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-slate-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search employee..."
+            value={searchEmployee}
+            onChange={(e) => setSearchEmployee(e.target.value)}
+            className="w-full h-10 pl-10 pr-4 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors shadow-sm bg-white"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-4 items-center justify-end flex-1">
           <div className="w-48">
-            <Select 
-              value={filterStatus} 
-              onValueChange={setFilterStatus}
+            <Dropdown
+              value={filterStatus}
+              onChange={setFilterStatus}
               placeholder="Filter by Status"
               buttonClassName="bg-white"
-            >
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="assigned">Assigned</SelectItem>
-              <SelectItem value="accepted">Accepted</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </Select>
+              options={[
+                { value: "all", label: "All Statuses" },
+                { value: "assigned", label: "Assigned" },
+                { value: "accepted", label: "Accepted" },
+                { value: "in_progress", label: "In Progress" },
+                { value: "completed", label: "Completed" },
+                { value: "rejected", label: "Rejected" },
+              ]}
+            />
           </div>
           <div className="w-48">
-            <Select 
-              value={filterTeam} 
-              onValueChange={setFilterTeam}
-              placeholder="Filter by Team"
+            <Dropdown
+              value={filterBranch}
+              onChange={setFilterBranch}
+              placeholder="Filter by Branch"
               buttonClassName="bg-white"
-            >
-              <SelectItem value="all">All Teams</SelectItem>
-              {teams.map(t => (
-                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-              ))}
-            </Select>
+              options={[
+                { value: "all", label: "All Branches" },
+                ...branches.map(b => ({ value: b.id, label: b.name }))
+              ]}
+            />
           </div>
           <div className="w-48">
-            <Select 
-              value={filterDate} 
-              onValueChange={setFilterDate}
+            <Dropdown
+              value={filterDate}
+              onChange={setFilterDate}
               placeholder="Filter by Date"
               buttonClassName="bg-white"
-            >
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="all">All Time</SelectItem>
-            </Select>
+              options={[
+                { value: "today", label: "Today" },
+                { value: "week", label: "This Week" },
+                { value: "month", label: "This Month" },
+                { value: "all", label: "All Time" },
+              ]}
+            />
           </div>
+          <Button
+            onClick={() => setIsAssignModalOpen(true)}
+            className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2"
+          >
+            <ClipboardList className="w-4 h-4" />
+            Assign Jobs
+          </Button>
         </div>
       </div>
 
@@ -126,7 +159,6 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
               <tr key={assignment.id} className="hover:bg-slate-50">
                 <td className="px-6 py-4 font-medium text-slate-900">
                   {assignment.job_entry_tests?.uid ? `UID: ${assignment.job_entry_tests.uid}` : 'Unknown'}
-                  <div className="text-xs text-slate-400 mt-1" title={assignment.job_entry_test_id}>UUID: {assignment.job_entry_test_id.slice(0,8)}...</div>
                 </td>
                 <td className="px-6 py-4 text-slate-600">
                   {assignment.job_entry_tests?.test_master ? `${assignment.job_entry_tests.test_master.component_parameter || ''} - ${assignment.job_entry_tests.test_master.specific_test || ''}` : 'N/A'}
@@ -142,7 +174,6 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
                       <span className="font-medium text-slate-800">
                         {assignment.assigned_to_profile?.first_name} {assignment.assigned_to_profile?.last_name}
                       </span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">Employee</span>
                     </div>
                   )}
                 </td>
@@ -153,19 +184,25 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
                   {getStatusBadge(assignment.status)}
                 </td>
                 <td className="px-6 py-4">
-                  <Select 
-                    value={assignment.status} 
-                    onValueChange={(val) => handleStatusChange(assignment.id, val)}
-                    disabled={loading}
+                  <Dropdown
+                    value={assignment.status}
+                    onChange={(val) => handleStatusChange(assignment.id, val)}
+                    disabled={
+                      loading ||
+                      (assignment.team_id
+                        ? !assignment.teams?.team_members?.some((m: any) => m.employee_id === userId)
+                        : assignment.assigned_to !== userId)
+                    }
                     placeholder="Update Status"
                     buttonClassName="w-[130px] h-8 text-xs"
-                  >
-                    <SelectItem value="assigned">Assigned</SelectItem>
-                    <SelectItem value="accepted">Accepted</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </Select>
+                    options={[
+                      { value: "assigned", label: "Assigned" },
+                      { value: "accepted", label: "Accepted" },
+                      { value: "in_progress", label: "In Progress" },
+                      { value: "completed", label: "Completed" },
+                      { value: "rejected", label: "Rejected" },
+                    ]}
+                  />
                 </td>
               </tr>
             ))}
@@ -179,6 +216,25 @@ export function AssignmentsListTab({ assignments, teams, employees }: { assignme
           </tbody>
         </table>
       </div>
+
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 sm:p-6 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col relative overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-slate-100">
+              <h3 className="text-lg font-semibold text-slate-800">Assign Job</h3>
+              <button
+                onClick={() => setIsAssignModalOpen(false)}
+                className="text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <AssignJobsTab employees={employees} branches={branches} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

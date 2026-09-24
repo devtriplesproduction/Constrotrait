@@ -7,13 +7,14 @@ import { loginSchema, LoginFormData } from "@/lib/validations/auth";
 import { loginAction } from "@/actions/auth.actions";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Input } from "../ui/input";
 
 export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   const {
     register,
@@ -30,6 +31,8 @@ export function LoginForm() {
     if (!result.success) {
       setError(result.error || "Failed to sign in");
       setIsLoading(false);
+    } else {
+      router.push("/dashboard");
     }
   };
 

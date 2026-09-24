@@ -12,6 +12,15 @@ export async function getAssignmentsAction(filters?: { team_id?: string; employe
   }
 }
 
+export async function getUnassignedJobCardsAction() {
+  try {
+    const unassigned = await JobAssignmentService.getUnassignedJobCards();
+    return { success: true, data: unassigned };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function getMyAssignmentsAction(userId: string) {
   try {
     const assignments = await JobAssignmentService.getMyAssignments(userId);

@@ -37,30 +37,6 @@ export function JobAssignmentsTabsClient({ activeTab, isManager, onTabChange }: 
         <>
           <Button
             variant="custom" size="none"
-            onClick={() => handleTabChange('teams')}
-            disabled={isPending}
-            className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
-              activeTab === 'teams' ? 'bg-orange-500 text-white shadow' : 'text-slate-600 hover:text-slate-800'
-            } ${isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
-          >
-            {isPending && !onTabChange ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
-            Teams
-          </Button>
-          
-          <Button
-            variant="custom" size="none"
-            onClick={() => handleTabChange('assign')}
-            disabled={isPending}
-            className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
-              activeTab === 'assign' ? 'bg-orange-500 text-white shadow' : 'text-slate-600 hover:text-slate-800'
-            } ${isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
-          >
-            {isPending && !onTabChange ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />}
-            Assign Jobs
-          </Button>
-
-          <Button
-            variant="custom" size="none"
             onClick={() => handleTabChange('list')}
             disabled={isPending}
             className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${

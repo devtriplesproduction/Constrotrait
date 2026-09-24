@@ -24,6 +24,32 @@ export class JobAssignmentService {
     return user;
   }
 
+  static async getUnassignedJobCards() {
+    const supabase = await createClient();
+    await this.checkPermission(supabase);
+
+    // Fetch all job entry tests that don't have an active assignment
+    // A simple way is to get those with no assignments.
+    const { data, error } = await supabase
+      .from('job_entry_tests')
+      .select(`
+        id,
+        uid,
+        test_master ( component_parameter, specific_test, test_method, category ),
+        job_assignments ( id )
+      `);
+
+    if (error) {
+      console.error("Error fetching unassigned job cards:", error);
+      throw new Error(error.message);
+    }
+
+    // Filter out tests that already have an assignment
+    const unassigned = data.filter((test: any) => !test.job_assignments || test.job_assignments.length === 0);
+    
+    return unassigned;
+  }
+
   static async getAssignments(filters?: { team_id?: string; employee_id?: string; status?: string }) {
     const supabase = await createClient();
     await this.checkPermission(supabase);
@@ -35,7 +61,7 @@ export class JobAssignmentService {
         job_entry_tests!inner (
           id,
           uid,
-          test_master ( component_parameter, specific_test, test_method )
+          test_master ( component_parameter, specific_test, test_method, category )
         ),
         teams ( id, name, team_members(employee_id) ),
         assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),
@@ -77,7 +103,7 @@ export class JobAssignmentService {
         job_entry_tests!inner (
           id,
           uid,
-          test_master ( component_parameter, specific_test, test_method )
+          test_master ( component_parameter, specific_test, test_method, category )
         ),
         teams ( id, name, team_members(employee_id) ),
         assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),

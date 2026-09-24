@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { canManageJobAssignments } from "@/config/roles";
 import { JobAssignmentsContent } from "@/components/modules/job-assignments/JobAssignmentsContent";
-import { getTeamsAction } from "@/actions/team.actions";
+import { getActiveBranchesAction } from "@/actions/branch.actions";
 import { getAssignmentsAction, getMyAssignmentsAction } from "@/actions/job-assignment.actions";
 import { getAllEmployeesAction } from "@/actions/employee.actions";
 
@@ -24,24 +24,24 @@ export default async function JobAssignmentsPage(props: {
   const roles = profile?.roles || [];
   const isManager = canManageJobAssignments(roles);
 
-  const defaultTab = isManager ? "teams" : "my";
+  const defaultTab = isManager ? "list" : "my";
   const tab = typeof searchParams.tab === "string" ? searchParams.tab : defaultTab;
 
   if (!isManager && tab !== "my") {
     redirect("/job-assignments?tab=my");
   }
 
-  let teams: any[] = [];
+  let branches: any[] = [];
   let assignments: any[] = [];
   let employees: any[] = [];
 
   if (isManager) {
-    const [teamsRes, assignmentsRes, employeesRes] = await Promise.all([
-      getTeamsAction(),
+    const [branchesRes, assignmentsRes, employeesRes] = await Promise.all([
+      getActiveBranchesAction(),
       getAssignmentsAction(),
       getAllEmployeesAction()
     ]);
-    teams = teamsRes.success ? teamsRes.data : [];
+    branches = branchesRes.success ? branchesRes.data : [];
     assignments = assignmentsRes.success ? assignmentsRes.data : [];
     employees = employeesRes.success ? employeesRes.data : [];
   } else {
@@ -55,7 +55,7 @@ export default async function JobAssignmentsPage(props: {
         initialTab={tab}
         isManager={isManager}
         userId={user.id}
-        teams={teams}
+        branches={branches}
         assignments={assignments}
         employees={employees}
       />

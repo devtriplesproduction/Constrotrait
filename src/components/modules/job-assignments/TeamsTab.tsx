@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Users, X, Trash2 } from "lucide-react";
 import { createTeamAction, addTeamMemberAction, removeTeamMemberAction } from "@/actions/team.actions";
+import { Select, SelectItem } from "@/components/ui/select";
 
 export function TeamsTab({ initialTeams, employees }: { initialTeams: any[], employees: any[] }) {
   const [teams, setTeams] = useState(initialTeams);
@@ -147,18 +148,19 @@ export function TeamsTab({ initialTeams, employees }: { initialTeams: any[], emp
 
             {selectedTeamId === team.id ? (
               <div className="flex gap-2 mt-auto">
-                <select 
-                  className="flex h-9 w-full rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950"
-                  value={selectedEmployeeId}
-                  onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                >
-                  <option value="">Select Employee</option>
-                  {employees
-                    .filter(e => !(team.team_members || []).find((m: any) => m.employee_id === e.id))
-                    .map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</option>
-                  ))}
-                </select>
+                <div className="flex-1">
+                  <Select 
+                    value={selectedEmployeeId}
+                    onValueChange={setSelectedEmployeeId}
+                    placeholder="Select Employee"
+                  >
+                    {employees
+                      .filter(e => !(team.team_members || []).find((m: any) => m.employee_id === e.id))
+                      .map(emp => (
+                      <SelectItem key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</SelectItem>
+                    ))}
+                  </Select>
+                </div>
                 <Button size="sm" onClick={() => handleAddMember(team.id)} disabled={!selectedEmployeeId || loading}>Add</Button>
                 <Button size="sm" variant="outline" onClick={() => setSelectedTeamId(null)}><X className="w-4 h-4"/></Button>
               </div>
