@@ -88,7 +88,12 @@ export async function submitEOD(payload: {
 /**
  * Approve or Reject an EOD Report
  */
-export async function reviewEOD(eodId: string, action: 'Approve' | 'Reject', rejectionReason?: string) {
+export async function reviewEOD(
+  eodId: string, 
+  action: 'Approve' | 'Reject', 
+  rejectionReason?: string,
+  updates?: { tasks_accomplished?: string; office_hours?: number; location?: 'Office'|'Field'; photo_url?: string }
+) {
   try {
     const currentUser = await getAuthenticatedUserWithRoles();
     if (!currentUser) return { success: false, error: "Unauthorized" };
@@ -118,6 +123,23 @@ export async function reviewEOD(eodId: string, action: 'Approve' | 'Reject', rej
 
     if (action === 'Reject' && !rejectionReason) {
       return { success: false, error: "Rejection reason is required." };
+    }
+
+    if (updates && (updates.tasks_accomplished || updates.office_hours !== undefined || updates.location || updates.photo_url)) {
+      const { error: updateError } = await supabase
+        .from('eod_reports')
+        .update({
+          ...(updates.tasks_accomplished && { tasks_accomplished: updates.tasks_accomplished }),
+          ...(updates.office_hours !== undefined && { office_hours: updates.office_hours }),
+          ...(updates.location && { location: updates.location }),
+          ...(updates.photo_url && { photo_url: updates.photo_url }),
+        })
+        .eq('id', eodId);
+
+      if (updateError) {
+        console.error("Failed to update EOD report fields:", updateError);
+        return { success: false, error: "Failed to update EOD details before review" };
+      }
     }
 
     const { error } = await supabase.rpc('review_eod_rpc', {

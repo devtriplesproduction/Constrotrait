@@ -9,6 +9,10 @@ import { EODReport } from '@/services/eod.service';
 import { reviewEODAction } from '@/actions/eod.actions';
 import { PremiumDatePicker } from '@/components/ui/PremiumDatePicker';
 
+import { createClient } from '@/lib/supabase/client';
+import { ImagePlus } from 'lucide-react';
+import Image from 'next/image';
+
 type Employee = { id: string; first_name: string; last_name: string; employee_id: string };
 type EnrichedEOD = EODReport & { profiles: Employee | null };
 
@@ -32,11 +36,34 @@ export function ReviewDashboard({
   const [rejectReason, setRejectReason] = useState('');
   const [actionError, setActionError] = useState('');
 
+  const [editedTasks, setEditedTasks] = useState('');
+  const [editedHours, setEditedHours] = useState('');
+  const [editedLocation, setEditedLocation] = useState<'Office' | 'Field'>('Office');
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+
+  const supabase = createClient();
+
   const handleOpenModal = (eod: EnrichedEOD) => {
     setSelectedEod(eod);
     setIsRejecting(false);
     setRejectReason('');
     setActionError('');
+    setEditedTasks(eod.tasks_accomplished || '');
+    setEditedHours(eod.office_hours?.toString() || '');
+    setEditedLocation((eod.location as 'Office' | 'Field') || 'Office');
+    setExistingPhotoUrl(eod.photo_url || null);
+    setFile(null);
+    setFileUrl(null);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setFileUrl(URL.createObjectURL(selectedFile));
+    }
   };
 
   const handleAction = async (action: 'Approve' | 'Reject') => {
@@ -55,19 +82,49 @@ export function ReviewDashboard({
     setIsSubmitting(true);
     setActionError('');
 
-    const formData = new FormData();
-    formData.append('eod_id', selectedEod.id);
-    formData.append('action', action);
-    if (action === 'Reject') {
-      formData.append('rejection_reason', rejectReason);
-    }
-
     try {
+      if (action === 'Approve' && editedLocation === 'Field' && !file && !existingPhotoUrl) {
+        throw new Error("A field photo is required when submitting a Field report.");
+      }
+
+      let photoPath = existingPhotoUrl || '';
+      if (editedLocation === 'Field' && file) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${selectedEod.employee_id}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('eod_photos')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          throw new Error(`Failed to upload photo: ${uploadError.message}`);
+        }
+        photoPath = uploadData.path;
+      }
+
+      const formData = new FormData();
+      formData.append('eod_id', selectedEod.id);
+      formData.append('action', action);
+      if (action === 'Reject') {
+        formData.append('rejection_reason', rejectReason);
+      }
+      formData.append('tasks_accomplished', editedTasks);
+      formData.append('office_hours', editedHours);
+      formData.append('location', editedLocation);
+      if (photoPath) formData.append('photo_url', photoPath);
+
       const res = await reviewEODAction(formData);
       if (res.success) {
         setEods(prev => prev.map(e => {
           if (e.id === selectedEod.id) {
-            return { ...e, status: action === 'Approve' ? 'Approved' : 'Rejected' };
+            return { 
+              ...e, 
+              status: action === 'Approve' ? 'Approved' : 'Rejected',
+              tasks_accomplished: editedTasks,
+              office_hours: Number(editedHours),
+              location: editedLocation,
+              photo_url: photoPath
+            };
           }
           return e;
         }));
@@ -408,11 +465,30 @@ export function ReviewDashboard({
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> Location</p>
-                      <p className="font-semibold text-slate-700 text-sm">{selectedEod.location}</p>
+                      {selectedEod.status === 'Pending' ? (
+                        <Dropdown
+                          options={[{ label: 'Office', value: 'Office' }, { label: 'Field', value: 'Field' }]}
+                          value={editedLocation}
+                          onChange={(val) => setEditedLocation(val as 'Office' | 'Field')}
+                          className="!mt-0"
+                          buttonClassName="h-8 py-0 text-sm"
+                        />
+                      ) : (
+                        <p className="font-semibold text-slate-700 text-sm">{selectedEod.location}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> Hours</p>
-                      <p className="font-semibold text-slate-700 text-sm">{selectedEod.office_hours}h</p>
+                      {selectedEod.status === 'Pending' ? (
+                        <Input
+                          type="number"
+                          value={editedHours}
+                          onChange={(e) => setEditedHours(e.target.value)}
+                          className="h-8 py-0 text-sm"
+                        />
+                      ) : (
+                        <p className="font-semibold text-slate-700 text-sm">{selectedEod.office_hours}h</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -424,10 +500,51 @@ export function ReviewDashboard({
                     <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                     <h3 className="font-bold text-slate-800">Tasks Accomplished</h3>
                   </div>
-                  <div className="text-slate-600 whitespace-pre-wrap leading-relaxed text-sm bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                    {selectedEod.tasks_accomplished}
-                  </div>
+                  {selectedEod.status === 'Pending' ? (
+                    <textarea
+                      value={editedTasks}
+                      onChange={(e) => setEditedTasks(e.target.value)}
+                      className="w-full text-slate-600 leading-relaxed text-sm bg-white p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
+                      rows={3}
+                    />
+                  ) : (
+                    <div className="text-slate-600 whitespace-pre-wrap leading-relaxed text-sm bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                      {selectedEod.tasks_accomplished}
+                    </div>
+                  )}
                 </div>
+
+                {editedLocation === 'Field' && selectedEod.status === 'Pending' && (
+                  <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                    <h3 className="font-bold text-slate-800 mb-3 text-sm">Field Photo</h3>
+                    {!file && !existingPhotoUrl ? (
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-lg cursor-pointer bg-white hover:bg-slate-50 transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <ImagePlus className="w-8 h-8 mb-3 text-slate-400" />
+                          <p className="text-sm text-slate-500">Click to upload photo</p>
+                        </div>
+                        <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                      </label>
+                    ) : (
+                      <div className="relative w-full h-48 rounded-lg overflow-hidden border">
+                        <Image 
+                           src={fileUrl || (existingPhotoUrl ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/eod_photos/${existingPhotoUrl}` : '')} 
+                           alt="Preview" 
+                           fill 
+                           className="object-cover" 
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="absolute top-2 right-2 bg-white/80 hover:bg-white text-rose-600"
+                          onClick={() => { setFile(null); setFileUrl(null); setExistingPhotoUrl(null); }}
+                        >
+                          <X className="w-4 h-4" /> Remove
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {selectedEod.blockers && (
                   <div className="bg-rose-50/50 rounded-2xl p-5 border border-rose-100/50">

@@ -15,6 +15,8 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
   const [loading, setLoading] = useState(false);
   const [jobEntryTestId, setJobEntryTestId] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("");
+  const [assignType, setAssignType] = useState<"employee" | "team">("employee");
+  const [selectedTeam, setSelectedTeam] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
@@ -59,7 +61,8 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
 
   const relevantAssignments = existingAssignments.filter(a => {
     if (dueDate && (!a.due_date || !a.due_date.startsWith(dueDate))) return false;
-    if (selectedEmployee && a.assigned_to !== selectedEmployee) return false;
+    if (assignType === "employee" && selectedEmployee && a.assigned_to !== selectedEmployee) return false;
+    if (assignType === "team" && selectedTeam && a.team_id !== selectedTeam) return false;
     return true;
   });
 
@@ -70,7 +73,8 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
 
   const handleAssign = async () => {
     if (!jobEntryTestId) return toast({ title: "Validation Error", description: "Please enter a Job Entry Test UID (or UUID).", variant: "warning" });
-    if (!selectedEmployee) return toast({ title: "Validation Error", description: "Please select an employee.", variant: "warning" });
+    if (assignType === "employee" && !selectedEmployee) return toast({ title: "Validation Error", description: "Please select an employee.", variant: "warning" });
+    if (assignType === "team" && !selectedTeam) return toast({ title: "Validation Error", description: "Please select a team.", variant: "warning" });
 
     const alreadyAssigned = existingAssignments.find(a => a.job_entry_test_id === jobEntryTestId || (a.job_entry_tests?.uid && a.job_entry_tests.uid.toString() === jobEntryTestId));
     
@@ -78,7 +82,8 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
     let updateMessage = "Job Card reassigned successfully!";
 
     if (alreadyAssigned) {
-      if (alreadyAssigned.assigned_to === selectedEmployee) {
+      if ((assignType === "employee" && alreadyAssigned.assigned_to === selectedEmployee) ||
+          (assignType === "team" && alreadyAssigned.team_id === selectedTeam)) {
         isJustUpdate = true;
         const oldDate = alreadyAssigned.due_date ? alreadyAssigned.due_date.substring(0, 10) : "";
         const newDate = dueDate ? dueDate.substring(0, 10) : "";
@@ -104,7 +109,8 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
     setLoading(true);
     const data = {
       job_entry_test_id: alreadyAssigned ? alreadyAssigned.job_entry_test_id : jobEntryTestId,
-      assigned_to: selectedEmployee,
+      assigned_to: assignType === "employee" ? selectedEmployee : undefined,
+      team_id: assignType === "team" ? selectedTeam : undefined,
       due_date: dueDate || undefined,
       notes: notes || undefined,
     };
@@ -174,19 +180,68 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5" /> Assign To Employee
-                  </label>
-                  <Dropdown 
-                    value={selectedEmployee}
-                    onChange={setSelectedEmployee}
-                    placeholder="Select Employee"
-                    buttonClassName="w-full bg-white border-slate-200"
-                    options={filteredEmployees.map(emp => ({
-                      value: emp.id,
-                      label: `${emp.first_name} ${emp.last_name}`
-                    }))}
-                  />
+                  <div className="flex items-center gap-4 mb-3">
+                    <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="assignType" 
+                        checked={assignType === "employee"} 
+                        onChange={() => {
+                          setAssignType("employee");
+                          setSelectedTeam("");
+                        }}
+                        className="accent-orange-500"
+                      />
+                      Employee
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="assignType" 
+                        checked={assignType === "team"} 
+                        onChange={() => {
+                          setAssignType("team");
+                          setSelectedEmployee("");
+                        }}
+                        className="accent-orange-500"
+                      />
+                      Team
+                    </label>
+                  </div>
+                  
+                  {assignType === "employee" ? (
+                    <>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5" /> Assign To Employee
+                      </label>
+                      <Dropdown 
+                        value={selectedEmployee}
+                        onChange={setSelectedEmployee}
+                        placeholder="Select Employee"
+                        buttonClassName="w-full bg-white border-slate-200"
+                        options={filteredEmployees.map(emp => ({
+                          value: emp.id,
+                          label: `${emp.first_name} ${emp.last_name}`
+                        }))}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5" /> Assign To Team
+                      </label>
+                      <Dropdown 
+                        value={selectedTeam}
+                        onChange={setSelectedTeam}
+                        placeholder="Select Team"
+                        buttonClassName="w-full bg-white border-slate-200"
+                        options={(teams || []).map(t => ({
+                          value: t.id,
+                          label: t.name
+                        }))}
+                      />
+                    </>
+                  )}
                 </div>
 
                 <div>
@@ -258,13 +313,13 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
           </div>
           
           <div className="flex-1 min-h-0 bg-slate-50/50 rounded-xl border border-slate-100 p-2">
-            {(!selectedEmployee && !dueDate) ? (
+            {((assignType === "employee" && !selectedEmployee) || (assignType === "team" && !selectedTeam)) && !dueDate ? (
               <div className="bg-white rounded-xl p-8 text-center border border-slate-200 border-dashed h-full flex flex-col items-center justify-center">
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
                   <User className="w-8 h-8" />
                 </div>
-                <h4 className="text-slate-700 font-semibold mb-1">Select an Employee</h4>
-                <p className="text-slate-500 text-sm max-w-[250px]">Please select an employee or date from the form to view their assignments.</p>
+                <h4 className="text-slate-700 font-semibold mb-1">Select {assignType === "employee" ? "an Employee" : "a Team"}</h4>
+                <p className="text-slate-500 text-sm max-w-[250px]">Please select {assignType === "employee" ? "an employee" : "a team"} or date from the form to view their assignments.</p>
               </div>
             ) : relevantAssignments.length === 0 ? (
               <div className="bg-white rounded-xl p-8 text-center border border-slate-200 border-dashed h-full flex flex-col items-center justify-center">
@@ -282,7 +337,15 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
                     className="p-4 bg-white border border-slate-200 rounded-xl flex flex-wrap lg:flex-nowrap items-center gap-4 lg:gap-6 cursor-pointer hover:border-orange-400 hover:shadow-md transition-all duration-300 group"
                     onClick={() => {
                       setJobEntryTestId(a.job_entry_tests?.uid.toString());
-                      setSelectedEmployee(a.assigned_to || "");
+                      if (a.team_id) {
+                        setAssignType("team");
+                        setSelectedTeam(a.team_id);
+                        setSelectedEmployee("");
+                      } else {
+                        setAssignType("employee");
+                        setSelectedEmployee(a.assigned_to || "");
+                        setSelectedTeam("");
+                      }
                       setDueDate(a.due_date || "");
                       setNotes(a.notes || "");
                       setShowAssignmentsView(false);

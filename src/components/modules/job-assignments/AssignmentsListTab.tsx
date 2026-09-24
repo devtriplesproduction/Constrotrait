@@ -11,7 +11,7 @@ import { ClipboardList, X, Search } from "lucide-react";
 import { AssignJobsTab } from "./AssignJobsTab";
 import { PageHeader } from "@/components/modules/PageHeader";
 
-export function AssignmentsListTab({ assignments, branches, employees, userId }: { assignments: any[], branches: any[], employees: any[], userId?: string }) {
+export function AssignmentsListTab({ assignments, branches, employees, userId, isManager }: { assignments: any[], branches: any[], employees: any[], userId?: string, isManager?: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -35,7 +35,8 @@ export function AssignmentsListTab({ assignments, branches, employees, userId }:
     }
 
     if (filterDate !== "all") {
-      const date = new Date(a.created_at);
+      const dateStr = a.due_date || a.created_at;
+      const date = new Date(dateStr);
       const today = new Date();
       if (filterDate === "today" && !isSameDay(date, today)) return false;
       if (filterDate === "week" && !isThisWeek(date)) return false;
@@ -189,9 +190,10 @@ export function AssignmentsListTab({ assignments, branches, employees, userId }:
                     onChange={(val) => handleStatusChange(assignment.id, val)}
                     disabled={
                       loading ||
-                      (assignment.team_id
-                        ? !assignment.teams?.team_members?.some((m: any) => m.employee_id === userId)
-                        : assignment.assigned_to !== userId)
+                      (!isManager &&
+                        (assignment.team_id
+                          ? !assignment.teams?.team_members?.some((m: any) => m.employee_id === userId)
+                          : assignment.assigned_to !== userId))
                     }
                     placeholder="Update Status"
                     buttonClassName="w-[130px] h-8 text-xs"

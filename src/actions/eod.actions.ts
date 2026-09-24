@@ -70,10 +70,22 @@ export async function submitEODAction(formData: FormData) {
 const eodReviewSchema = z.object({
   eod_id: z.string().uuid(),
   action: z.enum(['Approve', 'Reject']),
-  rejection_reason: z.string().optional()
+  rejection_reason: z.string().optional(),
+  tasks_accomplished: z.string().min(1, "Tasks accomplished is required").optional(),
+  office_hours: z.number().min(0).max(12, "Office hours must be between 0 and 12").optional(),
+  location: z.enum(['Office', 'Field']).optional(),
+  photo_url: z.string().optional(),
 }).refine(data => data.action === 'Approve' || (data.action === 'Reject' && data.rejection_reason && data.rejection_reason.trim().length > 0), {
   message: "Rejection reason is required",
   path: ['rejection_reason']
+}).refine(data => {
+  if (data.action === 'Approve' && data.location === 'Field') {
+    return !!data.photo_url;
+  }
+  return true;
+}, {
+  message: "Field photo is required when location is Field",
+  path: ['photo_url']
 });
 
 export async function reviewEODAction(formData: FormData) {
@@ -86,11 +98,25 @@ export async function reviewEODAction(formData: FormData) {
       eod_id: formData.get('eod_id') as string,
       action: formData.get('action') as 'Approve' | 'Reject',
       rejection_reason: (formData.get('rejection_reason') as string | null) ?? undefined,
+      tasks_accomplished: formData.get('tasks_accomplished') ? formData.get('tasks_accomplished') as string : undefined,
+      office_hours: formData.get('office_hours') ? Number(formData.get('office_hours')) : undefined,
+      location: formData.get('location') ? formData.get('location') as "Office" | "Field" : undefined,
+      photo_url: formData.get('photo_url') ? formData.get('photo_url') as string : undefined,
     };
 
     const validatedData = eodReviewSchema.parse(rawData);
 
-    const result = await reviewEOD(validatedData.eod_id, validatedData.action, validatedData.rejection_reason);
+    const result = await reviewEOD(
+      validatedData.eod_id, 
+      validatedData.action, 
+      validatedData.rejection_reason,
+      {
+        tasks_accomplished: validatedData.tasks_accomplished,
+        office_hours: validatedData.office_hours,
+        location: validatedData.location,
+        photo_url: validatedData.photo_url
+      }
+    );
 
     if (result.success) {
       revalidatePath('/eod');
