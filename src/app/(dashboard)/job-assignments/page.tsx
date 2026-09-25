@@ -41,12 +41,12 @@ export default async function JobAssignmentsPage(props: {
       getAssignmentsAction(),
       getAllEmployeesAction()
     ]);
-    branches = branchesRes.success ? branchesRes.data : [];
-    assignments = assignmentsRes.success ? assignmentsRes.data : [];
-    employees = employeesRes.success ? employeesRes.data : [];
+    branches = branchesRes.success ? (branchesRes.data || []) : [];
+    assignments = assignmentsRes.success ? (assignmentsRes.data || []) : [];
+    employees = employeesRes.success ? (employeesRes.data || []) : [];
   } else {
     const assignmentsRes = await getMyAssignmentsAction(user.id);
-    assignments = assignmentsRes.success ? assignmentsRes.data : [];
+    assignments = assignmentsRes.success ? (assignmentsRes.data || []) : [];
   }
 
   return (

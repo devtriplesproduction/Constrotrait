@@ -185,26 +185,14 @@ export function AssignmentsListTab({ assignments, branches, employees, userId, i
                   {getStatusBadge(assignment.status)}
                 </td>
                 <td className="px-6 py-4">
-                  <Dropdown
-                    value={assignment.status}
-                    onChange={(val) => handleStatusChange(assignment.id, val)}
-                    disabled={
-                      loading ||
-                      (!isManager &&
-                        (assignment.team_id
-                          ? !assignment.teams?.team_members?.some((m: any) => m.employee_id === userId)
-                          : assignment.assigned_to !== userId))
-                    }
-                    placeholder="Update Status"
-                    buttonClassName="w-[130px] h-8 text-xs"
-                    options={[
-                      { value: "assigned", label: "Assigned" },
-                      { value: "accepted", label: "Accepted" },
-                      { value: "in_progress", label: "In Progress" },
-                      { value: "completed", label: "Completed" },
-                      { value: "rejected", label: "Rejected" },
-                    ]}
-                  />
+                  <Button
+                    onClick={() => setIsAssignModalOpen(true)}
+                    size="sm"
+                    variant="outline"
+                    className="text-orange-600 hover:text-orange-700 border-orange-200 hover:bg-orange-50"
+                  >
+                    Edit
+                  </Button>
                 </td>
               </tr>
             ))}

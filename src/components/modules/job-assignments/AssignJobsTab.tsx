@@ -18,7 +18,7 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
   const [assignType, setAssignType] = useState<"employee" | "team">("employee");
   const [selectedTeam, setSelectedTeam] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState(new Date().toISOString());
   const [notes, setNotes] = useState("");
 
   const [existingAssignments, setExistingAssignments] = useState<any[]>([]);
@@ -180,73 +180,24 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <div className="flex items-center gap-4 mb-3">
-                    <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="assignType" 
-                        checked={assignType === "employee"} 
-                        onChange={() => {
-                          setAssignType("employee");
-                          setSelectedTeam("");
-                        }}
-                        className="accent-orange-500"
-                      />
-                      Employee
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="assignType" 
-                        checked={assignType === "team"} 
-                        onChange={() => {
-                          setAssignType("team");
-                          setSelectedEmployee("");
-                        }}
-                        className="accent-orange-500"
-                      />
-                      Team
-                    </label>
-                  </div>
-                  
-                  {assignType === "employee" ? (
-                    <>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5" /> Assign To Employee
-                      </label>
-                      <Dropdown 
-                        value={selectedEmployee}
-                        onChange={setSelectedEmployee}
-                        placeholder="Select Employee"
-                        buttonClassName="w-full bg-white border-slate-200"
-                        options={filteredEmployees.map(emp => ({
-                          value: emp.id,
-                          label: `${emp.first_name} ${emp.last_name}`
-                        }))}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5" /> Assign To Team
-                      </label>
-                      <Dropdown 
-                        value={selectedTeam}
-                        onChange={setSelectedTeam}
-                        placeholder="Select Team"
-                        buttonClassName="w-full bg-white border-slate-200"
-                        options={(teams || []).map(t => ({
-                          value: t.id,
-                          label: t.name
-                        }))}
-                      />
-                    </>
-                  )}
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5" /> Assign To Employee
+                  </label>
+                  <Dropdown 
+                    value={selectedEmployee}
+                    onChange={setSelectedEmployee}
+                    placeholder="Select Employee"
+                    buttonClassName="w-full bg-white border-slate-200"
+                    options={filteredEmployees.map(emp => ({
+                      value: emp.id,
+                      label: `${emp.first_name} ${emp.last_name}`
+                    }))}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5" /> Due Date (Optional)
+                    <Calendar className="w-3.5 h-3.5" /> Due Date
                   </label>
                   <div className="relative">
                     <PremiumDatePicker 

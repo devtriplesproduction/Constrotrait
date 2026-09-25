@@ -146,7 +146,7 @@ export class JobAssignmentService {
       const { data: jet, error: jetError } = await supabase
         .from("job_entry_tests")
         .select("id")
-        .eq("uid", actualJobEntryTestId)
+        .eq("uid", parseInt(actualJobEntryTestId, 10))
         .maybeSingle();
       if (jetError || !jet) throw new Error(`Could not find job card with UID ${actualJobEntryTestId}`);
       actualJobEntryTestId = jet.id;
