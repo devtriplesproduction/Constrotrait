@@ -59,21 +59,37 @@ export async function submitClientWizard(data: ClientWizardValues) {
       client_id: clientId,
     };
 
-    let testsData: any[] = [{
-      test_master_id: toNull(data.jobEntryTest?.test_master_id),
-      material_id: toNull(data.jobEntryTest?.material_id),
-      material_details_location: data.jobEntryTest?.material_details_location || null,
-      sample_quantity: data.jobEntryTest?.sample_quantity || null,
-      grade: data.jobEntryTest?.grade || null,
-      testing_day: data.jobEntryTest?.testing_day || null,
-      test_method: data.jobEntryTest?.test_method || null,
-      date_of_receiving: toNull(data.jobEntryTest?.date_of_receiving),
-      date_of_casting: toNull(data.jobEntryTest?.date_of_casting),
-      testing_age: data.jobEntryTest?.testing_age || null,
-      date_of_testing: toNull(data.jobEntryTest?.date_of_testing),
-      material_description: data.jobEntryTest?.material_description || null,
-      additional_details_values: data.jobEntryTest?.additional_details_values || {},
-    }];
+    let testsData: any[] = data.jobEntryTests && data.jobEntryTests.length > 0 
+      ? data.jobEntryTests.map((test: any) => ({
+          test_master_id: toNull(test.test_master_id),
+          material_id: toNull(test.material_id),
+          material_details_location: test.material_details_location || null,
+          sample_quantity: test.sample_quantity || null,
+          grade: test.grade || null,
+          testing_day: test.testing_day || null,
+          test_method: test.test_method || null,
+          date_of_receiving: toNull(test.date_of_receiving),
+          date_of_casting: toNull(test.date_of_casting),
+          testing_age: test.testing_age || null,
+          date_of_testing: toNull(test.date_of_testing),
+          material_description: test.material_description || null,
+          additional_details_values: test.additional_details_values || {},
+        }))
+      : [{
+          test_master_id: null,
+          material_id: null,
+          material_details_location: null,
+          sample_quantity: null,
+          grade: null,
+          testing_day: null,
+          test_method: null,
+          date_of_receiving: null,
+          date_of_casting: null,
+          testing_age: null,
+          date_of_testing: null,
+          material_description: null,
+          additional_details_values: {},
+        }];
 
     const result = await JobEntryService.createJobEntryWithTests(jobData, testsData);
     if (result.jobEntryTests && result.jobEntryTests.length > 0) {
@@ -115,21 +131,24 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
     });
 
     // 2. Update Job Entry Test
-    await JobEntryService.updateJobEntryTest(testId, {
-      test_master_id: toNull(data.jobEntryTest.test_master_id),
-      material_id: toNull(data.jobEntryTest.material_id),
-      material_details_location: data.jobEntryTest.material_details_location,
-      sample_quantity: data.jobEntryTest.sample_quantity,
-      grade: data.jobEntryTest.grade,
-      testing_day: data.jobEntryTest.testing_day,
-      test_method: data.jobEntryTest.test_method,
-      date_of_receiving: toNull(data.jobEntryTest.date_of_receiving),
-      date_of_casting: toNull(data.jobEntryTest.date_of_casting),
-      testing_age: data.jobEntryTest.testing_age,
-      date_of_testing: toNull(data.jobEntryTest.date_of_testing),
-      material_description: data.jobEntryTest.material_description,
-      additional_details_values: data.jobEntryTest.additional_details_values || {},
-    });
+    const jobEntryTest = data.jobEntryTests[0];
+    if (jobEntryTest) {
+      await JobEntryService.updateJobEntryTest(testId, {
+        test_master_id: toNull(jobEntryTest.test_master_id),
+        material_id: toNull(jobEntryTest.material_id),
+        material_details_location: jobEntryTest.material_details_location,
+        sample_quantity: jobEntryTest.sample_quantity,
+        grade: jobEntryTest.grade,
+        testing_day: jobEntryTest.testing_day,
+        test_method: jobEntryTest.test_method,
+        date_of_receiving: toNull(jobEntryTest.date_of_receiving),
+        date_of_casting: toNull(jobEntryTest.date_of_casting),
+        testing_age: jobEntryTest.testing_age,
+        date_of_testing: toNull(jobEntryTest.date_of_testing),
+        material_description: jobEntryTest.material_description,
+        additional_details_values: jobEntryTest.additional_details_values || {},
+      });
+    }
 
     revalidatePath("/dashboard"); 
     revalidatePath("/clients"); 

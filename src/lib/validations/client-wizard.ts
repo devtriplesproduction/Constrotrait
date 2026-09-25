@@ -40,8 +40,8 @@ export type TestDetailsValues = z.infer<typeof testDetailsSchema>;
 
 export const clientWizardSchema = z.object({
   client: clientDetailsSchema,
-  selectedTestId: z.string().optional().or(z.literal("")),
-  jobEntryTest: testDetailsSchema,
+  selectedTestIds: z.array(z.string()).default([]),
+  jobEntryTests: z.array(testDetailsSchema).default([]),
 });
 
 export type ClientWizardValues = z.infer<typeof clientWizardSchema>;

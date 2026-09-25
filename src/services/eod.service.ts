@@ -126,7 +126,7 @@ export async function reviewEOD(
     }
 
     if (updates) {
-      const patch: Record<string, unknown> = {};
+      const patch: Database['public']['Tables']['eod_reports']['Update'] = {};
       if (updates.tasks_accomplished !== undefined) patch.tasks_accomplished = updates.tasks_accomplished;
       if (updates.office_hours !== undefined) patch.office_hours = updates.office_hours;
       if (updates.location !== undefined) patch.location = updates.location;

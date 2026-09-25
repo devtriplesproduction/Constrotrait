@@ -125,7 +125,7 @@ export default function AllJobsTab({
       toast({
         title: "Date Required",
         description: "Please select an Exact Date first to generate ULRs.",
-        variant: "destructive"
+        variant: "error"
       });
       return;
     }
@@ -147,14 +147,14 @@ export default function AllJobsTab({
         toast({
           title: "Error",
           description: res.error || "Failed to generate ULRs.",
-          variant: "destructive"
+          variant: "error"
         });
       }
     } catch (e: any) {
       toast({
         title: "Error",
         description: e.message,
-        variant: "destructive"
+        variant: "error"
       });
     } finally {
       setIsGenerating(false);

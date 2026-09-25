@@ -51,7 +51,7 @@ export function JobAssignmentsContent({
       <div className="bg-white rounded-xl shadow-sm border border-slate-200">
 
         {isManager && activeTab === "list" && (
-          <AssignmentsListTab assignments={assignments} branches={branches} employees={employees} userId={userId} isManager={isManager} />
+          <AssignmentsListTab assignments={assignments} branches={branches} employees={employees} />
         )}
         {activeTab === "my" && (
           <MyAssignmentsTab assignments={assignments} userId={userId} />
