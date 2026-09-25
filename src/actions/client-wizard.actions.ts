@@ -92,8 +92,8 @@ export async function submitClientWizard(data: ClientWizardValues) {
         }];
 
     const result = await JobEntryService.createJobEntryWithTests(jobData, testsData);
-    if (result.jobEntryTests && result.jobEntryTests.length > 0) {
-      uids = result.jobEntryTests.map(t => t.uid);
+    if (result.jobEntry && result.jobEntry.uid) {
+      uids = [result.jobEntry.uid.toString()];
     }
 
     revalidatePath("/dashboard"); 
@@ -176,8 +176,9 @@ export async function getNextUidAction() {
     
     // Get the maximum UID currently in the database
     const { data, error } = await supabase
-      .from('job_entry_tests')
+      .from('job_entries')
       .select('uid')
+      .not('uid', 'is', null)
       .order('uid', { ascending: false })
       .limit(1)
       .maybeSingle();

@@ -540,6 +540,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          uid: number
           updated_at: string
           updated_by: string | null
         }
@@ -548,6 +549,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          uid?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -556,6 +558,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          uid?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -588,7 +591,6 @@ export type Database = {
           test_method: string | null
           testing_age: string | null
           testing_day: string | null
-          uid: number
           ulr_generated_at: string | null
           ulr_number: string | null
           ulr_seq: number | null
@@ -615,7 +617,6 @@ export type Database = {
           test_method?: string | null
           testing_age?: string | null
           testing_day?: string | null
-          uid?: number
           ulr_generated_at?: string | null
           ulr_number?: string | null
           ulr_seq?: number | null
@@ -642,7 +643,6 @@ export type Database = {
           test_method?: string | null
           testing_age?: string | null
           testing_day?: string | null
-          uid?: number
           ulr_generated_at?: string | null
           ulr_number?: string | null
           ulr_seq?: number | null

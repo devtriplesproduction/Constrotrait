@@ -715,57 +715,59 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                         {selectedTestIds.length > 0 ? (
                           <div className="space-y-3">
                             <div className="text-sm font-semibold text-slate-700">{selectedTestIds.length} test{selectedTestIds.length > 1 ? 's' : ''} selected:</div>
-                            {selectedTestIds.map(id => {
-                              const test = availableTests.find(t => t.id === id);
-                              if (!test) return null;
-                              return (
-                                <div key={id} className="p-3.5 rounded-xl bg-gradient-to-br from-orange-50 to-white border border-orange-200 shadow-sm relative overflow-hidden group transition-all">
-                                  <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-100 to-orange-50 text-orange-800 text-[9px] font-bold px-3 py-1 rounded-bl-xl tracking-wider uppercase flex items-center gap-1 shadow-sm border-b border-l border-orange-200">
-                                    <CheckCircle2 className="w-3 h-3 text-orange-600" /> Selected
-                                  </div>
-
-                                  {mode !== "edit" && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="absolute right-2 bottom-2 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                      onClick={() => handleToggleTest(id)}
-                                    >
-                                      Remove
-                                    </Button>
-                                  )}
-
-                                  <div className="flex items-start gap-3 mb-3">
-                                    <div className="w-8 h-8 rounded-lg bg-orange-100/80 flex items-center justify-center shrink-0 border border-orange-200 shadow-inner mt-0.5">
-                                      <Check className="w-4 h-4 text-orange-600" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {selectedTestIds.map(id => {
+                                const test = availableTests.find(t => t.id === id);
+                                if (!test) return null;
+                                return (
+                                  <div key={id} className="p-3.5 rounded-xl bg-gradient-to-br from-orange-50 to-white border border-orange-200 shadow-sm relative overflow-hidden group transition-all pb-12">
+                                    <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-100 to-orange-50 text-orange-800 text-[9px] font-bold px-3 py-1 rounded-bl-xl tracking-wider uppercase flex items-center gap-1 shadow-sm border-b border-l border-orange-200">
+                                      <CheckCircle2 className="w-3 h-3 text-orange-600" /> Selected
                                     </div>
-                                    <div>
-                                      <h4 className="font-bold text-[14px] text-slate-900 pr-20 leading-snug">
-                                        {test.component_parameter || test.specific_test}
-                                      </h4>
-                                      {test.is_nabl && (
-                                        <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold rounded-full uppercase tracking-wider shadow-sm">
-                                          <CheckCircle2 className="w-2.5 h-2.5" /> NABL Accredited
-                                        </span>
+  
+                                    {mode !== "edit" && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute right-2 bottom-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                        onClick={() => handleToggleTest(id)}
+                                      >
+                                        Remove
+                                      </Button>
+                                    )}
+  
+                                    <div className="flex items-start gap-3 mb-3">
+                                      <div className="w-8 h-8 rounded-lg bg-orange-100/80 flex items-center justify-center shrink-0 border border-orange-200 shadow-inner mt-0.5">
+                                        <Check className="w-4 h-4 text-orange-600" />
+                                      </div>
+                                      <div>
+                                        <h4 className="font-bold text-[14px] text-slate-900 pr-20 leading-snug">
+                                          {test.component_parameter || test.specific_test}
+                                        </h4>
+                                        {test.is_nabl && (
+                                          <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold rounded-full uppercase tracking-wider shadow-sm">
+                                            <CheckCircle2 className="w-2.5 h-2.5" /> NABL Accredited
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+  
+                                    <div className="flex flex-col gap-1.5 pt-2 border-t border-orange-100/50">
+                                      <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/60 border border-orange-100/50 hover:bg-white transition-colors shadow-sm">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Material</span>
+                                        <span className="text-[12px] font-semibold text-slate-700 text-right truncate ml-2" title={test.material_product || ''}>{test.material_product}</span>
+                                      </div>
+                                      {test.test_method && (
+                                        <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/60 border border-orange-100/50 hover:bg-white transition-colors shadow-sm">
+                                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Method</span>
+                                          <span className="text-[12px] font-semibold text-slate-700 text-right truncate ml-2" title={test.test_method || ''}>{test.test_method}</span>
+                                        </div>
                                       )}
                                     </div>
                                   </div>
-
-                                  <div className="flex flex-col gap-1.5 pt-2 border-t border-orange-100/50">
-                                    <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/60 border border-orange-100/50 hover:bg-white transition-colors shadow-sm">
-                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Material</span>
-                                      <span className="text-[12px] font-semibold text-slate-700 text-right">{test.material_product}</span>
-                                    </div>
-                                    {test.test_method && (
-                                      <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/60 border border-orange-100/50 hover:bg-white transition-colors shadow-sm">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Method</span>
-                                        <span className="text-[12px] font-semibold text-slate-700 text-right">{test.test_method}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
                           </div>
                         ) : (
                           <div className="py-12 text-center flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200 h-full">

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 
 interface TestMasterClientProps {
   initialTests: TestMaster[];
@@ -191,11 +192,11 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {paginatedTests.map((test, index) => (
-              <Card key={test.id} className="p-4 sm:p-5 relative rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-orange-200 transition-all duration-200 group overflow-hidden">
-                <div className="flex flex-col gap-4">
-
-                  {/* Subtle Top Accent Line */}
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+              <Card key={test.id} className="relative h-[320px] rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-orange-200 transition-all duration-200 group overflow-hidden">
+                {/* Subtle Top Accent Line */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10" />
+                <ScrollArea className="h-full w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  <div className="flex flex-col gap-4 p-4 sm:p-5">
 
                   {/* Header: Badge + Actions */}
                   <div className="flex justify-between items-start gap-4">
@@ -277,7 +278,8 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
                     </div>
                   </div>
 
-                </div>
+                  </div>
+                </ScrollArea>
               </Card>
             ))}
           </div>

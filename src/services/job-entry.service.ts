@@ -17,10 +17,26 @@ export class JobEntryService {
 
     const supabase = await createClient();
 
-    // 1. Create the job entry
+    // Get the maximum UID currently in the database for job_entries
+    const { data: maxUidData, error: maxUidError } = await supabase
+      .from('job_entries')
+      .select('uid')
+      .not('uid', 'is', null)
+      .order('uid', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (maxUidError) {
+      console.error("Error fetching max UID:", maxUidError);
+      throw new Error(maxUidError.message);
+    }
+
+    const nextUid = (maxUidData?.uid || 0) + 1;
+
+    // 1. Create the job entry with uid
     const { data: jobEntry, error: jobError } = await supabase
       .from("job_entries")
-      .insert(jobData)
+      .insert({ ...jobData, uid: nextUid })
       .select()
       .single();
 
@@ -36,26 +52,10 @@ export class JobEntryService {
     let jobEntryTests: any[] | null = [];
 
     if (testsData && testsData.length > 0) {
-      // Get the maximum UID currently in the database
-      const { data: maxUidData, error: maxUidError } = await supabase
-        .from('job_entry_tests')
-        .select('uid')
-        .order('uid', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (maxUidError) {
-        console.error("Error fetching max UID:", maxUidError);
-        throw new Error(maxUidError.message);
-      }
-
-      let nextUid = (maxUidData?.uid || 0) + 1;
-
-      // 2. Create the associated tests
+      // 2. Create the associated tests without uid
       const testsToInsert = testsData.map((test) => ({
         ...test,
         job_entry_id: jobEntry.id,
-        uid: nextUid++,
       }));
 
       const { data: insertedTests, error: testsError } = await supabase
@@ -110,11 +110,10 @@ export class JobEntryService {
 
   /**
    * Update an existing job entry test (inward)
-   * Note: uid is excluded from the update type to enforce immutability
    */
   static async updateJobEntryTest(
     id: string,
-    testData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Update"], "uid">
+    testData: Database["public"]["Tables"]["job_entry_tests"]["Update"]
   ) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
@@ -122,13 +121,9 @@ export class JobEntryService {
 
     const supabase = await createClient();
     
-    // Explicitly ensure uid is not passed even if typescript is bypassed
-    const dataToUpdate = { ...testData } as any;
-    delete dataToUpdate.uid;
-
     const { data, error } = await supabase
       .from("job_entry_tests")
-      .update(dataToUpdate)
+      .update(testData)
       .eq("id", id)
       .select()
       .single();

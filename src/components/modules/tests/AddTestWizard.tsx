@@ -15,6 +15,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Spinner } from "@/components/ui/spinner";
 import { Select, SelectItem } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 
 const steps = [
   { id: "step1", title: "Test Details" },
@@ -264,35 +265,37 @@ export function AddTestWizard({
                   </Button>
                 </div>
 
-                <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
-                  {details.map((detail, index) => (
-                    <div key={index} className="flex items-start gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 shadow-sm">
-                      <div className="flex-1">
-                        <Input
-                          value={detail}
-                          onChange={(e) => updateDetail(index, e.target.value)}
-                          placeholder={`Detail ${index + 1}`}
-                          className="h-9 text-sm bg-white"
-                        />
+                <ScrollArea orientation="vertical" className="max-h-[250px] pr-4">
+                  <div className="space-y-3">
+                    {details.map((detail, index) => (
+                      <div key={index} className="flex items-start gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="flex-1">
+                          <Input
+                            value={detail}
+                            onChange={(e) => updateDetail(index, e.target.value)}
+                            placeholder={`Detail ${index + 1}`}
+                            className="h-9 text-sm bg-white"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeDetail(index)}
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 h-9 w-9 shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeDetail(index)}
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 h-9 w-9 shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-
-                  {details.length === 0 && (
-                    <div className="text-center py-8 text-sm text-slate-500 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
-                      No additional details added. Click &quot;Add Detail&quot; to include more information.
-                    </div>
-                  )}
-                </div>
+                    ))}
+  
+                    {details.length === 0 && (
+                      <div className="text-center py-8 text-sm text-slate-500 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+                        No additional details added. Click &quot;Add Detail&quot; to include more information.
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
               </motion.div>
             )}
           </AnimatePresence>
