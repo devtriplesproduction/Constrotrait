@@ -11,10 +11,11 @@ import { ClipboardList, X, Search } from "lucide-react";
 import { AssignJobsTab } from "./AssignJobsTab";
 import { PageHeader } from "@/components/modules/PageHeader";
 
-export function AssignmentsListTab({ assignments, branches, employees, userId, isManager }: { assignments: any[], branches: any[], employees: any[], userId?: string, isManager?: boolean }) {
+export function AssignmentsListTab({ assignments, branches, employees }: { assignments: any[], branches: any[], employees: any[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [initialAssignment, setInitialAssignment] = useState<any>(null);
 
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterBranch, setFilterBranch] = useState<string>("all");
@@ -46,16 +47,7 @@ export function AssignmentsListTab({ assignments, branches, employees, userId, i
     return true;
   });
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
-    setLoading(true);
-    const res = await updateAssignmentStatusAction(id, newStatus);
-    if (!res.success) {
-      alert("Error updating status: " + res.error);
-    } else {
-      router.refresh();
-    }
-    setLoading(false);
-  };
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -134,7 +126,10 @@ export function AssignmentsListTab({ assignments, branches, employees, userId, i
             />
           </div>
           <Button
-            onClick={() => setIsAssignModalOpen(true)}
+            onClick={() => {
+              setInitialAssignment(null);
+              setIsAssignModalOpen(true);
+            }}
             className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2"
           >
             <ClipboardList className="w-4 h-4" />
@@ -186,7 +181,17 @@ export function AssignmentsListTab({ assignments, branches, employees, userId, i
                 </td>
                 <td className="px-6 py-4">
                   <Button
-                    onClick={() => setIsAssignModalOpen(true)}
+                    onClick={() => {
+                      setInitialAssignment({
+                        job_entry_test_id: assignment.job_entry_test_id,
+                        uid: assignment.job_entry_tests?.uid,
+                        assigned_to: assignment.assigned_to,
+                        team_id: assignment.team_id,
+                        due_date: assignment.due_date,
+                        notes: assignment.notes
+                      });
+                      setIsAssignModalOpen(true);
+                    }}
                     size="sm"
                     variant="outline"
                     className="text-orange-600 hover:text-orange-700 border-orange-200 hover:bg-orange-50"
@@ -220,7 +225,15 @@ export function AssignmentsListTab({ assignments, branches, employees, userId, i
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              <AssignJobsTab employees={employees} branches={branches} />
+              <AssignJobsTab 
+                employees={employees} 
+                branches={branches} 
+                initialAssignment={initialAssignment}
+                onSuccess={() => {
+                  setIsAssignModalOpen(false);
+                  router.refresh();
+                }}
+              />
             </div>
           </div>
         </div>

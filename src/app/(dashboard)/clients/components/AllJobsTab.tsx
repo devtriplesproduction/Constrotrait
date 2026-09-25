@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { getAllJobEntryTestsAction } from "@/actions/job-entry.actions";
 import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
+import { generateULRsForDateAction } from "@/actions/ulr.actions";
 import { Database } from "@/types/database";
+import { useToast } from "@/hooks/use-toast";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
@@ -41,6 +43,9 @@ export default function AllJobsTab({
   const [searchClient, setSearchClient] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
+  
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
 
   const loadAllJobs = async () => {
     setIsLoading(true);
@@ -115,6 +120,47 @@ export default function AllJobsTab({
     });
   }, [allJobs, searchUid, searchClient, filterDate, filterMonth]);
 
+  const handleGenerateULRs = async () => {
+    if (!filterDate) {
+      toast({
+        title: "Date Required",
+        description: "Please select an Exact Date first to generate ULRs.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!confirm(`Are you sure you want to generate ULRs for testing date: ${filterDate}? This cannot be undone.`)) {
+      return;
+    }
+    
+    setIsGenerating(true);
+    try {
+      const res = await generateULRsForDateAction(filterDate);
+      if (res.success) {
+        toast({
+          title: "Success",
+          description: `ULRs successfully generated for ${filterDate}.`,
+        });
+        loadAllJobs();
+      } else {
+        toast({
+          title: "Error",
+          description: res.error || "Failed to generate ULRs.",
+          variant: "destructive"
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Error",
+        description: e.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="relative bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-5 transition-all duration-300 hover:shadow-md hover:border-orange-200/80 group overflow-hidden">
@@ -162,6 +208,18 @@ export default function AllJobsTab({
             className="h-10 bg-slate-50/50 border-slate-200 focus-visible:ring-orange-500/20 focus-visible:border-orange-400 hover:border-orange-300 transition-all shadow-sm rounded-xl"
           />
         </div>
+        
+        {/* Action Bar for ULR Generation */}
+        <div className="flex justify-end pt-2 border-t border-slate-100/60 mt-4">
+          <Button 
+            onClick={handleGenerateULRs} 
+            disabled={isGenerating || !filterDate}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+          >
+            {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Generate ULRs for {filterDate || "Selected Date"}
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
@@ -184,6 +242,9 @@ export default function AllJobsTab({
                     <div className="flex items-center gap-2.5">
                       <div className="px-3 py-1 bg-gradient-to-br from-orange-50 to-[#FFF8ED] border border-orange-100/80 rounded-xl text-orange-600 font-extrabold text-[12px] tracking-wide shadow-[0_1px_2px_rgba(249,115,22,0.05)]">
                         UID: {test.uid}
+                      </div>
+                      <div className={`px-3 py-1 rounded-xl font-extrabold text-[12px] tracking-wide shadow-[0_1px_2px_rgba(0,0,0,0.05)] border ${test.ulr_status === 'generated' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                        {test.ulr_status === 'generated' ? `ULR: ${test.ulr_number}` : `ULR Pending (${test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : '-'})`}
                       </div>
                       <div className="px-3 py-1 bg-slate-50 border border-slate-100/80 rounded-xl text-slate-500 text-[11px] font-semibold flex items-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                         <div className="w-1.5 h-1.5 rounded-full bg-orange-400/80 shadow-sm"></div>

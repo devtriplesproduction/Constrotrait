@@ -9,17 +9,17 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { toast } from "@/hooks/use-toast";
 
-export function AssignJobsTab({ employees, teams, branches }: { employees: any[], teams?: any[], branches?: any[] }) {
+export function AssignJobsTab({ employees, teams, branches, initialAssignment, onSuccess }: { employees: any[], teams?: any[], branches?: any[], initialAssignment?: any, onSuccess?: () => void }) {
   const router = useRouter();
   const [showAssignmentsView, setShowAssignmentsView] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [jobEntryTestId, setJobEntryTestId] = useState("");
+  const [jobEntryTestId, setJobEntryTestId] = useState(initialAssignment?.uid?.toString() || "");
   const [selectedBranch, setSelectedBranch] = useState("");
-  const [assignType, setAssignType] = useState<"employee" | "team">("employee");
-  const [selectedTeam, setSelectedTeam] = useState("");
-  const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [dueDate, setDueDate] = useState(new Date().toISOString());
-  const [notes, setNotes] = useState("");
+  const [assignType, setAssignType] = useState<"employee" | "team">(initialAssignment?.team_id ? "team" : "employee");
+  const [selectedTeam, setSelectedTeam] = useState(initialAssignment?.team_id || "");
+  const [selectedEmployee, setSelectedEmployee] = useState(initialAssignment?.assigned_to || "");
+  const [dueDate, setDueDate] = useState(initialAssignment?.due_date ? new Date(initialAssignment.due_date).toISOString() : new Date().toISOString());
+  const [notes, setNotes] = useState(initialAssignment?.notes || "");
 
   const [existingAssignments, setExistingAssignments] = useState<any[]>([]);
   const [unassignedJobCards, setUnassignedJobCards] = useState<any[]>([]);
@@ -123,6 +123,7 @@ export function AssignJobsTab({ employees, teams, branches }: { employees: any[]
       toast({ title: "Success", description: msg, variant: "success" });
       fetchExisting();
       setJobEntryTestId("");
+      if (onSuccess) onSuccess();
     } else {
       toast({ title: "Error", description: res.error, variant: "error" });
     }

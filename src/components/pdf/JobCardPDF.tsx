@@ -199,7 +199,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           </View>
           
           <View style={styles.row}>
-            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>UID. No.</Text></View>
+            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>UID/ULR</Text></View>
             <View style={[styles.cell, { width: '25%', alignItems: 'center' }]}><Text>Material Details</Text></View>
             <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>Testing Day</Text></View>
             <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text>Sample Code No.</Text></View>
@@ -210,7 +210,12 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
 
           {/* Data Row */}
           <View style={[styles.row, { minHeight: 40 }]}>
-            <View style={[styles.cell, { width: '10%' }]}><Text>{job?.uid || ''}</Text></View>
+            <View style={[styles.cell, { width: '10%' }]}>
+              <Text>{job?.uid || ''}</Text>
+              {job?.ulr_status === 'generated' && job?.ulr_number ? (
+                <Text style={{ fontSize: 7, marginTop: 4 }}>{job.ulr_number}</Text>
+              ) : null}
+            </View>
             <View style={[styles.cell, { width: '25%' }]}><Text>{job?.material_description || ''}</Text></View>
             <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>{job?.testing_day || ''}</Text></View>
             <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text>{sampleCodeNo}</Text></View>

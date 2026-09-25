@@ -125,20 +125,23 @@ export async function reviewEOD(
       return { success: false, error: "Rejection reason is required." };
     }
 
-    if (updates && (updates.tasks_accomplished || updates.office_hours !== undefined || updates.location || updates.photo_url)) {
-      const { error: updateError } = await supabase
-        .from('eod_reports')
-        .update({
-          ...(updates.tasks_accomplished && { tasks_accomplished: updates.tasks_accomplished }),
-          ...(updates.office_hours !== undefined && { office_hours: updates.office_hours }),
-          ...(updates.location && { location: updates.location }),
-          ...(updates.photo_url && { photo_url: updates.photo_url }),
-        })
-        .eq('id', eodId);
+    if (updates) {
+      const patch: Record<string, unknown> = {};
+      if (updates.tasks_accomplished !== undefined) patch.tasks_accomplished = updates.tasks_accomplished;
+      if (updates.office_hours !== undefined) patch.office_hours = updates.office_hours;
+      if (updates.location !== undefined) patch.location = updates.location;
+      if (updates.photo_url !== undefined) patch.photo_url = updates.photo_url;
+      
+      if (Object.keys(patch).length > 0) {
+        const { error: updateError } = await supabase
+          .from('eod_reports')
+          .update(patch)
+          .eq('id', eodId);
 
-      if (updateError) {
-        console.error("Failed to update EOD report fields:", updateError);
-        return { success: false, error: "Failed to update EOD details before review" };
+        if (updateError) {
+          console.error("Failed to update EOD report fields:", updateError);
+          return { success: false, error: "Failed to update EOD details before review" };
+        }
       }
     }
 

@@ -263,6 +263,9 @@ export default function ClientsTab({
                               <span className="inline-flex items-center justify-center font-black text-orange-600 bg-gradient-to-br from-orange-50 to-orange-100/50 px-2.5 py-1 rounded-lg border border-orange-200/50 shadow-sm group-hover:scale-105 transition-transform text-sm">
                                 UID: {test.uid}
                               </span>
+                              <span className={`inline-flex items-center justify-center font-black px-2.5 py-1 rounded-lg border shadow-sm group-hover:scale-105 transition-transform text-[11px] ${test.ulr_status === 'generated' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'}`}>
+                                {test.ulr_status === 'generated' ? `ULR: ${test.ulr_number}` : `ULR Pending (${test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : '-'})`}
+                              </span>
                               <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 bg-slate-50/80 px-2 py-1 rounded-md border border-slate-200/60 shadow-sm">
                                 <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
                                 {new Date(job.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}

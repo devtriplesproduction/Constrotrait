@@ -589,6 +589,11 @@ export type Database = {
           testing_age: string | null
           testing_day: string | null
           uid: number
+          ulr_generated_at: string | null
+          ulr_number: string | null
+          ulr_seq: number | null
+          ulr_status: string
+          ulr_year: number | null
           updated_at: string
           updated_by: string | null
         }
@@ -611,6 +616,11 @@ export type Database = {
           testing_age?: string | null
           testing_day?: string | null
           uid?: number
+          ulr_generated_at?: string | null
+          ulr_number?: string | null
+          ulr_seq?: number | null
+          ulr_status?: string
+          ulr_year?: number | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -633,6 +643,11 @@ export type Database = {
           testing_age?: string | null
           testing_day?: string | null
           uid?: number
+          ulr_generated_at?: string | null
+          ulr_number?: string | null
+          ulr_seq?: number | null
+          ulr_status?: string
+          ulr_year?: number | null
           updated_at?: string
           updated_by?: string | null
         }

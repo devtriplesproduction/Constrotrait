@@ -98,10 +98,10 @@ export async function reviewEODAction(formData: FormData) {
       eod_id: formData.get('eod_id') as string,
       action: formData.get('action') as 'Approve' | 'Reject',
       rejection_reason: (formData.get('rejection_reason') as string | null) ?? undefined,
-      tasks_accomplished: formData.get('tasks_accomplished') ? formData.get('tasks_accomplished') as string : undefined,
-      office_hours: formData.get('office_hours') ? Number(formData.get('office_hours')) : undefined,
-      location: formData.get('location') ? formData.get('location') as "Office" | "Field" : undefined,
-      photo_url: formData.get('photo_url') ? formData.get('photo_url') as string : undefined,
+      tasks_accomplished: formData.has('tasks_accomplished') ? formData.get('tasks_accomplished') as string : undefined,
+      office_hours: formData.get('office_hours') !== null && formData.get('office_hours') !== '' ? Number(formData.get('office_hours')) : undefined,
+      location: formData.has('location') ? formData.get('location') as "Office" | "Field" : undefined,
+      photo_url: formData.has('photo_url') ? formData.get('photo_url') as string : undefined,
     };
 
     const validatedData = eodReviewSchema.parse(rawData);
