@@ -1,12 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserWithRoles } from "./auth.service";
+import { canManageClientsAndJobs } from "@/config/roles";
 
 export const ULRService = {
+  /**
+   * Issue ULR / QC numbers for all pending tests on p_date.
+   * NABL catalogue tests on one job share one 18-char ULR.
+   * Non-NABL tests get QC-WAI-YY-###### only.
+   */
   async generateForDate(date: string) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+    if (!canManageClientsAndJobs(user.roles)) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const supabase = await createClient();
-    
-    // @ts-ignore: type for generate_ulr_for_date might be missing until db types are regenerated
-    const { error } = await supabase.rpc('generate_ulr_for_date', {
-      p_date: date
+
+    const { error } = await supabase.rpc("generate_ulr_for_date", {
+      p_date: date,
     });
 
     if (error) {
@@ -15,5 +27,5 @@ export const ULRService = {
     }
 
     return { success: true };
-  }
+  },
 };
