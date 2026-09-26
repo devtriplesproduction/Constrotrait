@@ -28,7 +28,9 @@ export function QcTestReportPDF({ report }: { report: any }) {
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP, WAI</Text>
         <Text style={styles.banner}>TEST REPORT — NOT UNDER NABL ACCREDITATION</Text>
-        <Text style={styles.sub}>Report No: {report.report_no}    QC No: {report.qc_number || "—"}</Text>
+        <Text style={styles.sub}>
+          ULR: {report.ulr_number || "—"}    Report No: {report.report_no}    QC No: {report.qc_number || "—"}
+        </Text>
 
         <View style={styles.row}><Text style={styles.label}>Customer</Text><Text style={styles.value}>{client?.name || ""}</Text></View>
         <View style={styles.row}><Text style={styles.label}>Site</Text><Text style={styles.value}>{client?.site_name || ""}</Text></View>
@@ -50,7 +52,7 @@ export function QcTestReportPDF({ report }: { report: any }) {
         ))}
 
         <Text style={styles.footer}>
-          This document does not carry the NABL symbol or a ULR. It must not be presented as an accredited certificate.
+          This report is outside the laboratory’s NABL accredited scope. The NABL symbol shall not be used on this sheet.
         </Text>
       </Page>
     </Document>
