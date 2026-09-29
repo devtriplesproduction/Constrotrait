@@ -1,0 +1,3912 @@
+[
+  {
+    "coverage_id": "src%2Factions%2Fadmin.actions.ts%23ServerActions::src%2Factions%2Fadmin.actions.ts%23Authorization::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/actions/admin.actions.ts#ServerActions",
+      "boundary": "src/actions/admin.actions.ts#Authorization",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/actions/admin.actions.ts#ServerActions",
+    "boundary": "src/actions/admin.actions.ts#Authorization",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/actions/admin.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/admin.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/admin.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fadmin.actions.ts%23ServerActions::src%2Factions%2Fadmin.actions.ts%23InputValidation::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "src/actions/admin.actions.ts#ServerActions",
+      "boundary": "src/actions/admin.actions.ts#InputValidation",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "src/actions/admin.actions.ts#ServerActions",
+    "boundary": "src/actions/admin.actions.ts#InputValidation",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "src/actions/admin.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/admin.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/admin.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fauth.actions.ts%23ServerActions::src%2Factions%2Fauth.actions.ts%23Authorization::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/actions/auth.actions.ts#ServerActions",
+      "boundary": "src/actions/auth.actions.ts#Authorization",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/actions/auth.actions.ts#ServerActions",
+    "boundary": "src/actions/auth.actions.ts#Authorization",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/actions/auth.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/auth.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/auth.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fauth.actions.ts%23ServerActions::src%2Factions%2Fauth.actions.ts%23InputValidation::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "src/actions/auth.actions.ts#ServerActions",
+      "boundary": "src/actions/auth.actions.ts#InputValidation",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "src/actions/auth.actions.ts#ServerActions",
+    "boundary": "src/actions/auth.actions.ts#InputValidation",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "src/actions/auth.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/auth.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/auth.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fbranch.actions.ts%23ServerActions::src%2Factions%2Fbranch.actions.ts%23Authorization::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/actions/branch.actions.ts#ServerActions",
+      "boundary": "src/actions/branch.actions.ts#Authorization",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/actions/branch.actions.ts#ServerActions",
+    "boundary": "src/actions/branch.actions.ts#Authorization",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/actions/branch.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/branch.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/branch.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fbranch.actions.ts%23ServerActions::src%2Factions%2Fbranch.actions.ts%23InputValidation::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "src/actions/branch.actions.ts#ServerActions",
+      "boundary": "src/actions/branch.actions.ts#InputValidation",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "src/actions/branch.actions.ts#ServerActions",
+    "boundary": "src/actions/branch.actions.ts#InputValidation",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "src/actions/branch.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/branch.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/branch.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Femployee.actions.ts%23ServerActions::src%2Factions%2Femployee.actions.ts%23Authorization::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/actions/employee.actions.ts#ServerActions",
+      "boundary": "src/actions/employee.actions.ts#Authorization",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/actions/employee.actions.ts#ServerActions",
+    "boundary": "src/actions/employee.actions.ts#Authorization",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/actions/employee.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/employee.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/employee.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Femployee.actions.ts%23ServerActions::src%2Factions%2Femployee.actions.ts%23InputValidation::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "src/actions/employee.actions.ts#ServerActions",
+      "boundary": "src/actions/employee.actions.ts#InputValidation",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "src/actions/employee.actions.ts#ServerActions",
+    "boundary": "src/actions/employee.actions.ts#InputValidation",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "src/actions/employee.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/employee.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/employee.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Feod.actions.ts%23ServerActions::src%2Factions%2Feod.actions.ts%23Authorization::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/actions/eod.actions.ts#ServerActions",
+      "boundary": "src/actions/eod.actions.ts#Authorization",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/actions/eod.actions.ts#ServerActions",
+    "boundary": "src/actions/eod.actions.ts#Authorization",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/actions/eod.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/eod.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/eod.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Feod.actions.ts%23ServerActions::src%2Factions%2Feod.actions.ts%23InputValidation::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "src/actions/eod.actions.ts#ServerActions",
+      "boundary": "src/actions/eod.actions.ts#InputValidation",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "src/actions/eod.actions.ts#ServerActions",
+    "boundary": "src/actions/eod.actions.ts#InputValidation",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "src/actions/eod.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/eod.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/eod.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fholiday.actions.ts%23ServerActions::src%2Factions%2Fholiday.actions.ts%23Authorization::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/actions/holiday.actions.ts#ServerActions",
+      "boundary": "src/actions/holiday.actions.ts#Authorization",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/actions/holiday.actions.ts#ServerActions",
+    "boundary": "src/actions/holiday.actions.ts#Authorization",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/actions/holiday.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/holiday.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/holiday.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fholiday.actions.ts%23ServerActions::src%2Factions%2Fholiday.actions.ts%23InputValidation::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "src/actions/holiday.actions.ts#ServerActions",
+      "boundary": "src/actions/holiday.actions.ts#InputValidation",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "src/actions/holiday.actions.ts#ServerActions",
+    "boundary": "src/actions/holiday.actions.ts#InputValidation",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "src/actions/holiday.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/holiday.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/holiday.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fleave.actions.ts%23ServerActions::src%2Factions%2Fleave.actions.ts%23Authorization::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/actions/leave.actions.ts#ServerActions",
+      "boundary": "src/actions/leave.actions.ts#Authorization",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/actions/leave.actions.ts#ServerActions",
+    "boundary": "src/actions/leave.actions.ts#Authorization",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/actions/leave.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/leave.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/leave.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fleave.actions.ts%23ServerActions::src%2Factions%2Fleave.actions.ts%23InputValidation::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "src/actions/leave.actions.ts#ServerActions",
+      "boundary": "src/actions/leave.actions.ts#InputValidation",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "src/actions/leave.actions.ts#ServerActions",
+    "boundary": "src/actions/leave.actions.ts#InputValidation",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "src/actions/leave.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/leave.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/leave.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fnotification.actions.ts%23ServerActions::src%2Factions%2Fnotification.actions.ts%23Authorization::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/actions/notification.actions.ts#ServerActions",
+      "boundary": "src/actions/notification.actions.ts#Authorization",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/actions/notification.actions.ts#ServerActions",
+    "boundary": "src/actions/notification.actions.ts#Authorization",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/actions/notification.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/notification.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/notification.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fnotification.actions.ts%23ServerActions::src%2Factions%2Fnotification.actions.ts%23InputValidation::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "src/actions/notification.actions.ts#ServerActions",
+      "boundary": "src/actions/notification.actions.ts#InputValidation",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "src/actions/notification.actions.ts#ServerActions",
+    "boundary": "src/actions/notification.actions.ts#InputValidation",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "src/actions/notification.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/notification.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/notification.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fpayroll.actions.ts%23ServerActions::src%2Factions%2Fpayroll.actions.ts%23Authorization::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/actions/payroll.actions.ts#ServerActions",
+      "boundary": "src/actions/payroll.actions.ts#Authorization",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/actions/payroll.actions.ts#ServerActions",
+    "boundary": "src/actions/payroll.actions.ts#Authorization",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/actions/payroll.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/payroll.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/payroll.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fpayroll.actions.ts%23ServerActions::src%2Factions%2Fpayroll.actions.ts%23InputValidation::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "src/actions/payroll.actions.ts#ServerActions",
+      "boundary": "src/actions/payroll.actions.ts#InputValidation",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "src/actions/payroll.actions.ts#ServerActions",
+    "boundary": "src/actions/payroll.actions.ts#InputValidation",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "src/actions/payroll.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/payroll.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/payroll.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fpayroll_slips.actions.ts%23ServerActions::src%2Factions%2Fpayroll_slips.actions.ts%23Authorization::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/actions/payroll_slips.actions.ts#ServerActions",
+      "boundary": "src/actions/payroll_slips.actions.ts#Authorization",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/actions/payroll_slips.actions.ts#ServerActions",
+    "boundary": "src/actions/payroll_slips.actions.ts#Authorization",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/actions/payroll_slips.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/payroll_slips.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/payroll_slips.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Factions%2Fpayroll_slips.actions.ts%23ServerActions::src%2Factions%2Fpayroll_slips.actions.ts%23InputValidation::subsystem%2Fnextjs-actions::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "src/actions/payroll_slips.actions.ts#ServerActions",
+      "boundary": "src/actions/payroll_slips.actions.ts#InputValidation",
+      "subsystem": "subsystem/nextjs-actions",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "src/actions/payroll_slips.actions.ts#ServerActions",
+    "boundary": "src/actions/payroll_slips.actions.ts#InputValidation",
+    "subsystem": "subsystem/nextjs-actions",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "src/actions/payroll_slips.actions.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/actions/payroll_slips.actions.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/actions/payroll_slips.actions.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Fapp%2Fapi%2Fcron%2Fexpire-comp-off%2Froute.ts%23GET::src%2Fapp%2Fapi%2Fcron%2Fexpire-comp-off%2Froute.ts%23API_Authorization::subsystem%2Fnextjs-api::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/app/api/cron/expire-comp-off/route.ts#GET",
+      "boundary": "src/app/api/cron/expire-comp-off/route.ts#API_Authorization",
+      "subsystem": "subsystem/nextjs-api",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "src/app/api/cron/expire-comp-off/route.ts#GET",
+    "boundary": "src/app/api/cron/expire-comp-off/route.ts#API_Authorization",
+    "subsystem": "subsystem/nextjs-api",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/app/api/cron/expire-comp-off/route.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "src/app/api/cron/expire-comp-off/route.ts"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "src/app/api/cron/expire-comp-off/route.ts"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20240819000000_create_profiles.sql%23RLS::supabase%2Fmigrations%2F20240819000000_create_profiles.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20240819000000_create_profiles.sql#RLS",
+      "boundary": "supabase/migrations/20240819000000_create_profiles.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20240819000000_create_profiles.sql#RLS",
+    "boundary": "supabase/migrations/20240819000000_create_profiles.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20240819000000_create_profiles.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20240819000000_create_profiles.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20240819000000_create_profiles.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260820000001_multiple_roles.sql%23RLS::supabase%2Fmigrations%2F20260820000001_multiple_roles.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260820000001_multiple_roles.sql#RLS",
+      "boundary": "supabase/migrations/20260820000001_multiple_roles.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260820000001_multiple_roles.sql#RLS",
+    "boundary": "supabase/migrations/20260820000001_multiple_roles.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260820000001_multiple_roles.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260820000001_multiple_roles.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260820000001_multiple_roles.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260820000003_add_profile_fields.sql%23RLS::supabase%2Fmigrations%2F20260820000003_add_profile_fields.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260820000003_add_profile_fields.sql#RLS",
+      "boundary": "supabase/migrations/20260820000003_add_profile_fields.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260820000003_add_profile_fields.sql#RLS",
+    "boundary": "supabase/migrations/20260820000003_add_profile_fields.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260820000003_add_profile_fields.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260820000003_add_profile_fields.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260820000003_add_profile_fields.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260821000000_create_notifications.sql%23RLS::supabase%2Fmigrations%2F20260821000000_create_notifications.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260821000000_create_notifications.sql#RLS",
+      "boundary": "supabase/migrations/20260821000000_create_notifications.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260821000000_create_notifications.sql#RLS",
+    "boundary": "supabase/migrations/20260821000000_create_notifications.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260821000000_create_notifications.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260821000000_create_notifications.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260821000000_create_notifications.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260822000000_create_attendance_and_eod.sql%23RLS::supabase%2Fmigrations%2F20260822000000_create_attendance_and_eod.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260822000000_create_attendance_and_eod.sql#RLS",
+      "boundary": "supabase/migrations/20260822000000_create_attendance_and_eod.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260822000000_create_attendance_and_eod.sql#RLS",
+    "boundary": "supabase/migrations/20260822000000_create_attendance_and_eod.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260822000000_create_attendance_and_eod.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260822000000_create_attendance_and_eod.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260822000000_create_attendance_and_eod.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260822000000_create_attendance_and_eod.sql%23RPC::supabase%2Fmigrations%2F20260822000000_create_attendance_and_eod.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260822000000_create_attendance_and_eod.sql#RPC",
+      "boundary": "supabase/migrations/20260822000000_create_attendance_and_eod.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260822000000_create_attendance_and_eod.sql#RPC",
+    "boundary": "supabase/migrations/20260822000000_create_attendance_and_eod.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260822000000_create_attendance_and_eod.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260822000000_create_attendance_and_eod.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260822000000_create_attendance_and_eod.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260824000001_secure_submit_eod_rpc.sql%23RPC::supabase%2Fmigrations%2F20260824000001_secure_submit_eod_rpc.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260824000001_secure_submit_eod_rpc.sql#RPC",
+      "boundary": "supabase/migrations/20260824000001_secure_submit_eod_rpc.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260824000001_secure_submit_eod_rpc.sql#RPC",
+    "boundary": "supabase/migrations/20260824000001_secure_submit_eod_rpc.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260824000001_secure_submit_eod_rpc.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260824000001_secure_submit_eod_rpc.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260824000001_secure_submit_eod_rpc.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260824000002_branch_manager_profiles_select.sql%23RLS::supabase%2Fmigrations%2F20260824000002_branch_manager_profiles_select.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260824000002_branch_manager_profiles_select.sql#RLS",
+      "boundary": "supabase/migrations/20260824000002_branch_manager_profiles_select.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260824000002_branch_manager_profiles_select.sql#RLS",
+    "boundary": "supabase/migrations/20260824000002_branch_manager_profiles_select.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260824000002_branch_manager_profiles_select.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260824000002_branch_manager_profiles_select.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260824000002_branch_manager_profiles_select.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260824000003_secure_birthday_rpc.sql%23RPC::supabase%2Fmigrations%2F20260824000003_secure_birthday_rpc.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260824000003_secure_birthday_rpc.sql#RPC",
+      "boundary": "supabase/migrations/20260824000003_secure_birthday_rpc.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260824000003_secure_birthday_rpc.sql#RPC",
+    "boundary": "supabase/migrations/20260824000003_secure_birthday_rpc.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260824000003_secure_birthday_rpc.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260824000003_secure_birthday_rpc.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260824000003_secure_birthday_rpc.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260824000004_update_eod_permissions.sql%23RLS::supabase%2Fmigrations%2F20260824000004_update_eod_permissions.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260824000004_update_eod_permissions.sql#RLS",
+      "boundary": "supabase/migrations/20260824000004_update_eod_permissions.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260824000004_update_eod_permissions.sql#RLS",
+    "boundary": "supabase/migrations/20260824000004_update_eod_permissions.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260824000004_update_eod_permissions.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260824000004_update_eod_permissions.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260824000004_update_eod_permissions.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260824000004_update_eod_permissions.sql%23RPC::supabase%2Fmigrations%2F20260824000004_update_eod_permissions.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260824000004_update_eod_permissions.sql#RPC",
+      "boundary": "supabase/migrations/20260824000004_update_eod_permissions.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260824000004_update_eod_permissions.sql#RPC",
+    "boundary": "supabase/migrations/20260824000004_update_eod_permissions.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260824000004_update_eod_permissions.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260824000004_update_eod_permissions.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260824000004_update_eod_permissions.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260824000005_fix_update_eod_rpc.sql%23RPC::supabase%2Fmigrations%2F20260824000005_fix_update_eod_rpc.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260824000005_fix_update_eod_rpc.sql#RPC",
+      "boundary": "supabase/migrations/20260824000005_fix_update_eod_rpc.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260824000005_fix_update_eod_rpc.sql#RPC",
+    "boundary": "supabase/migrations/20260824000005_fix_update_eod_rpc.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260824000005_fix_update_eod_rpc.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260824000005_fix_update_eod_rpc.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260824000005_fix_update_eod_rpc.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260825000000_update_birthday_rpc_status.sql%23RPC::supabase%2Fmigrations%2F20260825000000_update_birthday_rpc_status.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260825000000_update_birthday_rpc_status.sql#RPC",
+      "boundary": "supabase/migrations/20260825000000_update_birthday_rpc_status.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260825000000_update_birthday_rpc_status.sql#RPC",
+    "boundary": "supabase/migrations/20260825000000_update_birthday_rpc_status.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260825000000_update_birthday_rpc_status.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260825000000_update_birthday_rpc_status.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260825000000_update_birthday_rpc_status.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260825000001_add_branches.sql%23RLS::supabase%2Fmigrations%2F20260825000001_add_branches.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260825000001_add_branches.sql#RLS",
+      "boundary": "supabase/migrations/20260825000001_add_branches.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260825000001_add_branches.sql#RLS",
+    "boundary": "supabase/migrations/20260825000001_add_branches.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260825000001_add_branches.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260825000001_add_branches.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260825000001_add_branches.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260825000002_branch_rls.sql%23RLS::supabase%2Fmigrations%2F20260825000002_branch_rls.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260825000002_branch_rls.sql#RLS",
+      "boundary": "supabase/migrations/20260825000002_branch_rls.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260825000002_branch_rls.sql#RLS",
+    "boundary": "supabase/migrations/20260825000002_branch_rls.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260825000002_branch_rls.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260825000002_branch_rls.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260825000002_branch_rls.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260825000002_branch_rls.sql%23RPC::supabase%2Fmigrations%2F20260825000002_branch_rls.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260825000002_branch_rls.sql#RPC",
+      "boundary": "supabase/migrations/20260825000002_branch_rls.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260825000002_branch_rls.sql#RPC",
+    "boundary": "supabase/migrations/20260825000002_branch_rls.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260825000002_branch_rls.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260825000002_branch_rls.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260825000002_branch_rls.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260825000003_secure_eod_rpcs_and_rls.sql%23RPC::supabase%2Fmigrations%2F20260825000003_secure_eod_rpcs_and_rls.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260825000003_secure_eod_rpcs_and_rls.sql#RPC",
+      "boundary": "supabase/migrations/20260825000003_secure_eod_rpcs_and_rls.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260825000003_secure_eod_rpcs_and_rls.sql#RPC",
+    "boundary": "supabase/migrations/20260825000003_secure_eod_rpcs_and_rls.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260825000003_secure_eod_rpcs_and_rls.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260825000003_secure_eod_rpcs_and_rls.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260825000003_secure_eod_rpcs_and_rls.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260825000004_fix_branch_security.sql%23RLS::supabase%2Fmigrations%2F20260825000004_fix_branch_security.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260825000004_fix_branch_security.sql#RLS",
+      "boundary": "supabase/migrations/20260825000004_fix_branch_security.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260825000004_fix_branch_security.sql#RLS",
+    "boundary": "supabase/migrations/20260825000004_fix_branch_security.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260825000004_fix_branch_security.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260825000004_fix_branch_security.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260825000004_fix_branch_security.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260825000004_fix_branch_security.sql%23RPC::supabase%2Fmigrations%2F20260825000004_fix_branch_security.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260825000004_fix_branch_security.sql#RPC",
+      "boundary": "supabase/migrations/20260825000004_fix_branch_security.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260825000004_fix_branch_security.sql#RPC",
+    "boundary": "supabase/migrations/20260825000004_fix_branch_security.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260825000004_fix_branch_security.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260825000004_fix_branch_security.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260825000004_fix_branch_security.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260825000005_secure_review_eod_rpc.sql%23RPC::supabase%2Fmigrations%2F20260825000005_secure_review_eod_rpc.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260825000005_secure_review_eod_rpc.sql#RPC",
+      "boundary": "supabase/migrations/20260825000005_secure_review_eod_rpc.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260825000005_secure_review_eod_rpc.sql#RPC",
+    "boundary": "supabase/migrations/20260825000005_secure_review_eod_rpc.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260825000005_secure_review_eod_rpc.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260825000005_secure_review_eod_rpc.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260825000005_secure_review_eod_rpc.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260825080853_sync_profile_roles_to_auth.sql%23RPC::supabase%2Fmigrations%2F20260825080853_sync_profile_roles_to_auth.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260825080853_sync_profile_roles_to_auth.sql#RPC",
+      "boundary": "supabase/migrations/20260825080853_sync_profile_roles_to_auth.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260825080853_sync_profile_roles_to_auth.sql#RPC",
+    "boundary": "supabase/migrations/20260825080853_sync_profile_roles_to_auth.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260825080853_sync_profile_roles_to_auth.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260825080853_sync_profile_roles_to_auth.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260825080853_sync_profile_roles_to_auth.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260825090000_profiles_insert_rls.sql%23RLS::supabase%2Fmigrations%2F20260825090000_profiles_insert_rls.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260825090000_profiles_insert_rls.sql#RLS",
+      "boundary": "supabase/migrations/20260825090000_profiles_insert_rls.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260825090000_profiles_insert_rls.sql#RLS",
+    "boundary": "supabase/migrations/20260825090000_profiles_insert_rls.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260825090000_profiles_insert_rls.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260825090000_profiles_insert_rls.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260825090000_profiles_insert_rls.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260826000000_create_holidays.sql%23RLS::supabase%2Fmigrations%2F20260826000000_create_holidays.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260826000000_create_holidays.sql#RLS",
+      "boundary": "supabase/migrations/20260826000000_create_holidays.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260826000000_create_holidays.sql#RLS",
+    "boundary": "supabase/migrations/20260826000000_create_holidays.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260826000000_create_holidays.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260826000000_create_holidays.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260826000000_create_holidays.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260826082551_update_hr_holiday_rls.sql%23RLS::supabase%2Fmigrations%2F20260826082551_update_hr_holiday_rls.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260826082551_update_hr_holiday_rls.sql#RLS",
+      "boundary": "supabase/migrations/20260826082551_update_hr_holiday_rls.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260826082551_update_hr_holiday_rls.sql#RLS",
+    "boundary": "supabase/migrations/20260826082551_update_hr_holiday_rls.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260826082551_update_hr_holiday_rls.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260826082551_update_hr_holiday_rls.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260826082551_update_hr_holiday_rls.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260826111709_add_eod_fields.sql%23RPC::supabase%2Fmigrations%2F20260826111709_add_eod_fields.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260826111709_add_eod_fields.sql#RPC",
+      "boundary": "supabase/migrations/20260826111709_add_eod_fields.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260826111709_add_eod_fields.sql#RPC",
+    "boundary": "supabase/migrations/20260826111709_add_eod_fields.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260826111709_add_eod_fields.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260826111709_add_eod_fields.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260826111709_add_eod_fields.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260827000000_create_leave_management.sql%23RLS::supabase%2Fmigrations%2F20260827000000_create_leave_management.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260827000000_create_leave_management.sql#RLS",
+      "boundary": "supabase/migrations/20260827000000_create_leave_management.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260827000000_create_leave_management.sql#RLS",
+    "boundary": "supabase/migrations/20260827000000_create_leave_management.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260827000000_create_leave_management.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260827000000_create_leave_management.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260827000000_create_leave_management.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260828000001_secure_leave_and_compoff_rpcs.sql%23RPC::supabase%2Fmigrations%2F20260828000001_secure_leave_and_compoff_rpcs.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260828000001_secure_leave_and_compoff_rpcs.sql#RPC",
+      "boundary": "supabase/migrations/20260828000001_secure_leave_and_compoff_rpcs.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260828000001_secure_leave_and_compoff_rpcs.sql#RPC",
+    "boundary": "supabase/migrations/20260828000001_secure_leave_and_compoff_rpcs.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260828000001_secure_leave_and_compoff_rpcs.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260828000001_secure_leave_and_compoff_rpcs.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260828000001_secure_leave_and_compoff_rpcs.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260828000002_strict_rpc_security.sql%23RPC::supabase%2Fmigrations%2F20260828000002_strict_rpc_security.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260828000002_strict_rpc_security.sql#RPC",
+      "boundary": "supabase/migrations/20260828000002_strict_rpc_security.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260828000002_strict_rpc_security.sql#RPC",
+    "boundary": "supabase/migrations/20260828000002_strict_rpc_security.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260828000002_strict_rpc_security.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260828000002_strict_rpc_security.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260828000002_strict_rpc_security.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260828000003_fix_leave_rpc.sql%23RPC::supabase%2Fmigrations%2F20260828000003_fix_leave_rpc.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260828000003_fix_leave_rpc.sql#RPC",
+      "boundary": "supabase/migrations/20260828000003_fix_leave_rpc.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260828000003_fix_leave_rpc.sql#RPC",
+    "boundary": "supabase/migrations/20260828000003_fix_leave_rpc.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260828000003_fix_leave_rpc.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260828000003_fix_leave_rpc.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260828000003_fix_leave_rpc.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260828000006_fix_leave_audit_p0.sql%23RLS::supabase%2Fmigrations%2F20260828000006_fix_leave_audit_p0.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260828000006_fix_leave_audit_p0.sql#RLS",
+      "boundary": "supabase/migrations/20260828000006_fix_leave_audit_p0.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260828000006_fix_leave_audit_p0.sql#RLS",
+    "boundary": "supabase/migrations/20260828000006_fix_leave_audit_p0.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260828000006_fix_leave_audit_p0.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260828000006_fix_leave_audit_p0.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260828000006_fix_leave_audit_p0.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260828000006_fix_leave_audit_p0.sql%23RPC::supabase%2Fmigrations%2F20260828000006_fix_leave_audit_p0.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260828000006_fix_leave_audit_p0.sql#RPC",
+      "boundary": "supabase/migrations/20260828000006_fix_leave_audit_p0.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260828000006_fix_leave_audit_p0.sql#RPC",
+    "boundary": "supabase/migrations/20260828000006_fix_leave_audit_p0.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260828000006_fix_leave_audit_p0.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260828000006_fix_leave_audit_p0.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260828000006_fix_leave_audit_p0.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260829000000_create_payroll_tables.sql%23RLS::supabase%2Fmigrations%2F20260829000000_create_payroll_tables.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260829000000_create_payroll_tables.sql#RLS",
+      "boundary": "supabase/migrations/20260829000000_create_payroll_tables.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260829000000_create_payroll_tables.sql#RLS",
+    "boundary": "supabase/migrations/20260829000000_create_payroll_tables.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260829000000_create_payroll_tables.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260829000000_create_payroll_tables.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260829000000_create_payroll_tables.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260829000000_create_payroll_tables.sql%23RPC::supabase%2Fmigrations%2F20260829000000_create_payroll_tables.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260829000000_create_payroll_tables.sql#RPC",
+      "boundary": "supabase/migrations/20260829000000_create_payroll_tables.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260829000000_create_payroll_tables.sql#RPC",
+    "boundary": "supabase/migrations/20260829000000_create_payroll_tables.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260829000000_create_payroll_tables.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260829000000_create_payroll_tables.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260829000000_create_payroll_tables.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260829000001_fix_eod_attendance_flow.sql%23RPC::supabase%2Fmigrations%2F20260829000001_fix_eod_attendance_flow.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260829000001_fix_eod_attendance_flow.sql#RPC",
+      "boundary": "supabase/migrations/20260829000001_fix_eod_attendance_flow.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260829000001_fix_eod_attendance_flow.sql#RPC",
+    "boundary": "supabase/migrations/20260829000001_fix_eod_attendance_flow.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260829000001_fix_eod_attendance_flow.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260829000001_fix_eod_attendance_flow.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260829000001_fix_eod_attendance_flow.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260829000003_compoff_hold_and_expire.sql%23RPC::supabase%2Fmigrations%2F20260829000003_compoff_hold_and_expire.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260829000003_compoff_hold_and_expire.sql#RPC",
+      "boundary": "supabase/migrations/20260829000003_compoff_hold_and_expire.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260829000003_compoff_hold_and_expire.sql#RPC",
+    "boundary": "supabase/migrations/20260829000003_compoff_hold_and_expire.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260829000003_compoff_hold_and_expire.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260829000003_compoff_hold_and_expire.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260829000003_compoff_hold_and_expire.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260829000004_secure_payroll_rpc.sql%23RPC::supabase%2Fmigrations%2F20260829000004_secure_payroll_rpc.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260829000004_secure_payroll_rpc.sql#RPC",
+      "boundary": "supabase/migrations/20260829000004_secure_payroll_rpc.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260829000004_secure_payroll_rpc.sql#RPC",
+    "boundary": "supabase/migrations/20260829000004_secure_payroll_rpc.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260829000004_secure_payroll_rpc.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260829000004_secure_payroll_rpc.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260829000004_secure_payroll_rpc.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260829000005_update_payroll_rpc.sql%23RPC::supabase%2Fmigrations%2F20260829000005_update_payroll_rpc.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260829000005_update_payroll_rpc.sql#RPC",
+      "boundary": "supabase/migrations/20260829000005_update_payroll_rpc.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260829000005_update_payroll_rpc.sql#RPC",
+    "boundary": "supabase/migrations/20260829000005_update_payroll_rpc.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260829000005_update_payroll_rpc.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260829000005_update_payroll_rpc.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260829000005_update_payroll_rpc.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260904000000_make_payroll_cycles_branch_specific.sql%23RPC::supabase%2Fmigrations%2F20260904000000_make_payroll_cycles_branch_specific.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260904000000_make_payroll_cycles_branch_specific.sql#RPC",
+      "boundary": "supabase/migrations/20260904000000_make_payroll_cycles_branch_specific.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260904000000_make_payroll_cycles_branch_specific.sql#RPC",
+    "boundary": "supabase/migrations/20260904000000_make_payroll_cycles_branch_specific.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260904000000_make_payroll_cycles_branch_specific.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260904000000_make_payroll_cycles_branch_specific.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260904000000_make_payroll_cycles_branch_specific.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260904165139_update_verify_medical_certificate_rpc.sql%23RPC::supabase%2Fmigrations%2F20260904165139_update_verify_medical_certificate_rpc.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260904165139_update_verify_medical_certificate_rpc.sql#RPC",
+      "boundary": "supabase/migrations/20260904165139_update_verify_medical_certificate_rpc.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260904165139_update_verify_medical_certificate_rpc.sql#RPC",
+    "boundary": "supabase/migrations/20260904165139_update_verify_medical_certificate_rpc.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260904165139_update_verify_medical_certificate_rpc.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260904165139_update_verify_medical_certificate_rpc.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260904165139_update_verify_medical_certificate_rpc.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260905000001_secure_lock_payroll_cycle_branch.sql%23RPC::supabase%2Fmigrations%2F20260905000001_secure_lock_payroll_cycle_branch.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260905000001_secure_lock_payroll_cycle_branch.sql#RPC",
+      "boundary": "supabase/migrations/20260905000001_secure_lock_payroll_cycle_branch.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260905000001_secure_lock_payroll_cycle_branch.sql#RPC",
+    "boundary": "supabase/migrations/20260905000001_secure_lock_payroll_cycle_branch.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260905000001_secure_lock_payroll_cycle_branch.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260905000001_secure_lock_payroll_cycle_branch.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260905000001_secure_lock_payroll_cycle_branch.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260907124800_secure_medical_certificates.sql%23RLS::supabase%2Fmigrations%2F20260907124800_secure_medical_certificates.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260907124800_secure_medical_certificates.sql#RLS",
+      "boundary": "supabase/migrations/20260907124800_secure_medical_certificates.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260907124800_secure_medical_certificates.sql#RLS",
+    "boundary": "supabase/migrations/20260907124800_secure_medical_certificates.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260907124800_secure_medical_certificates.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260907124800_secure_medical_certificates.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260907124800_secure_medical_certificates.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260907143000_secure_medical_certificate_actions.sql%23RPC::supabase%2Fmigrations%2F20260907143000_secure_medical_certificate_actions.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260907143000_secure_medical_certificate_actions.sql#RPC",
+      "boundary": "supabase/migrations/20260907143000_secure_medical_certificate_actions.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260907143000_secure_medical_certificate_actions.sql#RPC",
+    "boundary": "supabase/migrations/20260907143000_secure_medical_certificate_actions.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260907143000_secure_medical_certificate_actions.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260907143000_secure_medical_certificate_actions.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260907143000_secure_medical_certificate_actions.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260908000001_fix_submit_eod_rpc.sql%23RPC::supabase%2Fmigrations%2F20260908000001_fix_submit_eod_rpc.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260908000001_fix_submit_eod_rpc.sql#RPC",
+      "boundary": "supabase/migrations/20260908000001_fix_submit_eod_rpc.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260908000001_fix_submit_eod_rpc.sql#RPC",
+    "boundary": "supabase/migrations/20260908000001_fix_submit_eod_rpc.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260908000001_fix_submit_eod_rpc.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260908000001_fix_submit_eod_rpc.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260908000001_fix_submit_eod_rpc.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260908000002_restore_eod_proxy_branch.sql%23RPC::supabase%2Fmigrations%2F20260908000002_restore_eod_proxy_branch.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260908000002_restore_eod_proxy_branch.sql#RPC",
+      "boundary": "supabase/migrations/20260908000002_restore_eod_proxy_branch.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260908000002_restore_eod_proxy_branch.sql#RPC",
+    "boundary": "supabase/migrations/20260908000002_restore_eod_proxy_branch.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260908000002_restore_eod_proxy_branch.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260908000002_restore_eod_proxy_branch.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260908000002_restore_eod_proxy_branch.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260908000003_secure_reporting_manager_branch.sql%23RPC::supabase%2Fmigrations%2F20260908000003_secure_reporting_manager_branch.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260908000003_secure_reporting_manager_branch.sql#RPC",
+      "boundary": "supabase/migrations/20260908000003_secure_reporting_manager_branch.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260908000003_secure_reporting_manager_branch.sql#RPC",
+    "boundary": "supabase/migrations/20260908000003_secure_reporting_manager_branch.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260908000003_secure_reporting_manager_branch.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260908000003_secure_reporting_manager_branch.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260908000003_secure_reporting_manager_branch.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260908000004_fix_eod_attendance_branch_id.sql%23RPC::supabase%2Fmigrations%2F20260908000004_fix_eod_attendance_branch_id.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260908000004_fix_eod_attendance_branch_id.sql#RPC",
+      "boundary": "supabase/migrations/20260908000004_fix_eod_attendance_branch_id.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260908000004_fix_eod_attendance_branch_id.sql#RPC",
+    "boundary": "supabase/migrations/20260908000004_fix_eod_attendance_branch_id.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260908000004_fix_eod_attendance_branch_id.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260908000004_fix_eod_attendance_branch_id.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260908000004_fix_eod_attendance_branch_id.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260908000005_fix_update_eod_submitted_by.sql%23RPC::supabase%2Fmigrations%2F20260908000005_fix_update_eod_submitted_by.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260908000005_fix_update_eod_submitted_by.sql#RPC",
+      "boundary": "supabase/migrations/20260908000005_fix_update_eod_submitted_by.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260908000005_fix_update_eod_submitted_by.sql#RPC",
+    "boundary": "supabase/migrations/20260908000005_fix_update_eod_submitted_by.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260908000005_fix_update_eod_submitted_by.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260908000005_fix_update_eod_submitted_by.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260908000005_fix_update_eod_submitted_by.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260908000006_secure_submit_eod_rpc_status.sql%23RPC::supabase%2Fmigrations%2F20260908000006_secure_submit_eod_rpc_status.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260908000006_secure_submit_eod_rpc_status.sql#RPC",
+      "boundary": "supabase/migrations/20260908000006_secure_submit_eod_rpc_status.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260908000006_secure_submit_eod_rpc_status.sql#RPC",
+    "boundary": "supabase/migrations/20260908000006_secure_submit_eod_rpc_status.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260908000006_secure_submit_eod_rpc_status.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260908000006_secure_submit_eod_rpc_status.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260908000006_secure_submit_eod_rpc_status.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260909000000_secure_payroll_financials.sql%23RPC::supabase%2Fmigrations%2F20260909000000_secure_payroll_financials.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260909000000_secure_payroll_financials.sql#RPC",
+      "boundary": "supabase/migrations/20260909000000_secure_payroll_financials.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260909000000_secure_payroll_financials.sql#RPC",
+    "boundary": "supabase/migrations/20260909000000_secure_payroll_financials.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260909000000_secure_payroll_financials.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260909000000_secure_payroll_financials.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260909000000_secure_payroll_financials.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260909000001_secure_eod_photo_storage.sql%23RLS::supabase%2Fmigrations%2F20260909000001_secure_eod_photo_storage.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260909000001_secure_eod_photo_storage.sql#RLS",
+      "boundary": "supabase/migrations/20260909000001_secure_eod_photo_storage.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260909000001_secure_eod_photo_storage.sql#RLS",
+    "boundary": "supabase/migrations/20260909000001_secure_eod_photo_storage.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260909000001_secure_eod_photo_storage.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260909000001_secure_eod_photo_storage.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260909000001_secure_eod_photo_storage.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260909000002_secure_eod_file_uploads.sql%23RLS::supabase%2Fmigrations%2F20260909000002_secure_eod_file_uploads.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260909000002_secure_eod_file_uploads.sql#RLS",
+      "boundary": "supabase/migrations/20260909000002_secure_eod_file_uploads.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260909000002_secure_eod_file_uploads.sql#RLS",
+    "boundary": "supabase/migrations/20260909000002_secure_eod_file_uploads.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260909000002_secure_eod_file_uploads.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260909000002_secure_eod_file_uploads.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260909000002_secure_eod_file_uploads.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260909000004_fix_lock_payroll_cycle_adjustments.sql%23RPC::supabase%2Fmigrations%2F20260909000004_fix_lock_payroll_cycle_adjustments.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260909000004_fix_lock_payroll_cycle_adjustments.sql#RPC",
+      "boundary": "supabase/migrations/20260909000004_fix_lock_payroll_cycle_adjustments.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260909000004_fix_lock_payroll_cycle_adjustments.sql#RPC",
+    "boundary": "supabase/migrations/20260909000004_fix_lock_payroll_cycle_adjustments.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260909000004_fix_lock_payroll_cycle_adjustments.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260909000004_fix_lock_payroll_cycle_adjustments.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260909000004_fix_lock_payroll_cycle_adjustments.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260909000005_fix_payroll_rls_branch_isolation.sql%23RLS::supabase%2Fmigrations%2F20260909000005_fix_payroll_rls_branch_isolation.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260909000005_fix_payroll_rls_branch_isolation.sql#RLS",
+      "boundary": "supabase/migrations/20260909000005_fix_payroll_rls_branch_isolation.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260909000005_fix_payroll_rls_branch_isolation.sql#RLS",
+    "boundary": "supabase/migrations/20260909000005_fix_payroll_rls_branch_isolation.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260909000005_fix_payroll_rls_branch_isolation.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260909000005_fix_payroll_rls_branch_isolation.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260909000005_fix_payroll_rls_branch_isolation.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260909000006_delete_branch_rpc.sql%23RPC::supabase%2Fmigrations%2F20260909000006_delete_branch_rpc.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260909000006_delete_branch_rpc.sql#RPC",
+      "boundary": "supabase/migrations/20260909000006_delete_branch_rpc.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260909000006_delete_branch_rpc.sql#RPC",
+    "boundary": "supabase/migrations/20260909000006_delete_branch_rpc.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260909000006_delete_branch_rpc.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260909000006_delete_branch_rpc.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260909000006_delete_branch_rpc.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260910000000_unify_payroll_calculations.sql%23RPC::supabase%2Fmigrations%2F20260910000000_unify_payroll_calculations.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260910000000_unify_payroll_calculations.sql#RPC",
+      "boundary": "supabase/migrations/20260910000000_unify_payroll_calculations.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260910000000_unify_payroll_calculations.sql#RPC",
+    "boundary": "supabase/migrations/20260910000000_unify_payroll_calculations.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260910000000_unify_payroll_calculations.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260910000000_unify_payroll_calculations.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260910000000_unify_payroll_calculations.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260910000002_fix_delete_branch_transaction.sql%23RPC::supabase%2Fmigrations%2F20260910000002_fix_delete_branch_transaction.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260910000002_fix_delete_branch_transaction.sql#RPC",
+      "boundary": "supabase/migrations/20260910000002_fix_delete_branch_transaction.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260910000002_fix_delete_branch_transaction.sql#RPC",
+    "boundary": "supabase/migrations/20260910000002_fix_delete_branch_transaction.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260910000002_fix_delete_branch_transaction.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260910000002_fix_delete_branch_transaction.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260910000002_fix_delete_branch_transaction.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260910000003_update_leave_workflow.sql%23RPC::supabase%2Fmigrations%2F20260910000003_update_leave_workflow.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260910000003_update_leave_workflow.sql#RPC",
+      "boundary": "supabase/migrations/20260910000003_update_leave_workflow.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260910000003_update_leave_workflow.sql#RPC",
+    "boundary": "supabase/migrations/20260910000003_update_leave_workflow.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260910000003_update_leave_workflow.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260910000003_update_leave_workflow.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260910000003_update_leave_workflow.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260910000004_employee_id_generation.sql%23RPC::supabase%2Fmigrations%2F20260910000004_employee_id_generation.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260910000004_employee_id_generation.sql#RPC",
+      "boundary": "supabase/migrations/20260910000004_employee_id_generation.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260910000004_employee_id_generation.sql#RPC",
+    "boundary": "supabase/migrations/20260910000004_employee_id_generation.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260910000004_employee_id_generation.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260910000004_employee_id_generation.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260910000004_employee_id_generation.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260910000005_fix_employee_id_generation.sql%23RPC::supabase%2Fmigrations%2F20260910000005_fix_employee_id_generation.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260910000005_fix_employee_id_generation.sql#RPC",
+      "boundary": "supabase/migrations/20260910000005_fix_employee_id_generation.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260910000005_fix_employee_id_generation.sql#RPC",
+    "boundary": "supabase/migrations/20260910000005_fix_employee_id_generation.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260910000005_fix_employee_id_generation.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260910000005_fix_employee_id_generation.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260910000005_fix_employee_id_generation.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260916000000_secure_generate_employee_id.sql%23RPC::supabase%2Fmigrations%2F20260916000000_secure_generate_employee_id.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260916000000_secure_generate_employee_id.sql#RPC",
+      "boundary": "supabase/migrations/20260916000000_secure_generate_employee_id.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260916000000_secure_generate_employee_id.sql#RPC",
+    "boundary": "supabase/migrations/20260916000000_secure_generate_employee_id.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260916000000_secure_generate_employee_id.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260916000000_secure_generate_employee_id.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260916000000_secure_generate_employee_id.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260916000001_add_preview_to_generate_employee_id.sql%23RPC::supabase%2Fmigrations%2F20260916000001_add_preview_to_generate_employee_id.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260916000001_add_preview_to_generate_employee_id.sql#RPC",
+      "boundary": "supabase/migrations/20260916000001_add_preview_to_generate_employee_id.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260916000001_add_preview_to_generate_employee_id.sql#RPC",
+    "boundary": "supabase/migrations/20260916000001_add_preview_to_generate_employee_id.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260916000001_add_preview_to_generate_employee_id.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260916000001_add_preview_to_generate_employee_id.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260916000001_add_preview_to_generate_employee_id.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260916000003_create_employee_documents_bucket.sql%23RLS::supabase%2Fmigrations%2F20260916000003_create_employee_documents_bucket.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260916000003_create_employee_documents_bucket.sql#RLS",
+      "boundary": "supabase/migrations/20260916000003_create_employee_documents_bucket.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260916000003_create_employee_documents_bucket.sql#RLS",
+    "boundary": "supabase/migrations/20260916000003_create_employee_documents_bucket.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260916000003_create_employee_documents_bucket.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260916000003_create_employee_documents_bucket.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260916000003_create_employee_documents_bucket.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260917000000_secure_medical_certificate_storage.sql%23RLS::supabase%2Fmigrations%2F20260917000000_secure_medical_certificate_storage.sql%23Row_Level_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Data%20isolation",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260917000000_secure_medical_certificate_storage.sql#RLS",
+      "boundary": "supabase/migrations/20260917000000_secure_medical_certificate_storage.sql#Row_Level_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Data isolation"
+    },
+    "surface": "supabase/migrations/20260917000000_secure_medical_certificate_storage.sql#RLS",
+    "boundary": "supabase/migrations/20260917000000_secure_medical_certificate_storage.sql#Row_Level_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Data isolation",
+    "starting_paths": [
+      "supabase/migrations/20260917000000_secure_medical_certificate_storage.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Data isolation",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Data isolation"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260917000000_secure_medical_certificate_storage.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260917000000_secure_medical_certificate_storage.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "supabase%2Fmigrations%2F20260917000001_harden_eod_review_update_rpcs.sql%23RPC::supabase%2Fmigrations%2F20260917000001_harden_eod_review_update_rpcs.sql%23Function_Security::subsystem%2Fsupabase::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "supabase/migrations/20260917000001_harden_eod_review_update_rpcs.sql#RPC",
+      "boundary": "supabase/migrations/20260917000001_harden_eod_review_update_rpcs.sql#Function_Security",
+      "subsystem": "subsystem/supabase",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "supabase/migrations/20260917000001_harden_eod_review_update_rpcs.sql#RPC",
+    "boundary": "supabase/migrations/20260917000001_harden_eod_review_update_rpcs.sql#Function_Security",
+    "subsystem": "subsystem/supabase",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "supabase/migrations/20260917000001_harden_eod_review_update_rpcs.sql"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "FILE.md#Core discipline",
+      "FILE.md#Universal moves",
+      "FILE.md#Validation rules",
+      "ATTACK-CLASSES.md#Access control"
+    ],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "antigravity-hunter",
+    "reviewed_paths": [
+      "supabase/migrations/20260917000001_harden_eod_review_update_rpcs.sql"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "antigravity-hunter",
+        "reviewed_paths": [
+          "supabase/migrations/20260917000001_harden_eod_review_update_rpcs.sql"
+        ],
+        "artifact": "agents/antigravity-hunter/artifacts/evidence.txt",
+        "invariant": "Access is restricted appropriately",
+        "method": "local",
+        "result": "pass"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  }
+]

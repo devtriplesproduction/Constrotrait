@@ -1,0 +1,176 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectItem } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { submitLeaveAction } from "@/actions/leave.actions";
+import { Loader2, Calendar, FileText, Stethoscope, UploadCloud, Clock } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
+import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
+
+interface LeaveFormProps {
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+export function LeaveForm({ onSuccess, onCancel }: LeaveFormProps) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [leaveType, setLeaveType] = useState<string>("Sick Leave");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isHalfDay, setIsHalfDay] = useState(false);
+  const [reason, setReason] = useState("");
+  const [medicalCertificate, setMedicalCertificate] = useState<File | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await submitLeaveAction({
+        leave_type: leaveType,
+        start_date: startDate,
+        end_date: isHalfDay ? startDate : endDate,
+        is_half_day: isHalfDay,
+        reason,
+        medical_certificate_url: undefined
+      }, leaveType === "Sick Leave" ? medicalCertificate || undefined : undefined);
+
+      if (res.success) {
+        toast({ title: "Leave submitted successfully", variant: "success" });
+        onSuccess();
+      } else {
+        toast({ title: "Failed to submit leave", description: res.error, variant: "error" });
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+      toast({ title: "Error", description: errorMessage, variant: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div className="grid gap-2">
+          <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-orange-500" /> Leave Type
+          </label>
+          <Select value={leaveType} onValueChange={setLeaveType} placeholder="Select type">
+            <SelectItem value="Sick Leave">Sick Leave</SelectItem>
+            <SelectItem value="Casual Leave">Casual Leave</SelectItem>
+            <SelectItem value="Unpaid Leave">Unpaid Leave</SelectItem>
+            <SelectItem value="Compensatory Off">Compensatory Off</SelectItem>
+          </Select>
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-orange-500" /> Leave Duration
+          </label>
+          <Select 
+            value={isHalfDay ? "Half Day" : "Full Day"} 
+            onValueChange={(val) => setIsHalfDay(val === "Half Day")}
+          >
+            <SelectItem value="Full Day">Full Day</SelectItem>
+            <SelectItem value="Half Day">Half Day (Applies for a single day only)</SelectItem>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid gap-2">
+            <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-orange-500" /> Start Date
+            </label>
+            <PremiumDatePicker 
+              value={startDate} 
+              onChange={(date) => setStartDate(date)}
+            />
+          </div>
+          
+          <div className={cn("grid gap-2 transition-all duration-300", isHalfDay ? "opacity-50 pointer-events-none" : "opacity-100")}>
+            <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-orange-500" /> End Date
+            </label>
+            <PremiumDatePicker 
+              value={endDate} 
+              onChange={(date) => setEndDate(date)} 
+              disabled={isHalfDay}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-sm font-semibold text-slate-700">Reason</label>
+          <textarea 
+            required 
+            placeholder="Briefly explain your reason for leave..."
+            className="w-full border border-slate-200 bg-white rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all resize-none min-h-[100px]" 
+            value={reason} 
+            onChange={(e) => setReason(e.target.value)} 
+          />
+        </div>
+
+        {leaveType === "Sick Leave" && (
+          <div className="grid gap-2 p-4 rounded-xl border border-orange-100 bg-orange-50/30">
+            <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <Stethoscope className="w-4 h-4 text-orange-500" /> Medical Certificate <span className="text-xs font-normal text-slate-500">(Optional at time of application)</span>
+            </label>
+            <div className="relative group">
+              <input 
+                type="file" 
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file && file.size > 3 * 1024 * 1024) {
+                    toast({ title: "File too large", description: "Please upload a file smaller than 3MB.", variant: "error" });
+                    e.target.value = "";
+                    setMedicalCertificate(null);
+                  } else {
+                    setMedicalCertificate(file || null);
+                  }
+                }} 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <div className="border-2 border-dashed border-orange-200 bg-white rounded-lg p-4 flex flex-col items-center justify-center gap-2 text-center group-hover:border-orange-400 transition-colors">
+                <UploadCloud className="w-6 h-6 text-orange-400 group-hover:text-orange-500 transition-colors" />
+                <div className="text-sm text-slate-600">
+                  {medicalCertificate ? (
+                    <span className="font-medium text-orange-600">{medicalCertificate.name}</span>
+                  ) : (
+                    <span><span className="font-semibold text-orange-600">Click to upload</span> or drag and drop</span>
+                  )}
+                </div>
+                <div className="text-xs text-slate-400">PDF, JPG, PNG up to 3MB</div>
+              </div>
+            </div>
+            <p className="text-xs text-orange-600/80 mt-1 flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-orange-500 block"></span>
+              Sick leave is unpaid until a certificate is verified
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end pt-4 border-t border-slate-100">
+        <Button type="button" variant="ghost" className="hover:bg-slate-100" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={loading} className="bg-orange-600 hover:bg-orange-700 shadow-sm shadow-orange-600/20 px-8">
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Submitting...
+            </>
+          ) : "Submit Application"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
