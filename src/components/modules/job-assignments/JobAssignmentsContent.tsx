@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { JobAssignmentsTabsClient } from "@/components/modules/job-assignments/JobAssignmentsTabsClient";
 
 
-import { AssignmentsListTab } from "@/components/modules/job-assignments/AssignmentsListTab";
+import { AllJobsTab } from "@/components/modules/job-assignments/AllJobsTab";
 import { MyAssignmentsTab } from "@/components/modules/job-assignments/MyAssignmentsTab";
 
 interface JobAssignmentsContentProps {
@@ -51,7 +51,7 @@ export function JobAssignmentsContent({
       <div className="bg-white rounded-xl shadow-sm border border-slate-200">
 
         {isManager && activeTab === "list" && (
-          <AssignmentsListTab assignments={assignments} branches={branches} employees={employees} />
+          <AllJobsTab assignments={assignments} branches={branches} employees={employees} />
         )}
         {activeTab === "my" && (
           <MyAssignmentsTab assignments={assignments} userId={userId} />

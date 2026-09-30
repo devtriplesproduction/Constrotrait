@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { ClipboardList, X, Search } from "lucide-react";
 import { AssignJobsTab } from "./AssignJobsTab";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
+import { JobStageStepper } from "@/components/ui/JobStageStepper";
 
 function assignmentUid(assignment: any) {
   const t = assignment.job_entry_tests;
@@ -17,7 +18,7 @@ function assignmentUid(assignment: any) {
   return `UID queued (test date: ${testDate})`;
 }
 
-export function AssignmentsListTab({ assignments, branches, employees }: { assignments: any[], branches: any[], employees: any[] }) {
+export function AllJobsTab({ assignments, branches, employees }: { assignments: any[], branches: any[], employees: any[] }) {
   const router = useRouter();
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [initialAssignment, setInitialAssignment] = useState<any>(null);
@@ -152,7 +153,12 @@ export function AssignmentsListTab({ assignments, branches, employees }: { assig
                   )}
                 </td>
                 <td className="px-6 py-4 text-slate-600">{assignment.due_date ? format(new Date(assignment.due_date), "dd MMM, yyyy") : "-"}</td>
-                <td className="px-6 py-4">{getStatusBadge(assignment.status)}</td>
+                <td className="px-6 py-4">
+                  {getStatusBadge(assignment.status)}
+                  <div className="mt-2 w-48">
+                    <JobStageStepper currentStage={assignment.status} isRejected={assignment.status === 'rejected'} />
+                  </div>
+                </td>
                 <td className="px-6 py-4">
                   <div className="flex flex-col gap-2 items-start">
                     <Button onClick={() => {

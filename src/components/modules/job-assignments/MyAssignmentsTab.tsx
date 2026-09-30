@@ -6,6 +6,7 @@ import { Loader2, Check, X, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { createClient } from "@/lib/supabase/client";
+import { JobStageStepper } from "@/components/ui/JobStageStepper";
 
 function uidOf(a: any) {
   const t = a.job_entry_tests;
@@ -16,11 +17,17 @@ function uidOf(a: any) {
 
 export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], userId: string }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const myAssignments = assignments.filter((a: any) => {
-    if (a.assigned_to === userId) return true;
-    if (a.teams?.team_members?.some((m: any) => m.employee_id === userId)) return true;
-    return false;
+    let isMine = false;
+    if (a.assigned_to === userId) isMine = true;
+    if (a.teams?.team_members?.some((m: any) => m.employee_id === userId)) isMine = true;
+    
+    if (!isMine) return false;
+    if (filterStatus !== "all" && a.status !== filterStatus) return false;
+    
+    return true;
   });
 
   const handleStatusUpdate = async (id: string, status: string) => {
@@ -32,7 +39,25 @@ export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], 
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <PageHeader title="My Assignments" subtitle="Jobs assigned to you or your team." icon={ClipboardList} className="mb-8" />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <PageHeader title="My Assignments" subtitle="Jobs assigned to you or your team." icon={ClipboardList} className="mb-0" />
+        <div className="w-48">
+          <select 
+            className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 bg-white"
+            value={filterStatus} 
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="all">All Statuses</option>
+            <option value="assigned">Assigned</option>
+            <option value="accepted">Accepted</option>
+            <option value="in_testing">In Testing</option>
+            <option value="report_uploaded">Report Uploaded</option>
+            <option value="in_review">In Review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
       {myAssignments.length === 0 ? (
         <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border border-slate-200 border-dashed">No assignments found.</div>
       ) : (
@@ -62,6 +87,9 @@ export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], 
                 {a.reviewer_remark && (
                   <p className="text-sm text-red-600 mt-1"><span className="font-medium">Reviewer Remark:</span> {a.reviewer_remark}</p>
                 )}
+                <div className="mt-4 w-full md:w-96">
+                  <JobStageStepper currentStage={a.status} isRejected={a.status === 'rejected'} />
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 {a.status === 'assigned' && (
