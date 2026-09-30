@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { ClipboardList, X, Search } from "lucide-react";
 import { AssignJobsTab } from "./AssignJobsTab";
-import { IssueReportButtons } from "@/components/modules/jobs/IssueReportButtons";
+import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
 
 function assignmentUid(assignment: any) {
-  const j = assignment.job_entry_tests?.job_entries;
-  const uid = j?.uid_label || j?.uid || assignment.job_entry_tests?.uid;
-  return uid ? `UID: ${uid}` : "Unknown";
+  const t = assignment.job_entry_tests;
+  if (t?.uid_label) return `UID: ${t.uid_label}`;
+  const testDate = t?.date_of_testing ? new Date(t.date_of_testing).toLocaleDateString() : '-';
+  return `UID queued (test date: ${testDate})`;
 }
 
 export function AssignmentsListTab({ assignments, branches, employees }: { assignments: any[], branches: any[], employees: any[] }) {
@@ -24,6 +25,7 @@ export function AssignmentsListTab({ assignments, branches, employees }: { assig
   const [filterBranch, setFilterBranch] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<string>("today");
   const [searchEmployee, setSearchEmployee] = useState<string>("");
+  const [remarkObj, setRemarkObj] = useState<{ id: string; remark: string } | null>(null);
 
   const filteredAssignments = assignments.filter((a) => {
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
@@ -49,11 +51,15 @@ export function AssignmentsListTab({ assignments, branches, employees }: { assig
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "assigned":
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Assigned</Badge>;
-      case "in_progress":
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">In Progress</Badge>;
-      case "completed":
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Completed</Badge>;
+        return <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">Assigned</Badge>;
+      case "in_testing":
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">In Testing</Badge>;
+      case "report_uploaded":
+        return <Badge variant="outline" className="bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200">Report Uploaded</Badge>;
+      case "in_review":
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">In Review</Badge>;
+      case "approved":
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
       case "accepted":
         return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Accepted</Badge>;
       case "rejected":
@@ -84,8 +90,10 @@ export function AssignmentsListTab({ assignments, branches, employees }: { assig
               { value: "all", label: "All Statuses" },
               { value: "assigned", label: "Assigned" },
               { value: "accepted", label: "Accepted" },
-              { value: "in_progress", label: "In Progress" },
-              { value: "completed", label: "Completed" },
+              { value: "in_testing", label: "In Testing" },
+              { value: "report_uploaded", label: "Report Uploaded" },
+              { value: "in_review", label: "In Review" },
+              { value: "approved", label: "Approved" },
               { value: "rejected", label: "Rejected" },
             ]} />
           </div>
@@ -137,6 +145,11 @@ export function AssignmentsListTab({ assignments, branches, employees }: { assig
                   ) : (
                     <span className="font-medium text-slate-800">{assignment.assigned_to_profile?.first_name} {assignment.assigned_to_profile?.last_name}</span>
                   )}
+                  {assignment.report_url && (
+                    <div className="mt-1">
+                      <a href={assignment.report_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">View Report</a>
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-slate-600">{assignment.due_date ? format(new Date(assignment.due_date), "dd MMM, yyyy") : "-"}</td>
                 <td className="px-6 py-4">{getStatusBadge(assignment.status)}</td>
@@ -153,7 +166,39 @@ export function AssignmentsListTab({ assignments, branches, employees }: { assig
                       });
                       setIsAssignModalOpen(true);
                     }} size="sm" variant="outline" className="text-orange-600 hover:text-orange-700 border-orange-200 hover:bg-orange-50">Edit</Button>
-                    <IssueReportButtons assignment={assignment} />
+                    
+                    {assignment.status === 'in_review' && (
+                      <div className="flex flex-col gap-2 mt-2">
+                        {remarkObj?.id === assignment.id ? (
+                          <div className="flex flex-col gap-1">
+                            <input
+                              type="text"
+                              autoFocus
+                              placeholder="Remark (required for reject)"
+                              className="text-xs border border-slate-300 rounded px-2 py-1 w-full"
+                              value={remarkObj.remark}
+                              onChange={(e) => setRemarkObj({ ...remarkObj, remark: e.target.value })}
+                            />
+                            <div className="flex gap-1">
+                              <Button size="sm" onClick={async () => {
+                                await updateAssignmentStatusAction(assignment.id, 'approved', { reviewer_remark: remarkObj.remark });
+                                setRemarkObj(null);
+                                router.refresh();
+                              }} className="bg-green-600 hover:bg-green-700 h-7 text-xs px-2">Approve</Button>
+                              <Button size="sm" variant="outline" onClick={async () => {
+                                if (!remarkObj.remark) return alert('Remark required for rejection');
+                                await updateAssignmentStatusAction(assignment.id, 'rejected', { reviewer_remark: remarkObj.remark });
+                                setRemarkObj(null);
+                                router.refresh();
+                              }} className="border-red-200 text-red-600 hover:bg-red-50 h-7 text-xs px-2">Reject</Button>
+                              <Button size="sm" variant="ghost" onClick={() => setRemarkObj(null)} className="h-7 w-7 p-0"><X className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button size="sm" onClick={() => setRemarkObj({ id: assignment.id, remark: "" })} className="bg-yellow-500 hover:bg-yellow-600 h-7 text-xs px-2 text-white">Review Report</Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </td>
               </tr>

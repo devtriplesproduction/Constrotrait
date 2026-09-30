@@ -210,7 +210,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           previews.push(uid);
           currentNablUid++;
         } else {
-          const uid = `${currentMonthStr}-${currentNonNablSerial.toString().padStart(2, '0')}`;
+          const uid = `Preview: ${currentMonthStr}-${currentNonNablSerial.toString().padStart(2, '0')} (Final: Month of Inward)`;
           groupToUid.set(groupKey, uid);
           previews.push(uid);
           currentNonNablSerial++;
@@ -410,8 +410,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           title: mode === "edit" ? "Inward Updated" : "Wizard Completed",
           description: mode === "edit"
             ? "Inward test details updated successfully."
-            : ("uids" in result && Array.isArray(result.uids) && result.uids.length > 0)
-              ? `Client and Test details saved successfully. Generated UID: ${result.uids.join(", ")}`
+            : (data.jobEntryTests && data.jobEntryTests.length > 0)
+              ? "Client and Test details saved successfully. Job queued. UID and ULR are assigned on each test date."
               : "Client details saved successfully (No test selected).",
         });
         reset();
@@ -799,6 +799,11 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                             <CheckCircle2 className="w-2.5 h-2.5" /> NABL Accredited
                                           </span>
                                         )}
+                                        {test.is_nabl && !test.category && (
+                                          <p className="text-[10px] text-red-600 font-bold mt-1.5 leading-tight">
+                                            Category required (Construction or Environmental) or UID groups will be wrong.
+                                          </p>
+                                        )}
                                       </div>
                                     </div>
   
@@ -885,6 +890,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                               <div className="flex flex-col gap-1.5 col-span-full md:col-span-1">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">{mode === "edit" ? "UID" : "UID Preview (final UID on test date)"}</label>
                                 <Input value={mode === "edit" ? (initialData?.jobEntryTest?.job_entries?.uid ?? initialData?.jobEntryTest?.uid ?? "") : (nextUidPreview !== null ? uidPreviews[index] || "Loading..." : "Loading...")} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
+                                {mode !== "edit" && !availableTests.find(t => t.id === field.test_master_id)?.category && (
+                                  <p className="text-[11px] text-amber-600 font-semibold mt-1">⚠️ Set test_master.category or preview will merge groups.</p>
+                                )}
                               </div>
 
                               <div className="flex flex-col gap-1.5">

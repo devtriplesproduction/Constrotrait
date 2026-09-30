@@ -114,7 +114,7 @@ export class JobAssignmentService {
       .from("job_entry_tests").select("id, job_entry_id").eq("id", actualJobEntryTestId).single();
     if (testErr || !testRow) throw new Error("Job card test not found");
 
-    await supabase.rpc("allocate_job_uid", { p_job_entry_id: testRow.job_entry_id });
+
 
     const { data: existing, error: existingError } = await supabase
       .from("job_assignments").select("id").eq("job_entry_test_id", actualJobEntryTestId).maybeSingle();
@@ -142,7 +142,7 @@ export class JobAssignmentService {
     return inserted;
   }
 
-  static async updateAssignmentStatus(id: string, status: string) {
+  static async updateAssignmentStatus(id: string, status: string, payload?: { report_url?: string; reviewer_remark?: string }) {
     const supabase = await createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error("Unauthorized");
@@ -160,7 +160,11 @@ export class JobAssignmentService {
       else if (assignment.teams?.team_members?.some((m: any) => m.employee_id === user.id)) canUpdate = true;
     }
     if (!canUpdate) throw new Error("Insufficient permissions to update this assignment");
-    const { data, error } = await supabase.from("job_assignments").update({ status }).eq("id", id).select().single();
+    const updateData: any = { status };
+    if (payload?.report_url !== undefined) updateData.report_url = payload.report_url;
+    if (payload?.reviewer_remark !== undefined) updateData.reviewer_remark = payload.reviewer_remark;
+
+    const { data, error } = await supabase.from("job_assignments").update(updateData).eq("id", id).select().single();
     if (error) throw new Error(error.message);
     return data;
   }

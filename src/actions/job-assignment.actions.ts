@@ -46,9 +46,9 @@ export async function assignJobCardAction(data: {
   }
 }
 
-export async function updateAssignmentStatusAction(id: string, status: string) {
+export async function updateAssignmentStatusAction(id: string, status: string, payload?: { report_url?: string; reviewer_remark?: string }) {
   try {
-    const assignment = await JobAssignmentService.updateAssignmentStatus(id, status);
+    const assignment = await JobAssignmentService.updateAssignmentStatus(id, status, payload);
     revalidatePath("/job-assignments");
     return { success: true, data: assignment };
   } catch (error: any) {

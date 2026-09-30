@@ -83,14 +83,11 @@ export async function submitClientWizard(data: ClientWizardValues) {
             },
           ];
 
-    const result = await JobEntryService.createJobEntryWithTests({ client_id: clientId }, testsData);
-    const job: any = result.jobEntry;
-    const label = job?.uid_label || job?.uid?.toString();
-    const uids = label ? [String(label)] : [];
+    await JobEntryService.createJobEntryWithTests({ client_id: clientId }, testsData);
 
     revalidatePath("/dashboard");
     revalidatePath("/clients");
-    return { success: true, uids };
+    return { success: true, uids: [] };
   } catch (error) {
     console.error("Wizard submission error:", error);
     return { success: false, error: (error as Error).message };
@@ -156,15 +153,34 @@ export async function getNextUidAction() {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("job_entries")
-      .select("uid")
-      .not("uid", "is", null)
-      .order("uid", { ascending: false })
-      .limit(1)
+    
+    // Try lab_uid_counters first
+    const { data: counterData, error: counterError } = await supabase
+      .from("lab_uid_counters" as any)
+      .select("counter_value")
+      .eq("counter_name", "UID_NABL")
       .maybeSingle();
-    if (error) return { success: false, error: error.message };
-    return { success: true, nextUid: (data?.uid || 0) + 1 };
+      
+    if (!counterError && counterData) {
+      return { success: true, nextUid: (counterData.counter_value || 0) + 1 };
+    }
+
+    // Fallback to max numeric uid_label
+    const { data: testsData } = await supabase
+      .from("job_entry_tests")
+      .select("uid_label")
+      .not("uid_label", "is", null);
+
+    let maxVal = 0;
+    if (testsData) {
+      for (const t of testsData) {
+        if (t.uid_label && /^\d+$/.test(t.uid_label)) {
+          const val = parseInt(t.uid_label, 10);
+          if (val > maxVal) maxVal = val;
+        }
+      }
+    }
+    return { success: true, nextUid: maxVal + 1 };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }

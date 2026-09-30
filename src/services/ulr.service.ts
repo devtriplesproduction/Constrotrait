@@ -17,7 +17,12 @@ export const ULRService = {
     }
     const supabase = await createClient() as any;
     const { data, error } = await supabase.rpc("process_ulr_queue_for_date", { p_date: date });
-    if (error) return { success: false, error: error.message };
+    if (error) {
+      if (error.message?.includes("Could not find function") || error.message?.includes("process_ulr_queue_for_date") || error.code === '42883') {
+        return { success: false, error: "RPC missing. Please apply migrations 00001, 00002, 00003." };
+      }
+      return { success: false, error: error.message };
+    }
     return { success: true, data };
   },
 };

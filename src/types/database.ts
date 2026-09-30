@@ -20,6 +20,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      enqueue_ulr_for_job: {
+        Args: {
+          p_job_entry_id: string
+        }
+        Returns: undefined
+      }
+      process_ulr_queue_for_date: {
+        Args: {
+          p_date: string
+        }
+        Returns: Json
+      }
+      issue_reports_for_job: {
+        Args: {
+          p_job_entry_id: string
+          p_issued_by?: string
+        }
+        Returns: Json
+      }
+      allocate_job_uid: {
+        Args: {
+          p_job_entry_id: string
+        }
+        Returns: undefined
+      }
       graphql: {
         Args: {
           extensions?: Json
@@ -540,7 +565,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
-          uid: number
+          inward_on: string | null
+          uid: number | null
+          uid_label: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -549,7 +576,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          uid?: number
+          inward_on?: string | null
+          uid?: number | null
+          uid_label?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -558,7 +587,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          uid?: number
+          inward_on?: string | null
+          uid?: number | null
+          uid_label?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -591,6 +622,7 @@ export type Database = {
           test_method: string | null
           testing_age: string | null
           testing_day: string | null
+          uid_label: string | null
           ulr_generated_at: string | null
           ulr_number: string | null
           ulr_seq: number | null
@@ -617,6 +649,7 @@ export type Database = {
           test_method?: string | null
           testing_age?: string | null
           testing_day?: string | null
+          uid_label?: string | null
           ulr_generated_at?: string | null
           ulr_number?: string | null
           ulr_seq?: number | null
@@ -643,6 +676,7 @@ export type Database = {
           test_method?: string | null
           testing_age?: string | null
           testing_day?: string | null
+          uid_label?: string | null
           ulr_generated_at?: string | null
           ulr_number?: string | null
           ulr_seq?: number | null
@@ -678,6 +712,8 @@ export type Database = {
           status: string
           due_date: string | null
           notes: string | null
+          report_url: string | null
+          reviewer_remark: string | null
           created_at: string
           updated_at: string
         }
@@ -690,6 +726,8 @@ export type Database = {
           status?: string
           due_date?: string | null
           notes?: string | null
+          report_url?: string | null
+          reviewer_remark?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -702,6 +740,8 @@ export type Database = {
           status?: string
           due_date?: string | null
           notes?: string | null
+          report_url?: string | null
+          reviewer_remark?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -722,6 +762,109 @@ export type Database = {
           }
         ]
       }
+      lab_reports: {
+        Row: {
+          id: string
+          job_entry_id: string
+          report_class: string
+          report_no: string
+          ulr_number: string | null
+          qc_number: string | null
+          qr_code: string | null
+          uid_label: string | null
+          sibling_report_id: string | null
+          status: string
+          issued_at: string
+          issued_by: string | null
+        }
+        Insert: {
+          id?: string
+          job_entry_id: string
+          report_class: string
+          report_no: string
+          ulr_number?: string | null
+          qc_number?: string | null
+          qr_code?: string | null
+          uid_label?: string | null
+          sibling_report_id?: string | null
+          status?: string
+          issued_at?: string
+          issued_by?: string | null
+        }
+        Update: {
+          id?: string
+          job_entry_id?: string
+          report_class?: string
+          report_no?: string
+          ulr_number?: string | null
+          qc_number?: string | null
+          qr_code?: string | null
+          uid_label?: string | null
+          sibling_report_id?: string | null
+          status?: string
+          issued_at?: string
+          issued_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_reports_job_entry_id_fkey"
+            columns: ["job_entry_id"]
+            isOneToOne: false
+            referencedRelation: "job_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_reports_sibling_report_id_fkey"
+            columns: ["sibling_report_id"]
+            isOneToOne: false
+            referencedRelation: "lab_reports"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      ulr_generation_queue: {
+        Row: {
+          job_entry_id: string
+          job_entry_test_id: string
+          scheduled_on: string
+          status: string
+          created_at: string
+          processed_at: string | null
+        }
+        Insert: {
+          job_entry_id: string
+          job_entry_test_id: string
+          scheduled_on: string
+          status?: string
+          created_at?: string
+          processed_at?: string | null
+        }
+        Update: {
+          job_entry_id?: string
+          job_entry_test_id?: string
+          scheduled_on?: string
+          status?: string
+          created_at?: string
+          processed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ulr_generation_queue_job_entry_id_fkey"
+            columns: ["job_entry_id"]
+            isOneToOne: false
+            referencedRelation: "job_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ulr_generation_queue_job_entry_test_id_fkey"
+            columns: ["job_entry_test_id"]
+            isOneToOne: false
+            referencedRelation: "job_entry_tests"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+
       teams: {
         Row: {
           id: string
@@ -1457,6 +1600,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      enqueue_ulr_for_job: {
+        Args: {
+          p_job_entry_id: string
+        }
+        Returns: undefined
+      }
+      process_ulr_queue_for_date: {
+        Args: {
+          p_date: string
+        }
+        Returns: Json
+      }
+      issue_reports_for_job: {
+        Args: {
+          p_job_entry_id: string
+          p_issued_by?: string
+        }
+        Returns: Json
+      }
+      allocate_job_uid: {
+        Args: {
+          p_job_entry_id: string
+        }
+        Returns: undefined
+      }
       approve_comp_off_leave: {
         Args: {
           p_approver_id: string
@@ -1763,3 +1931,5 @@ export const Constants = {
     },
   },
 } as const
+
+

@@ -104,7 +104,11 @@ export default function AllJobsTab({
   const filteredJobs = useMemo(() => {
     return allJobs.filter((job) => {
       // UID Filter
-      const uidMatch = searchUid.trim() === "" || job.job_entries?.uid?.toString().includes(searchUid.trim());
+      const searchUidLower = searchUid.trim().toLowerCase();
+      const uidMatch = searchUidLower === "" || 
+        job.uid_label?.toLowerCase().includes(searchUidLower) ||
+        job.job_entries?.uid?.toString().includes(searchUidLower) ||
+        job.ulr_number?.toLowerCase().includes(searchUidLower);
 
       // Client Name Filter
       const clientName = job.job_entries?.clients?.name?.toLowerCase() || "";
@@ -139,9 +143,23 @@ export default function AllJobsTab({
     try {
       const res = await generateULRsForDateAction(filterDate);
       if (res.success) {
+        let statsMsg = "";
+        if (res.data) {
+           const d = res.data as any;
+           const reps = d.reports_written ?? d.reports_generated ?? 0;
+           const uids = d.uid_written ?? d.uids_written ?? d.uid_assigned ?? d.uids_assigned ?? 0;
+           const ulrs = d.ulr_written ?? d.ulrs_written ?? d.ulr_generated ?? d.ulrs_generated ?? 0;
+           if (reps !== undefined || uids !== undefined || ulrs !== undefined) {
+             statsMsg = ` (Reports: ${reps}, UIDs: ${uids}, ULRs: ${ulrs})`;
+           } else if (typeof d === 'string') {
+             statsMsg = ` - ${d}`;
+           } else {
+             statsMsg = ` - ${JSON.stringify(d).replace(/[{""}]/g, '').replace(/:/g, ': ').replace(/,/g, ', ')}`;
+           }
+        }
         toast({
           title: "Success",
-          description: `ULRs successfully generated for ${filterDate}.`,
+          description: `ULRs successfully generated for ${filterDate}.${statsMsg}`,
         });
         loadAllJobs();
       } else {
@@ -242,7 +260,7 @@ export default function AllJobsTab({
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2.5">
                       <div className="px-3 py-1 bg-gradient-to-br from-orange-50 to-[#FFF8ED] border border-orange-100/80 rounded-xl text-orange-600 font-extrabold text-[12px] tracking-wide shadow-[0_1px_2px_rgba(249,115,22,0.05)]">
-                        UID: {test.job_entries?.uid}
+                        {test.uid_label ? `UID: ${test.uid_label}` : `UID queued (test date: ${test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : '-'})`}
                       </div>
                       <div className={`px-3 py-1 rounded-xl font-extrabold text-[12px] tracking-wide shadow-[0_1px_2px_rgba(0,0,0,0.05)] border ${test.ulr_status === 'generated' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                         {test.ulr_status === 'generated' ? `ULR: ${test.ulr_number}` : `ULR Pending (${test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : '-'})`}

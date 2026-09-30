@@ -5,11 +5,13 @@ import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
 import { Loader2, Check, X, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/modules/PageHeader";
-import { IssueReportButtons } from "@/components/modules/jobs/IssueReportButtons";
+import { createClient } from "@/lib/supabase/client";
 
 function uidOf(a: any) {
-  const j = a.job_entry_tests?.job_entries;
-  return String(j?.uid_label || j?.uid || a.job_entry_tests?.uid || "");
+  const t = a.job_entry_tests;
+  if (t?.uid_label) return `UID: ${t.uid_label}`;
+  const testDate = t?.date_of_testing ? new Date(t.date_of_testing).toLocaleDateString() : '-';
+  return `UID queued (test date: ${testDate})`;
 }
 
 export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], userId: string }) {
@@ -39,17 +41,27 @@ export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], 
             <div key={a.id} className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md text-sm border border-orange-100">UID: {uidOf(a)}</span>
+                  <span className="font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md text-sm border border-orange-100">{uidOf(a)}</span>
                   <span className={`text-xs font-semibold px-2 py-1 rounded-md ${
-                    a.status === 'completed' ? 'bg-green-100 text-green-700' :
-                    a.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                    a.status === 'in_testing' ? 'bg-blue-100 text-blue-700' :
+                    a.status === 'report_uploaded' ? 'bg-fuchsia-100 text-fuchsia-700' :
+                    a.status === 'in_review' ? 'bg-yellow-100 text-yellow-700' :
                     a.status === 'accepted' ? 'bg-indigo-100 text-indigo-700' :
+                    a.status === 'approved' ? 'bg-green-100 text-green-700' :
                     a.status === 'rejected' ? 'bg-red-100 text-red-700' :
                     'bg-slate-100 text-slate-700'
                   }`}>{String(a.status || '').replace('_', ' ').toUpperCase()}</span>
                 </div>
                 <p className="text-sm text-slate-600"><span className="font-medium text-slate-800">Test:</span> {a.job_entry_tests?.test_master?.specific_test || a.job_entry_tests?.test_master?.component_parameter || 'N/A'}</p>
                 {a.due_date && <p className="text-sm text-slate-600"><span className="font-medium text-slate-800">Due:</span> {new Date(a.due_date).toLocaleDateString()}</p>}
+                {a.report_url && (
+                  <p className="text-sm text-slate-600 mt-1">
+                    <a href={a.report_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View Uploaded Report</a>
+                  </p>
+                )}
+                {a.reviewer_remark && (
+                  <p className="text-sm text-red-600 mt-1"><span className="font-medium">Reviewer Remark:</span> {a.reviewer_remark}</p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 {a.status === 'assigned' && (
@@ -60,15 +72,44 @@ export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], 
                     <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(a.id, 'rejected')} disabled={loadingId === a.id} className="text-red-600 border-red-200">Reject</Button>
                   </>
                 )}
-                {(a.status === 'accepted' || a.status === 'in_progress') && (
-                  <>
-                    {a.status === 'accepted' && (
-                      <Button size="sm" onClick={() => handleStatusUpdate(a.id, 'in_progress')} disabled={loadingId === a.id} className="bg-blue-600 hover:bg-blue-700">Start Progress</Button>
-                    )}
-                    <Button size="sm" onClick={() => handleStatusUpdate(a.id, 'completed')} disabled={loadingId === a.id} className="bg-green-600 hover:bg-green-700">Mark Complete</Button>
-                  </>
+                {(a.status === 'accepted' || a.status === 'rejected') && (
+                  <Button size="sm" onClick={() => handleStatusUpdate(a.id, 'in_testing')} disabled={loadingId === a.id} className="bg-blue-600 hover:bg-blue-700">Start Testing</Button>
                 )}
-                {a.status === 'completed' && <IssueReportButtons assignment={a} />}
+                {a.status === 'in_testing' && (
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="file" 
+                      id={`file-${a.id}`} 
+                      className="hidden" 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setLoadingId(a.id);
+                        try {
+                          const supabase = createClient();
+                          const fileName = `${a.id}_${Date.now()}_${file.name}`;
+                          const { error } = await supabase.storage.from("reports").upload(fileName, file);
+                          if (error) throw error;
+                          const { data: urlData } = supabase.storage.from("reports").getPublicUrl(fileName);
+                          
+                          const res = await updateAssignmentStatusAction(a.id, "report_uploaded", { report_url: urlData.publicUrl });
+                          if (!res.success) alert("Error: " + res.error);
+                        } catch (err: any) {
+                          alert("Upload error: " + err.message);
+                        }
+                        setLoadingId(null);
+                      }} 
+                    />
+                    <Button size="sm" variant="outline" asChild disabled={loadingId === a.id}>
+                      <label htmlFor={`file-${a.id}`} className="cursor-pointer">
+                        {loadingId === a.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : "Upload Report"}
+                      </label>
+                    </Button>
+                  </div>
+                )}
+                {a.status === 'report_uploaded' && (
+                  <Button size="sm" onClick={() => handleStatusUpdate(a.id, 'in_review')} disabled={loadingId === a.id} className="bg-yellow-600 hover:bg-yellow-700">Submit for Review</Button>
+                )}
               </div>
             </div>
           ))}

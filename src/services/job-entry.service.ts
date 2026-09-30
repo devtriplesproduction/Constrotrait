@@ -37,7 +37,10 @@ export class JobEntryService {
     }
 
     const { error: qErr } = await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: jobEntry.id });
-    if (qErr) console.error("enqueue_ulr_for_job", qErr);
+    if (qErr) {
+      await supabase.from("job_entries").delete().eq("id", jobEntry.id);
+      throw new Error(qErr.message || "Failed to enqueue job");
+    }
 
     return { jobEntry, jobEntryTests };
   }

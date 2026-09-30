@@ -43,6 +43,8 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
     ...unassignedJobCards.map(uc => ({
       id: uc.id,
       uid: uc.uid,
+      uid_label: uc.uid_label,
+      date_of_testing: uc.date_of_testing,
       name: uc.test_master ? `${uc.test_master.component_parameter || ''} - ${uc.test_master.specific_test || ''}` : "Unknown Test",
       category: uc.test_master?.category || "Unknown Category",
       status: "Unassigned",
@@ -51,6 +53,8 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
     ...existingAssignments.map(ea => ({
       id: ea.job_entry_test_id,
       uid: ea.job_entry_tests?.uid,
+      uid_label: ea.job_entry_tests?.uid_label,
+      date_of_testing: ea.job_entry_tests?.date_of_testing,
       name: ea.job_entry_tests?.test_master ? `${ea.job_entry_tests.test_master.component_parameter || ''} - ${ea.job_entry_tests.test_master.specific_test || ''}` : "Unknown Test",
       category: ea.job_entry_tests?.test_master?.category || "Unknown Category",
       status: ea.status || "Assigned",
@@ -148,10 +152,13 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                   onChange={setJobEntryTestId} 
                   placeholder="Select a Job Card"
                   buttonClassName="w-full bg-white border-slate-200"
-                  options={allJobCards.map(jc => ({
-                    value: jc.uid?.toString() || "",
-                    label: `${jc.category} , ${jc.name} UID: ${jc.uid} (${jc.status})`
-                  }))}
+                  options={allJobCards.map(jc => {
+                    const uidStr = jc.uid_label ? `UID: ${jc.uid_label}` : `UID queued (test date: ${jc.date_of_testing ? new Date(jc.date_of_testing).toLocaleDateString() : '-'})`;
+                    return {
+                      value: jc.uid?.toString() || "",
+                      label: `${jc.category} , ${jc.name} ${uidStr} (${jc.status})`
+                    };
+                  })}
                 />
               </div>
 
@@ -323,7 +330,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                       </div>
                       <div>
                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">UID</div>
-                        <div className="font-semibold text-slate-800 text-sm">{a.job_entry_tests?.uid}</div>
+                        <div className="font-semibold text-slate-800 text-sm">{a.job_entry_tests?.uid_label ? a.job_entry_tests.uid_label : `queued (test date: ${a.job_entry_tests?.date_of_testing ? new Date(a.job_entry_tests.date_of_testing).toLocaleDateString() : '-'})`}</div>
                       </div>
                     </div>
 

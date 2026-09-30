@@ -261,7 +261,7 @@ export default function ClientsTab({
                           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                             <div className="flex items-center gap-3">
                               <span className="inline-flex items-center justify-center font-black text-orange-600 bg-gradient-to-br from-orange-50 to-orange-100/50 px-2.5 py-1 rounded-lg border border-orange-200/50 shadow-sm group-hover:scale-105 transition-transform text-sm">
-                                UID: {job.uid}
+                                {test.uid_label ? `UID: ${test.uid_label}` : `UID queued (test date: ${test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : '-'})`}
                               </span>
                               <span className={`inline-flex items-center justify-center font-black px-2.5 py-1 rounded-lg border shadow-sm group-hover:scale-105 transition-transform text-[11px] ${test.ulr_status === 'generated' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'}`}>
                                 {test.ulr_status === 'generated' ? `ULR: ${test.ulr_number}` : `ULR Pending (${test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : '-'})`}

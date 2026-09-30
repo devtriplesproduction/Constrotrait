@@ -77,7 +77,7 @@ export function AddTestWizard({
     let fieldsToValidate: (keyof CreateTestInput)[] = [];
 
     if (currentStep === 0) {
-      fieldsToValidate = ["discipline_group", "material_product", "component_parameter", "test_method"];
+      fieldsToValidate = ["category", "is_nabl", "discipline_group", "material_product", "component_parameter", "test_method"];
     } else if (currentStep === 1) {
       fieldsToValidate = ["additional_details"];
     }
@@ -194,7 +194,7 @@ export function AddTestWizard({
                 className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 px-2 md:px-2"
               >
                 <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Category</label>
+                  <label className="text-sm font-semibold text-slate-700">Category <span className="text-red-500">*</span></label>
                   <Select
                     value={category || "Construction"}
                     onValueChange={(val) => setValue("category", val as "Construction" | "Environmental")}
@@ -206,7 +206,7 @@ export function AddTestWizard({
                 </div>
 
                 <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Accreditation</label>
+                  <label className="text-sm font-semibold text-slate-700">Accreditation <span className="text-red-500">*</span></label>
                   <Select
                     value={is_nabl ? "true" : "false"}
                     onValueChange={(val) => setValue("is_nabl", val === "true")}
