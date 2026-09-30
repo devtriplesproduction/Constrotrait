@@ -51,7 +51,7 @@ export class JobEntryService {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("job_entries")
-      .select("*, job_entry_tests(*)")
+      .select("*, job_entry_tests!job_entry_tests_job_entry_id_fkey(*)")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -85,7 +85,7 @@ export class JobEntryService {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("job_entry_tests")
-      .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries ( id, created_at, client_id, uid, uid_label, clients ( id, name, email, mobile ) )`)
+      .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!job_entry_tests_job_entry_id_fkey ( id, created_at, client_id, uid, uid_label, clients ( id, name, email, mobile ) )`)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data;

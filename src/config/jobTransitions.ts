@@ -14,7 +14,7 @@ export function canTransition(from: JobStage, to: JobStage, roles: string[] | nu
   if (!roles) return false;
   
   const isSuperAdminOrBranchManager = isSuperAdmin(roles) || isBranchManager(roles);
-  const isTestEng = isTestEngineer(roles);
+  const isTestEng = isTestEngineer(roles) || isSuperAdminOrBranchManager;
   const isHRRole = isHR(roles);
 
   // HR is read-only

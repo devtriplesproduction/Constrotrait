@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { format, isSameDay, isThisWeek, isThisMonth } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { ClipboardList, X, Search } from "lucide-react";
+import { ClipboardList, X, Search, Calendar, FileText, User, Download, Loader2 } from "lucide-react";
 import { AssignJobsTab } from "./AssignJobsTab";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
+import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
 import { JobStageStepper } from "@/components/ui/JobStageStepper";
+import { toast } from "@/hooks/use-toast";
 
 function assignmentUid(assignment: any) {
   const t = assignment.job_entry_tests;
@@ -27,6 +29,42 @@ export function AllJobsTab({ assignments, branches, employees }: { assignments: 
   const [filterDate, setFilterDate] = useState<string>("today");
   const [searchEmployee, setSearchEmployee] = useState<string>("");
   const [remarkObj, setRemarkObj] = useState<{ id: string; remark: string } | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadPdf = async (testId: string, uid: string) => {
+    try {
+      setDownloadingId(testId);
+      const res = await downloadJobCardAction(testId);
+      if (res.success && res.data) {
+        // Convert base64 to blob
+        const byteCharacters = atob(res.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        
+        // Trigger download
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `JobCard_${uid}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        console.error("Failed to download PDF:", res.error);
+        toast({ title: "Error", description: "Failed to download Job Card PDF.", variant: "error" });
+      }
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast({ title: "Error", description: "Error generating Job Card.", variant: "error" });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const filteredAssignments = assignments.filter((a) => {
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
@@ -118,110 +156,186 @@ export function AllJobsTab({ assignments, branches, employees }: { assignments: 
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-sm bg-white">
         <table className="w-full text-sm text-left">
-          <thead className="bg-slate-50 text-slate-500 font-medium">
+          <thead className="bg-slate-50/80 text-[11px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-200/80">
             <tr>
-              <th className="px-6 py-4">Job Card (UID)</th>
-              <th className="px-6 py-4">Test</th>
+              <th className="px-6 py-4 rounded-tl-2xl">Job Card (UID)</th>
+              <th className="px-6 py-4">Test Details</th>
               <th className="px-6 py-4">Assigned To</th>
               <th className="px-6 py-4">Due Date</th>
               <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Actions</th>
+              <th className="px-6 py-4 rounded-tr-2xl text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
-            {filteredAssignments.map((assignment) => (
-              <tr key={assignment.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 font-medium text-slate-900">{assignmentUid(assignment)}</td>
-                <td className="px-6 py-4 text-slate-600">
-                  {assignment.job_entry_tests?.test_master ? `${assignment.job_entry_tests.test_master.component_parameter || ""} - ${assignment.job_entry_tests.test_master.specific_test || ""}` : "N/A"}
-                </td>
-                <td className="px-6 py-4 text-slate-600">
-                  {assignment.team_id ? (
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-800">{assignment.teams?.name}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">Team</span>
+          <tbody className="divide-y divide-slate-100">
+            {filteredAssignments.map((assignment) => {
+              const assignedName = assignment.team_id 
+                ? assignment.teams?.name 
+                : `${assignment.assigned_to_profile?.first_name || ""} ${assignment.assigned_to_profile?.last_name || ""}`;
+              const avatarLetter = assignment.team_id ? "T" : (assignedName.charAt(0) || "?");
+              
+              return (
+                <Fragment key={assignment.id}>
+                  <tr 
+                    className="hover:bg-orange-50/30 transition-colors group cursor-pointer"
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.closest('button') || target.closest('input') || target.closest('a')) return;
+                      router.push(`/job-assignments/${assignment.id}`);
+                    }}
+                  >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                        <ClipboardList className="w-4 h-4" />
+                      </div>
+                      <div className="font-bold text-slate-800 text-[13px]">{assignmentUid(assignment)}</div>
                     </div>
-                  ) : (
-                    <span className="font-medium text-slate-800">{assignment.assigned_to_profile?.first_name} {assignment.assigned_to_profile?.last_name}</span>
-                  )}
-                  {assignment.report_url && (
-                    <div className="mt-1">
-                      <a href={assignment.report_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">View Report</a>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-700">{assignment.job_entry_tests?.test_master?.component_parameter || "N/A"}</span>
+                      <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]" title={assignment.job_entry_tests?.test_master?.specific_test || "N/A"}>
+                        {assignment.job_entry_tests?.test_master?.specific_test || "N/A"}
+                      </span>
                     </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-slate-600">{assignment.due_date ? format(new Date(assignment.due_date), "dd MMM, yyyy") : "-"}</td>
-                <td className="px-6 py-4">
-                  {getStatusBadge(assignment.status)}
-                  <div className="mt-2 w-48">
-                    <JobStageStepper currentStage={assignment.status} isRejected={assignment.status === 'rejected'} />
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-col gap-2 items-start">
-                    <Button onClick={() => {
-                      setInitialAssignment({
-                        job_entry_test_id: assignment.job_entry_test_id,
-                        uid: assignment.job_entry_tests?.job_entries?.uid,
-                        assigned_to: assignment.assigned_to,
-                        team_id: assignment.team_id,
-                        due_date: assignment.due_date,
-                        notes: assignment.notes,
-                      });
-                      setIsAssignModalOpen(true);
-                    }} size="sm" variant="outline" className="text-orange-600 hover:text-orange-700 border-orange-200 hover:bg-orange-50">Edit</Button>
-                    
-                    {assignment.status === 'in_review' && (
-                      <div className="flex flex-col gap-2 mt-2">
-                        {remarkObj?.id === assignment.id ? (
-                          <div className="flex flex-col gap-1">
-                            <input
-                              type="text"
-                              autoFocus
-                              placeholder="Remark (required for reject)"
-                              className="text-xs border border-slate-300 rounded px-2 py-1 w-full"
-                              value={remarkObj.remark}
-                              onChange={(e) => setRemarkObj({ ...remarkObj, remark: e.target.value })}
-                            />
-                            <div className="flex gap-1">
-                              <Button size="sm" onClick={async () => {
-                                await updateAssignmentStatusAction(assignment.id, 'approved', { reviewer_remark: remarkObj.remark });
-                                setRemarkObj(null);
-                                router.refresh();
-                              }} className="bg-green-600 hover:bg-green-700 h-7 text-xs px-2">Approve</Button>
-                              <Button size="sm" variant="outline" onClick={async () => {
-                                if (!remarkObj.remark) return alert('Remark required for rejection');
-                                await updateAssignmentStatusAction(assignment.id, 'rejected', { reviewer_remark: remarkObj.remark });
-                                setRemarkObj(null);
-                                router.refresh();
-                              }} className="border-red-200 text-red-600 hover:bg-red-50 h-7 text-xs px-2">Reject</Button>
-                              <Button size="sm" variant="ghost" onClick={() => setRemarkObj(null)} className="h-7 w-7 p-0"><X className="w-4 h-4" /></Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <Button size="sm" onClick={() => setRemarkObj({ id: assignment.id, remark: "" })} className="bg-yellow-500 hover:bg-yellow-600 h-7 text-xs px-2 text-white">Review Report</Button>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold shadow-sm ${assignment.team_id ? "bg-indigo-100 text-indigo-700" : "bg-blue-100 text-blue-700"}`}>
+                        {avatarLetter.toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-slate-800 text-[13px]">{assignedName}</span>
+                          {assignment.team_id && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 font-bold uppercase tracking-wider border border-indigo-100">Team</span>
+                          )}
+                        </div>
+                        {assignment.report_url && (
+                          <a href={assignment.report_url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-500 hover:text-blue-700 font-semibold hover:underline mt-0.5">View Report &rarr;</a>
                         )}
                       </div>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Calendar className="w-4 h-4 text-slate-400" />
+                      <span className="font-semibold text-[13px]">
+                        {assignment.due_date ? format(new Date(assignment.due_date), "dd MMM, yyyy") : "-"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div>{getStatusBadge(assignment.status)}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-2 items-end">
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadPdf(assignment.job_entry_test_id, assignment.job_entry_tests?.uid_label || 'Unknown');
+                          }}
+                          size="sm" 
+                          variant="outline" 
+                          disabled={downloadingId === assignment.job_entry_test_id}
+                          className="text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-100 shadow-sm rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-all"
+                          title="Download Job Card"
+                        >
+                          {downloadingId === assignment.job_entry_test_id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                        </Button>
+                        <Button onClick={() => {
+                          setInitialAssignment({
+                            job_entry_test_id: assignment.job_entry_test_id,
+                            uid: assignment.job_entry_tests?.job_entries?.uid,
+                            assigned_to: assignment.assigned_to,
+                            team_id: assignment.team_id,
+                            due_date: assignment.due_date,
+                            notes: assignment.notes,
+                          });
+                          setIsAssignModalOpen(true);
+                        }} size="sm" variant="outline" className="text-orange-600 hover:text-white border-orange-200 hover:bg-orange-500 hover:border-orange-500 shadow-sm rounded-xl h-8 px-4 text-xs font-bold transition-all">
+                          Edit
+                        </Button>
+                      </div>
+                      
+                      {assignment.status === 'in_review' && (
+                        <div className="flex flex-col gap-2 mt-1">
+                          {remarkObj && remarkObj.id === assignment.id ? (
+                            <div className="flex flex-col gap-1 items-end">
+                              <input
+                                type="text"
+                                autoFocus
+                                placeholder="Remark (required for reject)"
+                                className="text-xs border border-slate-300 rounded-md px-2 py-1.5 w-40 focus:outline-none focus:border-orange-400 shadow-sm"
+                                value={remarkObj.remark}
+                                onChange={(e) => setRemarkObj({ ...remarkObj, remark: e.target.value })}
+                              />
+                              <div className="flex gap-1.5 justify-end w-full">
+                                <Button size="sm" onClick={async () => {
+                                  const res = await updateAssignmentStatusAction(assignment.id, 'approved', { reviewer_remark: remarkObj.remark });
+                                  if (res.success) {
+                                    toast({ title: "Success", description: "Status updated successfully", variant: "success" });
+                                  } else {
+                                    toast({ title: "Error", description: res.error, variant: "error" });
+                                  }
+                                  setRemarkObj(null);
+                                  router.refresh();
+                                }} className="bg-emerald-500 hover:bg-emerald-600 h-7 text-[10px] px-2.5 rounded-lg text-white font-bold shadow-sm">Approve</Button>
+                                <Button size="sm" variant="outline" onClick={async () => {
+                                  if (!remarkObj.remark) return toast({ title: 'Error', description: 'Remark required for rejection', variant: 'error' });
+                                  const res = await updateAssignmentStatusAction(assignment.id, 'rejected', { reviewer_remark: remarkObj.remark });
+                                  if (res.success) {
+                                    toast({ title: "Success", description: "Status updated successfully", variant: "success" });
+                                  } else {
+                                    toast({ title: "Error", description: res.error, variant: "error" });
+                                  }
+                                  setRemarkObj(null);
+                                  router.refresh();
+                                }} className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 h-7 text-[10px] px-2.5 rounded-lg font-bold shadow-sm">Reject</Button>
+                                <Button size="sm" variant="ghost" onClick={() => setRemarkObj(null)} className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:bg-slate-100"><X className="w-3.5 h-3.5" /></Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <Button size="sm" onClick={() => setRemarkObj({ id: assignment.id, remark: "" })} className="bg-amber-500 hover:bg-amber-600 h-7 text-[10px] px-3 text-white rounded-lg font-bold shadow-sm">Review Report</Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              </Fragment>
+              );
+            })}
             {filteredAssignments.length === 0 && (
-              <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-500">No assignments found.</td></tr>
+              <tr><td colSpan={6} className="px-6 py-16 text-center text-slate-500 bg-slate-50/50">
+                <div className="flex flex-col items-center gap-2">
+                  <ClipboardList className="w-8 h-8 text-slate-300" />
+                  <span className="font-semibold text-slate-600">No assignments found</span>
+                  <span className="text-xs text-slate-400">Adjust your filters to see more results.</span>
+                </div>
+              </td></tr>
             )}
           </tbody>
         </table>
       </div>
 
+      {/* Assignment Modal */}
       {isAssignModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 sm:p-6 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col relative overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b border-slate-100">
-              <h3 className="text-lg font-semibold text-slate-800">Assign Job</h3>
-              <button onClick={() => setIsAssignModalOpen(false)} className="text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full transition-colors">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col relative overflow-hidden border border-slate-100">
+            <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-orange-500" />
+                Assign Job
+              </h3>
+              <button onClick={() => setIsAssignModalOpen(false)} className="text-slate-400 hover:text-slate-700 bg-white shadow-sm border border-slate-200 hover:bg-slate-100 p-1.5 rounded-full transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>

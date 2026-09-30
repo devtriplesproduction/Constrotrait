@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
-import { Loader2, Check, X, ClipboardList } from "lucide-react";
+import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
+import { Loader2, Check, X, ClipboardList, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { createClient } from "@/lib/supabase/client";
@@ -17,7 +18,43 @@ function uidOf(a: any) {
 
 export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], userId: string }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+
+  const handleDownloadPdf = async (testId: string, uid: string) => {
+    try {
+      setDownloadingId(testId);
+      const res = await downloadJobCardAction(testId);
+      if (res.success && res.data) {
+        // Convert base64 to blob
+        const byteCharacters = atob(res.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        
+        // Trigger download
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `JobCard_${uid}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        console.error("Failed to download PDF:", res.error);
+        alert("Failed to download Job Card PDF.");
+      }
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      alert("Error generating Job Card.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const myAssignments = assignments.filter((a: any) => {
     let isMine = false;
@@ -39,8 +76,7 @@ export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], 
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <PageHeader title="My Assignments" subtitle="Jobs assigned to you or your team." icon={ClipboardList} className="mb-0" />
+      <div className="flex justify-end mb-6">
         <div className="w-48">
           <select 
             className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 bg-white"
@@ -92,6 +128,17 @@ export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], 
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => handleDownloadPdf(a.job_entry_test_id, a.job_entry_tests?.uid_label || 'Unknown')}
+                  disabled={downloadingId === a.job_entry_test_id}
+                  className="text-slate-600 border-slate-200 shadow-sm"
+                  title="Download Job Card"
+                >
+                  {downloadingId === a.job_entry_test_id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Download className="w-4 h-4 mr-1" />}
+                  Job Card
+                </Button>
                 {a.status === 'assigned' && (
                   <>
                     <Button size="sm" onClick={() => handleStatusUpdate(a.id, 'accepted')} disabled={loadingId === a.id} className="bg-indigo-600 hover:bg-indigo-700">
@@ -134,10 +181,8 @@ export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], 
                         setLoadingId(null);
                       }} 
                     />
-                    <Button size="sm" variant="outline" asChild disabled={loadingId === a.id}>
-                      <label htmlFor={`file-${a.id}`} className="cursor-pointer">
-                        {loadingId === a.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : "Upload Report"}
-                      </label>
+                    <Button size="sm" variant="outline" disabled={loadingId === a.id} onClick={() => document.getElementById(`file-${a.id}`)?.click()}>
+                      {loadingId === a.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : "Upload Report"}
                     </Button>
                   </div>
                 )}

@@ -9,7 +9,7 @@ const TEST_SELECT = `
   report_class,
   date_of_testing,
   test_master ( component_parameter, specific_test, test_method, category, is_nabl ),
-  job_entries ( id, uid, uid_label )
+  job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label )
 `;
 
 export class JobAssignmentService {
@@ -56,7 +56,7 @@ export class JobAssignmentService {
       .select(`
         id, job_entry_id, date_of_testing, uid_label, test_master_id,
         test_master:test_master_id ( component_parameter, specific_test, category, is_nabl ),
-        job_entries ( id, uid, uid_label ),
+        job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label ),
         job_assignments ( id )
       `);
 
@@ -67,7 +67,7 @@ export class JobAssignmentService {
         .select(`
           id, job_entry_id, date_of_testing, uid_label, test_master_id,
           test_master:test_master_id ( component_parameter, specific_test, category, is_nabl ),
-          job_entries ( id, uid, uid_label )
+          job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label )
         `);
       if (fallback.error) throw new Error(fallback.error.message);
       
@@ -121,6 +121,26 @@ export class JobAssignmentService {
     }
     
     return filteredData;
+  }
+
+  static async getAssignmentById(id: string) {
+    const supabase = await createClient();
+    await this.checkViewPermission(supabase);
+    
+    const { data, error } = await supabase
+      .from("job_assignments")
+      .select(`
+        *,
+        job_entry_tests!inner ( ${TEST_SELECT} ),
+        teams ( id, name, branch_id, team_members(employee_id) ),
+        assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name, branch_id ),
+        assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name, branch_id )
+      `)
+      .eq("id", id)
+      .single();
+      
+    if (error) throw new Error(error.message);
+    return data;
   }
 
   static async getMyAssignments(_userId?: string) {

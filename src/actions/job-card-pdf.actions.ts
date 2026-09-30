@@ -22,7 +22,7 @@ export async function downloadJobCardAction(jobEntryTestId: string) {
       .select(`
         *,
         test_master (*),
-        job_entries (
+        job_entries!job_entry_tests_job_entry_id_fkey (
           id,
           clients (*)
         )
