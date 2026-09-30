@@ -33,6 +33,6 @@ BEGIN
         'queued'
     FROM public.job_entry_tests t
     WHERE t.job_entry_id = p_job_entry_id
-    ON CONFLICT (job_entry_id, job_entry_test_id) DO NOTHING;
+    ON CONFLICT (job_entry_id, job_entry_test_id) DO UPDATE SET scheduled_on = COALESCE(EXCLUDED.scheduled_on, ulr_generation_queue.scheduled_on);
 END;
 $$;
