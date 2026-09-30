@@ -26,6 +26,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
         email: data.client.email,
         collected_by: data.client.collected_by,
         gst_no: data.client.gst_no,
+        company_name: data.client.company_name,
       });
     } else {
       const newClient = await ClientService.createClient({
@@ -42,6 +43,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
         email: data.client.email,
         collected_by: data.client.collected_by,
         gst_no: data.client.gst_no,
+        company_name: data.client.company_name,
       });
       clientId = newClient.id;
     }
@@ -112,6 +114,7 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
       email: data.client.email,
       collected_by: data.client.collected_by,
       gst_no: data.client.gst_no,
+      company_name: data.client.company_name,
     });
     const jobEntryTest = data.jobEntryTests[0];
     if (jobEntryTest) {

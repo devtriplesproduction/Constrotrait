@@ -120,6 +120,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       client: {
         id: initialData.client.id,
         name: initialData.client.name || "",
+        company_name: initialData.client.company_name || "",
         address: initialData.client.address || "",
         division: initialData.client.division || "",
         site_name: initialData.client.site_name || "",
@@ -153,6 +154,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   } as ClientWizardValues : {
     client: {
         name: "",
+        company_name: "",
         address: "",
         division: "",
         site_name: "",
@@ -284,6 +286,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const handleSelectClient = async (client: Database["public"]["Tables"]["clients"]["Row"]) => {
     setValue("client.id", client.id);
     setValue("client.name", client.name || "");
+    setValue("client.company_name", client.company_name || "");
     setValue("client.address", client.address || "");
     setValue("client.division", client.division || "");
     setValue("client.site_name", client.site_name || "");
@@ -521,7 +524,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     <div className="relative group max-w-md">
                       <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors duration-300" />
                       <Input
-                        placeholder="Search Client by Name, Mobile, Email, or GST..."
+                        placeholder="Search company or customer name..."
                         className="pl-12 pr-4 h-11 rounded-xl border-slate-200/80 bg-slate-50/50 text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-orange-500/10 focus-visible:border-orange-500 transition-all duration-300"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -537,21 +540,37 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
                     {showResults && searchResults.length > 0 && (
                       <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl overflow-hidden z-50 max-h-[350px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-slate-900/5 max-w-md">
-                        {searchResults.map((client, idx) => (
-                          <div
-                            key={client.id}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              handleSelectClient(client);
-                            }}
-                            className={`p-4 hover:bg-orange-50 cursor-pointer border-b border-slate-100 last:border-0 transition-colors duration-150 ${idx === 0 ? 'rounded-t-xl' : ''}`}
-                          >
-                            <div className="font-semibold text-slate-900 text-base">{client.name}</div>
-                            <div className="text-xs font-medium text-slate-500 mt-1.5 flex gap-4">
-                              {client.mobile && <span className="flex items-center gap-1"><span className="text-slate-400">📱</span> {client.mobile}</span>}
-                              {client.email && <span className="flex items-center gap-1"><span className="text-slate-400">✉️</span> {client.email}</span>}
-                              {client.gst_no && <span className="flex items-center gap-1"><span className="text-slate-400">📄</span> {client.gst_no}</span>}
-                            </div>
+                        {Object.entries(
+                          searchResults.reduce((acc, client) => {
+                            const company = client.company_name || 'Individual Customers';
+                            if (!acc[company]) acc[company] = [];
+                            acc[company].push(client);
+                            return acc;
+                          }, {} as Record<string, Database["public"]["Tables"]["clients"]["Row"][]>)
+                        ).map(([company, clients], gIdx) => (
+                          <div key={company}>
+                            {company !== 'Individual Customers' && (
+                              <div className="px-4 py-2 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider sticky top-0 border-b border-slate-100 shadow-sm z-10">{company}</div>
+                            )}
+                            {clients.map((client, idx) => (
+                              <div
+                                key={client.id}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleSelectClient(client);
+                                }}
+                                className={`p-4 hover:bg-orange-50 cursor-pointer border-b border-slate-100 last:border-0 transition-colors duration-150 ${(gIdx === 0 && idx === 0) ? 'rounded-t-xl' : ''}`}
+                              >
+                                <div className="font-semibold text-slate-900 text-base">
+                                  {client.name} {company === 'Individual Customers' && client.company_name ? ` - ${client.company_name}` : ''}
+                                </div>
+                                <div className="text-xs font-medium text-slate-500 mt-1.5 flex gap-4">
+                                  {client.mobile && <span className="flex items-center gap-1"><span className="text-slate-400">📱</span> {client.mobile}</span>}
+                                  {client.email && <span className="flex items-center gap-1"><span className="text-slate-400">✉️</span> {client.email}</span>}
+                                  {client.gst_no && <span className="flex items-center gap-1"><span className="text-slate-400">📄</span> {client.gst_no}</span>}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         ))}
                       </div>
@@ -561,6 +580,11 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Customer <span className="text-red-500">*</span></label>
                     <Input {...register("client.name")} placeholder="Customer Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                     {errors.client?.name && <p className="text-red-500 text-xs">{errors.client.name.message}</p>}
+                  </div>
+                  
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Company</label>
+                    <Input {...register("client.company_name")} placeholder="Company Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                   </div>
 
                   <div className="flex flex-col gap-1.5">

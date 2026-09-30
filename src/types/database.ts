@@ -224,6 +224,7 @@ export type Database = {
         Row: {
           address: string | null
           agency_name: string | null
+            company_name: string | null
           collected_by: string | null
           contact_person: string | null
           created_at: string
@@ -244,6 +245,7 @@ export type Database = {
         Insert: {
           address?: string | null
           agency_name?: string | null
+            company_name?: string | null
           collected_by?: string | null
           contact_person?: string | null
           created_at?: string
@@ -264,6 +266,7 @@ export type Database = {
         Update: {
           address?: string | null
           agency_name?: string | null
+            company_name?: string | null
           collected_by?: string | null
           contact_person?: string | null
           created_at?: string

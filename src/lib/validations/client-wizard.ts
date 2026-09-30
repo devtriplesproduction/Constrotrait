@@ -3,6 +3,7 @@ import { z } from "zod";
 export const clientDetailsSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, "Name of Customer is required"),
+  company_name: z.string().optional(),
   address: z.string().optional(),
   division: z.string().optional(),
   site_name: z.string().optional(),

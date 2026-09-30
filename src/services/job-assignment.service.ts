@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { canManageJobAssignments } from "@/config/roles";
+import { canManageJobAssignments, isHR, isTestEngineer, isSuperAdmin } from "@/config/roles";
 
 const TEST_SELECT = `
   id,
@@ -25,7 +25,7 @@ export class JobAssignmentService {
 
     if (profileError || !profile) throw new Error("Failed to verify permissions");
     const roles = profile.roles || [];
-    if (!canManageJobAssignments(roles) && !roles.includes("HR") && !roles.includes("TEST_ENGINEER")) {
+    if (!canManageJobAssignments(roles) && !isHR(roles) && !isTestEngineer(roles)) {
       throw new Error("Insufficient permissions to view job assignments");
     }
     return user;
@@ -68,9 +68,9 @@ export class JobAssignmentService {
       .select(`
         *,
         job_entry_tests!inner ( ${TEST_SELECT} ),
-        teams ( id, name, team_members(employee_id) ),
+        teams ( id, name, branch_id, team_members(employee_id) ),
         assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name, branch_id ),
-        assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name )
+        assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name, branch_id )
       `)
       .order("created_at", { ascending: false });
       
@@ -83,9 +83,18 @@ export class JobAssignmentService {
     
     // For branch scope filtering if needed
     let filteredData = data;
-    const isSuper = profile?.roles?.includes("SUPER_ADMIN");
+    const isSuper = isSuperAdmin(profile?.roles);
     if (!isSuper && profile?.branch_id) {
-       filteredData = filteredData.filter((a: any) => a.assigned_to_profile?.branch_id === profile.branch_id);
+       filteredData = filteredData.filter((a: any) => {
+         // assigned_to matches branch
+         if (a.assigned_to_profile?.branch_id === profile.branch_id) return true;
+         // assigned_to is null, check assigned_by
+         if (!a.assigned_to && a.assigned_by_profile?.branch_id === profile.branch_id) return true;
+         // check team members matching branch
+         if (a.teams?.branch_id === profile.branch_id) return true;
+         
+         return false;
+       });
     }
     
     return filteredData;
@@ -201,6 +210,11 @@ export class JobAssignmentService {
     if (!canTransition(assignment.status as any, actualStatus as any, profile.roles)) {
       throw new Error(`Invalid state transition from ${assignment.status} to ${actualStatus}`);
     }
+    
+    if (actualStatus === 'rejected' && (!payload?.reviewer_remark || payload.reviewer_remark.trim() === '')) {
+      throw new Error("A reviewer remark is required when rejecting a job.");
+    }
+    
     const updateData: any = { status: actualStatus };
     if (payload?.report_url !== undefined) updateData.report_url = payload.report_url;
     if (payload?.reviewer_remark !== undefined) updateData.reviewer_remark = payload.reviewer_remark;

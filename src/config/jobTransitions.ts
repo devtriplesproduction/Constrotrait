@@ -1,4 +1,4 @@
-import { AppRole, isSuperAdmin, isBranchManager, isHR } from "./roles";
+import { AppRole, isSuperAdmin, isBranchManager, isHR, isTestEngineer } from "./roles";
 
 export type JobStage = 
   | 'pending'
@@ -14,7 +14,7 @@ export function canTransition(from: JobStage, to: JobStage, roles: string[] | nu
   if (!roles) return false;
   
   const isSuperAdminOrBranchManager = isSuperAdmin(roles) || isBranchManager(roles);
-  const isTestEngineer = roles.includes("TEST_ENGINEER");
+  const isTestEng = isTestEngineer(roles);
   const isHRRole = isHR(roles);
 
   // HR is read-only
@@ -30,7 +30,7 @@ export function canTransition(from: JobStage, to: JobStage, roles: string[] | nu
   }
 
   // Test Engineer can accept, start testing, upload report
-  if (isTestEngineer) {
+  if (isTestEng) {
     if (from === 'assigned' && to === 'accepted') return true;
     if (from === 'accepted' && to === 'in_testing') return true;
     if (from === 'in_testing' && to === 'report_uploaded') return true;

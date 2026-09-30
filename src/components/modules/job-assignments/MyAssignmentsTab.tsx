@@ -30,9 +30,9 @@ export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], 
     return true;
   });
 
-  const handleStatusUpdate = async (id: string, status: string) => {
+  const handleStatusUpdate = async (id: string, status: string, payload?: any) => {
     setLoadingId(id);
-    const res = await updateAssignmentStatusAction(id, status);
+    const res = await updateAssignmentStatusAction(id, status, payload);
     if (!res.success) alert("Error: " + res.error);
     setLoadingId(null);
   };
@@ -97,7 +97,13 @@ export function MyAssignmentsTab({ assignments, userId }: { assignments: any[], 
                     <Button size="sm" onClick={() => handleStatusUpdate(a.id, 'accepted')} disabled={loadingId === a.id} className="bg-indigo-600 hover:bg-indigo-700">
                       {loadingId === a.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}Accept
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(a.id, 'rejected')} disabled={loadingId === a.id} className="text-red-600 border-red-200">Reject</Button>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      const remark = window.prompt("Please enter a reason for rejection:");
+                      if (remark !== null) {
+                        if (!remark.trim()) return alert("Remark is required to reject.");
+                        handleStatusUpdate(a.id, 'rejected', { reviewer_remark: remark });
+                      }
+                    }} disabled={loadingId === a.id} className="text-red-600 border-red-200">Reject</Button>
                   </>
                 )}
                 {(a.status === 'accepted' || a.status === 'rejected') && (
