@@ -12,8 +12,10 @@ const STAGES: { id: JobStage; label: string }[] = [
   { id: 'approved', label: 'Approved' }
 ];
 
-export function JobStageStepper({ currentStage, isRejected }: { currentStage: JobStage; isRejected?: boolean }) {
-  const currentIndex = STAGES.findIndex(s => s.id === currentStage);
+export function JobStageStepper({ currentStage, isRejected }: { currentStage: JobStage | 'rejected'; isRejected?: boolean }) {
+  const actualStage = currentStage === 'rejected' ? 'in_review' : currentStage;
+  const isActualRejected = isRejected || currentStage === 'rejected';
+  const currentIndex = STAGES.findIndex(s => s.id === actualStage);
   
   return (
     <div className="flex items-center space-x-1 w-full mt-2 overflow-x-auto py-2">
@@ -28,7 +30,7 @@ export function JobStageStepper({ currentStage, isRejected }: { currentStage: Jo
           colorClass = 'text-green-500';
           bgClass = 'bg-green-500';
         } else if (isCurrent) {
-          if (isRejected) {
+          if (isActualRejected) {
             colorClass = 'text-red-500';
             bgClass = 'bg-red-500';
           } else {
@@ -51,6 +53,9 @@ export function JobStageStepper({ currentStage, isRejected }: { currentStage: Jo
               </div>
               <span className={`text-[10px] mt-1 text-center whitespace-nowrap ${isCurrent ? 'font-semibold text-slate-800' : 'text-slate-500'}`}>
                 {stage.label}
+                {isCurrent && isActualRejected && (
+                  <span className="block text-[9px] text-red-500 font-bold mt-0.5">Rejected</span>
+                )}
               </span>
             </div>
             {index < STAGES.length - 1 && (

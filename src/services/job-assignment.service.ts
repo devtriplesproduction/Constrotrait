@@ -61,7 +61,7 @@ export class JobAssignmentService {
   static async getAssignments(filters?: { team_id?: string; employee_id?: string; status?: string }) {
     const supabase = await createClient();
     const user = await this.checkViewPermission(supabase);
-    const { data: profile } = await supabase.from("profiles").select("roles").eq("id", user.id).single();
+    const { data: profile } = await supabase.from("profiles").select("roles, branch_id").eq("id", user.id).single();
     
     let query = supabase
       .from("job_assignments")
@@ -82,12 +82,13 @@ export class JobAssignmentService {
     if (error) throw new Error(error.message);
     
     // For branch scope filtering if needed
-    // HR / Branch Manager logic to only see their branch can be applied here, 
-    // assuming RLS doesn't fully handle it, or we filter on the frontend.
-    // The prompt says "see all jobs in their branch scope". 
-    // If not implemented locally, we can return all data for now and let the front-end handle it.
+    let filteredData = data;
+    const isSuper = profile?.roles?.includes("SUPER_ADMIN");
+    if (!isSuper && profile?.branch_id) {
+       filteredData = filteredData.filter((a: any) => a.assigned_to_profile?.branch_id === profile.branch_id);
+    }
     
-    return data;
+    return filteredData;
   }
 
   static async getMyAssignments(_userId?: string) {
@@ -191,10 +192,16 @@ export class JobAssignmentService {
     if (!canUpdate) throw new Error("Insufficient permissions to update this assignment");
 
     const { canTransition } = await import("@/config/jobTransitions");
-    if (!canTransition(assignment.status, status as any, profile.roles)) {
-      throw new Error(`Invalid state transition from ${assignment.status} to ${status}`);
+    
+    let actualStatus = status;
+    if (status === 'report_uploaded' && payload?.report_url) {
+      actualStatus = 'in_review';
     }
-    const updateData: any = { status };
+
+    if (!canTransition(assignment.status as any, actualStatus as any, profile.roles)) {
+      throw new Error(`Invalid state transition from ${assignment.status} to ${actualStatus}`);
+    }
+    const updateData: any = { status: actualStatus };
     if (payload?.report_url !== undefined) updateData.report_url = payload.report_url;
     if (payload?.reviewer_remark !== undefined) updateData.reviewer_remark = payload.reviewer_remark;
 

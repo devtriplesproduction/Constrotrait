@@ -10,11 +10,18 @@ import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
 import { generateULRsForDateAction } from "@/actions/ulr.actions";
 import { Database } from "@/types/database";
 import { useToast } from "@/hooks/use-toast";
+import { JobStageStepper } from "@/components/ui/JobStageStepper";
+import { JobStage } from "@/config/jobTransitions";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
 
 interface JobEntryTestWithRelations extends JobEntryTest {
+  job_assignments?: {
+    id: string;
+    status: string;
+    reviewer_remark?: string;
+  }[];
   job_entries: {
     id: string;
     uid: number;
@@ -301,6 +308,25 @@ export default function AllJobsTab({
                       </button>
                     </div>
                   </div>
+
+                  <hr className="border-slate-100/60 my-4" />
+
+                  {/* Status & Stepper */}
+                  {(() => {
+                    // Supabase returns an array for one-to-many, even if it's mostly 1-to-1 logically here.
+                    const latestAssignment = test.job_assignments && test.job_assignments.length > 0 ? test.job_assignments[0] : null;
+                    const status = (latestAssignment?.status as JobStage | 'rejected') || "pending";
+                    return (
+                      <div className="mb-4 px-1">
+                        <JobStageStepper currentStage={status} isRejected={status === 'rejected'} />
+                        {status === 'rejected' && latestAssignment?.reviewer_remark && (
+                          <div className="mt-3 text-[11px] text-red-600 bg-red-50/80 p-2.5 rounded-lg border border-red-100/80 shadow-sm">
+                            <strong className="font-bold">Remark:</strong> {latestAssignment.reviewer_remark}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <hr className="border-slate-100/60 my-4" />
 

@@ -85,7 +85,7 @@ export class JobEntryService {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("job_entry_tests")
-      .select(`*, job_entries ( id, created_at, client_id, uid, uid_label, clients ( id, name, email, mobile ) )`)
+      .select(`*, job_assignments ( id, status, reviewer_remark ), job_entries ( id, created_at, client_id, uid, uid_label, clients ( id, name, email, mobile ) )`)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data;
