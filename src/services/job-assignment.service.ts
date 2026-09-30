@@ -137,17 +137,6 @@ export class JobAssignmentService {
     }
 
     let actualJobEntryTestId = data.job_entry_test_id;
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(actualJobEntryTestId)) {
-      const asInt = parseInt(actualJobEntryTestId, 10);
-      const { data: byJobUid } = await supabase.from("job_entries").select("id").eq("uid", asInt).maybeSingle();
-      if (byJobUid) {
-        const { data: jet } = await supabase.from("job_entry_tests").select("id").eq("job_entry_id", byJobUid.id).limit(1).maybeSingle();
-        if (!jet) throw new Error(`Could not find job card with UID ${actualJobEntryTestId}`);
-        actualJobEntryTestId = jet.id;
-      } else {
-        throw new Error(`Could not find job card with UID ${actualJobEntryTestId}`);
-      }
-    }
 
     const { data: testRow, error: testErr } = await supabase
       .from("job_entry_tests").select("id, job_entry_id").eq("id", actualJobEntryTestId).single();

@@ -13,7 +13,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
   const router = useRouter();
   const [showAssignmentsView, setShowAssignmentsView] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [jobEntryTestId, setJobEntryTestId] = useState(initialAssignment?.uid?.toString() || "");
+  const [jobEntryTestId, setJobEntryTestId] = useState(initialAssignment?.job_entry_test_id || "");
   const [selectedBranch, setSelectedBranch] = useState("");
   const [assignType, setAssignType] = useState<"employee" | "team">(initialAssignment?.team_id ? "team" : "employee");
   const [selectedTeam, setSelectedTeam] = useState(initialAssignment?.team_id || "");
@@ -42,8 +42,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
   const allJobCards = [
     ...unassignedJobCards.map(uc => ({
       id: uc.id,
-      uid: uc.uid,
-      uid_label: uc.uid_label,
+      uid_label: uc.uid_label || uc.job_entries?.uid_label,
       date_of_testing: uc.date_of_testing,
       name: uc.test_master ? `${uc.test_master.component_parameter || ''} - ${uc.test_master.specific_test || ''}` : "Unknown Test",
       category: uc.test_master?.category || "Unknown Category",
@@ -52,8 +51,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
     })),
     ...existingAssignments.map(ea => ({
       id: ea.job_entry_test_id,
-      uid: ea.job_entry_tests?.uid,
-      uid_label: ea.job_entry_tests?.uid_label,
+      uid_label: ea.job_entry_tests?.uid_label || ea.job_entry_tests?.job_entries?.uid_label,
       date_of_testing: ea.job_entry_tests?.date_of_testing,
       name: ea.job_entry_tests?.test_master ? `${ea.job_entry_tests.test_master.component_parameter || ''} - ${ea.job_entry_tests.test_master.specific_test || ''}` : "Unknown Test",
       category: ea.job_entry_tests?.test_master?.category || "Unknown Category",
@@ -80,7 +78,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
     if (assignType === "employee" && !selectedEmployee) return toast({ title: "Validation Error", description: "Please select an employee.", variant: "warning" });
     if (assignType === "team" && !selectedTeam) return toast({ title: "Validation Error", description: "Please select a team.", variant: "warning" });
 
-    const alreadyAssigned = existingAssignments.find(a => a.job_entry_test_id === jobEntryTestId || (a.job_entry_tests?.uid && a.job_entry_tests.uid.toString() === jobEntryTestId));
+    const alreadyAssigned = existingAssignments.find(a => a.job_entry_test_id === jobEntryTestId);
     
     let isJustUpdate = false;
     let updateMessage = "Job Card reassigned successfully!";
@@ -112,7 +110,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
 
     setLoading(true);
     const data = {
-      job_entry_test_id: alreadyAssigned ? alreadyAssigned.job_entry_test_id : jobEntryTestId,
+      job_entry_test_id: jobEntryTestId,
       assigned_to: assignType === "employee" ? selectedEmployee : undefined,
       team_id: assignType === "team" ? selectedTeam : undefined,
       due_date: dueDate || undefined,
@@ -155,7 +153,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                   options={allJobCards.map(jc => {
                     const uidStr = jc.uid_label ? `UID: ${jc.uid_label}` : `UID queued (test date: ${jc.date_of_testing ? new Date(jc.date_of_testing).toLocaleDateString() : '-'})`;
                     return {
-                      value: jc.uid?.toString() || "",
+                      value: jc.id,
                       label: `${jc.category} , ${jc.name} ${uidStr} (${jc.status})`
                     };
                   })}
@@ -245,7 +243,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
               disabled={loading} 
               className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-sm font-semibold rounded-xl shadow-md shadow-orange-500/20 transition-all hover:shadow-lg hover:shadow-orange-500/30"
             >
-              {loading ? "Processing..." : (allJobCards.find(jc => jc.uid?.toString() === jobEntryTestId)?.isAssigned ? "Reassign Job Card" : "Confirm Assignment")}
+              {loading ? "Processing..." : (allJobCards.find(jc => jc.id === jobEntryTestId)?.isAssigned ? "Reassign Job Card" : "Confirm Assignment")}
             </Button>
           </div>
         </>
@@ -295,7 +293,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                     key={a.id} 
                     className="p-4 bg-white border border-slate-200 rounded-xl flex flex-wrap lg:flex-nowrap items-center gap-4 lg:gap-6 cursor-pointer hover:border-orange-400 hover:shadow-md transition-all duration-300 group"
                     onClick={() => {
-                      setJobEntryTestId(a.job_entry_tests?.uid.toString());
+                      setJobEntryTestId(a.job_entry_test_id);
                       if (a.team_id) {
                         setAssignType("team");
                         setSelectedTeam(a.team_id);
