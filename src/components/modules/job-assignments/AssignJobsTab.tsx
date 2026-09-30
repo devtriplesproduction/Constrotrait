@@ -28,10 +28,17 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
     const res = await getAssignmentsAction();
     if (res.success && res.data) {
       setExistingAssignments(res.data);
+    } else if (!res.success) {
+      console.error("Failed to load assignments:", res.error);
+      toast({ title: "Error loading assignments", description: res.error, variant: "error" });
     }
+
     const unassignedRes = await getUnassignedJobCardsAction();
     if (unassignedRes.success && unassignedRes.data) {
       setUnassignedJobCards(unassignedRes.data);
+    } else if (!unassignedRes.success) {
+      console.error("Failed to load unassigned job cards:", unassignedRes.error);
+      toast({ title: "Error loading unassigned job cards", description: unassignedRes.error, variant: "error" });
     }
   };
 
@@ -158,6 +165,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                     };
                   })}
                 />
+                <div className="mt-1.5 text-xs text-slate-500 text-right">{unassignedJobCards.length} unassigned job cards loaded</div>
               </div>
 
               {branches && branches.length > 0 && (

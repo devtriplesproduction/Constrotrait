@@ -51,10 +51,33 @@ export class JobAssignmentService {
   static async getUnassignedJobCards() {
     const supabase = await createClient();
     await this.checkPermission(supabase);
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("job_entry_tests")
-      .select(`${TEST_SELECT}, job_assignments ( id )`);
-    if (error) throw new Error(error.message);
+      .select(`
+        id, job_entry_id, date_of_testing, uid_label, test_master_id,
+        test_master:test_master_id ( component_parameter, specific_test, category, is_nabl ),
+        job_entries ( id, uid, uid_label ),
+        job_assignments ( id )
+      `);
+
+    if (error) {
+      console.warn("Failed to select job_assignments, falling back to tests only:", error.message);
+      const fallback = await supabase
+        .from("job_entry_tests")
+        .select(`
+          id, job_entry_id, date_of_testing, uid_label, test_master_id,
+          test_master:test_master_id ( component_parameter, specific_test, category, is_nabl ),
+          job_entries ( id, uid, uid_label )
+        `);
+      if (fallback.error) throw new Error(fallback.error.message);
+      
+      const assignments = await supabase.from("job_assignments").select("job_entry_test_id");
+      if (assignments.error) throw new Error(assignments.error.message);
+      
+      const assignedIds = new Set(assignments.data.map((a: any) => a.job_entry_test_id));
+      data = fallback.data?.map((test: any) => ({ ...test, job_assignments: assignedIds.has(test.id) ? [{ id: 'assigned' }] : [] })) || [];
+    }
+    
     return (data || []).filter((test: any) => !test.job_assignments || test.job_assignments.length === 0);
   }
 
