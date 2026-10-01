@@ -267,7 +267,7 @@ export default function AllJobsTab({
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2.5">
                       <div className="px-3 py-1 bg-gradient-to-br from-orange-50 to-[#FFF8ED] border border-orange-100/80 rounded-xl text-orange-600 font-extrabold text-[12px] tracking-wide shadow-[0_1px_2px_rgba(249,115,22,0.05)]">
-                        {test.uid_label ? `UID: ${test.uid_label}` : `UID queued (test date: ${test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : '-'})`}
+                        {test.uid_label ? `UID: ${test.uid_label}` : `UID missing`}
                       </div>
                       <div className={`px-3 py-1 rounded-xl font-extrabold text-[12px] tracking-wide shadow-[0_1px_2px_rgba(0,0,0,0.05)] border ${test.ulr_status === 'generated' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                         {test.ulr_status === 'generated' ? `ULR: ${test.ulr_number}` : `ULR Pending (${test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : '-'})`}

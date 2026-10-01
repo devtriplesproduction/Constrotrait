@@ -51,34 +51,23 @@ export class JobAssignmentService {
   static async getUnassignedJobCards() {
     const supabase = await createClient();
     await this.checkPermission(supabase);
-    let { data, error } = await supabase
+
+    const { data: tests, error: testsErr } = await supabase
       .from("job_entry_tests")
       .select(`
         id, job_entry_id, date_of_testing, uid_label, test_master_id,
         test_master:test_master_id ( component_parameter, specific_test, category, is_nabl ),
-        job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label ),
-        job_assignments ( id )
+        job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label )
       `);
+    if (testsErr) throw new Error(testsErr.message);
 
-    if (error) {
-      console.warn("Failed to select job_assignments, falling back to tests only:", error.message);
-      const fallback = await supabase
-        .from("job_entry_tests")
-        .select(`
-          id, job_entry_id, date_of_testing, uid_label, test_master_id,
-          test_master:test_master_id ( component_parameter, specific_test, category, is_nabl ),
-          job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label )
-        `);
-      if (fallback.error) throw new Error(fallback.error.message);
-      
-      const assignments = await supabase.from("job_assignments").select("job_entry_test_id");
-      if (assignments.error) throw new Error(assignments.error.message);
-      
-      const assignedIds = new Set(assignments.data.map((a: any) => a.job_entry_test_id));
-      data = fallback.data?.map((test: any) => ({ ...test, job_assignments: assignedIds.has(test.id) ? [{ id: 'assigned' }] : [] })) || [];
-    }
-    
-    return (data || []).filter((test: any) => !test.job_assignments || test.job_assignments.length === 0);
+    const { data: assignments, error: asgnErr } = await supabase
+      .from("job_assignments")
+      .select("job_entry_test_id");
+    if (asgnErr) throw new Error(asgnErr.message);
+
+    const assignedIds = new Set(assignments.map((a: any) => a.job_entry_test_id));
+    return (tests || []).filter((test: any) => !assignedIds.has(test.id));
   }
 
   static async getAssignments(filters?: { team_id?: string; employee_id?: string; status?: string }) {

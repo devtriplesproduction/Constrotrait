@@ -11,8 +11,8 @@ function jobIdOf(assignment: any): string | null {
 }
 
 function uidOf(assignment: any): string {
-  const j = assignment?.job_entry_tests?.job_entries;
-  return String(j?.uid_label || j?.uid || assignment?.job_entry_tests?.uid || "");
+  const test = assignment?.job_entry_tests;
+  return String(test?.uid_label || "UID missing");
 }
 
 export function IssueReportButtons({ assignment }: { assignment: any }) {

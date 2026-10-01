@@ -158,14 +158,14 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                   placeholder="Select a Job Card"
                   buttonClassName="w-full bg-white border-slate-200"
                   options={allJobCards.map(jc => {
-                    const uidStr = jc.uid_label ? `UID: ${jc.uid_label}` : `UID queued (test date: ${jc.date_of_testing ? new Date(jc.date_of_testing).toLocaleDateString() : '-'})`;
+                    const uidStr = jc.uid_label ? `UID: ${jc.uid_label}` : `UID missing`;
                     return {
                       value: jc.id,
                       label: `${jc.category} , ${jc.name} ${uidStr} (${jc.status})`
                     };
                   })}
                 />
-                <div className="mt-1.5 text-xs text-slate-500 text-right">{unassignedJobCards.length} unassigned job cards loaded</div>
+                <div className="mt-1.5 text-xs text-slate-500 text-right">Loaded {unassignedJobCards.length} unassigned</div>
               </div>
 
               {branches && branches.length > 0 && (

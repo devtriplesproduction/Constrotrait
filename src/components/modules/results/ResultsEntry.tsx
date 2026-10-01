@@ -72,7 +72,7 @@ export function ResultsEntry({ initialTests, loadError }: { initialTests: any[];
             <tbody>
               {initialTests.map((t) => (
                 <tr key={t.id} className={`cursor-pointer hover:bg-orange-50 ${selected === t.id ? "bg-orange-50" : ""}`} onClick={() => open(t.id)}>
-                  <td className="px-3 py-2">{t.job_entries?.uid_label || t.job_entries?.uid || ""}</td>
+                  <td className="px-3 py-2">{t.uid_label || "UID missing"}</td>
                   <td className="px-3 py-2">{t.test_master?.specific_test || t.test_master?.component_parameter}</td>
                   <td className="px-3 py-2">{t.test_master?.is_nabl ? "NABL" : "Non-NABL"}</td>
                 </tr>

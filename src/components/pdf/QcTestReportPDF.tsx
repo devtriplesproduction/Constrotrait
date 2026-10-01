@@ -19,10 +19,7 @@ const styles = StyleSheet.create({
 function linesOf(report: any) {
   return (report.lab_report_lines || []).map((l: any) => l.job_entry_tests).filter(Boolean);
 }
-function uidOf(report: any) {
-  const j = report.job_entries;
-  return String(j?.uid_label || j?.uid || "");
-}
+function uidOf(report: any) { const tests = linesOf(report); if (tests && tests.length > 0) { return String(tests[0].uid_label || "UID missing"); } return "UID missing"; }
 
 export function QcTestReportPDF({ report }: { report: any }) {
   const job = report.job_entries;

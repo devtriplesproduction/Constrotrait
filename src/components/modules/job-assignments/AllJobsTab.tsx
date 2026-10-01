@@ -17,7 +17,7 @@ function assignmentUid(assignment: any) {
   const t = assignment.job_entry_tests;
   if (t?.uid_label) return `UID: ${t.uid_label}`;
   const testDate = t?.date_of_testing ? new Date(t.date_of_testing).toLocaleDateString() : '-';
-  return `UID queued (test date: ${testDate})`;
+  return `UID missing`;
 }
 
 export function AllJobsTab({ assignments, branches, employees }: { assignments: any[], branches: any[], employees: any[] }) {

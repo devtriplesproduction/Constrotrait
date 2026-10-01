@@ -37,7 +37,9 @@ export class JobEntryService {
       for (const test of testsData) {
         const tm = testMasters.find((x: any) => x.id === test.test_master_id);
         const isNabl = tm?.is_nabl ? 'true' : 'false';
-        const category = tm?.category || 'NONE';
+        let category = tm?.category?.trim();
+        if (!category) category = 'Construction';
+        
         let age = '0';
         if (test.testing_age) {
           const ta = String(test.testing_age);
@@ -51,6 +53,7 @@ export class JobEntryService {
 
       const createdDate = jobEntry.created_at ? new Date(jobEntry.created_at) : new Date();
       const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+      const jobYear = createdDate.getFullYear();
       let firstUidLabel: string | null = null;
 
       for (const [key, groupTests] of Array.from(groups.entries())) {
@@ -58,43 +61,17 @@ export class JobEntryService {
         let currentUidLabel = "";
 
         if (isNabl === 'true') {
-          const { data: counter } = await supabase.from("lab_uid_counters").select("counter_value").eq("counter_name", "UID_NABL").maybeSingle();
-          let nextVal = 1;
-          if (counter) {
-            nextVal = (counter.counter_value || 0) + 1;
-            await supabase.from("lab_uid_counters").update({ counter_value: nextVal }).eq("counter_name", "UID_NABL");
-          } else {
-            const { data: allTests } = await supabase.from("job_entry_tests").select("uid_label").not("uid_label", "is", null);
-            let maxVal = 0;
-            if (allTests) {
-              for (const t of allTests) {
-                if (t.uid_label && /^\d+$/.test(t.uid_label)) {
-                  const val = parseInt(t.uid_label, 10);
-                  if (val > maxVal) maxVal = val;
-                }
-              }
-            }
-            nextVal = maxVal + 1;
-            await supabase.from("lab_uid_counters").insert({ counter_name: "UID_NABL", counter_value: nextVal });
-          }
-          currentUidLabel = nextVal.toString();
+          const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
+          if (error) throw new Error("UID Generation failed: " + error.message);
+          currentUidLabel = data.toString();
         } else {
           const counterName = `UID_${month}`;
-          const { data: counter } = await supabase.from("lab_uid_counters").select("counter_value").eq("counter_name", counterName).maybeSingle();
-          let nextVal = 1;
-          if (counter) {
-            nextVal = (counter.counter_value || 0) + 1;
-            await supabase.from("lab_uid_counters").update({ counter_value: nextVal }).eq("counter_name", counterName);
-          } else {
-            await supabase.from("lab_uid_counters").insert({ counter_name: counterName, counter_value: nextVal });
-          }
-          currentUidLabel = `${month}-${nextVal.toString().padStart(2, '0')}`;
+          const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
+          if (error) throw new Error("UID Generation failed: " + error.message);
+          currentUidLabel = `${month}-${data.toString().padStart(2, '0')}`;
         }
 
         if (!firstUidLabel) firstUidLabel = currentUidLabel;
-        if (isNabl === 'true' && (!firstUidLabel || !firstUidLabel.match(/^\d+$/))) {
-          firstUidLabel = currentUidLabel;
-        }
 
         uidsIssued.push(currentUidLabel);
 
@@ -104,7 +81,11 @@ export class JobEntryService {
       }
 
       if (firstUidLabel) {
-        await supabase.from("job_entries").update({ uid_label: firstUidLabel, uid: parseInt(firstUidLabel) || null }).eq("id", jobEntry.id);
+        const isAllDigits = /^\d+$/.test(firstUidLabel);
+        await supabase.from("job_entries").update({ 
+          uid_label: firstUidLabel, 
+          uid: isAllDigits ? parseInt(firstUidLabel, 10) : null 
+        }).eq("id", jobEntry.id);
         jobEntry.uid_label = firstUidLabel;
       }
 
@@ -122,6 +103,8 @@ export class JobEntryService {
 
     const { error: qErr } = await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: jobEntry.id });
     if (qErr) {
+      // On enqueue_ulr_for_job failure: do not leave a half job. 
+      // Delete job (CASCADE tests) but document that the counter will skip a number — acceptable.
       await supabase.from("job_entries").delete().eq("id", jobEntry.id);
       throw new Error(qErr.message || "Failed to enqueue job");
     }
