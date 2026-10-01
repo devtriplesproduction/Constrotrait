@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, Beaker, FileText, XCircle, Pencil, Trash2, AlertTriangle, Loader2, Search, ChevronLeft, ChevronRight as ChevronRightIcon } from "lucide-react";
+import { Plus, Beaker, FileText, XCircle, Pencil, Trash2, AlertTriangle, Loader2, Search, ChevronLeft, ChevronRight as ChevronRightIcon, Download } from "lucide-react";
 import { TestMaster } from "@/services/test.service";
 import { AddTestWizard } from "./AddTestWizard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,6 +70,27 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
     });
   };
 
+  const handleExport = () => {
+    import("xlsx").then((XLSX) => {
+      const exportData = filteredTests.map((test, index) => ({
+        "S.No": index + 1,
+        "Test Method": test.test_method,
+        "Discipline / Group": test.discipline_group,
+        "Material / Product": test.material_product,
+        "Component / Parameter": test.component_parameter,
+        "Additional Details": test.additional_details?.join(", ") || "None",
+        "NABL": test.is_nabl ? "Yes" : "No",
+        "Category": test.category || "N/A",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Tests");
+      
+      XLSX.writeFile(workbook, "test_master.xlsx");
+    });
+  };
+
   const filteredTests = initialTests.filter(test => {
     if (nablFilter === "nabl" && test.is_nabl !== true) return false;
     if (nablFilter === "non-nabl" && test.is_nabl === true) return false;
@@ -131,6 +152,15 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
                 <SelectItem value="Environmental">Environmental</SelectItem>
               </Select>
             </div>
+            <Button
+              variant="outline"
+              size="none"
+              onClick={handleExport}
+              className="h-[40px] rounded-xl px-4 shadow-sm text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </Button>
             <Button
               variant="custom"
               size="none"

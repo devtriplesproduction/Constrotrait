@@ -15,6 +15,8 @@ export interface TestMaster {
   is_nabl: boolean | null;
   category: "Construction" | "Environmental" | null;
   additional_details: string[] | null;
+  report_qr: string | null;
+  datasheet_qr: string | null;
   created_at: string;
   created_by: string | null;
   updated_at: string;
@@ -61,6 +63,8 @@ export const testService = {
           is_nabl: data.is_nabl ?? false,
           category: data.category || "",
           additional_details: data.additional_details || [],
+          report_qr: data.report_qr,
+          datasheet_qr: data.datasheet_qr || null,
           created_by: user.id,
           updated_by: user.id,
         })
@@ -87,7 +91,7 @@ export const testService = {
       const supabase = await createClient();
       const { data, error } = await supabase
         .from("test_master")
-        .select("id, serial_no, discipline_group, material_product, component_parameter, specific_test, test_method, technique_equipment, is_nabl, category, additional_details, created_at, created_by, updated_at, updated_by")
+        .select("id, serial_no, discipline_group, material_product, component_parameter, specific_test, test_method, technique_equipment, is_nabl, category, additional_details, report_qr, datasheet_qr, created_at, created_by, updated_at, updated_by")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -122,6 +126,8 @@ export const testService = {
           is_nabl: data.is_nabl ?? false,
           category: data.category || "",
           additional_details: data.additional_details || [],
+          report_qr: data.report_qr,
+          datasheet_qr: data.datasheet_qr || null,
           updated_at: new Date().toISOString(),
           updated_by: user.id,
         })
@@ -161,6 +167,26 @@ export const testService = {
       return { success: true };
     } catch (error) {
       console.error("Error deleting test master:", error);
+      return { success: false, error: "An unexpected error occurred" };
+    }
+  },
+
+  async getQrDocuments() {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("qr_documents")
+        .select("*")
+        .order("code", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching QR documents:", error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error fetching QR documents:", error);
       return { success: false, error: "An unexpected error occurred" };
     }
   }

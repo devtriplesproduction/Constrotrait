@@ -1558,6 +1558,27 @@ export type Database = {
           },
         ]
       }
+      qr_documents: {
+        Row: {
+          code: string
+          name: string | null
+          doc_type: string | null
+          is_nabl: boolean | null
+        }
+        Insert: {
+          code: string
+          name?: string | null
+          doc_type?: string | null
+          is_nabl?: boolean | null
+        }
+        Update: {
+          code?: string
+          name?: string | null
+          doc_type?: string | null
+          is_nabl?: boolean | null
+        }
+        Relationships: []
+      }
       test_master: {
         Row: {
           additional_details: string[] | null
@@ -1569,6 +1590,8 @@ export type Database = {
           id: string
           is_nabl: boolean
           material_product: string
+          report_qr: string | null
+          datasheet_qr: string | null
           serial_no: string
           specific_test: string
           technique_equipment: string
@@ -1586,6 +1609,8 @@ export type Database = {
           id?: string
           is_nabl?: boolean
           material_product: string
+          report_qr?: string | null
+          datasheet_qr?: string | null
           serial_no: string
           specific_test: string
           technique_equipment: string
@@ -1603,6 +1628,8 @@ export type Database = {
           id?: string
           is_nabl?: boolean
           material_product?: string
+          report_qr?: string | null
+          datasheet_qr?: string | null
           serial_no?: string
           specific_test?: string
           technique_equipment?: string

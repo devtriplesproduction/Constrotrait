@@ -919,6 +919,11 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 )}
                               </div>
 
+                              <div className="flex flex-col gap-1.5 col-span-full md:col-span-1">
+                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Report QR</label>
+                                <Input value={testMaster?.report_qr || "None"} readOnly className="bg-slate-100 text-slate-500 font-medium border-slate-200 focus-visible:ring-0" />
+                              </div>
+
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">MATERIAL ID <span className="text-red-500">*</span></label>
                                 <Input {...register(`jobEntryTests.${index}.material_id`)} placeholder="Material ID" />

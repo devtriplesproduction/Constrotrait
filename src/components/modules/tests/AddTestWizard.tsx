@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { createTestSchema, CreateTestInput } from "@/lib/validations/test";
-import { createTestMasterAction, updateTestMasterAction } from "@/actions/test.actions";
+import { createTestMasterAction, updateTestMasterAction, getQrDocumentsAction } from "@/actions/test.actions";
 import { TestMaster } from "@/services/test.service";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,18 @@ export function AddTestWizard({
   const { toast } = useToast();
   const router = useRouter();
 
+  const [qrDocuments, setQrDocuments] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadQrDocuments() {
+      const res = await getQrDocumentsAction();
+      if (res.success && res.data) {
+        setQrDocuments(res.data);
+      }
+    }
+    loadQrDocuments();
+  }, []);
+
   const [details, setDetails] = useState<string[]>(
     initialData?.additional_details && initialData.additional_details.length > 0
       ? initialData.additional_details
@@ -57,11 +69,15 @@ export function AddTestWizard({
       component_parameter: initialData?.component_parameter || "",
       test_method: initialData?.test_method || "",
       is_nabl: initialData?.is_nabl ?? true,
+      report_qr: initialData?.report_qr || "",
+      datasheet_qr: initialData?.datasheet_qr || "",
     },
   });
 
   const category = watch("category");
   const is_nabl = watch("is_nabl");
+  const report_qr = watch("report_qr");
+  const datasheet_qr = watch("datasheet_qr");
 
   const [submitEnabled, setSubmitEnabled] = useState(false);
 
@@ -77,7 +93,7 @@ export function AddTestWizard({
     let fieldsToValidate: (keyof CreateTestInput)[] = [];
 
     if (currentStep === 0) {
-      fieldsToValidate = ["category", "is_nabl", "discipline_group", "material_product", "component_parameter", "test_method"];
+      fieldsToValidate = ["category", "is_nabl", "discipline_group", "material_product", "component_parameter", "test_method", "report_qr", "datasheet_qr"];
     } else if (currentStep === 1) {
       fieldsToValidate = ["additional_details"];
     }
@@ -218,7 +234,36 @@ export function AddTestWizard({
                 </div>
 
                 <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700 leading-tight">Teast Name <span className="text-red-500">*</span></label>
+                  <label className="text-sm font-semibold text-slate-700">Report QR <span className="text-red-500">*</span></label>
+                  <Select
+                    value={report_qr || ""}
+                    onValueChange={(val) => setValue("report_qr", val)}
+                    placeholder="Select Report QR"
+                  >
+                    {qrDocuments.filter(q => q.doc_type === "TR").map((doc) => (
+                      <SelectItem key={doc.code} value={doc.code}>{doc.name}</SelectItem>
+                    ))}
+                  </Select>
+                  {errors.report_qr && <p className="text-red-500 text-xs">{errors.report_qr.message}</p>}
+                </div>
+
+                <div className="flex flex-col justify-end gap-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Datasheet QR</label>
+                  <Select
+                    value={datasheet_qr || ""}
+                    onValueChange={(val) => setValue("datasheet_qr", val)}
+                    placeholder="Select Datasheet QR"
+                    isClearable
+                  >
+                    {qrDocuments.filter(q => q.doc_type === "DS").map((doc) => (
+                      <SelectItem key={doc.code} value={doc.code}>{doc.name}</SelectItem>
+                    ))}
+                  </Select>
+                  {errors.datasheet_qr && <p className="text-red-500 text-xs">{errors.datasheet_qr.message}</p>}
+                </div>
+
+                <div className="flex flex-col justify-end gap-1.5">
+                  <label className="text-sm font-semibold text-slate-700 leading-tight">Test Name <span className="text-red-500">*</span></label>
                   <Input {...register("discipline_group")} placeholder="e.g. Mechanical, Chemical..." />
                   {errors.discipline_group && <p className="text-red-500 text-xs">{errors.discipline_group.message}</p>}
                 </div>

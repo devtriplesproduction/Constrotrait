@@ -24,6 +24,10 @@ export async function getTestsAction() {
   return await testService.getTests();
 }
 
+export async function getQrDocumentsAction() {
+  return await testService.getQrDocuments();
+}
+
 export async function updateTestMasterAction(id: string, data: CreateTestInput) {
   const validationResult = createTestSchema.safeParse(data);
   if (!validationResult.success) {
