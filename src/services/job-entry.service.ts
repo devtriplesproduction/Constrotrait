@@ -42,9 +42,9 @@ export class JobEntryService {
         
         let age = '0';
         if (test.testing_age) {
-          const ta = String(test.testing_age);
+          const ta = String(test.testing_age).trim();
           if (ta.includes('28')) age = '28';
-          else if (ta.includes('7')) age = '7';
+          else if (ta === '7' || ta.startsWith('7 ') || ta.startsWith('7-') || ta.toLowerCase().startsWith('7d')) age = '7';
         }
         const key = `${isNabl}|${category}|${age}`;
         if (!groups.has(key)) groups.set(key, []);

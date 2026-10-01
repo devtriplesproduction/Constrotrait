@@ -29,7 +29,10 @@ BEGIN
       COALESCE(NULLIF(TRIM(m.category), ''), 'Construction') AS category,
       CASE 
         WHEN t.testing_age::text ILIKE '%28%' THEN 28 
-        WHEN t.testing_age::text ILIKE '%7%' THEN 7 
+        WHEN TRIM(t.testing_age::text) = '7' 
+          OR TRIM(t.testing_age::text) ILIKE '7 %' 
+          OR TRIM(t.testing_age::text) ILIKE '7-%' 
+          OR TRIM(t.testing_age::text) ILIKE '7D%' THEN 7 
         ELSE 0 
       END AS age_days,
       array_agg(t.id) AS test_ids,
