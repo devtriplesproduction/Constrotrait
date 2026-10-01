@@ -152,7 +152,7 @@ export class JobEntryService {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("job_entry_tests")
-      .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!job_entry_tests_job_entry_id_fkey ( id, created_at, client_id, uid, uid_label, clients ( id, name, email, mobile ) )`)
+      .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!job_entry_tests_job_entry_id_fkey ( id, created_at, client_id, uid, uid_label, inward_on, clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person ) ), test_master ( id, component_parameter, specific_test )`)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data;

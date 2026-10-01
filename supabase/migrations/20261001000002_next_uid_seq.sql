@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS public.lab_uid_counters (
     counter_name TEXT NOT NULL,
     counter_year INT NOT NULL,
-    last_value INT NOT NULL DEFAULT 0,
+    counter_value INT NOT NULL DEFAULT 0,
     PRIMARY KEY (counter_name, counter_year)
 );
 
@@ -16,11 +16,11 @@ AS $$
 DECLARE
   v_next int;
 BEGIN
-  INSERT INTO public.lab_uid_counters (counter_name, counter_year, last_value)
+  INSERT INTO public.lab_uid_counters (counter_name, counter_year, counter_value)
   VALUES (p_name, p_year, 1)
   ON CONFLICT (counter_name, counter_year)
-  DO UPDATE SET last_value = public.lab_uid_counters.last_value + 1
-  RETURNING last_value INTO v_next;
+  DO UPDATE SET counter_value = public.lab_uid_counters.counter_value + 1
+  RETURNING counter_value INTO v_next;
 
   RETURN v_next;
 END;

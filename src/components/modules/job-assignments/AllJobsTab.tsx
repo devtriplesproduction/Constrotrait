@@ -20,11 +20,10 @@ function assignmentUid(assignment: any) {
   return `UID missing`;
 }
 
-export function AllJobsTab({ assignments, branches, employees }: { assignments: any[], branches: any[], employees: any[] }) {
+export function AllJobsTab({ assignments, branches, employees, filterStatus }: { assignments: any[], branches: any[], employees: any[], filterStatus: string }) {
   const router = useRouter();
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [initialAssignment, setInitialAssignment] = useState<any>(null);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterBranch, setFilterBranch] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<string>("today");
   const [searchEmployee, setSearchEmployee] = useState<string>("");
@@ -124,18 +123,6 @@ export function AllJobsTab({ assignments, branches, employees }: { assignments: 
           />
         </div>
         <div className="flex flex-wrap gap-4 items-center justify-end flex-1">
-          <div className="w-48">
-            <Dropdown value={filterStatus} onChange={setFilterStatus} placeholder="Filter by Status" buttonClassName="bg-white" options={[
-              { value: "all", label: "All Statuses" },
-              { value: "assigned", label: "Assigned" },
-              { value: "accepted", label: "Accepted" },
-              { value: "in_testing", label: "In Testing" },
-              { value: "report_uploaded", label: "Report Uploaded" },
-              { value: "in_review", label: "In Review" },
-              { value: "approved", label: "Approved" },
-              { value: "rejected", label: "Rejected" },
-            ]} />
-          </div>
           <div className="w-48">
             <Dropdown value={filterBranch} onChange={setFilterBranch} placeholder="Filter by Branch" buttonClassName="bg-white" options={[
               { value: "all", label: "All Branches" },

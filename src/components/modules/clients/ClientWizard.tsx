@@ -70,7 +70,7 @@ export interface ClientWizardProps {
   mode?: "create" | "edit";
   initialData?: {
     client: Database["public"]["Tables"]["clients"]["Row"];
-    jobEntryTest: Database["public"]["Tables"]["job_entry_tests"]["Row"] & { uid?: number; job_entries?: { uid?: number } | null };
+    jobEntryTest: Database["public"]["Tables"]["job_entry_tests"]["Row"] & { uid?: number; uid_label?: string | null; job_entries?: { uid?: number; uid_label?: string | null } | null };
   };
   onSuccess?: () => void;
 }
@@ -150,9 +150,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         date_of_testing: initialData.jobEntryTest.date_of_testing || "",
         material_description: initialData.jobEntryTest.material_description || "",
         additional_details_values: (initialData.jobEntryTest.additional_details_values as Record<string, string>) || {},
-    }] : [],
-  } as ClientWizardValues : {
-    client: {
+      }] : [],
+    } as ClientWizardValues : {
+      client: {
         name: "",
         company_name: "",
         address: "",
@@ -168,10 +168,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         collected_by: "",
         gst_no: "",
       },
-    selectedTestIds: [],
-    jobEntryTests: [],
-  } as ClientWizardValues,
-});
+      selectedTestIds: [],
+      jobEntryTests: [],
+    } as ClientWizardValues,
+  });
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -183,11 +183,11 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
   const uidPreviews = React.useMemo(() => {
     if (mode === "edit" || nextUidPreview === null) return [];
-    
+
     let currentNablUid = nextUidPreview;
     const currentMonthStr = new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase();
     let currentNonNablSerial = 1;
-    
+
     const groupToUid = new Map<string, string>();
     const previews: string[] = [];
 
@@ -200,9 +200,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       const isNabl = testMaster.is_nabl;
       const category = testMaster.category || "";
       const testingAgeGroup = getTestingAgeGroup(test.testing_age || "");
-      
+
       const groupKey = `${isNabl}-${category}-${testingAgeGroup}`;
-      
+
       if (groupToUid.has(groupKey)) {
         previews.push(groupToUid.get(groupKey)!);
       } else {
@@ -324,7 +324,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       const newIds = [...currentIds];
       newIds.splice(currentIndex, 1);
       setValue("selectedTestIds", newIds, { shouldValidate: true });
-      
+
       const testIndex = fields.findIndex(f => f.test_master_id === id);
       if (testIndex > -1) {
         remove(testIndex);
@@ -335,7 +335,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         toast({ title: "Edit Mode", description: "You can only edit the single selected test in edit mode.", variant: "error" });
         return;
       }
-      
+
       const test = availableTests.find(t => t.id === id);
       if (!test) return;
 
@@ -464,7 +464,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       <div className="w-full md:w-70 lg:w-72 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-6 flex flex-col shrink-0">
         <div className="mb-10">
           <PageHeader
-            title="Client Registration"
+            title="Client Inward"
 
             className="flex-col items-start gap-6 [&_h1]:text-2xl [&_h1]:leading-tight"
           />
@@ -521,25 +521,25 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                   </div>
 
                   <div className="col-span-full mb-2 relative z-50">
-                    <div className="relative group max-w-md">
+                    <div className="relative group">
                       <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors duration-300" />
                       <Input
                         placeholder="Search company or customer name..."
-                        className="pl-12 pr-4 h-11 rounded-xl border-slate-200/80 bg-slate-50/50 text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-orange-500/10 focus-visible:border-orange-500 transition-all duration-300"
+                        className="pl-12 pr-4 h-14 rounded-xl border-slate-200/80 bg-slate-50/50 text-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-orange-500/10 focus-visible:border-orange-500 transition-all duration-300"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => { if (searchResults.length > 0) setShowResults(true); }}
                         onBlur={() => setTimeout(() => setShowResults(false), 200)}
                       />
                       {isSearching && (
-                        <div className="absolute right-5 top-4">
+                        <div className="absolute right-5 top-1/2 -translate-y-1/2">
                           <Spinner className="h-5 w-5 text-orange-500" />
                         </div>
                       )}
                     </div>
 
                     {showResults && searchResults.length > 0 && (
-                      <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl overflow-hidden z-50 max-h-[350px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-slate-900/5 max-w-md">
+                      <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl overflow-hidden z-50 max-h-[350px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-slate-900/5">
                         {Object.entries(
                           searchResults.reduce((acc, client) => {
                             const company = client.company_name || 'Individual Customers';
@@ -581,7 +581,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     <Input {...register("client.name")} placeholder="Customer Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                     {errors.client?.name && <p className="text-red-500 text-xs">{errors.client.name.message}</p>}
                   </div>
-                  
+
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Company</label>
                     <Input {...register("client.company_name")} placeholder="Company Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
@@ -756,12 +756,12 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                               {filteredTests.slice(0, 50).map((test) => (
                                 <div
                                   key={test.id}
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      handleToggleTest(test.id);
-                                      setShowTestResults(false);
-                                      setTestSearchQuery("");
-                                    }}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    handleToggleTest(test.id);
+                                    setShowTestResults(false);
+                                    setTestSearchQuery("");
+                                  }}
                                   className="group p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-all duration-200 flex flex-col gap-1.5"
                                 >
                                   <div className="font-semibold text-[14px] text-slate-700 group-hover:text-slate-900 transition-colors pl-1">{test.component_parameter || test.specific_test}</div>
@@ -798,7 +798,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                     <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-100 to-orange-50 text-orange-800 text-[9px] font-bold px-3 py-1 rounded-bl-xl tracking-wider uppercase flex items-center gap-1 shadow-sm border-b border-l border-orange-200">
                                       <CheckCircle2 className="w-3 h-3 text-orange-600" /> Selected
                                     </div>
-  
+
                                     {mode !== "edit" && (
                                       <Button
                                         variant="ghost"
@@ -809,7 +809,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                         Remove
                                       </Button>
                                     )}
-  
+
                                     <div className="flex items-start gap-3 mb-3">
                                       <div className="w-8 h-8 rounded-lg bg-orange-100/80 flex items-center justify-center shrink-0 border border-orange-200 shadow-inner mt-0.5">
                                         <Check className="w-4 h-4 text-orange-600" />
@@ -830,7 +830,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                         )}
                                       </div>
                                     </div>
-  
+
                                     <div className="flex flex-col gap-1.5 pt-2 border-t border-orange-100/50">
                                       <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/60 border border-orange-100/50 hover:bg-white transition-colors shadow-sm">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Material</span>
@@ -892,7 +892,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                         return (
                           <div key={field.id} className="bg-slate-50 rounded-xl p-6 border border-slate-200 shadow-sm relative">
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 rounded-l-xl"></div>
-                            
+
                             {mode !== "edit" && (
                               <Button
                                 variant="ghost"
@@ -913,7 +913,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                               <div className="flex flex-col gap-1.5 col-span-full md:col-span-1">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">{mode === "edit" ? "UID" : "UID Preview (final UID on test date)"}</label>
-                                <Input value={mode === "edit" ? (initialData?.jobEntryTest?.job_entries?.uid ?? initialData?.jobEntryTest?.uid ?? "") : (nextUidPreview !== null ? uidPreviews[index] || "Loading..." : "Loading...")} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
+                                <Input value={mode === "edit" ? (initialData?.jobEntryTest?.uid_label || initialData?.jobEntryTest?.job_entries?.uid_label || String(initialData?.jobEntryTest?.job_entries?.uid || "")) : (nextUidPreview !== null ? uidPreviews[index] || "Loading..." : "Loading...")} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
                                 {mode !== "edit" && !availableTests.find(t => t.id === field.test_master_id)?.category && (
                                   <p className="text-[11px] text-amber-600 font-semibold mt-1">⚠️ Set test_master.category or preview will merge groups.</p>
                                 )}

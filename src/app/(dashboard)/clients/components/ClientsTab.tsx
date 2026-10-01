@@ -140,9 +140,10 @@ export default function ClientsTab({
 
       {selectedClient && (
         <ClientDetailsWizard
-          client={selectedClient}
-          onClose={() => setSelectedClient(null)}
-        />
+            client={selectedClient}
+            onClose={() => setSelectedClient(null)}
+            onEditClick={onEditClick}
+          />
       )}
     </div>
   );

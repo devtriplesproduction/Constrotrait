@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Edit, Search, Download, Loader2, Building2, FlaskConical, CalendarDays, FileText, Activity, Layers, Tag } from "lucide-react";
+import { Edit, Search, Download, Loader2, Building2, FlaskConical, CalendarDays, FileText, Activity, Layers, Tag, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
@@ -12,6 +12,7 @@ import { Database } from "@/types/database";
 import { useToast } from "@/hooks/use-toast";
 import { JobStageStepper } from "@/components/ui/JobStageStepper";
 import { JobStage } from "@/config/jobTransitions";
+import { useRouter } from "next/navigation";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
@@ -43,9 +44,11 @@ export default function AllJobsTab({
   onEditClick: (test: JobEntryTest, client: Client) => void;
   triggerRefresh: number;
 }) {
+  const router = useRouter();
   const [allJobs, setAllJobs] = useState<JobEntryTestWithRelations[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
   const [searchUid, setSearchUid] = useState("");
   const [searchClient, setSearchClient] = useState("");
@@ -108,6 +111,28 @@ export default function AllJobsTab({
     }
   };
 
+  const handleGenerateULRs = async () => {
+    if (!filterDate) {
+      toast({ title: "Error", description: "Please select an exact date first.", variant: "destructive" });
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const res = await generateULRsForDateAction(filterDate);
+      if (res.success) {
+        toast({ title: "Success", description: "ULRs generated successfully." });
+        loadAllJobs();
+      } else {
+        toast({ title: "Error", description: res.error || "Failed to generate ULRs.", variant: "destructive" });
+      }
+    } catch (error) {
+      console.error("Error generating ULRs:", error);
+      toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const filteredJobs = useMemo(() => {
     return allJobs.filter((job) => {
       // UID Filter
@@ -132,60 +157,17 @@ export default function AllJobsTab({
     });
   }, [allJobs, searchUid, searchClient, filterDate, filterMonth]);
 
-  const handleGenerateULRs = async () => {
-    if (!filterDate) {
-      toast({
-        title: "Date Required",
-        description: "Please select an Exact Date first to generate ULRs.",
-        variant: "error"
-      });
-      return;
-    }
-    
-    if (!confirm(`Are you sure you want to generate ULRs for testing date: ${filterDate}? This cannot be undone.`)) {
-      return;
-    }
-    
-    setIsGenerating(true);
-    try {
-      const res = await generateULRsForDateAction(filterDate);
-      if (res.success) {
-        let statsMsg = "";
-        if (res.data) {
-           const d = res.data as any;
-           const reps = d.reports_written ?? d.reports_generated ?? 0;
-           const uids = d.uid_written ?? d.uids_written ?? d.uid_assigned ?? d.uids_assigned ?? 0;
-           const ulrs = d.ulr_written ?? d.ulrs_written ?? d.ulr_generated ?? d.ulrs_generated ?? 0;
-           if (reps !== undefined || uids !== undefined || ulrs !== undefined) {
-             statsMsg = ` (Reports: ${reps}, UIDs: ${uids}, ULRs: ${ulrs})`;
-           } else if (typeof d === 'string') {
-             statsMsg = ` - ${d}`;
-           } else {
-             statsMsg = ` - ${JSON.stringify(d).replace(/[{""}]/g, '').replace(/:/g, ': ').replace(/,/g, ', ')}`;
-           }
-        }
-        toast({
-          title: "Success",
-          description: `ULRs successfully generated for ${filterDate}.${statsMsg}`,
-        });
-        loadAllJobs();
-      } else {
-        toast({
-          title: "Error",
-          description: res.error || "Failed to generate ULRs.",
-          variant: "error"
-        });
+  const groupedJobs = useMemo(() => {
+    const groups = new Map<string, typeof filteredJobs>();
+    for (const test of filteredJobs) {
+      const key = test.uid_label || test.id;
+      if (!groups.has(key)) {
+        groups.set(key, []);
       }
-    } catch (e: any) {
-      toast({
-        title: "Error",
-        description: e.message,
-        variant: "error"
-      });
-    } finally {
-      setIsGenerating(false);
+      groups.get(key)!.push(test);
     }
-  };
+    return Array.from(groups.values());
+  }, [filteredJobs]);
 
   return (
     <div className="space-y-4">
@@ -253,133 +235,59 @@ export default function AllJobsTab({
           <div className="text-center text-muted-foreground py-10">
             Loading all job entries...
           </div>
-        ) : filteredJobs.length === 0 ? (
+        ) : groupedJobs.length === 0 ? (
           <div className="text-center text-muted-foreground py-10">
             No jobs found matching your filters.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-2">
-            {filteredJobs.map((test) => {
-              const client = test.job_entries?.clients;
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-2">
+            {groupedJobs.map((jobGroup) => {
+              const primaryTest = jobGroup[0];
+              const client = primaryTest.job_entries?.clients;
+              const groupId = primaryTest.uid_label || primaryTest.id;
+              
               return (
-                <div key={test.id} className="bg-white rounded-[20px] p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] border border-slate-100 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.1)] hover:border-orange-100 transition-all duration-300 group">
-                  {/* Top Row */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2.5">
-                      <div className="px-3 py-1 bg-gradient-to-br from-orange-50 to-[#FFF8ED] border border-orange-100/80 rounded-xl text-orange-600 font-extrabold text-[12px] tracking-wide shadow-[0_1px_2px_rgba(249,115,22,0.05)]">
-                        {test.uid_label ? `UID: ${test.uid_label}` : `UID missing`}
+                <div 
+                  key={groupId} 
+                  className="group relative bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col p-5 gap-5 overflow-hidden isolate"
+                >
+                  {/* Top-right curved accent background */}
+                  <div className="absolute top-0 right-0 w-[140px] h-[130px] bg-[#FFF8F3] rounded-bl-[120px] pointer-events-none -z-10 hidden sm:block" />
+
+                  {/* Header */}
+                  <div className="flex items-start justify-between relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 shrink-0 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
+                        <Briefcase className="w-7 h-7" />
                       </div>
-                      <div className={`px-3 py-1 rounded-xl font-extrabold text-[12px] tracking-wide shadow-[0_1px_2px_rgba(0,0,0,0.05)] border ${test.ulr_status === 'generated' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                        {test.ulr_status === 'generated' ? `ULR: ${test.ulr_number}` : `ULR Pending (${test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : '-'})`}
-                      </div>
-                      <div className="px-3 py-1 bg-slate-50 border border-slate-100/80 rounded-xl text-slate-500 text-[11px] font-semibold flex items-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400/80 shadow-sm"></div>
-                        {new Date(test.job_entries?.created_at || "").toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-lg leading-tight">
+                          Job UID: {primaryTest.uid_label || "Missing"}
+                        </h3>
+                        <p className="font-bold text-orange-500 text-sm mt-1">
+                          {jobGroup.length} Test{jobGroup.length !== 1 ? 's' : ''} • Created: {primaryTest.job_entries?.created_at ? new Date(primaryTest.job_entries.created_at).toLocaleDateString() : "-"}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDownloadPdf(test.id, test.job_entries?.uid || 0);
-                        }}
-                        disabled={downloadingId === test.id}
-                        className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-100 bg-white text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 hover:border-indigo-100 transition-all duration-200 shadow-sm"
-                        title="Download PDF"
-                      >
-                        {downloadingId === test.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Download className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (client) {
-                            const mockClient = { ...client } as any;
-                            onEditClick(test, mockClient);
-                          }
-                        }}
-                        className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-100 bg-white text-slate-400 hover:text-orange-500 hover:bg-orange-50 hover:border-orange-100 transition-all duration-200 shadow-sm"
-                        title="Edit"
-                      >
-                        <Edit className="h-3.5 w-3.5" />
-                      </button>
+
+                    {/* Client Badge */}
+                    <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-orange-100/50 max-w-[150px] truncate">
+                      <Building2 className="w-3.5 h-3.5 shrink-0" /> 
+                      <span className="truncate">{client?.name || "Unknown Client"}</span>
                     </div>
                   </div>
 
-                  <hr className="border-slate-100/60 my-4" />
-
-                  {/* Status & Stepper */}
-                  {(() => {
-                    // Supabase returns an array for one-to-many, even if it's mostly 1-to-1 logically here.
-                    const latestAssignment = test.job_assignments && test.job_assignments.length > 0 ? test.job_assignments[0] : null;
-                    const status = (latestAssignment?.status as JobStage | 'rejected') || "pending";
-                    return (
-                      <div className="mb-4 px-1">
-                        <JobStageStepper currentStage={status} isRejected={status === 'rejected'} />
-                        {status === 'rejected' && latestAssignment?.reviewer_remark && (
-                          <div className="mt-3 text-[11px] text-red-600 bg-red-50/80 p-2.5 rounded-lg border border-red-100/80 shadow-sm">
-                            <strong className="font-bold">Remark:</strong> {latestAssignment.reviewer_remark}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  <hr className="border-slate-100/60 my-4" />
-
-                  {/* Details Section */}
-                  <div className="space-y-4 mb-4 px-1">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="group/item">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-1.5 group-hover/item:text-slate-500 transition-colors">Client</div>
-                        <div className="text-[14px] font-bold text-slate-800 truncate" title={client?.name || "Unknown"}>{client?.name || "Unknown"}</div>
-                      </div>
-
-                      <div className="group/item">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-1.5 group-hover/item:text-slate-500 transition-colors">Material</div>
-                        <div className="text-[14px] font-bold text-slate-700 truncate" title={test.material_description || "-"}>{test.material_description || "-"}</div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="col-span-2 group/item">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-1.5 group-hover/item:text-slate-500 transition-colors">Method</div>
-                        <div className="text-[14px] font-bold text-slate-700 truncate" title={test.test_method || "-"}>{test.test_method || "-"}</div>
-                      </div>
-                      <div className="group/item">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-1.5 group-hover/item:text-slate-500 transition-colors">Grade</div>
-                        <div className="inline-flex px-2.5 py-1 bg-slate-50 border border-slate-200/60 rounded-md text-[13px] font-bold text-slate-700 shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-w-[3rem] justify-center">
-                          {test.grade || "-"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <hr className="border-slate-100/60 my-4" />
-
-                  {/* Dates Section */}
-                  <div className="grid grid-cols-3 gap-2.5 px-0.5">
-                    <div className="flex flex-col items-center justify-center py-2 bg-gradient-to-b from-[#F8FAFC] to-white border border-[#E2E8F0]/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] group-hover:border-blue-100 transition-colors">
-                      <div className="text-[11px] font-extrabold text-blue-600 uppercase tracking-wide mb-0.5">Cast</div>
-                      <div className="text-[13px] font-semibold text-slate-600">
-                        {test.date_of_casting ? new Date(test.date_of_casting).toLocaleDateString() : "-"}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-center justify-center py-2 bg-gradient-to-b from-[#F0FDF4] to-white border border-[#DCFCE7]/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] group-hover:border-emerald-100 transition-colors">
-                      <div className="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wide mb-0.5">Recv</div>
-                      <div className="text-[13px] font-semibold text-slate-600">
-                        {test.date_of_receiving ? new Date(test.date_of_receiving).toLocaleDateString() : "-"}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-center justify-center py-2 bg-gradient-to-b from-[#FAF5FF] to-white border border-[#F3E8FF]/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] group-hover:border-purple-100 transition-colors">
-                      <div className="text-[11px] font-extrabold text-purple-600 uppercase tracking-wide mb-0.5">Test</div>
-                      <div className="text-[13px] font-semibold text-slate-600">
-                        {test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : "-"}
-                      </div>
-                    </div>
+                  {/* View Details Link */}
+                  <div className="flex justify-end mt-4 relative z-10">
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/job-cards/${encodeURIComponent(groupId)}`);
+                      }}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      View Details
+                    </Button>
                   </div>
                 </div>
               );

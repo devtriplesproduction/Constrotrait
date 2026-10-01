@@ -218,7 +218,7 @@ export function AddTestWizard({
                 </div>
 
                 <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700 leading-tight">Discipline / Group <span className="text-red-500">*</span></label>
+                  <label className="text-sm font-semibold text-slate-700 leading-tight">Teast Name <span className="text-red-500">*</span></label>
                   <Input {...register("discipline_group")} placeholder="e.g. Mechanical, Chemical..." />
                   {errors.discipline_group && <p className="text-red-500 text-xs">{errors.discipline_group.message}</p>}
                 </div>
@@ -288,7 +288,7 @@ export function AddTestWizard({
                         </Button>
                       </div>
                     ))}
-  
+
                     {details.length === 0 && (
                       <div className="text-center py-8 text-sm text-slate-500 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
                         No additional details added. Click &quot;Add Detail&quot; to include more information.

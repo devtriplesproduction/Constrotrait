@@ -6,6 +6,7 @@ import { JobAssignmentsTabsClient } from "@/components/modules/job-assignments/J
 
 import { AllJobsTab } from "@/components/modules/job-assignments/AllJobsTab";
 import { MyAssignmentsTab } from "@/components/modules/job-assignments/MyAssignmentsTab";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 interface JobAssignmentsContentProps {
   initialTab: string;
@@ -27,6 +28,7 @@ export function JobAssignmentsContent({
   employees
 }: JobAssignmentsContentProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   // Sync with URL changes if needed, or just handle tab changes locally
   const handleTabChange = (tab: string) => {
@@ -40,21 +42,35 @@ export function JobAssignmentsContent({
         title="Job Assignments"
         className="mb-6"
         actions={
-          <JobAssignmentsTabsClient 
-            activeTab={activeTab} 
-            isManager={isManager} 
-            onTabChange={handleTabChange} 
-          />
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="w-48 hidden md:block">
+              <Dropdown value={filterStatus} onChange={setFilterStatus} placeholder="Filter by Status" buttonClassName="bg-white !h-[48px] rounded-xl" options={[
+                { value: "all", label: "All Statuses" },
+                { value: "assigned", label: "Assigned" },
+                { value: "accepted", label: "Accepted" },
+                { value: "in_testing", label: "In Testing" },
+                { value: "report_uploaded", label: "Report Uploaded" },
+                { value: "in_review", label: "In Review" },
+                { value: "approved", label: "Approved" },
+                { value: "rejected", label: "Rejected" },
+              ]} />
+            </div>
+            <JobAssignmentsTabsClient 
+              activeTab={activeTab} 
+              isManager={isManager} 
+              onTabChange={handleTabChange} 
+            />
+          </div>
         }
       />
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200">
 
         {isManager && activeTab === "list" && (
-          <AllJobsTab assignments={assignments} branches={branches} employees={employees} />
+          <AllJobsTab assignments={assignments} branches={branches} employees={employees} filterStatus={filterStatus} />
         )}
         {activeTab === "my" && (
-          <MyAssignmentsTab assignments={assignments} userId={userId} />
+          <MyAssignmentsTab assignments={assignments} userId={userId} filterStatus={filterStatus} />
         )}
       </div>
     </>
