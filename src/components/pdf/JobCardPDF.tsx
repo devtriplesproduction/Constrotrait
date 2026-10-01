@@ -123,7 +123,11 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           <View style={styles.row}>
             <View style={[styles.cell, { width: '50%', borderRightWidth: 1 }]}>
               <Text>1. Name of Customer / Agency:</Text>
-              <Text style={styles.bold}>{client?.name || ''}</Text>
+              <Text style={styles.bold}>
+                {client?.name || ''}
+                {client?.company_name ? ` - ${client.company_name}` : ''}
+                {client?.agency_name ? ` (${client.agency_name})` : ''}
+              </Text>
             </View>
             <View style={[styles.lastCell, { width: '50%' }]}>
               <Text>Date of Sample Received: {formatDate(job?.date_of_receiving)}</Text>
@@ -145,8 +149,12 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           </View>
           <View style={styles.row}>
             <View style={[styles.cell, { width: '50%', borderRightWidth: 1 }]}>
-              <Text>3. Name of site:</Text>
-              <Text style={styles.bold}>{client?.site_name || ''}</Text>
+              <Text>3. Name of site / Project / Division:</Text>
+              <Text style={styles.bold}>
+                {client?.site_name || ''}
+                {client?.project_name ? ` / ${client.project_name}` : ''}
+                {client?.division ? ` / ${client.division}` : ''}
+              </Text>
             </View>
             <View style={{ width: '50%', flexDirection: 'column' }}>
               <View style={{ borderBottomWidth: 1, borderColor: '#000', flex: 1, justifyContent: 'center' }}>
@@ -176,8 +184,13 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
               <Text>5. Address of Dispatching the Report:</Text>
               <Text style={styles.bold}>{client?.dispatch_address || ''}</Text>
             </View>
-            <View style={[styles.lastCell, { width: '50%' }]}>
-              <Text>Mode of Dispatch of Report :</Text>
+            <View style={{ width: '50%', flexDirection: 'column' }}>
+              <View style={{ borderBottomWidth: 1, borderColor: '#000', flex: 1, justifyContent: 'center' }}>
+                <Text style={{ padding: 4 }}>Collected By : {client?.collected_by || ''}</Text>
+              </View>
+              <View style={{ flex: 1, justifyContent: 'center' }}>
+                <Text style={{ padding: 4 }}>GST No : {client?.gst_no || ''}</Text>
+              </View>
             </View>
           </View>
           <View style={styles.row}>
@@ -211,7 +224,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           {/* Data Row */}
           <View style={[styles.row, { minHeight: 40 }]}>
             <View style={[styles.cell, { width: '10%' }]}>
-              <Text>{job?.uid || ''}</Text>
+              <Text>{job?.uid_label || ''}</Text>
               {job?.ulr_status === 'generated' && job?.ulr_number ? (
                 <Text style={{ fontSize: 7, marginTop: 4 }}>{job.ulr_number}</Text>
               ) : null}

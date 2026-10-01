@@ -85,11 +85,11 @@ export async function submitClientWizard(data: ClientWizardValues) {
             },
           ];
 
-    await JobEntryService.createJobEntryWithTests({ client_id: clientId }, testsData);
+    const { uidsIssued } = await JobEntryService.createJobEntryWithTests({ client_id: clientId }, testsData);
 
     revalidatePath("/dashboard");
     revalidatePath("/clients");
-    return { success: true, uids: [] };
+    return { success: true, uids: uidsIssued || [] };
   } catch (error) {
     console.error("Wizard submission error:", error);
     return { success: false, error: (error as Error).message };
@@ -136,7 +136,7 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
     }
     revalidatePath("/dashboard");
     revalidatePath("/clients");
-    return { success: true };
+    return { success: true, uids: [] };
   } catch (error) {
     console.error("Wizard update error:", error);
     return { success: false, error: (error as Error).message };

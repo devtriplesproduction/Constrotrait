@@ -220,7 +220,7 @@ export default function ClientDetailsWizard({
                               {test.material_details_location || "Location not provided."}
                             </p>
                           </div>
-                          <Button variant="default" className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-sm whitespace-nowrap px-4 h-9">
+                          <Button variant="primary" className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-sm whitespace-nowrap px-4 h-9">
                             View Details
                           </Button>
                         </div>
@@ -280,7 +280,7 @@ export default function ClientDetailsWizard({
                               {test.material_details_location || "Location not provided."}
                             </p>
                           </div>
-                          <Button variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-sm whitespace-nowrap px-4 h-9">
+                          <Button variant="primary" className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-sm whitespace-nowrap px-4 h-9">
                             View Details
                           </Button>
                         </div>

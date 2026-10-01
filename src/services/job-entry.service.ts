@@ -23,7 +23,91 @@ export class JobEntryService {
     if (jobError || !jobEntry) throw new Error(jobError?.message || "Failed to create job entry");
 
     let jobEntryTests: any[] | null = [];
+    let uidsIssued: string[] = [];
+
     if (testsData && testsData.length > 0) {
+      const testMasterIds = testsData.map((t) => t.test_master_id).filter(Boolean);
+      let testMasters: any[] = [];
+      if (testMasterIds.length > 0) {
+        const { data: tmData } = await supabase.from("test_master").select("id, category, is_nabl").in("id", testMasterIds as string[]);
+        testMasters = tmData || [];
+      }
+
+      const groups = new Map<string, typeof testsData>();
+      for (const test of testsData) {
+        const tm = testMasters.find((x: any) => x.id === test.test_master_id);
+        const isNabl = tm?.is_nabl ? 'true' : 'false';
+        const category = tm?.category || 'NONE';
+        let age = '0';
+        if (test.testing_age) {
+          const ta = String(test.testing_age);
+          if (ta.includes('28')) age = '28';
+          else if (ta.includes('7')) age = '7';
+        }
+        const key = `${isNabl}|${category}|${age}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(test);
+      }
+
+      const createdDate = jobEntry.created_at ? new Date(jobEntry.created_at) : new Date();
+      const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+      let firstUidLabel: string | null = null;
+
+      for (const [key, groupTests] of Array.from(groups.entries())) {
+        const [isNabl, category, age] = key.split('|');
+        let currentUidLabel = "";
+
+        if (isNabl === 'true') {
+          const { data: counter } = await supabase.from("lab_uid_counters").select("counter_value").eq("counter_name", "UID_NABL").maybeSingle();
+          let nextVal = 1;
+          if (counter) {
+            nextVal = (counter.counter_value || 0) + 1;
+            await supabase.from("lab_uid_counters").update({ counter_value: nextVal }).eq("counter_name", "UID_NABL");
+          } else {
+            const { data: allTests } = await supabase.from("job_entry_tests").select("uid_label").not("uid_label", "is", null);
+            let maxVal = 0;
+            if (allTests) {
+              for (const t of allTests) {
+                if (t.uid_label && /^\d+$/.test(t.uid_label)) {
+                  const val = parseInt(t.uid_label, 10);
+                  if (val > maxVal) maxVal = val;
+                }
+              }
+            }
+            nextVal = maxVal + 1;
+            await supabase.from("lab_uid_counters").insert({ counter_name: "UID_NABL", counter_value: nextVal });
+          }
+          currentUidLabel = nextVal.toString();
+        } else {
+          const counterName = `UID_${month}`;
+          const { data: counter } = await supabase.from("lab_uid_counters").select("counter_value").eq("counter_name", counterName).maybeSingle();
+          let nextVal = 1;
+          if (counter) {
+            nextVal = (counter.counter_value || 0) + 1;
+            await supabase.from("lab_uid_counters").update({ counter_value: nextVal }).eq("counter_name", counterName);
+          } else {
+            await supabase.from("lab_uid_counters").insert({ counter_name: counterName, counter_value: nextVal });
+          }
+          currentUidLabel = `${month}-${nextVal.toString().padStart(2, '0')}`;
+        }
+
+        if (!firstUidLabel) firstUidLabel = currentUidLabel;
+        if (isNabl === 'true' && (!firstUidLabel || !firstUidLabel.match(/^\d+$/))) {
+          firstUidLabel = currentUidLabel;
+        }
+
+        uidsIssued.push(currentUidLabel);
+
+        for (const t of groupTests) {
+          (t as any).uid_label = currentUidLabel;
+        }
+      }
+
+      if (firstUidLabel) {
+        await supabase.from("job_entries").update({ uid_label: firstUidLabel, uid: parseInt(firstUidLabel) || null }).eq("id", jobEntry.id);
+        jobEntry.uid_label = firstUidLabel;
+      }
+
       const testsToInsert = testsData.map((test) => ({ ...test, job_entry_id: jobEntry.id }));
       const { data: insertedTests, error: testsError } = await supabase
         .from("job_entry_tests")
@@ -42,7 +126,7 @@ export class JobEntryService {
       throw new Error(qErr.message || "Failed to enqueue job");
     }
 
-    return { jobEntry, jobEntryTests };
+    return { jobEntry, jobEntryTests, uidsIssued };
   }
 
   static async getJobEntriesByClientId(clientId: string) {

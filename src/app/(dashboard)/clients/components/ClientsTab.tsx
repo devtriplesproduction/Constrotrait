@@ -94,7 +94,7 @@ export default function ClientsTab({
 
                   {/* Client Badge */}
                   <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-orange-100/50">
-                    <User className="w-3.5 h-3.5" /> Client Profile
+                    <User className="w-3.5 h-3.5" /> {client.company_name || "Client Profile"}
                   </div>
                 </div>
 

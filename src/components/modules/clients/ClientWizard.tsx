@@ -414,7 +414,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           description: mode === "edit"
             ? "Inward test details updated successfully."
             : (data.jobEntryTests && data.jobEntryTests.length > 0)
-              ? "Client and Test details saved successfully. Job queued. UID and ULR are assigned on each test date."
+              ? (result.uids && result.uids.length > 0 ? `UID issued: ${result.uids.join(', ')}. ULR still pending.` : "Client and Test details saved successfully. ULR pending.")
               : "Client details saved successfully (No test selected).",
         });
         reset();
