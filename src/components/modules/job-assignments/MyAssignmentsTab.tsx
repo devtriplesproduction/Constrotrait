@@ -90,33 +90,58 @@ return (
             return (
             <div key={a.id} className="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col">
               
-              {/* Card Header */}
-              <div className="p-5 sm:p-6 pb-0 flex flex-wrap gap-4 items-start justify-between">
+              {/* Card Header & Details Combined */}
+              <div className="p-5 sm:p-6 pb-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 items-start">
+                
+                {/* Job UID */}
                 <div>
                   {uid ? (
-                    <div className="flex items-center gap-2">
-                      <div className="bg-orange-100 text-orange-600 p-1.5 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <div className="bg-orange-100 text-orange-600 p-1.5 rounded-lg mt-0.5 shrink-0">
                         <Tag className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="text-xs text-slate-500 font-medium">Job UID</p>
-                        <h3 className="text-lg font-bold text-slate-900 leading-tight">{uid}</h3>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Job UID</p>
+                        <h3 className="text-sm font-bold text-slate-900 leading-tight break-all">{uid}</h3>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="bg-red-50 text-red-500 p-1.5 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <div className="bg-red-50 text-red-500 p-1.5 rounded-lg mt-0.5 shrink-0">
                         <AlertCircle className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="text-xs text-slate-500 font-medium">Job UID</p>
-                        <h3 className="text-lg font-bold text-slate-400 italic leading-tight">Missing</h3>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Job UID</p>
+                        <h3 className="text-sm font-bold text-slate-400 italic leading-tight">Missing</h3>
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center">
+                {/* Test Request */}
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1 text-slate-400">
+                    <Beaker className="w-3.5 h-3.5" />
+                    <p className="text-xs font-medium uppercase tracking-wider">Test Request</p>
+                  </div>
+                  <p className="text-sm font-semibold text-slate-800">{a.job_entry_tests?.test_master?.specific_test || a.job_entry_tests?.test_master?.component_parameter || 'N/A'}</p>
+                </div>
+
+                {/* Due Date */}
+                <div>
+                  {a.due_date && (
+                    <>
+                      <div className="flex items-center gap-1.5 mb-1 text-slate-400">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <p className="text-xs font-medium uppercase tracking-wider">Due Date</p>
+                      </div>
+                      <p className="text-sm font-semibold text-slate-800">{new Date(a.due_date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                    </>
+                  )}
+                </div>
+
+                {/* Status Badge */}
+                <div className="flex items-start md:justify-end">
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
                     a.status === 'in_testing' ? 'bg-blue-50 text-blue-700 border border-blue-200/60' :
                     a.status === 'report_uploaded' ? 'bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200/60' :
@@ -138,26 +163,6 @@ return (
                     {String(a.status || '').replace('_', ' ')}
                   </span>
                 </div>
-              </div>
-
-              {/* Card Body - Details */}
-              <div className="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1 text-slate-400">
-                    <Beaker className="w-3.5 h-3.5" />
-                    <p className="text-xs font-medium uppercase tracking-wider">Test Request</p>
-                  </div>
-                  <p className="text-sm font-semibold text-slate-800">{a.job_entry_tests?.test_master?.specific_test || a.job_entry_tests?.test_master?.component_parameter || 'N/A'}</p>
-                </div>
-                {a.due_date && (
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1 text-slate-400">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <p className="text-xs font-medium uppercase tracking-wider">Due Date</p>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-800">{new Date(a.due_date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                  </div>
-                )}
               </div>
 
               {a.reviewer_remark && (

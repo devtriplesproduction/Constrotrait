@@ -27,20 +27,7 @@ VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- Map existing tests
-UPDATE public.test_master SET report_qr = 'QR103' WHERE name = 'Compressive Strength of Cube' AND is_nabl = true;
-UPDATE public.test_master SET report_qr = 'QR50' WHERE name = 'Compressive Strength of Cube' AND (is_nabl = false OR is_nabl IS NULL);
 
-UPDATE public.test_master SET report_qr = 'QR124' WHERE name = 'Ultrasonic Pulse Velocity' AND is_nabl = true;
-UPDATE public.test_master SET report_qr = 'QR74' WHERE name = 'Ultrasonic Pulse Velocity' AND (is_nabl = false OR is_nabl IS NULL);
-
-UPDATE public.test_master SET report_qr = 'QR121' WHERE name = 'Rebound Hammer' AND is_nabl = true;
-UPDATE public.test_master SET report_qr = 'QR73' WHERE name = 'Rebound Hammer' AND (is_nabl = false OR is_nabl IS NULL);
-
-UPDATE public.test_master SET report_qr = 'QR130' WHERE name = 'Half Cell Potential' AND is_nabl = true;
-UPDATE public.test_master SET report_qr = 'QR155' WHERE name = 'Half Cell Potential' AND (is_nabl = false OR is_nabl IS NULL);
-
-UPDATE public.test_master SET report_qr = 'QR294' WHERE name = 'Ambient Noise Level' AND is_nabl = true;
-UPDATE public.test_master SET report_qr = 'QR237A' WHERE name = 'Ambient Noise Level' AND (is_nabl = false OR is_nabl IS NULL);
 
 CREATE OR REPLACE FUNCTION public.issue_reports_for_job(p_job_entry_id UUID, p_issued_by UUID DEFAULT NULL)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
