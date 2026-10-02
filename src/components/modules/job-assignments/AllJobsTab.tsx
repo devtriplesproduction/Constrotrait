@@ -15,9 +15,9 @@ import { toast } from "@/hooks/use-toast";
 
 function assignmentUid(assignment: any) {
   const t = assignment.job_entry_tests;
-  if (t?.uid_label) return `UID: ${t.uid_label}`;
+  if (t?.uid_label) return `Test ID: ${t.uid_label}`;
   const testDate = t?.date_of_testing ? new Date(t.date_of_testing).toLocaleDateString() : '-';
-  return `UID missing`;
+  return `Test ID missing`;
 }
 
 export function AllJobsTab({ assignments, branches, employees, filterStatus }: { assignments: any[], branches: any[], employees: any[], filterStatus: string }) {

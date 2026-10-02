@@ -124,20 +124,8 @@ return (
               <div className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 relative z-10">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="bg-orange-100 text-orange-600 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">
-                    {a.job_entry_tests?.job_entries?.uid || '#JOB-0000'}
+                    {uid || 'UID missing'}
                   </div>
-                  
-                  {uid ? (
-                    <div className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 shadow-sm border border-slate-200">
-                      <Tag className="w-4 h-4 text-slate-400" />
-                      UID: {uid}
-                    </div>
-                  ) : (
-                    <div className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 shadow-sm border border-slate-200">
-                      <AlertCircle className="w-4 h-4 text-slate-400" />
-                      UID missing
-                    </div>
-                  )}
 
                   <div className={`px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm border uppercase tracking-wide ${
                     a.status === 'in_testing' ? 'bg-blue-50 text-blue-700 border-blue-200' :

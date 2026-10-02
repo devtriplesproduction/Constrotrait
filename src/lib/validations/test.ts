@@ -11,7 +11,7 @@ export const createTestSchema = z.object({
   is_nabl: z.boolean({ required_error: "Accreditation is required" }),
   category: z.enum(["Construction", "Environmental"], { required_error: "Category is required" }),
   additional_details: z.array(z.string()).optional(),
-  report_qr: z.string().min(1, "Report QR is required"),
+  report_qr: z.string().optional().or(z.literal("")),
   datasheet_qr: z.string().nullable().optional(),
 });
 

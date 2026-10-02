@@ -234,31 +234,14 @@ export function AddTestWizard({
                 </div>
 
                 <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Report QR <span className="text-red-500">*</span></label>
-                  <Select
-                    value={report_qr || ""}
-                    onValueChange={(val) => setValue("report_qr", val)}
-                    placeholder="Select Report QR"
-                  >
-                    {qrDocuments.filter(q => q.doc_type === "TR").map((doc) => (
-                      <SelectItem key={doc.code} value={doc.code}>{doc.name}</SelectItem>
-                    ))}
-                  </Select>
+                  <label className="text-sm font-semibold text-slate-700 leading-tight">Report QR</label>
+                  <Input {...register("report_qr")} placeholder="e.g. QR280" />
                   {errors.report_qr && <p className="text-red-500 text-xs">{errors.report_qr.message}</p>}
                 </div>
 
                 <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Datasheet QR</label>
-                  <Select
-                    value={datasheet_qr || ""}
-                    onValueChange={(val) => setValue("datasheet_qr", val)}
-                    placeholder="Select Datasheet QR"
-                    isClearable
-                  >
-                    {qrDocuments.filter(q => q.doc_type === "DS").map((doc) => (
-                      <SelectItem key={doc.code} value={doc.code}>{doc.name}</SelectItem>
-                    ))}
-                  </Select>
+                  <label className="text-sm font-semibold text-slate-700 leading-tight">Datasheet QR</label>
+                  <Input {...register("datasheet_qr")} placeholder="e.g. QR50" />
                   {errors.datasheet_qr && <p className="text-red-500 text-xs">{errors.datasheet_qr.message}</p>}
                 </div>
 

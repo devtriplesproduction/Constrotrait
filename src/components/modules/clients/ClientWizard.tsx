@@ -178,7 +178,6 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
     if (mode === "edit" || nextUidPreview === null) return [];
 
     let currentNablUid = nextUidPreview;
-    const currentMonthStr = new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase();
     let currentNonNablSerial = 1;
 
     const groupToUid = new Map<string, string>();
@@ -205,7 +204,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           previews.push(uid);
           currentNablUid++;
         } else {
-          const uid = `Preview: ${currentMonthStr}-${currentNonNablSerial.toString().padStart(2, '0')} (Final: Month of Inward)`;
+          const inwardDate = test.date_of_receiving ? new Date(test.date_of_receiving) : new Date();
+          const currentMonthStr = inwardDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+          const uid = `${currentMonthStr}-${currentNonNablSerial.toString().padStart(2, '0')}`;
           groupToUid.set(groupKey, uid);
           previews.push(uid);
           currentNonNablSerial++;
