@@ -21,7 +21,7 @@ export async function listTestsForResultsAction() {
 export async function getResultRowsAction(jobEntryTestId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("test_results")
+    .from("test_results" as any)
     .select("*")
     .eq("job_entry_test_id", jobEntryTestId)
     .order("sr_no", { ascending: true });
@@ -35,7 +35,7 @@ export async function saveResultRowsAction(jobEntryTestId: string, rows: any[]) 
 
   // First delete existing rows for this test
   const { error: delError } = await supabase
-    .from("test_results")
+    .from("test_results" as any)
     .delete()
     .eq("job_entry_test_id", jobEntryTestId);
 
@@ -44,7 +44,7 @@ export async function saveResultRowsAction(jobEntryTestId: string, rows: any[]) 
   // Insert new rows
   if (rows && rows.length > 0) {
     const { error: insError } = await supabase
-      .from("test_results")
+      .from("test_results" as any)
       .insert(rows.map(r => {
         // Remove 'id' if it's there so we don't conflict with UUID autogeneration on re-inserts
         const { id, ...rest } = r; 

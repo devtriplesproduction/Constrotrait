@@ -15,16 +15,8 @@ export async function submitClientWizard(data: ClientWizardValues) {
       await ClientService.updateClient(clientId, {
         name: data.client.name,
         address: data.client.address,
-        division: data.client.division,
-        site_name: data.client.site_name,
-        agency_name: data.client.agency_name,
-        project_name: data.client.project_name,
-        dispatch_name: data.client.dispatch_name,
-        dispatch_address: data.client.dispatch_address,
-        contact_person: data.client.contact_person,
         mobile: data.client.mobile,
         email: data.client.email,
-        collected_by: data.client.collected_by,
         gst_no: data.client.gst_no,
         company_name: data.client.company_name,
       });
@@ -32,16 +24,8 @@ export async function submitClientWizard(data: ClientWizardValues) {
       const newClient = await ClientService.createClient({
         name: data.client.name,
         address: data.client.address,
-        division: data.client.division,
-        site_name: data.client.site_name,
-        agency_name: data.client.agency_name,
-        project_name: data.client.project_name,
-        dispatch_name: data.client.dispatch_name,
-        dispatch_address: data.client.dispatch_address,
-        contact_person: data.client.contact_person,
         mobile: data.client.mobile,
         email: data.client.email,
-        collected_by: data.client.collected_by,
         gst_no: data.client.gst_no,
         company_name: data.client.company_name,
       });
@@ -54,38 +38,42 @@ export async function submitClientWizard(data: ClientWizardValues) {
       data.jobEntryTests && data.jobEntryTests.length > 0
         ? data.jobEntryTests.map((test: any) => ({
             test_master_id: toNull(test.test_master_id),
-            material_id: toNull(test.material_id),
-            material_details_location: test.material_details_location || null,
-            sample_quantity: test.sample_quantity || null,
-            grade: test.grade || null,
-            testing_day: test.testing_day || null,
-            test_method: test.test_method || null,
             date_of_receiving: toNull(test.date_of_receiving),
-            date_of_casting: toNull(test.date_of_casting),
             testing_age: test.testing_age || null,
             date_of_testing: toNull(test.date_of_testing),
             material_description: test.material_description || null,
             additional_details_values: test.additional_details_values || {},
+            test_method: test.test_method || null,
           }))
         : [
             {
               test_master_id: null,
-              material_id: null,
-              material_details_location: null,
-              sample_quantity: null,
-              grade: null,
-              testing_day: null,
-              test_method: null,
               date_of_receiving: null,
-              date_of_casting: null,
               testing_age: null,
               date_of_testing: null,
               material_description: null,
               additional_details_values: {},
+              test_method: null,
             },
           ];
 
-    const { uidsIssued } = await JobEntryService.createJobEntryWithTests({ client_id: clientId }, testsData);
+    const jobEntryData = {
+      client_id: clientId,
+      division: data.jobEntry.division,
+      site_name: data.jobEntry.site_name,
+      agency: data.jobEntry.agency_name,
+      project_name: data.jobEntry.project_name,
+      dispatch_name: data.jobEntry.dispatch_name,
+      dispatch_address: data.jobEntry.dispatch_address,
+      contact_person: data.jobEntry.contact_person,
+      collected_by: data.jobEntry.collected_by,
+      invoice_no: data.jobEntry.invoice_no,
+      invoice_date: data.jobEntry.invoice_date,
+      letter_reference: data.jobEntry.letter_reference,
+      payment_status: data.jobEntry.payment_status,
+    };
+
+    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData);
 
     revalidatePath("/dashboard");
     revalidatePath("/clients");
@@ -103,35 +91,26 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
     await ClientService.updateClient(clientId, {
       name: data.client.name,
       address: data.client.address,
-      division: data.client.division,
-      site_name: data.client.site_name,
-      agency_name: data.client.agency_name,
-      project_name: data.client.project_name,
-      dispatch_name: data.client.dispatch_name,
-      dispatch_address: data.client.dispatch_address,
-      contact_person: data.client.contact_person,
       mobile: data.client.mobile,
       email: data.client.email,
-      collected_by: data.client.collected_by,
       gst_no: data.client.gst_no,
       company_name: data.client.company_name,
     });
+    
+    // In edit mode we only update the test, we'll leave job_entries fields untouched for now
+    // as JobEntryService.updateJobEntryTest only takes testData.
+    // If needed we'd create a JobEntryService.updateJobEntry.
+
     const jobEntryTest = data.jobEntryTests[0];
     if (jobEntryTest) {
       await JobEntryService.updateJobEntryTest(testId, {
         test_master_id: toNull(jobEntryTest.test_master_id),
-        material_id: toNull(jobEntryTest.material_id),
-        material_details_location: jobEntryTest.material_details_location,
-        sample_quantity: jobEntryTest.sample_quantity,
-        grade: jobEntryTest.grade,
-        testing_day: jobEntryTest.testing_day,
-        test_method: jobEntryTest.test_method,
         date_of_receiving: toNull(jobEntryTest.date_of_receiving),
-        date_of_casting: toNull(jobEntryTest.date_of_casting),
         testing_age: jobEntryTest.testing_age,
         date_of_testing: toNull(jobEntryTest.date_of_testing),
         material_description: jobEntryTest.material_description,
         additional_details_values: jobEntryTest.additional_details_values || {},
+        test_method: jobEntryTest.test_method,
       });
     }
     revalidatePath("/dashboard");
@@ -165,7 +144,7 @@ export async function getNextUidAction() {
       .maybeSingle();
       
     if (!counterError && counterData) {
-      return { success: true, nextUid: (counterData.counter_value || 0) + 1 };
+      return { success: true, nextUid: ((counterData as any).counter_value || 0) + 1 };
     }
 
     // Fallback to max numeric uid_label

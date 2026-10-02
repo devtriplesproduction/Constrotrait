@@ -33,7 +33,7 @@ export function ResultsEntry({ initialTests, loadError }: { initialTests: any[];
       alert(res.error);
       return;
     }
-    setRows(res.data.length ? res.data : [emptyRow(id, 1), emptyRow(id, 2), emptyRow(id, 3)]);
+    setRows(res.data && res.data.length ? (res.data as any) : [emptyRow(id, 1), emptyRow(id, 2), emptyRow(id, 3)]);
   };
 
   const save = async () => {

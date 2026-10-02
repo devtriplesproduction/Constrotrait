@@ -113,7 +113,7 @@ export default function AllJobsTab({
 
   const handleGenerateULRs = async () => {
     if (!filterDate) {
-      toast({ title: "Error", description: "Please select an exact date first.", variant: "destructive" });
+      toast({ title: "Error", description: "Please select an exact date first.", variant: "destructive" as any });
       return;
     }
     setIsGenerating(true);
@@ -123,11 +123,11 @@ export default function AllJobsTab({
         toast({ title: "Success", description: "ULRs generated successfully." });
         loadAllJobs();
       } else {
-        toast({ title: "Error", description: res.error || "Failed to generate ULRs.", variant: "destructive" });
+        toast({ title: "Error", description: res.error || "Failed to generate ULRs.", variant: "destructive" as any });
       }
     } catch (error) {
       console.error("Error generating ULRs:", error);
-      toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+      toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" as any });
     } finally {
       setIsGenerating(false);
     }

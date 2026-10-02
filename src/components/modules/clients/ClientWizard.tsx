@@ -122,50 +122,43 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         name: initialData.client.name || "",
         company_name: initialData.client.company_name || "",
         address: initialData.client.address || "",
-        division: initialData.client.division || "",
-        site_name: initialData.client.site_name || "",
-        agency_name: initialData.client.agency_name || "",
-        project_name: initialData.client.project_name || "",
-        dispatch_name: initialData.client.dispatch_name || "",
-        dispatch_address: initialData.client.dispatch_address || "",
-        contact_person: initialData.client.contact_person || "",
         mobile: initialData.client.mobile || "",
         email: initialData.client.email || "",
-        collected_by: initialData.client.collected_by || "",
         gst_no: initialData.client.gst_no || "",
+      },
+      jobEntry: {
+        division: (initialData.jobEntryTest as any)?.job_entries?.division || "",
+        site_name: (initialData.jobEntryTest as any)?.job_entries?.site_name || "",
+        agency_name: (initialData.jobEntryTest as any)?.job_entries?.agency || "",
+        project_name: (initialData.jobEntryTest as any)?.job_entries?.project_name || "",
+        dispatch_name: (initialData.jobEntryTest as any)?.job_entries?.dispatch_name || "",
+        dispatch_address: (initialData.jobEntryTest as any)?.job_entries?.dispatch_address || "",
+        contact_person: (initialData.jobEntryTest as any)?.job_entries?.contact_person || "",
+        collected_by: (initialData.jobEntryTest as any)?.job_entries?.collected_by || "",
+        invoice_no: (initialData.jobEntryTest as any)?.job_entries?.invoice_no || "",
+        invoice_date: (initialData.jobEntryTest as any)?.job_entries?.invoice_date || "",
+        letter_reference: (initialData.jobEntryTest as any)?.job_entries?.letter_reference || "",
+        payment_status: (initialData.jobEntryTest as any)?.job_entries?.payment_status || "",
       },
       selectedTestIds: initialData && initialData.jobEntryTest.test_master_id ? [initialData.jobEntryTest.test_master_id] : [],
       jobEntryTests: initialData ? [{
         test_master_id: initialData.jobEntryTest.test_master_id || "",
         test_name: "", // Will be updated when tests load
         test_method: initialData.jobEntryTest.test_method || "",
-        material_id: initialData.jobEntryTest.material_id || "",
-        material_details_location: initialData.jobEntryTest.material_details_location || "",
-        sample_quantity: initialData.jobEntryTest.sample_quantity || "",
-        grade: initialData.jobEntryTest.grade || "",
-        testing_day: initialData.jobEntryTest.testing_day || "",
         date_of_receiving: initialData.jobEntryTest.date_of_receiving || "",
-        date_of_casting: initialData.jobEntryTest.date_of_casting || "",
         testing_age: initialData.jobEntryTest.testing_age || "",
         date_of_testing: initialData.jobEntryTest.date_of_testing || "",
         material_description: initialData.jobEntryTest.material_description || "",
         additional_details_values: (initialData.jobEntryTest.additional_details_values as Record<string, string>) || {},
       }] : [],
     } as ClientWizardValues : {
+      jobEntry: {},
       client: {
         name: "",
         company_name: "",
         address: "",
-        division: "",
-        site_name: "",
-        agency_name: "",
-        project_name: "",
-        dispatch_name: "",
-        dispatch_address: "",
-        contact_person: "",
         mobile: "",
         email: "",
-        collected_by: "",
         gst_no: "",
       },
       selectedTestIds: [],
@@ -288,16 +281,16 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
     setValue("client.name", client.name || "");
     setValue("client.company_name", client.company_name || "");
     setValue("client.address", client.address || "");
-    setValue("client.division", client.division || "");
-    setValue("client.site_name", client.site_name || "");
-    setValue("client.agency_name", client.agency_name || "");
-    setValue("client.project_name", client.project_name || "");
-    setValue("client.dispatch_name", client.dispatch_name || "");
-    setValue("client.dispatch_address", client.dispatch_address || "");
-    setValue("client.contact_person", client.contact_person || "");
+    setValue("jobEntry.division", (client as any).division || "");
+    setValue("jobEntry.site_name", (client as any).site_name || "");
+    setValue("jobEntry.agency_name", (client as any).agency_name || "");
+    setValue("jobEntry.project_name", (client as any).project_name || "");
+    setValue("jobEntry.dispatch_name", (client as any).dispatch_name || "");
+    setValue("jobEntry.dispatch_address", (client as any).dispatch_address || "");
+    setValue("jobEntry.contact_person", (client as any).contact_person || "");
     setValue("client.mobile", client.mobile || "");
     setValue("client.email", client.email || "");
-    setValue("client.collected_by", client.collected_by || "");
+    setValue("jobEntry.collected_by", (client as any).collected_by || "");
     setValue("client.gst_no", client.gst_no || "");
 
     setShowResults(false);
@@ -352,13 +345,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         test_master_id: test.id,
         test_name: test.component_parameter || test.specific_test || "",
         test_method: test.test_method || "",
-        material_id: "",
-        material_details_location: "",
-        sample_quantity: "",
-        grade: "",
-        testing_day: "",
         date_of_receiving: "",
-        date_of_casting: "",
         testing_age: "",
         date_of_testing: "",
         material_description: "",
@@ -613,10 +600,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Division</label>
-                    <Input {...register("client.division")} placeholder="Division" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                  
 
                 </motion.div>
               )}
@@ -635,44 +619,69 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                       <Building2 className="w-5 h-5" />
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Site & Project Details</h3>
+                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Job Entry Details</h3>
                       <p className="text-[15px] text-slate-500 font-medium">Enter information regarding the site, agency, and project.</p>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Site</label>
-                    <Input {...register("client.site_name")} placeholder="Site Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                    <Input {...register("jobEntry.site_name")} placeholder="Site Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Agency</label>
-                    <Input {...register("client.agency_name")} placeholder="Agency Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                    <Input {...register("jobEntry.agency_name")} placeholder="Agency Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Project</label>
-                    <Input {...register("client.project_name")} placeholder="Project Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                    <Input {...register("jobEntry.project_name")} placeholder="Project Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Contact Person Name</label>
-                    <Input {...register("client.contact_person")} placeholder="Contact Person" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                    <Input {...register("jobEntry.contact_person")} placeholder="Contact Person" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Collected By</label>
-                    <Input {...register("client.collected_by")} placeholder="Collected By" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                    <Input {...register("jobEntry.collected_by")} placeholder="Collected By" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Division</label>
+                    <Input {...register("jobEntry.division")} placeholder="Division" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice No.</label>
+                    <Input {...register("jobEntry.invoice_no")} placeholder="Invoice Number" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                  </div>
+                  
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice Date</label>
+                    <Input type="date" {...register("jobEntry.invoice_date")} className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Letter Reference</label>
+                    <Input {...register("jobEntry.letter_reference")} placeholder="Letter Reference" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Payment Status</label>
+                    <Input {...register("jobEntry.payment_status")} placeholder="Payment Status" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                  </div>
+
+
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name for Dispatching the Report</label>
-                    <Input {...register("client.dispatch_name")} placeholder="Dispatch Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                    <Input {...register("jobEntry.dispatch_name")} placeholder="Dispatch Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                   </div>
 
                   <div className="flex flex-col gap-1.5 md:col-span-2">
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Address for Dispatching the Report</label>
                     <textarea
-                      {...register("client.dispatch_address")}
+                      {...register("jobEntry.dispatch_address")}
                       placeholder="Dispatch Address"
                       rows={3}
                       className="flex w-full rounded-xl border border-border bg-slate-50/50 px-4 py-2.5 text-[13px] shadow-sm transition-all duration-300 placeholder:text-muted-foreground focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 hover:border-orange-500/50 disabled:cursor-not-allowed disabled:opacity-50 text-foreground border-slate-200/80 focus-visible:bg-white min-h-[80px] resize-y"
@@ -924,31 +933,18 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 <Input value={testMaster?.report_qr || "None"} readOnly className="bg-slate-100 text-slate-500 font-medium border-slate-200 focus-visible:ring-0" />
                               </div>
 
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">MATERIAL ID <span className="text-red-500">*</span></label>
-                                <Input {...register(`jobEntryTests.${index}.material_id`)} placeholder="Material ID" />
-                                {errors.jobEntryTests?.[index]?.material_id && <p className="text-red-500 text-xs">{errors.jobEntryTests[index]?.material_id?.message}</p>}
-                              </div>
+                              
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material Description</label>
                                 <Input {...register(`jobEntryTests.${index}.material_description`)} placeholder="Material Description" />
                               </div>
 
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">MATERIAL DETAILS / Location</label>
-                                <Input {...register(`jobEntryTests.${index}.material_details_location`)} placeholder="Location / Details" />
-                              </div>
+                              
 
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">NUMBER OF SAMPLE / QTY</label>
-                                <Input {...register(`jobEntryTests.${index}.sample_quantity`)} placeholder="Quantity" />
-                              </div>
+                              
 
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">GRADE</label>
-                                <Input {...register(`jobEntryTests.${index}.grade`)} placeholder="Grade" />
-                              </div>
+                              
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Receiving</label>
@@ -959,19 +955,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 />
                               </div>
 
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Casting</label>
-                                <PremiumDatePicker
-                                  value={watch(`jobEntryTests.${index}.date_of_casting`)}
-                                  onChange={(val) => {
-                                    setValue(`jobEntryTests.${index}.date_of_casting`, val, { shouldValidate: true });
-                                    const currentValues = getValues(`jobEntryTests.${index}`);
-                                    const newTestingDate = calculateTestingDate(val, currentValues.testing_age || "");
-                                    setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
-                                  }}
-                                  side="left"
-                                />
-                              </div>
+                              
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Age</label>
@@ -981,7 +965,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                   onChange={(val) => {
                                     setValue(`jobEntryTests.${index}.testing_age`, val, { shouldValidate: true });
                                     const currentValues = getValues(`jobEntryTests.${index}`);
-                                    const newTestingDate = calculateTestingDate(currentValues.date_of_casting || "", val);
+                                    const newTestingDate = calculateTestingDate(currentValues.additional_details_values?.["Date of Casting"] || currentValues.additional_details_values?.["Casting Date"] || "", val);
                                     setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
                                   }}
                                   placeholder="Select Testing Age..."
@@ -999,10 +983,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 />
                               </div>
 
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Day</label>
-                                <Input {...register(`jobEntryTests.${index}.testing_day`)} placeholder="Testing Day" />
-                              </div>
+                              
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Test Method</label>
