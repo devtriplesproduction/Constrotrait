@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
 import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
-import { Loader2, Check, X, ClipboardList, Download, Tag, Calendar, Beaker, AlertCircle } from "lucide-react";
+import { Loader2, Check, X, ClipboardList, Download, Tag, Calendar, Beaker, AlertCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { createClient } from "@/lib/supabase/client";
 import { JobStageStepper } from "@/components/ui/JobStageStepper";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 function uidOf(a: any) {
   const t = a.job_entry_tests;
@@ -49,9 +51,117 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
     } catch (error) {
       console.error("Error downloading PDF:", error);
       alert("Error generating Job Card.");
-    } finally {
+      } finally {
       setDownloadingId(null);
     }
+  };
+
+  const handleDownloadAllotmentPdf = (a: any) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Header Border
+    doc.rect(14, 15, pageWidth - 28, 15);
+    
+    // Header Texts
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI", pageWidth / 2, 24, { align: "center" });
+    
+    // Info Table
+    const docNo = a.job_entry_tests?.test_master?.datasheet_qr || "";
+    autoTable(doc, {
+      startY: 32,
+      theme: "plain",
+      styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 10, fontStyle: 'bold' },
+      body: [
+        [`Doc No. : ${docNo}`, "Record As per ISO/IEC 17025:2017", "Doc Name: Sample Allotment Form"]
+      ],
+      columnStyles: {
+        0: { cellWidth: "30%" },
+        1: { cellWidth: "40%", halign: "center" },
+        2: { cellWidth: "30%", halign: "right" }
+      }
+    });
+
+    const receivedDate = a.job_entry_tests?.job_entries?.created_at ? new Date(a.job_entry_tests.job_entries.created_at).toLocaleDateString() : '';
+    const dueDate = a.due_date ? new Date(a.due_date).toLocaleDateString() : '';
+    const allottedDate = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
+    const assignedName = a.team_id ? a.teams?.name : `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`;
+    
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 4,
+      theme: "plain",
+      styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 10 },
+      body: [
+        [`Sample Received: ${receivedDate}`, `Date of Sample Allotted: ${allottedDate}`],
+        [`Due Date: ${dueDate}`, `Issue To: ${assignedName}`]
+      ]
+    });
+    
+    const prodName = a.job_entry_tests?.test_master?.material_product || '';
+    const uidLabel = a.job_entry_tests?.uid_label || '';
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 4,
+      theme: "plain",
+      styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 10, fontStyle: 'bold' },
+      body: [
+        [`Product Test Name - ${prodName}`, `UID - ${uidLabel}`]
+      ]
+    });
+
+    let count = 1;
+    const sq = a.job_entry_tests?.job_entries?.sample_quantity || a.job_entry_tests?.test_master?.sample_size || '';
+    const match = sq.toString().match(/\d+/);
+    if (match) count = parseInt(match[0], 10);
+    if (count < 1) count = 1;
+
+    const cat = (a.job_entry_tests?.test_master?.category || 'NA').substring(0, 3).toUpperCase();
+    const short = (a.job_entry_tests?.test_master?.component_parameter || 'NA').substring(0, 3).toUpperCase();
+    const fy = new Date(a.created_at || Date.now()).getFullYear();
+    const romanMap = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV"];
+
+    const tableRows = [];
+    const testParams = a.job_entry_tests?.test_master?.component_parameter || '';
+    const method = a.job_entry_tests?.test_master?.test_method || '';
+    
+    for (let i = 0; i < count; i++) {
+        let scode = `CMTS/${cat}/${short}/${fy}/${uidLabel}`;
+        if (count > 1) {
+            scode += `-${romanMap[i] || (i+1)}`;
+        }
+        tableRows.push([scode, prodName, testParams, method, sq, ""]);
+    }
+    
+    for (let i = tableRows.length; i < 5; i++) {
+      tableRows.push(["", "", "", "", "", ""]);
+    }
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 4,
+      theme: "plain",
+      styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 3, fontSize: 9 },
+      headStyles: { fontStyle: "bold", halign: "center" },
+      head: [["Sample Code No.", "Sample Name", "Test Parameters", "Method", "Sample Details", "Remark"]],
+      body: tableRows
+    });
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Sample Received By-", 14, (doc as any).lastAutoTable.finalY + 20);
+
+    const today = new Date().toLocaleDateString();
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 25,
+      theme: "plain",
+      styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 9 },
+      body: [
+        ["Issue No. : 01", "Amendment No & Date :02 & 08.06.2026", "Page No: 1-1"],
+        [`Issue Date: ${today}`, "Prepared by : ", "Reviewed & Approved by: "]
+      ]
+    });
+
+    doc.save(`Sample_Allotment_Form_${uidLabel}.pdf`);
   };
 
   const myAssignments = assignments.filter((a: any) => {
@@ -246,6 +356,15 @@ return (
                     title="Download Job Card PDF"
                   >
                     {downloadingId === a.job_entry_test_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-5 h-5" />}
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleDownloadAllotmentPdf(a)}
+                    className="bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm rounded-lg h-10 w-10 p-0 flex items-center justify-center shrink-0"
+                    title="Download Allotment Form"
+                  >
+                    <FileText className="w-5 h-5" />
                   </Button>
 
                   {/* Actions based on status */}

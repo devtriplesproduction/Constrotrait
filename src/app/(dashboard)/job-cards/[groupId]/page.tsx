@@ -8,6 +8,7 @@ import { JobStageStepper } from "@/components/ui/JobStageStepper";
 import { JobStage } from "@/config/jobTransitions";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { EditTestModal } from "../components/EditTestModal";
 
 export default async function JobCardDetailsPage(props: {
   params: Promise<{ groupId: string }>;
@@ -39,6 +40,33 @@ export default async function JobCardDetailsPage(props: {
 
   const primaryTest = jobGroup[0];
   const client = primaryTest.job_entries?.clients;
+
+  // Extract all unique dates
+  const inwardDates = jobGroup
+    .map((t: any) => t.job_entries?.inward_on || t.date_of_receiving)
+    .filter(Boolean)
+    .sort();
+    
+  const testingDates = jobGroup
+    .map((t: any) => t.date_of_testing)
+    .filter(Boolean)
+    .sort();
+    
+  const castingDates = jobGroup
+    .map((t: any) => t.additional_details_values?.['Casting date'] || 
+           t.additional_details_values?.['Date of Casting'] || 
+           t.additional_details_values?.['Casting Date'])
+    .filter(Boolean)
+    .sort();
+
+  const getDisplayDate = (dates: string[]) => {
+    if (!dates || dates.length === 0) return "-";
+    const uniqueDates = Array.from(new Set(dates));
+    if (uniqueDates.length === 1) {
+      return format(new Date(uniqueDates[0]), "dd MMM yyyy");
+    }
+    return `${format(new Date(uniqueDates[0]), "dd MMM")} - ${format(new Date(uniqueDates[uniqueDates.length - 1]), "dd MMM yyyy")}`;
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-screen-xl mx-auto min-h-screen bg-[#FFF9F5] flex flex-col gap-4">
@@ -77,7 +105,7 @@ export default async function JobCardDetailsPage(props: {
             <div>
               <p className="text-[11px] text-slate-400 mb-0.5">Received</p>
               <p className="text-sm font-bold text-slate-700">
-                {primaryTest.job_entries?.inward_on ? format(new Date(primaryTest.job_entries.inward_on), "dd MMM yyyy") : (primaryTest.date_of_receiving ? format(new Date(primaryTest.date_of_receiving), "dd MMM yyyy") : "-")}
+                {getDisplayDate(inwardDates)}
               </p>
             </div>
           </div>
@@ -86,7 +114,7 @@ export default async function JobCardDetailsPage(props: {
             <div>
               <p className="text-[11px] text-slate-400 mb-0.5">Cast</p>
               <p className="text-sm font-bold text-slate-700">
-                {primaryTest.date_of_casting ? format(new Date(primaryTest.date_of_casting), "dd MMM yyyy") : "-"}
+                {getDisplayDate(castingDates)}
               </p>
             </div>
           </div>
@@ -95,7 +123,7 @@ export default async function JobCardDetailsPage(props: {
             <div>
               <p className="text-[11px] text-slate-400 mb-0.5">Test</p>
               <p className="text-sm font-bold text-slate-700">
-                {primaryTest.date_of_testing ? format(new Date(primaryTest.date_of_testing), "dd MMM yyyy") : "-"}
+                {getDisplayDate(testingDates)}
               </p>
             </div>
           </div>
@@ -154,11 +182,13 @@ export default async function JobCardDetailsPage(props: {
                 </div>
               </div>
               
-              {/* Left Column: Details */}
               <div className="sm:w-[260px] md:w-[280px] flex-shrink-0 sm:border-r border-slate-200 sm:pr-6 flex flex-col">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                  <span className="text-[13px] font-bold text-orange-500 uppercase tracking-widest">TEST {index + 1}</span>
+                <div className="flex items-center justify-between mb-1.5 pr-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                    <span className="text-[13px] font-bold text-orange-500 uppercase tracking-widest">TEST {index + 1}</span>
+                  </div>
+                  <EditTestModal client={client} test={test} />
                 </div>
                 <h3 className="text-2xl font-extrabold text-slate-900 mb-5">{test.material_description || "XX"}</h3>
                 
@@ -192,7 +222,7 @@ export default async function JobCardDetailsPage(props: {
                    </div>
                    <div>
                      <p className="text-[9px] font-bold text-orange-500 uppercase tracking-widest mb-0.5">GRADE</p>
-                     <p className="text-xl font-bold text-orange-500 leading-none">{test.grade || "-"}</p>
+                     <p className="text-xl font-bold text-orange-500 leading-none">{test.grade || (test.additional_details_values as any)?.Grade || (test.additional_details_values as any)?.grade || "-"}</p>
                    </div>
                 </div>
               </div>

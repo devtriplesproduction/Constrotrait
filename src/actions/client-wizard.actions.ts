@@ -19,6 +19,14 @@ export async function submitClientWizard(data: ClientWizardValues) {
         email: data.client.email,
         gst_no: data.client.gst_no,
         company_name: data.client.company_name,
+        division: data.jobEntry.division,
+        site_name: data.jobEntry.site_name,
+        agency_name: data.jobEntry.agency_name,
+        project_name: data.jobEntry.project_name,
+        dispatch_name: data.jobEntry.dispatch_name,
+        dispatch_address: data.jobEntry.dispatch_address,
+        contact_person: data.jobEntry.contact_person,
+        collected_by: data.jobEntry.collected_by,
       });
     } else {
       const newClient = await ClientService.createClient({
@@ -28,6 +36,14 @@ export async function submitClientWizard(data: ClientWizardValues) {
         email: data.client.email,
         gst_no: data.client.gst_no,
         company_name: data.client.company_name,
+        division: data.jobEntry.division,
+        site_name: data.jobEntry.site_name,
+        agency_name: data.jobEntry.agency_name,
+        project_name: data.jobEntry.project_name,
+        dispatch_name: data.jobEntry.dispatch_name,
+        dispatch_address: data.jobEntry.dispatch_address,
+        contact_person: data.jobEntry.contact_person,
+        collected_by: data.jobEntry.collected_by,
       });
       clientId = newClient.id;
     }
@@ -44,6 +60,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
             material_description: test.material_description || null,
             additional_details_values: test.additional_details_values || {},
             test_method: test.test_method || null,
+            grade: test.additional_details_values?.Grade || test.additional_details_values?.grade || null,
           }))
         : [
             {
@@ -54,18 +71,17 @@ export async function submitClientWizard(data: ClientWizardValues) {
               material_description: null,
               additional_details_values: {},
               test_method: null,
+              grade: null,
             },
           ];
 
     const jobEntryData = {
       client_id: clientId,
       division: data.jobEntry.division,
-      site_name: data.jobEntry.site_name,
       agency: data.jobEntry.agency_name,
       project_name: data.jobEntry.project_name,
       dispatch_name: data.jobEntry.dispatch_name,
       dispatch_address: data.jobEntry.dispatch_address,
-      contact_person: data.jobEntry.contact_person,
       collected_by: data.jobEntry.collected_by,
       invoice_no: data.jobEntry.invoice_no,
       invoice_date: data.jobEntry.invoice_date,
@@ -95,6 +111,14 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
       email: data.client.email,
       gst_no: data.client.gst_no,
       company_name: data.client.company_name,
+      division: data.jobEntry.division,
+      site_name: data.jobEntry.site_name,
+      agency_name: data.jobEntry.agency_name,
+      project_name: data.jobEntry.project_name,
+      dispatch_name: data.jobEntry.dispatch_name,
+      dispatch_address: data.jobEntry.dispatch_address,
+      contact_person: data.jobEntry.contact_person,
+      collected_by: data.jobEntry.collected_by,
     });
     
     // In edit mode we only update the test, we'll leave job_entries fields untouched for now
@@ -111,6 +135,7 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
         material_description: jobEntryTest.material_description,
         additional_details_values: jobEntryTest.additional_details_values || {},
         test_method: jobEntryTest.test_method,
+        grade: jobEntryTest.additional_details_values?.Grade || jobEntryTest.additional_details_values?.grade || null,
       });
     }
     revalidatePath("/dashboard");

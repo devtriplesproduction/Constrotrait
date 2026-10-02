@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { MultiSelect } from "@/components/ui/MultiSelect";
-import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText } from "lucide-react";
+import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText, ChevronDown, MapPin, Users, Receipt, Truck } from "lucide-react";
 import { Database } from "@/types/database";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -446,7 +446,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const paginatedTests = filteredTests.slice((testCurrentPage - 1) * testPageSize, testCurrentPage * testPageSize);
 
   return (
-    <Card className="w-full max-w-5xl mx-auto shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 bg-white rounded-2xl overflow-hidden flex flex-col md:flex-row h-[600px]">
+    <Card className="w-full max-w-[1200px] mx-auto shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 bg-white rounded-2xl overflow-hidden flex flex-col md:flex-row h-[600px]">
 
       {/* Left Sidebar Stepper */}
       <div className="w-full md:w-70 lg:w-72 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-6 flex flex-col shrink-0">
@@ -613,9 +613,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: -50, opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 px-2 md:px-2 pb-4"
+                  className="flex flex-col gap-8 px-2 md:px-2 pb-4"
                 >
-                  <div className="col-span-full mb-4 pb-4 border-b border-slate-200/60 flex items-center gap-3">
+                  <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 text-orange-500 shadow-sm shrink-0">
                       <Building2 className="w-5 h-5" />
                     </div>
@@ -625,85 +625,118 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     </div>
                   </div>
 
-                  {(() => {
-                    const hasNonNabl = selectedTestIds.some(id => {
-                      const test = availableTests.find(t => t.id === id);
-                      return test && test.is_nabl === false;
-                    });
-
-                    return (
-                      <>
+                  <div className="flex flex-col gap-6 pt-2">
+                    {/* Site & Contact Card */}
+                    <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/50 group-hover:scale-105 transition-transform duration-300">
+                          <MapPin className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-base font-extrabold text-slate-800 tracking-tight">Site & Contact</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Site</label>
-                          <Input {...register("jobEntry.site_name")} placeholder="Site Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                          <Input {...register("jobEntry.site_name")} placeholder="Site Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
                         </div>
-
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Contact Person Name</label>
-                          <Input {...register("jobEntry.contact_person")} placeholder="Contact Person" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Project</label>
+                          <Input {...register("jobEntry.project_name")} placeholder="Project Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
                         </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Contact Person</label>
+                          <Input {...register("jobEntry.contact_person")} placeholder="Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Division</label>
+                          <Input {...register("jobEntry.division")} placeholder="Division" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                      </div>
+                    </div>
 
-                        {hasNonNabl && (
-                          <>
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Agency</label>
-                              <Input {...register("jobEntry.agency_name")} placeholder="Agency Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                            </div>
+                    {/* Agency & Collection Card */}
+                    <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/50 group-hover:scale-105 transition-transform duration-300">
+                          <Users className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-base font-extrabold text-slate-800 tracking-tight">Agency & Collection</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Agency</label>
+                          <Input {...register("jobEntry.agency_name")} placeholder="Agency Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Collected By</label>
+                          <Input {...register("jobEntry.collected_by")} placeholder="Collected By" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                      </div>
+                    </div>
 
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Project</label>
-                              <Input {...register("jobEntry.project_name")} placeholder="Project Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                            </div>
-
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Collected By</label>
-                              <Input {...register("jobEntry.collected_by")} placeholder="Collected By" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                            </div>
-                            
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Division</label>
-                              <Input {...register("jobEntry.division")} placeholder="Division" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                            </div>
-
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice No.</label>
-                              <Input {...register("jobEntry.invoice_no")} placeholder="Invoice Number" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                            </div>
-                            
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice Date</label>
-                              <Input type="date" {...register("jobEntry.invoice_date")} className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                            </div>
-
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Letter Reference</label>
-                              <Input {...register("jobEntry.letter_reference")} placeholder="Letter Reference" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                            </div>
-
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Payment Status</label>
-                              <Input {...register("jobEntry.payment_status")} placeholder="Payment Status" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                            </div>
-
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name for Dispatching the Report</label>
-                              <Input {...register("jobEntry.dispatch_name")} placeholder="Dispatch Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                            </div>
-
-                            <div className="flex flex-col gap-1.5 md:col-span-2">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Address for Dispatching the Report</label>
-                              <textarea
-                                {...register("jobEntry.dispatch_address")}
-                                placeholder="Dispatch Address"
-                                rows={3}
-                                className="flex w-full rounded-xl border border-border bg-slate-50/50 px-4 py-2.5 text-[13px] shadow-sm transition-all duration-300 placeholder:text-muted-foreground focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 hover:border-orange-500/50 disabled:cursor-not-allowed disabled:opacity-50 text-foreground border-slate-200/80 focus-visible:bg-white min-h-[80px] resize-y"
+                    {/* Billing Details Card */}
+                    <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/50 group-hover:scale-105 transition-transform duration-300">
+                          <Receipt className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-base font-extrabold text-slate-800 tracking-tight">Billing Information</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice No.</label>
+                          <Input {...register("jobEntry.invoice_no")} placeholder="Number" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice Date</label>
+                          <Controller
+                            control={control}
+                            name="jobEntry.invoice_date"
+                            render={({ field }) => (
+                              <PremiumDatePicker
+                                value={field.value}
+                                onChange={field.onChange}
+                                triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
                               />
-                            </div>
-                          </>
-                        )}
-                      </>
-                    );
-                  })()}
+                            )}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Reference</label>
+                          <Input {...register("jobEntry.letter_reference")} placeholder="Ref" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Status</label>
+                          <Input {...register("jobEntry.payment_status")} placeholder="Status" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dispatch Details Card */}
+                    <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/50 group-hover:scale-105 transition-transform duration-300">
+                          <Truck className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-base font-extrabold text-slate-800 tracking-tight">Report Dispatch</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name for Dispatching</label>
+                          <Input {...register("jobEntry.dispatch_name")} placeholder="Dispatch Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5 h-full">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Address</label>
+                          <textarea
+                            {...register("jobEntry.dispatch_address")}
+                            placeholder="Dispatch Address"
+                            rows={2}
+                            className="flex w-full rounded-xl border border-border bg-slate-50/50 px-4 py-2.5 text-[13px] shadow-sm transition-all duration-300 placeholder:text-muted-foreground focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 hover:border-orange-500/50 disabled:cursor-not-allowed disabled:opacity-50 text-foreground border-slate-200/80 focus-visible:bg-white h-[44px] resize-none group-hover:bg-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
@@ -759,8 +792,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
                       <div className="flex flex-col gap-4 relative z-50">
                         <div className="relative group">
-                          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+                          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors pointer-events-none" />
                           <Input
+                            id="test-search-input"
                             placeholder="Search and select tests by name, material, or method..."
                             value={testSearchQuery}
                             onChange={(e) => {
@@ -768,9 +802,25 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                               setShowTestResults(true);
                             }}
                             onFocus={() => setShowTestResults(true)}
+                            onClick={() => setShowTestResults(true)}
                             onBlur={() => setTimeout(() => setShowTestResults(false), 200)}
-                            className="pl-12 h-11 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base"
+                            className="pl-12 pr-10 h-11 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base cursor-text"
                           />
+                          <div 
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 cursor-pointer rounded-md hover:bg-slate-100 transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (showTestResults) {
+                                setShowTestResults(false);
+                              } else {
+                                setShowTestResults(true);
+                                document.getElementById("test-search-input")?.focus();
+                              }
+                            }}
+                          >
+                            <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform duration-200 ${showTestResults ? "rotate-180" : ""}`} />
+                          </div>
                         </div>
 
                         {showTestResults && filteredTests.length > 0 && (
@@ -1012,15 +1062,35 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 <div className="col-span-full mt-2">
                                   <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">Additional Details</h4>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                    {testMaster.additional_details.map((detailLabel, detailIdx) => (
-                                      <div key={detailIdx} className="flex flex-col gap-1.5">
-                                        <label className="text-[13px] font-semibold text-slate-700 mb-0.5">{detailLabel}</label>
-                                        <Input
-                                          {...register(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any)}
-                                          placeholder={`Enter ${detailLabel}`}
-                                        />
-                                      </div>
-                                    ))}
+                                    {testMaster.additional_details.map((detailLabel, detailIdx) => {
+                                      const isDateField = detailLabel.toLowerCase().includes('date');
+                                      return (
+                                        <div key={detailIdx} className="flex flex-col gap-1.5">
+                                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">{detailLabel}</label>
+                                          {isDateField ? (
+                                            <PremiumDatePicker
+                                              value={watch(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any) || ""}
+                                              onChange={(val) => {
+                                                setValue(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any, val, { shouldValidate: true });
+                                                if (detailLabel.toLowerCase() === 'casting date' || detailLabel.toLowerCase() === 'date of casting') {
+                                                  const currentValues = getValues(`jobEntryTests.${index}`);
+                                                  if (currentValues.testing_age) {
+                                                    const newTestingDate = calculateTestingDate(val, currentValues.testing_age);
+                                                    setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
+                                                  }
+                                                }
+                                              }}
+                                              side="right"
+                                            />
+                                          ) : (
+                                            <Input
+                                              {...register(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any)}
+                                              placeholder={`Enter ${detailLabel}`}
+                                            />
+                                          )}
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               )}

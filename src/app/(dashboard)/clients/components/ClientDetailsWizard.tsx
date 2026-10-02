@@ -43,7 +43,7 @@ function ProjectJobsList({
   if (filteredJobs.length === 0) {
     return (
       <div className="text-center p-8 text-slate-500 border border-dashed rounded-xl bg-slate-50">
-        No {isCompleted ? "completed" : "working"} projects.
+        No {isCompleted ? "completed" : "current"} projects.
       </div>
     );
   }
@@ -183,7 +183,7 @@ function ProjectJobsList({
                     <div className="shrink-0 text-center">
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Grade</p>
                       <div className="bg-slate-200/50 px-2.5 py-0.5 rounded-md text-[13px] font-bold text-slate-700 inline-block border border-slate-200/60">
-                        {test.grade || "-"}
+                        {test.grade || (test.additional_details_values as any)?.Grade || (test.additional_details_values as any)?.grade || "-"}
                       </div>
                     </div>
                   </div>
@@ -327,7 +327,7 @@ export default function ClientDetailsWizard({
                       step === s ? "text-orange-600" : "text-slate-400"
                     )}
                   >
-                    {s === 1 ? "Details" : s === 2 ? "Working" : "Completed"}
+                    {s === 1 ? "Details" : s === 2 ? "Current Projects" : "Completed"}
                   </span>
                 </div>
                 {idx < 2 && (
@@ -404,7 +404,7 @@ export default function ClientDetailsWizard({
             {step === 2 && (
               <div className="animate-in slide-in-from-right-4 fade-in duration-300">
                 <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-orange-500" /> Current Working Projects
+                  <Briefcase className="w-5 h-5 text-orange-500" /> Current Projects
                 </h3>
                 {isLoadingJobs ? (
                   <div className="flex justify-center p-8">

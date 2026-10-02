@@ -6,6 +6,7 @@ import { ClipboardList, Calendar, User, FileText, StickyNote, ArrowLeft, Edit2 }
 import { assignJobCardAction, getAssignmentsAction, getUnassignedJobCardsAction } from "@/actions/job-assignment.actions";
 import { useRouter } from "next/navigation";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { Select, SelectItem, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { toast } from "@/hooks/use-toast";
 
@@ -13,13 +14,14 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
   const router = useRouter();
   const [showAssignmentsView, setShowAssignmentsView] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [jobEntryTestId, setJobEntryTestId] = useState(initialAssignment?.job_entry_test_id || "");
+  const [selectedJobEntryId, setSelectedJobEntryId] = useState(initialAssignment?.job_entry_tests?.job_entry_id || "");
   const [selectedBranch, setSelectedBranch] = useState("");
   const [assignType, setAssignType] = useState<"employee" | "team">(initialAssignment?.team_id ? "team" : "employee");
   const [selectedTeam, setSelectedTeam] = useState(initialAssignment?.team_id || "");
   const [selectedEmployee, setSelectedEmployee] = useState(initialAssignment?.assigned_to || "");
   const [dueDate, setDueDate] = useState(initialAssignment?.due_date ? new Date(initialAssignment.due_date).toISOString() : new Date().toISOString());
   const [notes, setNotes] = useState(initialAssignment?.notes || "");
+  const [searchJobCard, setSearchJobCard] = useState("");
 
   const [existingAssignments, setExistingAssignments] = useState<any[]>([]);
   const [unassignedJobCards, setUnassignedJobCards] = useState<any[]>([]);
@@ -49,7 +51,8 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
   const allJobCards = [
     ...unassignedJobCards.map(uc => ({
       id: uc.id,
-      uid_label: uc.uid_label || uc.job_entries?.uid_label,
+      job_entry_id: uc.job_entry_id,
+      uid_label: uc.uid_label || uc.job_entries?.uid_label || uc.job_entries?.uid,
       date_of_testing: uc.date_of_testing,
       name: uc.test_master ? `${uc.test_master.component_parameter || ''} - ${uc.test_master.specific_test || ''}` : "Unknown Test",
       category: uc.test_master?.category || "Unknown Category",
@@ -58,7 +61,8 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
     })),
     ...existingAssignments.map(ea => ({
       id: ea.job_entry_test_id,
-      uid_label: ea.job_entry_tests?.uid_label || ea.job_entry_tests?.job_entries?.uid_label,
+      job_entry_id: ea.job_entry_tests?.job_entry_id,
+      uid_label: ea.job_entry_tests?.uid_label || ea.job_entry_tests?.job_entries?.uid_label || ea.job_entry_tests?.job_entries?.uid,
       date_of_testing: ea.job_entry_tests?.date_of_testing,
       name: ea.job_entry_tests?.test_master ? `${ea.job_entry_tests.test_master.component_parameter || ''} - ${ea.job_entry_tests.test_master.specific_test || ''}` : "Unknown Test",
       category: ea.job_entry_tests?.test_master?.category || "Unknown Category",
@@ -67,6 +71,19 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
       assignmentDetails: ea
     }))
   ];
+
+  const uniqueJobEntries = Array.from(new Set(allJobCards.map(jc => jc.job_entry_id))).filter(id => id).map(jobEntryId => {
+    const tests = allJobCards.filter(jc => jc.job_entry_id === jobEntryId);
+    const firstTest = tests[0];
+    const isAllAssigned = tests.every(t => t.isAssigned);
+    return {
+      job_entry_id: jobEntryId,
+      uid_label: firstTest?.uid_label,
+      name: firstTest?.name,
+      isAssigned: isAllAssigned,
+      testCount: tests.length
+    };
+  });
 
   const relevantAssignments = existingAssignments.filter(a => {
     if (dueDate && (!a.due_date || !a.due_date.startsWith(dueDate))) return false;
@@ -81,61 +98,43 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
   });
 
   const handleAssign = async () => {
-    if (!jobEntryTestId) return toast({ title: "Validation Error", description: "Please enter a Job Entry Test UID (or UUID).", variant: "warning" });
+    if (!selectedJobEntryId) return toast({ title: "Validation Error", description: "Please select a Job Card.", variant: "warning" });
     if (assignType === "employee" && !selectedEmployee) return toast({ title: "Validation Error", description: "Please select an employee.", variant: "warning" });
     if (assignType === "team" && !selectedTeam) return toast({ title: "Validation Error", description: "Please select a team.", variant: "warning" });
 
-    const alreadyAssigned = existingAssignments.find(a => a.job_entry_test_id === jobEntryTestId);
-    
-    let isJustUpdate = false;
-    let updateMessage = "Job Card reassigned successfully!";
+    setLoading(true);
 
-    if (alreadyAssigned) {
-      if ((assignType === "employee" && alreadyAssigned.assigned_to === selectedEmployee) ||
-          (assignType === "team" && alreadyAssigned.team_id === selectedTeam)) {
-        isJustUpdate = true;
-        const oldDate = alreadyAssigned.due_date ? alreadyAssigned.due_date.substring(0, 10) : "";
-        const newDate = dueDate ? dueDate.substring(0, 10) : "";
-        const oldNotes = alreadyAssigned.notes || "";
-        const newNotes = notes || "";
+    const testsToAssign = allJobCards.filter(jc => jc.job_entry_id === selectedJobEntryId);
+    let successCount = 0;
+    let errorCount = 0;
 
-        if (oldDate !== newDate && oldNotes !== newNotes) {
-          updateMessage = "Due date and notes updated successfully!";
-        } else if (oldDate !== newDate) {
-          updateMessage = "Due date updated successfully!";
-        } else if (oldNotes !== newNotes) {
-          updateMessage = "Notes updated successfully!";
-        } else {
-          updateMessage = "Assignment details updated successfully!";
-        }
+    for (const test of testsToAssign) {
+      const data = {
+        job_entry_test_id: test.id,
+        assigned_to: assignType === "employee" ? selectedEmployee : undefined,
+        team_id: assignType === "team" ? selectedTeam : undefined,
+        due_date: dueDate || undefined,
+        notes: notes || undefined,
+      };
+
+      const res = await assignJobCardAction(data);
+      if (res.success) {
+        successCount++;
       } else {
-        if (!confirm(`This job is already assigned to another employee. Reassign?`)) {
-          return;
-        }
+        errorCount++;
       }
     }
 
-    setLoading(true);
-    const data = {
-      job_entry_test_id: jobEntryTestId,
-      assigned_to: assignType === "employee" ? selectedEmployee : undefined,
-      team_id: assignType === "team" ? selectedTeam : undefined,
-      due_date: dueDate || undefined,
-      notes: notes || undefined,
-    };
-
-    const res = await assignJobCardAction(data);
-    if (res.success) {
-      const msg = alreadyAssigned 
-         ? (isJustUpdate ? updateMessage : "Job Card reassigned successfully!") 
-         : "Job Card assigned successfully!";
-      toast({ title: "Success", description: msg, variant: "success" });
+    if (successCount > 0) {
+      toast({ title: "Success", description: `Successfully assigned ${successCount} tests from the Job Card!`, variant: "success" });
       fetchExisting();
-      setJobEntryTestId("");
+      setSelectedJobEntryId("");
       if (onSuccess) onSuccess();
-    } else {
-      toast({ title: "Error", description: res.error, variant: "error" });
     }
+    if (errorCount > 0) {
+      toast({ title: "Warning", description: `Failed to assign ${errorCount} tests.`, variant: "warning" });
+    }
+
     setLoading(false);
   };
 
@@ -152,20 +151,39 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
             <div className="space-y-5">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Select Job Card</label>
-                <Dropdown 
-                  value={jobEntryTestId} 
-                  onChange={setJobEntryTestId} 
+                <Select
+                  value={selectedJobEntryId} 
+                  onValueChange={setSelectedJobEntryId} 
                   placeholder="Select a Job Card"
                   buttonClassName="w-full bg-white border-slate-200"
-                  options={allJobCards.map(jc => {
-                    const uidStr = jc.uid_label ? `UID: ${jc.uid_label}` : `UID missing`;
-                    return {
-                      value: jc.id,
-                      label: `${jc.category} , ${jc.name} ${uidStr} (${jc.status})`
-                    };
-                  })}
-                />
-                <div className="mt-1.5 text-xs text-slate-500 text-right">Loaded {unassignedJobCards.length} unassigned</div>
+                  isSearchable={true}
+                  searchValue={searchJobCard}
+                  onSearchChange={setSearchJobCard}
+                >
+                  <SelectGroup>
+                    <SelectLabel className="text-orange-600 bg-orange-50/80">⚠️ Unassigned Job Cards</SelectLabel>
+                    {uniqueJobEntries.filter(je => !je.isAssigned && (!searchJobCard || je.uid_label?.toLowerCase().includes(searchJobCard.toLowerCase()) || je.name?.toLowerCase().includes(searchJobCard.toLowerCase()))).map(je => {
+                      const uidStr = je.uid_label ? `ID: ${je.uid_label}` : `Unknown ID (${je.name})`;
+                      return (
+                        <SelectItem key={je.job_entry_id} value={je.job_entry_id}>
+                          {`${uidStr} (${je.testCount} tests)`}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="text-emerald-600 bg-emerald-50/80 mt-1">🔄 Assigned Job Cards</SelectLabel>
+                    {uniqueJobEntries.filter(je => je.isAssigned && (!searchJobCard || je.uid_label?.toLowerCase().includes(searchJobCard.toLowerCase()) || je.name?.toLowerCase().includes(searchJobCard.toLowerCase()))).map(je => {
+                      const uidStr = je.uid_label ? `ID: ${je.uid_label}` : `Unknown ID (${je.name})`;
+                      return (
+                        <SelectItem key={je.job_entry_id} value={je.job_entry_id}>
+                          {`${uidStr} (${je.testCount} tests)`}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectGroup>
+                </Select>
+                <div className="mt-1.5 text-xs text-slate-500 text-right">Loaded {uniqueJobEntries.length} Job Cards</div>
               </div>
 
               {branches && branches.length > 0 && (
@@ -251,7 +269,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
               disabled={loading} 
               className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-sm font-semibold rounded-xl shadow-md shadow-orange-500/20 transition-all hover:shadow-lg hover:shadow-orange-500/30"
             >
-              {loading ? "Processing..." : (allJobCards.find(jc => jc.id === jobEntryTestId)?.isAssigned ? "Reassign Job Card" : "Confirm Assignment")}
+              {loading ? "Processing..." : (uniqueJobEntries.find(je => je.job_entry_id === selectedJobEntryId)?.isAssigned ? "Reassign Job Card" : "Confirm Assignment")}
             </Button>
           </div>
         </>
@@ -301,7 +319,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                     key={a.id} 
                     className="p-4 bg-white border border-slate-200 rounded-xl flex flex-wrap lg:flex-nowrap items-center gap-4 lg:gap-6 cursor-pointer hover:border-orange-400 hover:shadow-md transition-all duration-300 group"
                     onClick={() => {
-                      setJobEntryTestId(a.job_entry_test_id);
+                      setSelectedJobEntryId(a.job_entry_tests?.job_entry_id);
                       if (a.team_id) {
                         setAssignType("team");
                         setSelectedTeam(a.team_id);
