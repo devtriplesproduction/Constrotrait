@@ -74,12 +74,12 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
 
   const uniqueJobEntries = Array.from(new Set(allJobCards.map(jc => jc.job_entry_id))).filter(id => id).map(jobEntryId => {
     const tests = allJobCards.filter(jc => jc.job_entry_id === jobEntryId);
-    const firstTest = tests[0];
+    const uidLabel = tests.find(t => t.uid_label)?.uid_label;
     const isAllAssigned = tests.every(t => t.isAssigned);
     return {
       job_entry_id: jobEntryId,
-      uid_label: firstTest?.uid_label,
-      name: firstTest?.name,
+      uid_label: uidLabel,
+      name: tests[0]?.name,
       isAssigned: isAllAssigned,
       testCount: tests.length
     };
