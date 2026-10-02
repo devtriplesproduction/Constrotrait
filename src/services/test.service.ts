@@ -14,6 +14,12 @@ export interface TestMaster {
   technique_equipment: string;
   is_nabl: boolean | null;
   category: "Construction" | "Environmental" | null;
+  particulars: string | null;
+  unit: string | null;
+  sample_size: string | null;
+  minimum_value: string | null;
+  time_required: string | null;
+  tested_as_per_is: string | null;
   additional_details: string[] | null;
   report_qr: string | null;
   datasheet_qr: string | null;
@@ -62,8 +68,14 @@ export const testService = {
           technique_equipment: data.technique_equipment || "",
           is_nabl: data.is_nabl ?? false,
           category: data.category || "",
+          particulars: data.particulars || null,
+          unit: data.unit || null,
+          sample_size: data.sample_size || null,
+          minimum_value: data.minimum_value || null,
+          time_required: data.time_required || null,
+          tested_as_per_is: data.tested_as_per_is || null,
           additional_details: data.additional_details || [],
-          report_qr: data.report_qr,
+          report_qr: data.report_qr || null,
           datasheet_qr: data.datasheet_qr || null,
           created_by: user.id,
           updated_by: user.id,
@@ -91,7 +103,7 @@ export const testService = {
       const supabase = await createClient();
       const { data, error } = await supabase
         .from("test_master")
-        .select("id, serial_no, discipline_group, material_product, component_parameter, specific_test, test_method, technique_equipment, is_nabl, category, additional_details, report_qr, datasheet_qr, created_at, created_by, updated_at, updated_by")
+        .select("id, serial_no, discipline_group, material_product, component_parameter, specific_test, test_method, technique_equipment, is_nabl, category, particulars, unit, sample_size, minimum_value, time_required, tested_as_per_is, additional_details, report_qr, datasheet_qr, created_at, created_by, updated_at, updated_by")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -125,8 +137,14 @@ export const testService = {
           technique_equipment: data.technique_equipment || "",
           is_nabl: data.is_nabl ?? false,
           category: data.category || "",
+          particulars: data.particulars || null,
+          unit: data.unit || null,
+          sample_size: data.sample_size || null,
+          minimum_value: data.minimum_value || null,
+          time_required: data.time_required || null,
+          tested_as_per_is: data.tested_as_per_is || null,
           additional_details: data.additional_details || [],
-          report_qr: data.report_qr,
+          report_qr: data.report_qr || null,
           datasheet_qr: data.datasheet_qr || null,
           updated_at: new Date().toISOString(),
           updated_by: user.id,

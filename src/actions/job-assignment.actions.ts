@@ -64,3 +64,13 @@ export async function updateAssignmentStatusAction(id: string, status: string, p
     return { success: false, error: error.message };
   }
 }
+
+export async function deleteAssignmentAction(id: string) {
+  try {
+    await JobAssignmentService.deleteAssignment(id);
+    revalidatePath("/job-assignments");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

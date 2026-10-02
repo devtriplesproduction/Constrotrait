@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { ClipboardList, X, Search, Calendar, FileText, User, Download, Loader2 } from "lucide-react";
 import { AssignJobsTab } from "./AssignJobsTab";
-import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
+import { updateAssignmentStatusAction, deleteAssignmentAction } from "@/actions/job-assignment.actions";
 import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
 import { JobStageStepper } from "@/components/ui/JobStageStepper";
 import { toast } from "@/hooks/use-toast";
+import { Trash2 } from "lucide-react";
 
 function assignmentUid(assignment: any) {
   const t = assignment.job_entry_tests;
@@ -29,6 +30,26 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
   const [searchEmployee, setSearchEmployee] = useState<string>("");
   const [remarkObj, setRemarkObj] = useState<{ id: string; remark: string } | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteAssignment = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this assignment?")) return;
+    try {
+      setDeletingId(id);
+      const res = await deleteAssignmentAction(id);
+      if (res.success) {
+        toast({ title: "Success", description: "Assignment deleted successfully.", variant: "success" });
+        router.refresh();
+      } else {
+        toast({ title: "Error", description: res.error || "Failed to delete assignment.", variant: "error" });
+      }
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
+      toast({ title: "Error", description: "Failed to delete assignment.", variant: "error" });
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleDownloadPdf = async (testId: string, uid: string) => {
     try {
@@ -249,6 +270,23 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                           setIsAssignModalOpen(true);
                         }} size="sm" variant="outline" className="text-orange-600 hover:text-white border-orange-200 hover:bg-orange-500 hover:border-orange-500 shadow-sm rounded-xl h-8 px-4 text-xs font-bold transition-all">
                           Edit
+                        </Button>
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteAssignment(assignment.id);
+                          }}
+                          size="sm" 
+                          variant="outline" 
+                          disabled={deletingId === assignment.id}
+                          className="text-red-600 hover:text-red-900 border-red-200 hover:bg-red-50 shadow-sm rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-all"
+                          title="Delete Assignment"
+                        >
+                          {deletingId === assignment.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </Button>
                       </div>
                       

@@ -34,23 +34,11 @@ export function AddTestWizard({
   const { toast } = useToast();
   const router = useRouter();
 
-  const [qrDocuments, setQrDocuments] = useState<any[]>([]);
+  const defaultAdditionalDetails = initialData?.additional_details && initialData.additional_details.length > 0
+    ? initialData.additional_details
+    : ["Material id", "Location", "Sample qty", "Grade", "Testing day", "Casting date"];
 
-  useEffect(() => {
-    async function loadQrDocuments() {
-      const res = await getQrDocumentsAction();
-      if (res.success && res.data) {
-        setQrDocuments(res.data);
-      }
-    }
-    loadQrDocuments();
-  }, []);
-
-  const [details, setDetails] = useState<string[]>(
-    initialData?.additional_details && initialData.additional_details.length > 0
-      ? initialData.additional_details
-      : [""]
-  );
+  const [details, setDetails] = useState<string[]>(defaultAdditionalDetails);
 
   const {
     register,
@@ -62,7 +50,7 @@ export function AddTestWizard({
   } = useForm<CreateTestInput>({
     resolver: zodResolver(createTestSchema),
     defaultValues: {
-      additional_details: initialData?.additional_details || [],
+      additional_details: defaultAdditionalDetails,
       category: initialData?.category || "Construction",
       discipline_group: initialData?.discipline_group || "",
       material_product: initialData?.material_product || "",
@@ -71,6 +59,12 @@ export function AddTestWizard({
       is_nabl: initialData?.is_nabl ?? true,
       report_qr: initialData?.report_qr || "",
       datasheet_qr: initialData?.datasheet_qr || "",
+      particulars: initialData?.particulars || "",
+      unit: initialData?.unit || "",
+      sample_size: initialData?.sample_size || "",
+      minimum_value: initialData?.minimum_value || "",
+      time_required: initialData?.time_required || "",
+      tested_as_per_is: initialData?.tested_as_per_is || "",
     },
   });
 
@@ -78,6 +72,14 @@ export function AddTestWizard({
   const is_nabl = watch("is_nabl");
   const report_qr = watch("report_qr");
   const datasheet_qr = watch("datasheet_qr");
+
+  const prevIsNablRef = React.useRef(initialData?.is_nabl ?? true);
+
+  useEffect(() => {
+    if (prevIsNablRef.current !== is_nabl) {
+      prevIsNablRef.current = is_nabl;
+    }
+  }, [is_nabl]);
 
   const [submitEnabled, setSubmitEnabled] = useState(false);
 
@@ -93,7 +95,11 @@ export function AddTestWizard({
     let fieldsToValidate: (keyof CreateTestInput)[] = [];
 
     if (currentStep === 0) {
-      fieldsToValidate = ["category", "is_nabl", "discipline_group", "material_product", "component_parameter", "test_method", "report_qr", "datasheet_qr"];
+      if (is_nabl) {
+        fieldsToValidate = ["category", "is_nabl", "discipline_group", "material_product", "component_parameter", "test_method", "report_qr", "datasheet_qr"];
+      } else {
+        fieldsToValidate = ["category", "is_nabl", "particulars", "unit", "sample_size", "minimum_value", "time_required", "tested_as_per_is", "report_qr", "datasheet_qr"];
+      }
     } else if (currentStep === 1) {
       fieldsToValidate = ["additional_details"];
     }
@@ -207,67 +213,123 @@ export function AddTestWizard({
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -50, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 px-2 md:px-2"
+                className="px-1"
               >
-                <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Category <span className="text-red-500">*</span></label>
-                  <Select
-                    value={category || "Construction"}
-                    onValueChange={(val) => setValue("category", val as "Construction" | "Environmental")}
-                  >
-                    <SelectItem value="Construction">Construction</SelectItem>
-                    <SelectItem value="Environmental">Environmental</SelectItem>
-                  </Select>
-                  {errors.category && <p className="text-red-500 text-xs">{errors.category.message}</p>}
-                </div>
+                <ScrollArea orientation="vertical" className="h-[380px] pr-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 pb-2">
+                    <div className="flex flex-col justify-end gap-1.5">
+                      <label className="text-sm font-semibold text-slate-700">Category <span className="text-red-500">*</span></label>
+                      <Select
+                        value={category || "Construction"}
+                        onValueChange={(val) => setValue("category", val as "Construction" | "Environmental")}
+                      >
+                        <SelectItem value="Construction">Construction</SelectItem>
+                        <SelectItem value="Environmental">Environmental</SelectItem>
+                      </Select>
+                      {errors.category && <p className="text-red-500 text-xs">{errors.category.message}</p>}
+                    </div>
 
-                <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Accreditation <span className="text-red-500">*</span></label>
-                  <Select
-                    value={is_nabl ? "true" : "false"}
-                    onValueChange={(val) => setValue("is_nabl", val === "true")}
-                  >
-                    <SelectItem value="true">NABL</SelectItem>
-                    <SelectItem value="false">Non-NABL</SelectItem>
-                  </Select>
-                  {errors.is_nabl && <p className="text-red-500 text-xs">{errors.is_nabl.message}</p>}
-                </div>
+                    <div className="flex flex-col justify-end gap-1.5">
+                      <label className="text-sm font-semibold text-slate-700">Accreditation <span className="text-red-500">*</span></label>
+                      <Select
+                        value={is_nabl ? "true" : "false"}
+                        onValueChange={(val) => setValue("is_nabl", val === "true")}
+                      >
+                        <SelectItem value="true">NABL</SelectItem>
+                        <SelectItem value="false">Non-NABL</SelectItem>
+                      </Select>
+                      {errors.is_nabl && <p className="text-red-500 text-xs">{errors.is_nabl.message}</p>}
+                    </div>
 
-                <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700 leading-tight">Report QR</label>
-                  <Input {...register("report_qr")} placeholder="e.g. QR280" />
-                  {errors.report_qr && <p className="text-red-500 text-xs">{errors.report_qr.message}</p>}
-                </div>
+                    <div className="flex flex-col justify-end gap-1.5">
+                      <label className="text-sm font-semibold text-slate-700 leading-tight">Report QR <span className="text-red-500">*</span></label>
+                      <Input {...register("report_qr")} placeholder="e.g. QR280" />
+                      {errors.report_qr && <p className="text-red-500 text-xs">{errors.report_qr.message}</p>}
+                    </div>
 
-                <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700 leading-tight">Datasheet QR</label>
-                  <Input {...register("datasheet_qr")} placeholder="e.g. QR50" />
-                  {errors.datasheet_qr && <p className="text-red-500 text-xs">{errors.datasheet_qr.message}</p>}
-                </div>
+                    <div className="flex flex-col justify-end gap-1.5">
+                      <label className="text-sm font-semibold text-slate-700 leading-tight">Datasheet QR</label>
+                      <Input {...register("datasheet_qr")} placeholder="e.g. QR50" />
+                      {errors.datasheet_qr && <p className="text-red-500 text-xs">{errors.datasheet_qr.message}</p>}
+                    </div>
 
-                <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700 leading-tight">Test Name <span className="text-red-500">*</span></label>
-                  <Input {...register("discipline_group")} placeholder="e.g. Mechanical, Chemical..." />
-                  {errors.discipline_group && <p className="text-red-500 text-xs">{errors.discipline_group.message}</p>}
-                </div>
+                    {is_nabl ? (
+                      <>
+                        <div className="col-span-1 md:col-span-2 flex items-center gap-2 mt-1">
+                          <div className="h-5 w-1 bg-blue-500 rounded-full"></div>
+                          <h4 className="text-sm font-bold text-blue-900 tracking-tight">NABL Specifications</h4>
+                        </div>
 
-                <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700 leading-tight">Materials or Products tested <span className="text-red-500">*</span></label>
-                  <Input {...register("material_product")} placeholder="e.g. Cement, Soil..." />
-                  {errors.material_product && <p className="text-red-500 text-xs">{errors.material_product.message}</p>}
-                </div>
+                        <div className="flex flex-col justify-end gap-1.5">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Test Name <span className="text-red-500">*</span></label>
+                          <Input {...register("discipline_group")} placeholder="e.g. Mechanical, Chemical..." />
+                          {errors.discipline_group && <p className="text-red-500 text-xs">{errors.discipline_group.message}</p>}
+                        </div>
 
-                <div className="flex flex-col justify-end gap-1.5">
-                  <label className="text-sm font-semibold text-slate-700 leading-tight">Component, parameter or characteristic tested <span className="text-red-500">*</span></label>
-                  <Input {...register("component_parameter")} placeholder="e.g. Compressive Strength..." />
-                  {errors.component_parameter && <p className="text-red-500 text-xs">{errors.component_parameter.message}</p>}
-                </div>
+                        <div className="flex flex-col justify-end gap-1.5">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Materials or Products tested <span className="text-red-500">*</span></label>
+                          <Input {...register("material_product")} placeholder="e.g. Cement, Soil..." />
+                          {errors.material_product && <p className="text-red-500 text-xs">{errors.material_product.message}</p>}
+                        </div>
 
-                <div className="flex flex-col justify-end gap-1.5 md:col-span-2">
-                  <label className="text-sm font-semibold text-slate-700 leading-tight">Test Method Specification & Techniques <span className="text-red-500">*</span></label>
-                  <Input {...register("test_method")} placeholder="e.g. IS 516 / Compression Testing Machine" />
-                  {errors.test_method && <p className="text-red-500 text-xs">{errors.test_method.message}</p>}
-                </div>
+                        <div className="flex flex-col justify-end gap-1.5">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Component, parameter or characteristic tested <span className="text-red-500">*</span></label>
+                          <Input {...register("component_parameter")} placeholder="e.g. Compressive Strength..." />
+                          {errors.component_parameter && <p className="text-red-500 text-xs">{errors.component_parameter.message}</p>}
+                        </div>
+
+                        <div className="flex flex-col justify-end gap-1.5 md:col-span-2">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Test Method Specification & Techniques <span className="text-red-500">*</span></label>
+                          <Input {...register("test_method")} placeholder="e.g. IS 516 / Compression Testing Machine" />
+                          {errors.test_method && <p className="text-red-500 text-xs">{errors.test_method.message}</p>}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="col-span-1 md:col-span-2 flex items-center gap-2 mt-1">
+                          <div className="h-5 w-1 bg-blue-500 rounded-full"></div>
+                          <h4 className="text-sm font-bold text-blue-900 tracking-tight">Non-NABL Specifications</h4>
+                        </div>
+                        
+                        <div className="col-span-1 md:col-span-2 flex flex-col justify-end gap-1.5">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Particulars <span className="text-red-500">*</span></label>
+                          <Input {...register("particulars")} placeholder="e.g. Appearance" />
+                          {errors.particulars && <p className="text-red-500 text-xs">{errors.particulars.message}</p>}
+                        </div>
+
+                        <div className="flex flex-col justify-end gap-1.5">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Unit <span className="text-red-500">*</span></label>
+                          <Input {...register("unit")} placeholder="e.g. kg, mm" />
+                          {errors.unit && <p className="text-red-500 text-xs">{errors.unit.message}</p>}
+                        </div>
+
+                        <div className="flex flex-col justify-end gap-1.5">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Sample size <span className="text-red-500">*</span></label>
+                          <Input {...register("sample_size")} placeholder="e.g. 50g" />
+                          {errors.sample_size && <p className="text-red-500 text-xs">{errors.sample_size.message}</p>}
+                        </div>
+
+                        <div className="flex flex-col justify-end gap-1.5">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Minimum <span className="text-red-500">*</span></label>
+                          <Input {...register("minimum_value")} placeholder="e.g. 10" />
+                          {errors.minimum_value && <p className="text-red-500 text-xs">{errors.minimum_value.message}</p>}
+                        </div>
+
+                        <div className="flex flex-col justify-end gap-1.5">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Time <span className="text-red-500">*</span></label>
+                          <Input {...register("time_required")} placeholder="e.g. 24 hours" />
+                          {errors.time_required && <p className="text-red-500 text-xs">{errors.time_required.message}</p>}
+                        </div>
+
+                        <div className="col-span-1 md:col-span-2 flex flex-col justify-end gap-1.5">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Tested As Per Indian Standard <span className="text-red-500">*</span></label>
+                          <Input {...register("tested_as_per_is")} placeholder="e.g. IS 456" />
+                          {errors.tested_as_per_is && <p className="text-red-500 text-xs">{errors.tested_as_per_is.message}</p>}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </ScrollArea>
               </motion.div>
             )}
 

@@ -244,4 +244,13 @@ export class JobAssignmentService {
     if (error) throw new Error(error.message);
     return data;
   }
+
+  static async deleteAssignment(id: string) {
+    const supabase = await createClient();
+    const user = await this.checkPermission(supabase);
+    
+    const { error } = await supabase.from("job_assignments").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+    return true;
+  }
 }
