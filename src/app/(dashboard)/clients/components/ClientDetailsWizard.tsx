@@ -103,7 +103,7 @@ function ProjectJobsList({
                   <Briefcase className="w-6 h-6 text-orange-500" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-800 text-lg m-0">Job UID: {job.uid_label || String(job.uid || "") || "Missing"}</h4>
+                  <h4 className="font-bold text-slate-800 text-lg m-0">Job UID: {job.uid_label || String(job.uid || "") || job.job_entry_tests?.find(t => t.uid_label)?.uid_label || "Missing"}</h4>
                   <p className="text-sm font-semibold text-slate-500 mt-0.5">
                     {job.matchingTests.length} Test{job.matchingTests.length !== 1 ? 's' : ''} • Created: {new Date(job.created_at).toLocaleDateString()}
                   </p>
@@ -130,7 +130,7 @@ function ProjectJobsList({
             <ArrowLeft className="w-4 h-4" /> Back to Jobs
           </button>
           <div className="text-sm font-bold text-slate-800 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-            Job: {selectedJob.uid_label || String(selectedJob.uid || "") || "UID missing"}
+            Job: {selectedJob.uid_label || String(selectedJob.uid || "") || selectedJob.job_entry_tests?.find(t => t.uid_label)?.uid_label || "UID missing"}
           </div>
         </div>
 

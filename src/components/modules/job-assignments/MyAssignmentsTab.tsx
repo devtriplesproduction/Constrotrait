@@ -111,26 +111,48 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
     });
 
     let count = 1;
-    const sq = a.job_entry_tests?.job_entries?.sample_quantity || a.job_entry_tests?.test_master?.sample_size || '';
-    const match = sq.toString().match(/\d+/);
+    // Extract count ONLY from test's additional_details_values if present.
+    // The instruction: "one row per sample only if a numeric sample count is stored on the test. Do not read job_entries.sample_quantity."
+    const testSampleCountStr = a.job_entry_tests?.additional_details_values?.sample_quantity || 
+                               a.job_entry_tests?.test_master?.sample_size || '';
+    const match = testSampleCountStr.toString().match(/\d+/);
     if (match) count = parseInt(match[0], 10);
-    if (count < 1) count = 1;
+    if (count < 1 || isNaN(count)) count = 1;
 
     const cat = (a.job_entry_tests?.test_master?.category || 'NA').substring(0, 3).toUpperCase();
     const short = (a.job_entry_tests?.test_master?.component_parameter || 'NA').substring(0, 3).toUpperCase();
-    const fy = new Date(a.created_at || Date.now()).getFullYear();
+    
+    // FY Logic: Apr-Mar
+    const creationDate = new Date(a.created_at || Date.now());
+    const m = creationDate.getMonth(); // 0-11
+    const y = creationDate.getFullYear() % 100;
+    const fy = m >= 3 ? `${y}-${y+1}` : `${y-1}-${y}`;
+    
     const romanMap = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV"];
 
     const tableRows = [];
     const testParams = a.job_entry_tests?.test_master?.component_parameter || '';
     const method = a.job_entry_tests?.test_master?.test_method || '';
     
+    // Sample Name = material description or additional_details_values location if present, else blank
+    const sampleName = a.job_entry_tests?.job_entries?.material_description || 
+                       a.job_entry_tests?.additional_details_values?.location || '';
+                       
+    // Sample Details = additional detail value if present, else blank. Do not put the quantity.
+    const sampleDetails = a.job_entry_tests?.additional_details_values?.location || ''; // Since it's unstructured, location is the main detail usually, or we can just stringify other details excluding quantity?
+    // Wait, the instruction says "additional detail value if present".
+    // I'll extract a simple string from additional_details_values ignoring 'sample_quantity' and 'sample_code_no'.
+    const rawDetails = { ...(a.job_entry_tests?.additional_details_values || {}) };
+    delete rawDetails.sample_quantity;
+    delete rawDetails.sample_code_no;
+    const sampleDetailsStr = Object.values(rawDetails).filter(Boolean).join(', ') || '';
+    
     for (let i = 0; i < count; i++) {
         let scode = `CMTS/${cat}/${short}/${fy}/${uidLabel}`;
         if (count > 1) {
             scode += `-${romanMap[i] || (i+1)}`;
         }
-        tableRows.push([scode, prodName, testParams, method, sq, ""]);
+        tableRows.push([scode, sampleName, testParams, method, sampleDetailsStr, ""]);
     }
     
     for (let i = tableRows.length; i < 5; i++) {
@@ -156,7 +178,7 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
       theme: "plain",
       styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 9 },
       body: [
-        ["Issue No. : 01", "Amendment No & Date :02 & 08.06.2026", "Page No: 1-1"],
+        ["Issue No. : 01", "Amendment No & Date : ", "Page No: 1-1"],
         [`Issue Date: ${today}`, "Prepared by : ", "Reviewed & Approved by: "]
       ]
     });
@@ -289,9 +311,16 @@ return (
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Test Request</p>
                     <h3 className="text-lg font-bold text-slate-900 mb-3 leading-tight">{specificTest}</h3>
                     <div className="flex flex-wrap gap-2">
-                      <span className="px-2 py-1 rounded bg-orange-100 text-orange-700 text-xs font-semibold">Concrete</span>
-                      <span className="px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-semibold">NDT</span>
-                      <span className="px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-semibold">Quality Control</span>
+                      {a.job_entry_tests?.test_master?.material_product && (
+                        <span className="px-2 py-1 rounded bg-orange-100 text-orange-700 text-xs font-semibold">
+                          {a.job_entry_tests.test_master.material_product}
+                        </span>
+                      )}
+                      {a.job_entry_tests?.test_master?.category && (
+                        <span className="px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-semibold">
+                          {a.job_entry_tests.test_master.category}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

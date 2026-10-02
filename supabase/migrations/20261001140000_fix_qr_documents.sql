@@ -1,7 +1,7 @@
 -- 20261001140000_fix_qr_documents.sql
 
 -- Clear out any incorrectly mapped test_master rows (as instructed: do not set report_qr from test name)
-UPDATE public.test_master SET report_qr = NULL, datasheet_qr = NULL;
+-- REMOVED UPDATE statement per request.
 
 -- Upsert qr_documents with correct doc_types
 INSERT INTO public.qr_documents (code, name, doc_type, is_nabl)

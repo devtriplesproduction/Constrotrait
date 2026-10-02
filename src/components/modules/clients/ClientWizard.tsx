@@ -204,8 +204,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           previews.push(uid);
           currentNablUid++;
         } else {
-          const inwardDate = test.date_of_receiving ? new Date(test.date_of_receiving) : new Date();
-          const currentMonthStr = inwardDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+          const inwardDateStr = test.date_of_receiving;
+          const currentMonthStr = inwardDateStr ? new Date(inwardDateStr).toLocaleString('en-US', { month: 'short' }).toUpperCase() : "MMM";
           const uid = `${currentMonthStr}-${currentNonNablSerial.toString().padStart(2, '0')}`;
           groupToUid.set(groupKey, uid);
           previews.push(uid);
