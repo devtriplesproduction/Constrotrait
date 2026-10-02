@@ -619,74 +619,90 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                       <Building2 className="w-5 h-5" />
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Job Entry Details</h3>
-                      <p className="text-[15px] text-slate-500 font-medium">Enter information regarding the site, agency, and project.</p>
+                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Site / Project Details</h3>
+                      <p className="text-[15px] text-slate-500 font-medium">Enter information regarding the site and project.</p>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Site</label>
-                    <Input {...register("jobEntry.site_name")} placeholder="Site Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Agency</label>
-                    <Input {...register("jobEntry.agency_name")} placeholder="Agency Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                  {(() => {
+                    const hasNonNabl = selectedTestIds.some(id => {
+                      const test = availableTests.find(t => t.id === id);
+                      return test && test.is_nabl === false;
+                    });
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Project</label>
-                    <Input {...register("jobEntry.project_name")} placeholder="Project Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                    return (
+                      <>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Site</label>
+                          <Input {...register("jobEntry.site_name")} placeholder="Site Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                        </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Contact Person Name</label>
-                    <Input {...register("jobEntry.contact_person")} placeholder="Contact Person" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Contact Person Name</label>
+                          <Input {...register("jobEntry.contact_person")} placeholder="Contact Person" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                        </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Collected By</label>
-                    <Input {...register("jobEntry.collected_by")} placeholder="Collected By" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Division</label>
-                    <Input {...register("jobEntry.division")} placeholder="Division" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                        {hasNonNabl && (
+                          <>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Agency</label>
+                              <Input {...register("jobEntry.agency_name")} placeholder="Agency Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                            </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice No.</label>
-                    <Input {...register("jobEntry.invoice_no")} placeholder="Invoice Number" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
-                  
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice Date</label>
-                    <Input type="date" {...register("jobEntry.invoice_date")} className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Project</label>
+                              <Input {...register("jobEntry.project_name")} placeholder="Project Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                            </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Letter Reference</label>
-                    <Input {...register("jobEntry.letter_reference")} placeholder="Letter Reference" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Collected By</label>
+                              <Input {...register("jobEntry.collected_by")} placeholder="Collected By" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                            </div>
+                            
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Division</label>
+                              <Input {...register("jobEntry.division")} placeholder="Division" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                            </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Payment Status</label>
-                    <Input {...register("jobEntry.payment_status")} placeholder="Payment Status" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice No.</label>
+                              <Input {...register("jobEntry.invoice_no")} placeholder="Invoice Number" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                            </div>
+                            
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice Date</label>
+                              <Input type="date" {...register("jobEntry.invoice_date")} className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                            </div>
 
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Letter Reference</label>
+                              <Input {...register("jobEntry.letter_reference")} placeholder="Letter Reference" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                            </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name for Dispatching the Report</label>
-                    <Input {...register("jobEntry.dispatch_name")} placeholder="Dispatch Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Payment Status</label>
+                              <Input {...register("jobEntry.payment_status")} placeholder="Payment Status" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                            </div>
 
-                  <div className="flex flex-col gap-1.5 md:col-span-2">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Address for Dispatching the Report</label>
-                    <textarea
-                      {...register("jobEntry.dispatch_address")}
-                      placeholder="Dispatch Address"
-                      rows={3}
-                      className="flex w-full rounded-xl border border-border bg-slate-50/50 px-4 py-2.5 text-[13px] shadow-sm transition-all duration-300 placeholder:text-muted-foreground focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 hover:border-orange-500/50 disabled:cursor-not-allowed disabled:opacity-50 text-foreground border-slate-200/80 focus-visible:bg-white min-h-[80px] resize-y"
-                    />
-                  </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name for Dispatching the Report</label>
+                              <Input {...register("jobEntry.dispatch_name")} placeholder="Dispatch Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
+                            </div>
+
+                            <div className="flex flex-col gap-1.5 md:col-span-2">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Address for Dispatching the Report</label>
+                              <textarea
+                                {...register("jobEntry.dispatch_address")}
+                                placeholder="Dispatch Address"
+                                rows={3}
+                                className="flex w-full rounded-xl border border-border bg-slate-50/50 px-4 py-2.5 text-[13px] shadow-sm transition-all duration-300 placeholder:text-muted-foreground focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 hover:border-orange-500/50 disabled:cursor-not-allowed disabled:opacity-50 text-foreground border-slate-200/80 focus-visible:bg-white min-h-[80px] resize-y"
+                              />
+                            </div>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
                 </motion.div>
               )}
 

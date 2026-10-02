@@ -87,71 +87,68 @@ return (
         <div className="grid gap-6">
           {myAssignments.map((a: any) => {
             const uid = uidOf(a);
+            
+            // Derive created/updated dates
+            const createdDate = a.created_at ? new Date(a.created_at) : null;
+            const updatedDate = a.updated_at ? new Date(a.updated_at) : new Date();
+            
+            // Format dates
+            const createdStr = createdDate ? createdDate.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : '-';
+            const updatedHours = Math.round((new Date().getTime() - updatedDate.getTime()) / (1000 * 60 * 60));
+            const updatedStr = updatedHours < 24 ? `${updatedHours} hours ago` : updatedHours < 48 ? '1 day ago' : `${Math.floor(updatedHours/24)} days ago`;
+            const dueDate = a.due_date ? new Date(a.due_date) : null;
+            const dueStr = dueDate ? dueDate.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : '-';
+            
+            // Calculate overdue
+            let isOverdue = false;
+            let overdueDays = 0;
+            if (dueDate && new Date() > dueDate && a.status !== 'approved' && a.status !== 'rejected') {
+                isOverdue = true;
+                overdueDays = Math.floor((new Date().getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+            }
+            
+            const assignedName = a.team_id 
+                ? a.teams?.name 
+                : `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`;
+            
+            const specificTest = a.job_entry_tests?.test_master?.specific_test || a.job_entry_tests?.test_master?.component_parameter || 'N/A';
+
             return (
-            <div key={a.id} className="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col">
+            <div key={a.id} className="relative bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
               
-              {/* Card Header & Details Combined */}
-              <div className="p-5 sm:p-6 pb-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 items-start">
-                
-                {/* Job UID */}
-                <div>
+              {/* Left Edge Accent & Top Gradient */}
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 z-10"></div>
+              <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-orange-50/50 to-transparent pointer-events-none"></div>
+
+              {/* Top Header Row */}
+              <div className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 relative z-10">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="bg-orange-100 text-orange-600 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">
+                    {a.job_entry_tests?.job_entries?.uid || '#JOB-0000'}
+                  </div>
+                  
                   {uid ? (
-                    <div className="flex items-start gap-2">
-                      <div className="bg-orange-100 text-orange-600 p-1.5 rounded-lg mt-0.5 shrink-0">
-                        <Tag className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Job UID</p>
-                        <h3 className="text-sm font-bold text-slate-900 leading-tight break-all">{uid}</h3>
-                      </div>
+                    <div className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 shadow-sm border border-slate-200">
+                      <Tag className="w-4 h-4 text-slate-400" />
+                      UID: {uid}
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2">
-                      <div className="bg-red-50 text-red-500 p-1.5 rounded-lg mt-0.5 shrink-0">
-                        <AlertCircle className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Job UID</p>
-                        <h3 className="text-sm font-bold text-slate-400 italic leading-tight">Missing</h3>
-                      </div>
+                    <div className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 shadow-sm border border-slate-200">
+                      <AlertCircle className="w-4 h-4 text-slate-400" />
+                      UID missing
                     </div>
                   )}
-                </div>
 
-                {/* Test Request */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1 text-slate-400">
-                    <Beaker className="w-3.5 h-3.5" />
-                    <p className="text-xs font-medium uppercase tracking-wider">Test Request</p>
-                  </div>
-                  <p className="text-sm font-semibold text-slate-800">{a.job_entry_tests?.test_master?.specific_test || a.job_entry_tests?.test_master?.component_parameter || 'N/A'}</p>
-                </div>
-
-                {/* Due Date */}
-                <div>
-                  {a.due_date && (
-                    <>
-                      <div className="flex items-center gap-1.5 mb-1 text-slate-400">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <p className="text-xs font-medium uppercase tracking-wider">Due Date</p>
-                      </div>
-                      <p className="text-sm font-semibold text-slate-800">{new Date(a.due_date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                    </>
-                  )}
-                </div>
-
-                {/* Status Badge */}
-                <div className="flex items-start md:justify-end">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                    a.status === 'in_testing' ? 'bg-blue-50 text-blue-700 border border-blue-200/60' :
-                    a.status === 'report_uploaded' ? 'bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200/60' :
-                    a.status === 'in_review' ? 'bg-amber-50 text-amber-700 border border-amber-200/60' :
-                    a.status === 'accepted' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/60' :
-                    a.status === 'approved' ? 'bg-green-50 text-green-700 border border-green-200/60' :
-                    a.status === 'rejected' ? 'bg-red-50 text-red-700 border border-red-200/60' :
-                    'bg-slate-50 text-slate-700 border border-slate-200/60'
+                  <div className={`px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm border uppercase tracking-wide ${
+                    a.status === 'in_testing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                    a.status === 'report_uploaded' ? 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' :
+                    a.status === 'in_review' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                    a.status === 'accepted' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                    a.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
+                    a.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                    'bg-slate-50 text-slate-700 border-slate-200'
                   }`}>
-                    <div className={`w-1.5 h-1.5 rounded-full mr-2 ${
+                    <div className={`w-2 h-2 rounded-full ${
                       a.status === 'in_testing' ? 'bg-blue-500' :
                       a.status === 'report_uploaded' ? 'bg-fuchsia-500' :
                       a.status === 'in_review' ? 'bg-amber-500' :
@@ -161,12 +158,70 @@ return (
                       'bg-slate-400'
                     }`}></div>
                     {String(a.status || '').replace('_', ' ')}
-                  </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-6 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Created on</p>
+                      <p className="font-semibold text-slate-700">{createdStr}</p>
+                    </div>
+                  </div>
+                  <div className="w-px h-8 bg-slate-200"></div>
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Updated</p>
+                      <p className="font-semibold text-slate-700">{updatedStr}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Body */}
+              <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
+                {/* Left - Test Request Details */}
+                <div className="lg:col-span-5 flex gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 border border-orange-100">
+                    <Beaker className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Test Request</p>
+                    <h3 className="text-lg font-bold text-slate-900 mb-3 leading-tight">{specificTest}</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-2 py-1 rounded bg-orange-100 text-orange-700 text-xs font-semibold">Concrete</span>
+                      <span className="px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-semibold">NDT</span>
+                      <span className="px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-semibold">Quality Control</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Middle - Due Date */}
+                <div className="lg:col-span-3">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Due Date</p>
+                  </div>
+                  <p className="text-base font-bold text-slate-800 mb-2">{dueStr}</p>
+                  {isOverdue && (
+                    <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-red-100 text-red-700 text-xs font-bold border border-red-200">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      Overdue by {overdueDays} day{overdueDays !== 1 ? 's' : ''}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right - Progress Stepper */}
+                <div className="lg:col-span-4 flex flex-col justify-center">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Progress</p>
+                  <JobStageStepper currentStage={a.status} isRejected={a.status === 'rejected'} orientation="horizontal" />
                 </div>
               </div>
 
               {a.reviewer_remark && (
-                <div className="mx-5 sm:mx-6 mb-6 bg-red-50/80 p-4 rounded-xl border border-red-100 text-sm">
+                <div className="mx-6 mb-6 bg-red-50/80 p-4 rounded-xl border border-red-100 text-sm">
                   <span className="flex items-center gap-2 font-semibold text-red-800 mb-1">
                     <AlertCircle className="w-4 h-4" /> Reviewer Remark
                   </span>
@@ -174,36 +229,42 @@ return (
                 </div>
               )}
 
-              {/* Stepper */}
-              <div className="px-5 sm:px-6 mb-6 overflow-x-auto">
-                <JobStageStepper currentStage={a.status} isRejected={a.status === 'rejected'} orientation="horizontal" />
-              </div>
-
-              {/* Card Footer - Actions */}
-              <div className="mt-auto bg-slate-50/50 border-t border-slate-100 p-4 sm:px-6 rounded-b-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex-1 w-full sm:w-auto">
-                  {a.report_url && (
-                    <a href={a.report_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors w-full sm:w-auto justify-center">
-                      <Download className="w-4 h-4" /> View Report
-                    </a>
-                  )}
+              {/* Bottom Footer */}
+              <div className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-auto">
+                <div className="flex flex-wrap items-center gap-6 sm:gap-8 w-full sm:w-auto text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-orange-100/50 text-orange-600 flex items-center justify-center border border-orange-200/50">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium mb-0.5">Assigned To</p>
+                      <p className="font-bold text-slate-800">{assignedName}</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 sm:justify-end w-full sm:w-auto">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  {a.report_url && (
+                    <a href={a.report_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 bg-orange-100 hover:bg-orange-200 px-4 py-2 rounded-lg transition-colors border border-orange-200 shadow-sm flex-1 sm:flex-none h-10">
+                      <Download className="w-4 h-4" /> View Uploaded Report
+                    </a>
+                  )}
+
                   <Button 
                     variant="outline" 
                     onClick={() => handleDownloadPdf(a.job_entry_test_id, a.job_entry_tests?.uid_label || 'Unknown')}
                     disabled={downloadingId === a.job_entry_test_id}
-                    className="bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm rounded-lg px-4 h-10 text-sm flex-1 sm:flex-none"
+                    className="bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm rounded-lg h-10 w-10 p-0 flex items-center justify-center shrink-0"
+                    title="Download Job Card PDF"
                   >
-                    {downloadingId === a.job_entry_test_id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ClipboardList className="w-4 h-4 mr-2 text-slate-400" />}
-                    Job Card
+                    {downloadingId === a.job_entry_test_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-5 h-5" />}
                   </Button>
 
+                  {/* Actions based on status */}
                   {a.status === 'assigned' && (
-                    <>
-                      <Button onClick={() => handleStatusUpdate(a.id, 'accepted')} disabled={loadingId === a.id} className="bg-indigo-600 hover:bg-indigo-700 shadow-sm rounded-lg px-5 h-10 text-white text-sm flex-1 sm:flex-none">
-                        {loadingId === a.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                    <div className="flex gap-2">
+                      <Button onClick={() => handleStatusUpdate(a.id, 'accepted')} disabled={loadingId === a.id} className="bg-orange-500 hover:bg-orange-600 shadow-sm rounded-lg px-4 h-10 text-white text-sm font-bold">
+                        {loadingId === a.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-1" />}
                         Accept
                       </Button>
                       <Button variant="outline" onClick={() => {
@@ -212,21 +273,21 @@ return (
                           if (!remark.trim()) return alert("Remark is required to reject.");
                           handleStatusUpdate(a.id, 'rejected', { reviewer_remark: remark });
                         }
-                      }} disabled={loadingId === a.id} className="text-red-600 border-red-200 hover:bg-red-50 rounded-lg h-10 text-sm flex-1 sm:flex-none">
+                      }} disabled={loadingId === a.id} className="text-red-600 border-red-200 hover:bg-red-50 rounded-lg h-10 text-sm font-bold">
                         Reject
                       </Button>
-                    </>
+                    </div>
                   )}
 
                   {(a.status === 'accepted' || a.status === 'rejected') && (
-                    <Button onClick={() => handleStatusUpdate(a.id, 'in_testing')} disabled={loadingId === a.id} className="bg-blue-600 hover:bg-blue-700 shadow-sm rounded-lg px-5 h-10 text-white text-sm flex-1 sm:flex-none">
+                    <Button onClick={() => handleStatusUpdate(a.id, 'in_testing')} disabled={loadingId === a.id} className="bg-orange-500 hover:bg-orange-600 shadow-sm rounded-lg px-4 h-10 text-white text-sm font-bold">
                       {loadingId === a.id && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                       Start Testing
                     </Button>
                   )}
 
                   {a.status === 'in_testing' && (
-                    <div className="flex items-center gap-2 w-full sm:w-auto flex-1 sm:flex-none">
+                    <>
                       <input 
                         type="file" 
                         id={`file-${a.id}`} 
@@ -250,15 +311,15 @@ return (
                           setLoadingId(null);
                         }} 
                       />
-                      <Button disabled={loadingId === a.id} onClick={() => document.getElementById(`file-${a.id}`)?.click()} className="bg-fuchsia-600 hover:bg-fuchsia-700 shadow-sm rounded-lg px-5 h-10 text-white text-sm w-full">
+                      <Button disabled={loadingId === a.id} onClick={() => document.getElementById(`file-${a.id}`)?.click()} className="bg-orange-500 hover:bg-orange-600 shadow-sm rounded-lg px-4 h-10 text-white text-sm font-bold">
                         {loadingId === a.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
                         Upload Report
                       </Button>
-                    </div>
+                    </>
                   )}
 
                   {a.status === 'report_uploaded' && (
-                    <Button onClick={() => handleStatusUpdate(a.id, 'in_review')} disabled={loadingId === a.id} className="bg-amber-500 hover:bg-amber-600 shadow-sm text-white rounded-lg px-5 h-10 text-sm flex-1 sm:flex-none">
+                    <Button onClick={() => handleStatusUpdate(a.id, 'in_review')} disabled={loadingId === a.id} className="bg-orange-500 hover:bg-orange-600 shadow-sm text-white rounded-lg px-4 h-10 text-sm font-bold">
                       {loadingId === a.id && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                       Submit for Review
                     </Button>
