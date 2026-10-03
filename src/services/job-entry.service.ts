@@ -29,65 +29,53 @@ export class JobEntryService {
       const testMasterIds = testsData.map((t) => t.test_master_id).filter(Boolean);
       let testMasters: any[] = [];
       if (testMasterIds.length > 0) {
-        const { data: tmData } = await supabase.from("test_master").select("id, category, is_nabl").in("id", testMasterIds as string[]);
+        const { data: tmData } = await supabase.from("test_master").select("id, is_nabl").in("id", testMasterIds as string[]);
         testMasters = tmData || [];
       }
 
-      const groups = new Map<string, typeof testsData>();
-      for (const test of testsData) {
+      const isNablSet = new Set(testsData.map(test => {
         const tm = testMasters.find((x: any) => x.id === test.test_master_id);
-        const isNabl = tm?.is_nabl ? 'true' : 'false';
-        let category = tm?.category?.trim();
-        if (!category) category = 'Construction';
-        
-        let age = '0';
-        if (test.testing_age) {
-          const ta = String(test.testing_age).trim();
-          if (ta.includes('28')) age = '28';
-          else if (ta === '7' || ta.startsWith('7 ') || ta.startsWith('7-') || ta.toLowerCase().startsWith('7d')) age = '7';
-        }
-        const key = `${isNabl}|${category}|${age}`;
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key)!.push(test);
+        return !!tm?.is_nabl;
+      }));
+
+      if (isNablSet.size > 1) {
+        throw new Error("All tests in a job entry must have the same NABL status");
       }
+
+      const isNabl = Array.from(isNablSet)[0] || false;
 
       const createdDate = jobEntry.created_at ? new Date(jobEntry.created_at) : new Date();
       const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
       const jobYear = createdDate.getFullYear();
       let firstUidLabel: string | null = null;
+      let firstUid: number | null = null;
 
-      for (const [key, groupTests] of Array.from(groups.entries())) {
-        const [isNabl, category, age] = key.split('|');
-        let currentUidLabel = "";
-
-        if (isNabl === 'true') {
-          const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
-          if (error) throw new Error("UID Generation failed: " + error.message);
-          currentUidLabel = data.toString();
-        } else {
-          const counterName = `UID_${month}`;
-          const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
-          if (error) throw new Error("UID Generation failed: " + error.message);
-          currentUidLabel = `${month}-${data.toString().padStart(2, '0')}`;
-        }
-
-        if (!firstUidLabel) firstUidLabel = currentUidLabel;
-
-        uidsIssued.push(currentUidLabel);
-
-        for (const t of groupTests) {
-          (t as any).uid_label = currentUidLabel;
-        }
+      if (isNabl) {
+        const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
+        if (error) throw new Error("UID Generation failed: " + error.message);
+        firstUidLabel = data.toString();
+        firstUid = parseInt(firstUidLabel as string, 10);
+      } else {
+        const counterName = `UID_${month}`;
+        const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
+        if (error) throw new Error("UID Generation failed: " + error.message);
+        firstUidLabel = `${month}-${data.toString().padStart(2, '0')}`;
       }
 
-      if (firstUidLabel) {
-        const isAllDigits = /^\d+$/.test(firstUidLabel);
-        await supabase.from("job_entries").update({ 
-          uid_label: firstUidLabel, 
-          uid: isAllDigits ? parseInt(firstUidLabel, 10) : null 
-        }).eq("id", jobEntry.id);
-        jobEntry.uid_label = firstUidLabel;
+      uidsIssued.push(firstUidLabel as string);
+
+      for (const t of testsData) {
+        (t as any).uid_label = firstUidLabel;
       }
+
+      await supabase.from("job_entries").update({ 
+        uid_label: firstUidLabel, 
+        uid: firstUid,
+        is_nabl: isNabl
+      }).eq("id", jobEntry.id);
+      jobEntry.uid_label = firstUidLabel;
+      jobEntry.uid = firstUid;
+      jobEntry.is_nabl = isNabl;
 
       const testsToInsert = testsData.map((test) => ({ ...test, job_entry_id: jobEntry.id }));
       const { data: insertedTests, error: testsError } = await supabase
@@ -148,7 +136,7 @@ export class JobEntryService {
 
     const { data: jobEntry, error: jobError } = await supabase
       .from("job_entries")
-      .insert({ client_id: clientId, uid_label: currentUidLabel, uid: uidInt })
+      .insert({ client_id: clientId, uid_label: currentUidLabel, uid: uidInt, is_nabl: isNabl })
       .select()
       .single();
     if (jobError) throw new Error(jobError.message);
@@ -183,7 +171,7 @@ export class JobEntryService {
       testMasters = tmData || [];
     }
 
-    const isNablCard = jobEntry.uid !== null;
+    const isNablCard = !!jobEntry.is_nabl;
     const uidsIssued: string[] = [];
     if (jobEntry.uid_label) uidsIssued.push(jobEntry.uid_label);
 
