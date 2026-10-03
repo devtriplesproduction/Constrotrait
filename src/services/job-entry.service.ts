@@ -16,16 +16,7 @@ export class JobEntryService {
     }
 
     const supabase = await createClient() as any;
-    const { data: jobEntry, error: jobError } = await supabase
-      .from("job_entries")
-      .insert({ ...jobData })
-      .select()
-      .single();
-    if (jobError || !jobEntry) throw new Error(jobError?.message || "Failed to create job entry");
-
-    let jobEntryTests: any[] | null = [];
-    let uidsIssued: string[] = [];
-
+    
     let isNabl = false;
 
     if (testsData && testsData.length > 0) {
@@ -50,7 +41,7 @@ export class JobEntryService {
       isNabl = isDummyNabl;
     }
 
-    const createdDate = jobEntry.created_at ? new Date(jobEntry.created_at) : new Date();
+    const createdDate = new Date();
     const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
     const jobYear = createdDate.getFullYear();
     let firstUidLabel: string | null = null;
@@ -67,17 +58,23 @@ export class JobEntryService {
       if (error) throw new Error("UID Generation failed: " + error.message);
       firstUidLabel = `${month}-${data.toString().padStart(2, '0')}`;
     }
-
-    uidsIssued.push(firstUidLabel as string);
-
-    await supabase.from("job_entries").update({ 
+    
+    const jobInsertData = { 
+      ...jobData, 
       uid_label: firstUidLabel, 
-      uid: firstUid,
-      is_nabl: isNabl
-    }).eq("id", jobEntry.id);
-    jobEntry.uid_label = firstUidLabel;
-    jobEntry.uid = firstUid;
-    jobEntry.is_nabl = isNabl;
+      uid: firstUid, 
+      is_nabl: isNabl 
+    };
+
+    const { data: jobEntry, error: jobError } = await supabase
+      .from("job_entries")
+      .insert([jobInsertData])
+      .select()
+      .single();
+    if (jobError || !jobEntry) throw new Error(jobError?.message || "Failed to create job entry");
+
+    let jobEntryTests: any[] | null = [];
+    let uidsIssued: string[] = [firstUidLabel as string];
 
     if (testsData && testsData.length > 0) {
       for (const t of testsData) {

@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { clientWizardSchema, ClientWizardValues } from "@/lib/validations/client-wizard";
-import { submitClientWizard, searchClientsAction, getNextUidAction, updateClientWizardAction } from "@/actions/client-wizard.actions";
+import { submitClientWizard, searchClientsAction, getNextUidAction, updateClientWizardAction, getClientProjectsAction } from "@/actions/client-wizard.actions";
 import { getTestsAction } from "@/actions/test.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Database["public"]["Tables"]["clients"]["Row"][]>([]);
   const [showResults, setShowResults] = useState(false);
+  
+  // Projects state
+  const [clientProjects, setClientProjects] = useState<any[]>([]);
+  const [isFetchingProjects, setIsFetchingProjects] = useState(false);
 
   // Test master data
   const [availableTests, setAvailableTests] = useState<TestMaster[]>([]);
@@ -313,17 +317,28 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
     setValue("client.name", client.name || "");
     setValue("client.company_name", client.company_name || "");
     setValue("client.address", client.address || "");
-    setValue("jobEntry.division", (client as any).division || "");
-    setValue("jobEntry.site_name", (client as any).site_name || "");
-    setValue("jobEntry.agency_name", (client as any).agency_name || "");
-    setValue("jobEntry.project_name", (client as any).project_name || "");
-    setValue("jobEntry.dispatch_name", (client as any).dispatch_name || "");
-    setValue("jobEntry.dispatch_address", (client as any).dispatch_address || "");
-    setValue("jobEntry.contact_person", (client as any).contact_person || "");
     setValue("client.mobile", client.mobile || "");
     setValue("client.email", client.email || "");
-    setValue("jobEntry.collected_by", (client as any).collected_by || "");
     setValue("client.gst_no", client.gst_no || "");
+
+    // Clear project/site details by default, user can select from previous projects in step 2
+    setValue("jobEntry.division", "");
+    setValue("jobEntry.site_name", "");
+    setValue("jobEntry.agency_name", "");
+    setValue("jobEntry.project_name", "");
+    setValue("jobEntry.dispatch_name", "");
+    setValue("jobEntry.dispatch_address", "");
+    setValue("jobEntry.contact_person", "");
+    setValue("jobEntry.collected_by", "");
+    
+    // Fetch projects for this client
+    setIsFetchingProjects(true);
+    getClientProjectsAction(client.id).then(res => {
+      if(res.success && res.data) {
+        setClientProjects(res.data);
+      }
+      setIsFetchingProjects(false);
+    });
 
     setShowResults(false);
     setSearchQuery("");
@@ -673,6 +688,44 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                   </div>
 
                   <div className="flex flex-col gap-6 pt-2">
+                    {clientProjects.length > 0 && (
+                      <div className="flex flex-col gap-1.5 px-6">
+                        <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Select Past Project (Optional)</label>
+                        <select 
+                          className="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-2 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) {
+                              setValue("jobEntry.division", "");
+                              setValue("jobEntry.site_name", "");
+                              setValue("jobEntry.agency_name", "");
+                              setValue("jobEntry.project_name", "");
+                              setValue("jobEntry.dispatch_name", "");
+                              setValue("jobEntry.dispatch_address", "");
+                              setValue("jobEntry.contact_person", "");
+                              setValue("jobEntry.collected_by", "");
+                            } else {
+                              const proj = clientProjects.find(p => p.project_name === val);
+                              if (proj) {
+                                setValue("jobEntry.division", proj.division || "");
+                                setValue("jobEntry.site_name", proj.site_name || "");
+                                setValue("jobEntry.agency_name", proj.agency || "");
+                                setValue("jobEntry.project_name", proj.project_name || "");
+                                setValue("jobEntry.dispatch_name", proj.dispatch_name || "");
+                                setValue("jobEntry.dispatch_address", proj.dispatch_address || "");
+                                setValue("jobEntry.contact_person", proj.contact_person || "");
+                                setValue("jobEntry.collected_by", proj.collected_by || "");
+                              }
+                            }
+                          }}
+                        >
+                          <option value="">-- New Project --</option>
+                          {clientProjects.map((p, i) => (
+                            <option key={i} value={p.project_name}>{p.project_name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     {/* Site & Contact Card */}
                     <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
                       <div className="flex items-center gap-3 border-b border-slate-100 pb-3">

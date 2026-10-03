@@ -155,6 +155,29 @@ export async function searchClientsAction(query: string) {
   }
 }
 
+export async function getClientProjectsAction(clientId: string) {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    
+    const { data, error } = await supabase
+      .from("job_entries")
+      .select("project_name, division, site_name, agency, dispatch_name, dispatch_address, collected_by, contact_person")
+      .eq("client_id", clientId)
+      .not("project_name", "is", null)
+      .order("created_at", { ascending: false });
+      
+    if (error) throw error;
+    
+    // Deduplicate by project_name
+    const uniqueProjects = Array.from(new Map(data.filter(d => d.project_name).map(item => [item.project_name, item])).values());
+    
+    return { success: true, data: uniqueProjects };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
 export async function getNextUidAction() {
   try {
     const { createClient } = await import("@/lib/supabase/server");
