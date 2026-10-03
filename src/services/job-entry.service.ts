@@ -6,7 +6,8 @@ import { canManageClientsAndJobs } from "@/config/roles";
 export class JobEntryService {
   static async createJobEntryWithTests(
     jobData: Database["public"]["Tables"]["job_entries"]["Insert"],
-    testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[]
+    testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[],
+    isDummyNabl?: boolean
   ) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
@@ -25,6 +26,8 @@ export class JobEntryService {
     let jobEntryTests: any[] | null = [];
     let uidsIssued: string[] = [];
 
+    let isNabl = false;
+
     if (testsData && testsData.length > 0) {
       const testMasterIds = testsData.map((t) => t.test_master_id).filter(Boolean);
       let testMasters: any[] = [];
@@ -42,40 +45,44 @@ export class JobEntryService {
         throw new Error("All tests in a job entry must have the same NABL status");
       }
 
-      const isNabl = Array.from(isNablSet)[0] || false;
+      isNabl = Array.from(isNablSet)[0] || false;
+    } else if (isDummyNabl !== undefined) {
+      isNabl = isDummyNabl;
+    }
 
-      const createdDate = jobEntry.created_at ? new Date(jobEntry.created_at) : new Date();
-      const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-      const jobYear = createdDate.getFullYear();
-      let firstUidLabel: string | null = null;
-      let firstUid: number | null = null;
+    const createdDate = jobEntry.created_at ? new Date(jobEntry.created_at) : new Date();
+    const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+    const jobYear = createdDate.getFullYear();
+    let firstUidLabel: string | null = null;
+    let firstUid: number | null = null;
 
-      if (isNabl) {
-        const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
-        if (error) throw new Error("UID Generation failed: " + error.message);
-        firstUidLabel = data.toString();
-        firstUid = parseInt(firstUidLabel as string, 10);
-      } else {
-        const counterName = `UID_${month}`;
-        const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
-        if (error) throw new Error("UID Generation failed: " + error.message);
-        firstUidLabel = `${month}-${data.toString().padStart(2, '0')}`;
-      }
+    if (isNabl) {
+      const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
+      if (error) throw new Error("UID Generation failed: " + error.message);
+      firstUidLabel = data.toString();
+      firstUid = parseInt(firstUidLabel as string, 10);
+    } else {
+      const counterName = `UID_${month}`;
+      const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
+      if (error) throw new Error("UID Generation failed: " + error.message);
+      firstUidLabel = `${month}-${data.toString().padStart(2, '0')}`;
+    }
 
-      uidsIssued.push(firstUidLabel as string);
+    uidsIssued.push(firstUidLabel as string);
 
+    await supabase.from("job_entries").update({ 
+      uid_label: firstUidLabel, 
+      uid: firstUid,
+      is_nabl: isNabl
+    }).eq("id", jobEntry.id);
+    jobEntry.uid_label = firstUidLabel;
+    jobEntry.uid = firstUid;
+    jobEntry.is_nabl = isNabl;
+
+    if (testsData && testsData.length > 0) {
       for (const t of testsData) {
         (t as any).uid_label = firstUidLabel;
       }
-
-      await supabase.from("job_entries").update({ 
-        uid_label: firstUidLabel, 
-        uid: firstUid,
-        is_nabl: isNabl
-      }).eq("id", jobEntry.id);
-      jobEntry.uid_label = firstUidLabel;
-      jobEntry.uid = firstUid;
-      jobEntry.is_nabl = isNabl;
 
       const testsToInsert = testsData.map((test) => ({ ...test, job_entry_id: jobEntry.id }));
       const { data: insertedTests, error: testsError } = await supabase
@@ -87,14 +94,12 @@ export class JobEntryService {
         throw new Error(testsError.message);
       }
       jobEntryTests = insertedTests;
-    }
 
-    const { error: qErr } = await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: jobEntry.id });
-    if (qErr) {
-      // On enqueue_ulr_for_job failure: do not leave a half job. 
-      // Delete job (CASCADE tests) but document that the counter will skip a number — acceptable.
-      await supabase.from("job_entries").delete().eq("id", jobEntry.id);
-      throw new Error(qErr.message || "Failed to enqueue job");
+      const { error: qErr } = await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: jobEntry.id });
+      if (qErr) {
+        await supabase.from("job_entries").delete().eq("id", jobEntry.id);
+        throw new Error(qErr.message || "Failed to enqueue job");
+      }
     }
 
     return { jobEntry, jobEntryTests, uidsIssued };

@@ -8,7 +8,7 @@ import { ClientWizard } from "@/components/modules/clients/ClientWizard";
 import ClientsTab from "./ClientsTab";
 import AllJobsTab from "./AllJobsTab";
 import NewInwardModalButton from "./NewInwardModalButton";
-import DummyJobModalButton from "./DummyJobModalButton";
+
 import { PageHeader } from "@/components/modules/PageHeader";
 import { clsx } from "clsx";
 
@@ -81,7 +81,7 @@ export default function ClientInwardManager({
           <div className="flex items-center">
             {TabNavigation}
             <NewInwardModalButton />
-            <DummyJobModalButton />
+
           </div>
         }
       />

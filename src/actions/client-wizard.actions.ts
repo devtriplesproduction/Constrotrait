@@ -67,18 +67,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
             test_method: test.test_method || null,
             grade: data.materialDetails?.grade || test.grade || test.additional_details_values?.Grade || test.additional_details_values?.grade || null,
           }))
-        : [
-            {
-              test_master_id: null,
-              date_of_receiving: null,
-              testing_age: null,
-              date_of_testing: null,
-              material_description: null,
-              additional_details_values: {},
-              test_method: null,
-              grade: null,
-            },
-          ];
+        : [];
 
     const jobEntryData = {
       client_id: clientId,
@@ -94,7 +83,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
       payment_status: data.jobEntry.payment_status,
     };
 
-    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData);
+    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData, data.dummy_is_nabl);
 
     revalidatePath("/dashboard");
     revalidatePath("/clients");

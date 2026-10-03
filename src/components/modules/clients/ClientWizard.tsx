@@ -425,6 +425,14 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   };
 
   const onSubmit = async (data: ClientWizardValues) => {
+    if (!data.selectedTestIds?.length && data.dummy_is_nabl === undefined) {
+      toast({
+        title: "Validation Error",
+        description: "Please select NABL or Non-NABL for the dummy job card."
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       let result;
@@ -1093,8 +1101,40 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     </div>
                   </div>
                   {!selectedTestIds.length ? (
-                    <div className="text-center py-12 text-slate-500">
-                      No test selected. You can proceed to submit, or go back to step 3 to select a test.
+                    <div className="text-center py-12 flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
+                      <h3 className="text-slate-800 font-bold text-lg mb-2">No test selected</h3>
+                      <p className="text-slate-500 text-sm max-w-md mx-auto mb-6">
+                        You can proceed to submit this as a Dummy Job Card. Please select the type of dummy job card you want to create:
+                      </p>
+                      
+                      <div className="flex gap-4">
+                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
+                          <input 
+                            type="radio" 
+                            className="sr-only peer" 
+                            name="dummy_is_nabl" 
+                            value="true"
+                            onChange={() => setValue('dummy_is_nabl', true)}
+                            checked={watch('dummy_is_nabl') === true}
+                          />
+                          <div className="w-32 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all hover:bg-slate-50">
+                            NABL
+                          </div>
+                        </label>
+                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
+                          <input 
+                            type="radio" 
+                            className="sr-only peer" 
+                            name="dummy_is_nabl" 
+                            value="false"
+                            onChange={() => setValue('dummy_is_nabl', false)}
+                            checked={watch('dummy_is_nabl') === false}
+                          />
+                          <div className="w-32 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all hover:bg-slate-50">
+                            Non-NABL
+                          </div>
+                        </label>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-6">
