@@ -54,13 +54,18 @@ export async function submitClientWizard(data: ClientWizardValues) {
       data.jobEntryTests && data.jobEntryTests.length > 0
         ? data.jobEntryTests.map((test: any) => ({
             test_master_id: toNull(test.test_master_id),
-            date_of_receiving: toNull(test.date_of_receiving),
+            date_of_receiving: toNull(data.materialDetails?.date_of_receiving),
             testing_age: test.testing_age || null,
             date_of_testing: toNull(test.date_of_testing),
             material_description: test.material_description || null,
+            material_id: data.materialDetails?.material_id || null,
+            material_details_location: data.materialDetails?.material_details_location || null,
+            sample_quantity: data.materialDetails?.sample_quantity || null,
+            testing_day: data.materialDetails?.testing_day || null,
+            date_of_casting: toNull(data.materialDetails?.date_of_casting),
             additional_details_values: test.additional_details_values || {},
             test_method: test.test_method || null,
-            grade: test.additional_details_values?.Grade || test.additional_details_values?.grade || null,
+            grade: data.materialDetails?.grade || test.grade || test.additional_details_values?.Grade || test.additional_details_values?.grade || null,
           }))
         : [
             {
@@ -129,13 +134,18 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
     if (jobEntryTest) {
       await JobEntryService.updateJobEntryTest(testId, {
         test_master_id: toNull(jobEntryTest.test_master_id),
-        date_of_receiving: toNull(jobEntryTest.date_of_receiving),
+        date_of_receiving: toNull(data.materialDetails?.date_of_receiving || jobEntryTest.date_of_receiving),
         testing_age: jobEntryTest.testing_age,
         date_of_testing: toNull(jobEntryTest.date_of_testing),
         material_description: jobEntryTest.material_description,
+        material_id: data.materialDetails?.material_id || jobEntryTest.material_id,
+        material_details_location: data.materialDetails?.material_details_location || jobEntryTest.material_details_location,
+        sample_quantity: data.materialDetails?.sample_quantity || jobEntryTest.sample_quantity,
+        testing_day: data.materialDetails?.testing_day || jobEntryTest.testing_day,
+        date_of_casting: toNull(data.materialDetails?.date_of_casting || jobEntryTest.date_of_casting),
         additional_details_values: jobEntryTest.additional_details_values || {},
         test_method: jobEntryTest.test_method,
-        grade: jobEntryTest.additional_details_values?.Grade || jobEntryTest.additional_details_values?.grade || null,
+        grade: data.materialDetails?.grade || jobEntryTest.grade || jobEntryTest.additional_details_values?.Grade || jobEntryTest.additional_details_values?.grade || null,
       });
     }
     revalidatePath("/dashboard");

@@ -108,9 +108,22 @@ export function Select({ value, onValueChange, placeholder, children, className,
     };
   }, [open]);
 
-  const selectedChild = React.Children.toArray(children).find(
-    (child) => React.isValidElement(child) && (child as React.ReactElement<{ value: string }>).props.value === value
-  ) as React.ReactElement<{ children: React.ReactNode }>;
+  const findSelectedChild = (nodes: React.ReactNode, val: string | undefined): React.ReactElement<{ children: React.ReactNode }> | undefined => {
+    let found: React.ReactElement | undefined;
+    React.Children.forEach(nodes, (child) => {
+      if (found) return;
+      if (React.isValidElement(child)) {
+        if (child.props.value !== undefined && child.props.value === val) {
+          found = child as React.ReactElement;
+        } else if (child.props.children) {
+          found = findSelectedChild(child.props.children, val);
+        }
+      }
+    });
+    return found as React.ReactElement<{ children: React.ReactNode }> | undefined;
+  };
+
+  const selectedChild = findSelectedChild(children, value);
 
   const dropdown = (
     <AnimatePresence>

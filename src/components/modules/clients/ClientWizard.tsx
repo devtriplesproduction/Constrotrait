@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { MultiSelect } from "@/components/ui/MultiSelect";
-import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText, ChevronDown, MapPin, Users, Receipt, Truck } from "lucide-react";
+import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText, ChevronDown, MapPin, Users, Receipt, Truck, Package } from "lucide-react";
 import { Database } from "@/types/database";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -25,7 +25,8 @@ const steps = [
   { id: "step1", title: "Customer Basic Details", icon: User },
   { id: "step2", title: "Site / Project Details", icon: Building2 },
   { id: "step3", title: "Select Test", icon: FlaskConical },
-  { id: "step4", title: "Test Details", icon: FileText },
+  { id: "step4", title: "Material Details", icon: Package },
+  { id: "step5", title: "Test Details", icon: FileText },
 ];
 
 const TESTING_AGE_OPTIONS = [
@@ -96,10 +97,24 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const testPageSize = 10;
   const [isLoadingTests, setIsLoadingTests] = useState(false);
   const [showTestResults, setShowTestResults] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<string>("");
+
+  const uniqueMaterials = React.useMemo(() => {
+    const materialMap = new Map<string, string>();
+    availableTests.forEach(test => {
+      if (test.material_product) {
+        const lower = test.material_product.toLowerCase();
+        if (!materialMap.has(lower)) {
+          materialMap.set(lower, test.material_product);
+        }
+      }
+    });
+    return Array.from(materialMap.values()).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  }, [availableTests]);
 
   useEffect(() => {
     setTestCurrentPage(1);
-  }, [testSearchQuery, testNablFilter, testCategoryFilter]);
+  }, [testSearchQuery, testNablFilter, testCategoryFilter, selectedMaterial]);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -140,6 +155,15 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         letter_reference: (initialData.jobEntryTest as any)?.job_entries?.letter_reference || "",
         payment_status: (initialData.jobEntryTest as any)?.job_entries?.payment_status || "",
       },
+      materialDetails: {
+        material_id: initialData.jobEntryTest.material_id || "",
+        material_details_location: initialData.jobEntryTest.material_details_location || "",
+        sample_quantity: initialData.jobEntryTest.sample_quantity || "",
+        testing_day: initialData.jobEntryTest.testing_day || "",
+        grade: initialData.jobEntryTest.grade || "",
+        date_of_casting: initialData.jobEntryTest.date_of_casting || "",
+        date_of_receiving: initialData.jobEntryTest.date_of_receiving || "",
+      },
       selectedTestIds: initialData && initialData.jobEntryTest.test_master_id ? [initialData.jobEntryTest.test_master_id] : [],
       jobEntryTests: initialData ? [{
         test_master_id: initialData.jobEntryTest.test_master_id || "",
@@ -149,6 +173,12 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         testing_age: initialData.jobEntryTest.testing_age || "",
         date_of_testing: initialData.jobEntryTest.date_of_testing || "",
         material_description: initialData.jobEntryTest.material_description || "",
+        material_id: initialData.jobEntryTest.material_id || "",
+        material_details_location: initialData.jobEntryTest.material_details_location || "",
+        sample_quantity: initialData.jobEntryTest.sample_quantity || "",
+        testing_day: initialData.jobEntryTest.testing_day || "",
+        grade: initialData.jobEntryTest.grade || "",
+        date_of_casting: initialData.jobEntryTest.date_of_casting || "",
         additional_details_values: (initialData.jobEntryTest.additional_details_values as Record<string, string>) || {},
       }] : [],
     } as ClientWizardValues : {
@@ -350,6 +380,12 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         testing_age: "",
         date_of_testing: "",
         material_description: "",
+        material_id: "",
+        material_details_location: "",
+        sample_quantity: "",
+        testing_day: "",
+        grade: "",
+        date_of_casting: "",
         additional_details_values: initialAdditionalDetails,
       });
     }
@@ -360,7 +396,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
     if (currentStep === 0 || currentStep === 1) {
       isValid = await trigger("client");
-    } else if (currentStep === 2) {
+    } else if (currentStep === 2 || currentStep === 3) {
       isValid = true;
     }
 
@@ -428,6 +464,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   };
 
   const filteredTests = availableTests.filter((test) => {
+    if (selectedMaterial && (!test.material_product || test.material_product.toLowerCase() !== selectedMaterial.toLowerCase())) return false;
     if (testNablFilter === "nabl" && test.is_nabl !== true) return false;
     if (testNablFilter === "non-nabl" && test.is_nabl === true) return false;
     if (testCategoryFilter !== "all" && test.category !== testCategoryFilter) return false;
@@ -768,6 +805,16 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                       <div className="flex gap-4">
                         <Dropdown
                           options={[
+                            { label: "Select Material", value: "" },
+                            ...uniqueMaterials.map(m => ({ label: m, value: m }))
+                          ]}
+                          value={selectedMaterial}
+                          onChange={(val) => setSelectedMaterial(val as string)}
+                          buttonClassName="h-11 rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 focus:bg-white transition-all cursor-pointer"
+                          className="flex-1"
+                        />
+                        <Dropdown
+                          options={[
                             { label: "All NABL Status", value: "all" },
                             { label: "NABL Accredited", value: "nabl" },
                             { label: "Non-NABL", value: "non-nabl" }
@@ -790,74 +837,82 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                         />
                       </div>
 
-                      <div className="flex flex-col gap-4 relative z-50">
-                        <div className="relative group">
-                          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors pointer-events-none" />
-                          <Input
-                            id="test-search-input"
-                            placeholder="Search and select tests by name, material, or method..."
-                            value={testSearchQuery}
-                            onChange={(e) => {
-                              setTestSearchQuery(e.target.value);
-                              setShowTestResults(true);
-                            }}
-                            onFocus={() => setShowTestResults(true)}
-                            onClick={() => setShowTestResults(true)}
-                            onBlur={() => setTimeout(() => setShowTestResults(false), 200)}
-                            className="pl-12 pr-10 h-11 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base cursor-text"
-                          />
-                          <div 
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 cursor-pointer rounded-md hover:bg-slate-100 transition-colors"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (showTestResults) {
-                                setShowTestResults(false);
-                              } else {
-                                setShowTestResults(true);
-                                document.getElementById("test-search-input")?.focus();
-                              }
-                            }}
-                          >
-                            <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform duration-200 ${showTestResults ? "rotate-180" : ""}`} />
-                          </div>
-                        </div>
-
-                        {showTestResults && filteredTests.length > 0 && (
-                          <ScrollArea
-                            orientation="vertical"
-                            className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl z-50 max-h-[350px] animate-in fade-in slide-in-from-top-2 ring-1 ring-slate-900/5"
-                          >
-                            <div className="p-1.5 flex flex-col gap-1">
-                              {filteredTests.slice(0, 50).map((test) => (
-                                <div
-                                  key={test.id}
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    handleToggleTest(test.id);
+                      <div className="flex flex-col gap-4 relative z-50 mt-2">
+                        {selectedMaterial ? (
+                          <>
+                            <div className="relative group">
+                              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors pointer-events-none" />
+                              <Input
+                                id="test-search-input"
+                                placeholder="Search and select tests by name, material, or method..."
+                                value={testSearchQuery}
+                                onChange={(e) => {
+                                  setTestSearchQuery(e.target.value);
+                                  setShowTestResults(true);
+                                }}
+                                onFocus={() => setShowTestResults(true)}
+                                onClick={() => setShowTestResults(true)}
+                                onBlur={() => setTimeout(() => setShowTestResults(false), 200)}
+                                className="pl-12 pr-10 h-11 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base cursor-text"
+                              />
+                              <div 
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 cursor-pointer rounded-md hover:bg-slate-100 transition-colors"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (showTestResults) {
                                     setShowTestResults(false);
-                                    setTestSearchQuery("");
-                                  }}
-                                  className="group p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-all duration-200 flex flex-col gap-1.5"
-                                >
-                                  <div className="font-semibold text-[14px] text-slate-700 group-hover:text-slate-900 transition-colors pl-1">{test.component_parameter || test.specific_test}</div>
-                                  <div className="flex gap-4 text-[11px] text-slate-500 font-medium pl-1">
-                                    <span className="flex items-center gap-1">
-                                      <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MAT</span>
-                                      <span className="text-slate-600 truncate max-w-[150px]" title={test.material_product}>{test.material_product}</span>
-                                    </span>
-                                    {test.test_method && (
-                                      <span className="flex items-center gap-1">
-                                        <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MTH</span>
-                                        <span className="text-slate-600 truncate max-w-[150px]" title={test.test_method}>{test.test_method}</span>
-                                      </span>
-                                    )}
-                                    {test.is_nabl && <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold ml-auto border border-emerald-100 uppercase tracking-wider text-[9px]">NABL</span>}
-                                  </div>
-                                </div>
-                              ))}
+                                  } else {
+                                    setShowTestResults(true);
+                                    document.getElementById("test-search-input")?.focus();
+                                  }
+                                }}
+                              >
+                                <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform duration-200 ${showTestResults ? "rotate-180" : ""}`} />
+                              </div>
                             </div>
-                          </ScrollArea>
+
+                            {showTestResults && filteredTests.length > 0 && (
+                              <div
+                                className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl z-50 max-h-[350px] overflow-y-auto animate-in fade-in slide-in-from-top-2 ring-1 ring-slate-900/5"
+                              >
+                                <div className="p-1.5 flex flex-col gap-1">
+                                  {filteredTests.slice(0, 50).map((test) => (
+                                    <div
+                                      key={test.id}
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        handleToggleTest(test.id);
+                                        setShowTestResults(false);
+                                        setTestSearchQuery("");
+                                      }}
+                                      className="group p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-all duration-200 flex flex-col gap-1.5"
+                                    >
+                                      <div className="font-semibold text-[14px] text-slate-700 group-hover:text-slate-900 transition-colors pl-1">{test.component_parameter || test.specific_test}</div>
+                                      <div className="flex gap-4 text-[11px] text-slate-500 font-medium pl-1">
+                                        <span className="flex items-center gap-1">
+                                          <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MAT</span>
+                                          <span className="text-slate-600 truncate max-w-[150px]" title={test.material_product}>{test.material_product}</span>
+                                        </span>
+                                        {test.test_method && (
+                                          <span className="flex items-center gap-1">
+                                            <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MTH</span>
+                                            <span className="text-slate-600 truncate max-w-[150px]" title={test.test_method}>{test.test_method}</span>
+                                          </span>
+                                        )}
+                                        {test.is_nabl && <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold ml-auto border border-emerald-100 uppercase tracking-wider text-[9px]">NABL</span>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="py-6 text-center flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
+                            <h3 className="text-slate-800 font-bold text-base mb-1">Select a Material</h3>
+                            <p className="text-slate-500 text-sm max-w-xs mx-auto">Please select a material first to see and search available tests.</p>
+                          </div>
                         )}
                       </div>
 
@@ -941,7 +996,85 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
               {currentStep === 3 && (
                 <motion.div
-                  key="step4"
+                  key="step4_material"
+                  initial={{ x: 50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -50, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6 pb-6"
+                >
+                  <div className="mb-4 pb-4 border-b border-slate-200/60 flex items-center gap-3">
+                    <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 text-orange-500 shadow-sm shrink-0">
+                      <Package className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Material Details</h3>
+                      <p className="text-[15px] text-slate-500 font-medium">Enter material specific details applied to all tests.</p>
+                    </div>
+                  </div>
+                  {!selectedTestIds.length ? (
+                    <div className="text-center py-12 text-slate-500">
+                      No test selected. You can proceed to submit, or go back to step 3 to select a test.
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
+                        <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/50 group-hover:scale-105 transition-transform duration-300">
+                            <Package className="w-5 h-5" />
+                          </div>
+                          <h4 className="text-base font-extrabold text-slate-800 tracking-tight">Common Material Properties</h4>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material ID</label>
+                            <Input {...register(`materialDetails.material_id`)} placeholder="e.g. MAT-001" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Location</label>
+                            <Input {...register(`materialDetails.material_details_location`)} placeholder="e.g. Block A" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Sample Quantity</label>
+                            <Input {...register(`materialDetails.sample_quantity`)} placeholder="e.g. 50 kg" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Day</label>
+                            <Input {...register(`materialDetails.testing_day`)} placeholder="e.g. 7, 28" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Grade</label>
+                            <Input {...register(`materialDetails.grade`)} placeholder="e.g. M25" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Casting Date</label>
+                            <PremiumDatePicker
+                              value={watch(`materialDetails.date_of_casting`)}
+                              onChange={(val) => setValue(`materialDetails.date_of_casting`, val, { shouldValidate: true })}
+                              side="right"
+                              triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Receiving</label>
+                            <PremiumDatePicker
+                              value={watch(`materialDetails.date_of_receiving`)}
+                              onChange={(val) => setValue(`materialDetails.date_of_receiving`, val, { shouldValidate: true })}
+                              side="right"
+                              triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {currentStep === 4 && (
+                <motion.div
+                  key="step5"
                   initial={{ x: 50, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: -50, opacity: 0 }}
@@ -1005,21 +1138,6 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material Description</label>
                                 <Input {...register(`jobEntryTests.${index}.material_description`)} placeholder="Material Description" />
-                              </div>
-
-                              
-
-                              
-
-                              
-
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Receiving</label>
-                                <PremiumDatePicker
-                                  value={watch(`jobEntryTests.${index}.date_of_receiving`)}
-                                  onChange={(val) => setValue(`jobEntryTests.${index}.date_of_receiving`, val, { shouldValidate: true })}
-                                  side="right"
-                                />
                               </div>
 
                               

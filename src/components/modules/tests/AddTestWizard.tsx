@@ -36,7 +36,7 @@ export function AddTestWizard({
 
   const defaultAdditionalDetails = initialData?.additional_details && initialData.additional_details.length > 0
     ? initialData.additional_details
-    : ["Material id", "Location", "Sample qty", "Grade", "Testing day", "Casting date"];
+    : [];
 
   const [details, setDetails] = useState<string[]>(defaultAdditionalDetails);
 
@@ -72,6 +72,7 @@ export function AddTestWizard({
   const is_nabl = watch("is_nabl");
   const report_qr = watch("report_qr");
   const datasheet_qr = watch("datasheet_qr");
+  const discipline_group = watch("discipline_group");
 
   const prevIsNablRef = React.useRef(initialData?.is_nabl ?? true);
 
@@ -261,13 +262,19 @@ export function AddTestWizard({
                         </div>
 
                         <div className="flex flex-col justify-end gap-1.5">
-                          <label className="text-sm font-semibold text-slate-700 leading-tight">Test Name <span className="text-red-500">*</span></label>
-                          <Input {...register("discipline_group")} placeholder="e.g. Mechanical, Chemical..." />
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Group <span className="text-red-500">*</span></label>
+                          <Select
+                            value={discipline_group || ""}
+                            onValueChange={(val) => setValue("discipline_group", val)}
+                          >
+                            <SelectItem value="Mechanical">Mechanical</SelectItem>
+                            <SelectItem value="Chemical">Chemical</SelectItem>
+                          </Select>
                           {errors.discipline_group && <p className="text-red-500 text-xs">{errors.discipline_group.message}</p>}
                         </div>
 
                         <div className="flex flex-col justify-end gap-1.5">
-                          <label className="text-sm font-semibold text-slate-700 leading-tight">Materials or Products tested <span className="text-red-500">*</span></label>
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Materials or Products Name <span className="text-red-500">*</span></label>
                           <Input {...register("material_product")} placeholder="e.g. Cement, Soil..." />
                           {errors.material_product && <p className="text-red-500 text-xs">{errors.material_product.message}</p>}
                         </div>
@@ -290,7 +297,7 @@ export function AddTestWizard({
                           <div className="h-5 w-1 bg-blue-500 rounded-full"></div>
                           <h4 className="text-sm font-bold text-blue-900 tracking-tight">Non-NABL Specifications</h4>
                         </div>
-                        
+
                         <div className="col-span-1 md:col-span-2 flex flex-col justify-end gap-1.5">
                           <label className="text-sm font-semibold text-slate-700 leading-tight">Particulars <span className="text-red-500">*</span></label>
                           <Input {...register("particulars")} placeholder="e.g. Appearance" />

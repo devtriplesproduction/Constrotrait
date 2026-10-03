@@ -33,18 +33,35 @@ export const testDetailsSchema = z.object({
   test_master_id: z.string().optional().or(z.literal("")),
   test_name: z.string().optional(), // For UI purposes
   test_method: z.string().optional(), // Auto-filled from test master
-  date_of_receiving: z.string().optional(),
   testing_age: z.string().optional(),
   date_of_testing: z.string().optional(),
   material_description: z.string().optional(),
+  material_id: z.string().optional(),
+  material_details_location: z.string().optional(),
+  sample_quantity: z.string().optional(),
+  testing_day: z.string().optional(),
+  grade: z.string().optional(),
+  date_of_casting: z.string().optional(),
   additional_details_values: z.record(z.string(), z.string()).optional(),
 });
 
 export type TestDetailsValues = z.infer<typeof testDetailsSchema>;
 
+export const materialDetailsSchema = z.object({
+  material_id: z.string().optional(),
+  material_details_location: z.string().optional(),
+  sample_quantity: z.string().optional(),
+  testing_day: z.string().optional(),
+  grade: z.string().optional(),
+  date_of_casting: z.string().optional(),
+  date_of_receiving: z.string().optional(),
+});
+export type MaterialDetailsValues = z.infer<typeof materialDetailsSchema>;
+
 export const clientWizardSchema = z.object({
   client: clientDetailsSchema,
   jobEntry: jobEntryDetailsSchema.default({}),
+  materialDetails: materialDetailsSchema.default({}),
   selectedTestIds: z.array(z.string()).default([]),
   jobEntryTests: z.array(testDetailsSchema).default([]),
 });
