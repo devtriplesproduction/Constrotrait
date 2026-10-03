@@ -1188,6 +1188,23 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                           </div>
                         </label>
                       </div>
+
+                      <div className="w-full max-w-sm mt-6">
+                        <label className="text-[13px] font-semibold text-slate-700 mb-1.5 block text-left">Generate ULR After</label>
+                        <Dropdown
+                          options={[
+                            { label: "Immediate (0 days)", value: "0" },
+                            { label: "5 Days", value: "5" },
+                            { label: "7 Days", value: "7" },
+                            { label: "14 Days", value: "14" },
+                            { label: "21 Days", value: "21" },
+                            { label: "28 Days", value: "28" },
+                          ]}
+                          value={watch('dummy_scheduled_days') || "0"}
+                          onChange={(val) => setValue('dummy_scheduled_days', val, { shouldValidate: true })}
+                        />
+                        <p className="text-xs text-slate-500 mt-2 text-left">The system will wait this many days before automatically generating a Placeholder ULR if no tests are added.</p>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-6">

@@ -6,6 +6,7 @@ import { JobAssignmentsTabsClient } from "@/components/modules/job-assignments/J
 
 import { AllJobsTab } from "@/components/modules/job-assignments/AllJobsTab";
 import { MyAssignmentsTab } from "@/components/modules/job-assignments/MyAssignmentsTab";
+import { TestingScheduleTab } from "@/components/modules/job-assignments/TestingScheduleTab";
 import { Dropdown } from "@/components/ui/Dropdown";
 
 interface JobAssignmentsContentProps {
@@ -71,6 +72,9 @@ export function JobAssignmentsContent({
         )}
         {activeTab === "my" && (
           <MyAssignmentsTab assignments={assignments} userId={userId} filterStatus={filterStatus} />
+        )}
+        {activeTab === "schedule" && (
+          <TestingScheduleTab assignments={assignments} userId={userId} />
         )}
       </div>
     </>

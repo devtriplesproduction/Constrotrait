@@ -60,6 +60,18 @@ export function JobAssignmentsTabsClient({ activeTab, isManager, onTabChange }: 
         {isPending && !onTabChange ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListTodo className="w-4 h-4" />}
         My Assignments
       </Button>
+
+      <Button
+        variant="custom" size="none"
+        onClick={() => handleTabChange('schedule')}
+        disabled={isPending}
+        className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
+          activeTab === 'schedule' ? 'bg-orange-500 text-white shadow' : 'text-slate-600 hover:text-slate-800'
+        } ${isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+      >
+        {isPending && !onTabChange ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />}
+        Testing Schedule
+      </Button>
     </div>
   );
 }

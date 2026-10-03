@@ -83,7 +83,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
       payment_status: data.jobEntry.payment_status,
     };
 
-    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData, data.dummy_is_nabl);
+    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData, data.dummy_is_nabl, data.dummy_scheduled_days);
 
     revalidatePath("/dashboard");
     revalidatePath("/clients");
@@ -162,7 +162,7 @@ export async function getClientProjectsAction(clientId: string) {
     
     const { data, error } = await supabase
       .from("job_entries")
-      .select("project_name, division, site_name, agency, dispatch_name, dispatch_address, collected_by, contact_person")
+      .select("project_name, division, agency, dispatch_name, dispatch_address, collected_by")
       .eq("client_id", clientId)
       .not("project_name", "is", null)
       .order("created_at", { ascending: false });

@@ -66,6 +66,7 @@ export const clientWizardSchema = z.object({
   selectedTestIds: z.array(z.string()).default([]),
   jobEntryTests: z.array(testDetailsSchema).default([]),
   dummy_is_nabl: z.boolean().optional(),
+  dummy_scheduled_days: z.string().optional(),
 });
 
 export type ClientWizardValues = z.infer<typeof clientWizardSchema>;

@@ -7,7 +7,8 @@ export class JobEntryService {
   static async createJobEntryWithTests(
     jobData: Database["public"]["Tables"]["job_entries"]["Insert"],
     testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[],
-    isDummyNabl?: boolean
+    isDummyNabl?: boolean,
+    dummyScheduledDays?: string
   ) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
@@ -96,6 +97,32 @@ export class JobEntryService {
       if (qErr) {
         await supabase.from("job_entries").delete().eq("id", jobEntry.id);
         throw new Error(qErr.message || "Failed to enqueue job");
+      }
+    } else {
+      // It's a dummy job card, enqueue it with the scheduled date
+      if (dummyScheduledDays) {
+        let scheduledDate = new Date();
+        const days = parseInt(dummyScheduledDays, 10);
+        if (!isNaN(days) && days > 0) {
+          scheduledDate.setDate(scheduledDate.getDate() + days);
+        }
+        const formattedDate = scheduledDate.toISOString().split('T')[0];
+        
+        const { error: qErr } = await supabase.from('ulr_generation_queue').insert({
+          job_entry_id: jobEntry.id,
+          scheduled_on: formattedDate,
+          status: 'queued'
+        });
+        if (qErr) {
+          console.error("Failed to enqueue dummy job card:", qErr);
+        }
+      } else {
+        // Enqueue immediately if no schedule provided
+        await supabase.from('ulr_generation_queue').insert({
+          job_entry_id: jobEntry.id,
+          scheduled_on: new Date().toISOString().split('T')[0],
+          status: 'queued'
+        });
       }
     }
 
@@ -240,6 +267,21 @@ export class JobEntryService {
     const { data, error } = await supabase
       .from("job_entry_tests")
       .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!job_entry_tests_job_entry_id_fkey ( id, created_at, client_id, uid, uid_label, inward_on, clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person ) ), test_master ( id, component_parameter, specific_test )`)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
+  static async getAllJobEntries() {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+    if (!canManageClientsAndJobs(user.roles)) {
+      throw new Error("Unauthorized: You do not have permission to view job entries");
+    }
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("job_entries")
+      .select(`*, job_entry_tests!job_entry_tests_job_entry_id_fkey (*, job_assignments(id, status, report_url, reviewer_remark), test_master(id, component_parameter, specific_test)), clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person )`)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data;

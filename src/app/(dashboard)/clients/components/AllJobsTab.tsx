@@ -1,40 +1,41 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Edit, Search, Download, Loader2, Building2, FlaskConical, CalendarDays, FileText, Activity, Layers, Tag, Briefcase } from "lucide-react";
+import { Edit, Search, Download, Loader2, Building2, FlaskConical, CalendarDays, FileText, Activity, Layers, Tag, Briefcase, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
-import { getAllJobEntryTestsAction } from "@/actions/job-entry.actions";
-import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
+import { getAllJobEntriesAction } from "@/actions/job-entry.actions";
 import { generateULRsForDateAction } from "@/actions/ulr.actions";
 import { Database } from "@/types/database";
 import { useToast } from "@/hooks/use-toast";
-import { JobStageStepper } from "@/components/ui/JobStageStepper";
-import { JobStage } from "@/config/jobTransitions";
 import { useRouter } from "next/navigation";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
 
-interface JobEntryTestWithRelations extends JobEntryTest {
-  job_assignments?: {
+interface JobEntryWithRelations {
+  id: string;
+  uid: number | null;
+  uid_label: string | null;
+  created_at: string;
+  client_id: string;
+  project_name: string | null;
+  is_nabl: boolean | null;
+  clients: {
     id: string;
-    status: string;
-    reviewer_remark?: string;
-  }[];
-  job_entries: {
-    id: string;
-    uid: number;
-    created_at: string;
-    client_id: string;
-    clients: {
-      id: string;
-      name: string;
-      email: string | null;
-      mobile: string | null;
-    };
+    name: string;
+    email: string | null;
+    mobile: string | null;
   } | null;
+  job_entry_tests: (JobEntryTest & {
+    job_assignments?: {
+      id: string;
+      status: string;
+      reviewer_remark?: string;
+    }[];
+  })[];
 }
 
 export default function AllJobsTab({
@@ -45,15 +46,14 @@ export default function AllJobsTab({
   triggerRefresh: number;
 }) {
   const router = useRouter();
-  const [allJobs, setAllJobs] = useState<JobEntryTestWithRelations[]>([]);
+  const [allJobs, setAllJobs] = useState<JobEntryWithRelations[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
   const [searchUid, setSearchUid] = useState("");
   const [searchClient, setSearchClient] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
+  const [filterJobType, setFilterJobType] = useState<"all" | "dummy" | "active">("all");
   
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
@@ -61,9 +61,9 @@ export default function AllJobsTab({
   const loadAllJobs = async () => {
     setIsLoading(true);
     try {
-      const res = await getAllJobEntryTestsAction();
+      const res = await getAllJobEntriesAction();
       if (res.success && res.data) {
-        setAllJobs(res.data as JobEntryTestWithRelations[]);
+        setAllJobs(res.data as unknown as JobEntryWithRelations[]);
       }
     } catch (error) {
       console.error("Failed to load all jobs", error);
@@ -75,41 +75,6 @@ export default function AllJobsTab({
   useEffect(() => {
     loadAllJobs();
   }, [triggerRefresh]);
-
-  const handleDownloadPdf = async (testId: string, uid: number) => {
-    try {
-      setDownloadingId(testId);
-      const res = await downloadJobCardAction(testId);
-      if (res.success && res.data) {
-        // Convert base64 to blob
-        const byteCharacters = atob(res.data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'application/pdf' });
-        
-        // Trigger download
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `JobCard_${uid}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } else {
-        console.error("Failed to download PDF:", res.error);
-        alert("Failed to download Job Card PDF.");
-      }
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
-      alert("Error generating Job Card.");
-    } finally {
-      setDownloadingId(null);
-    }
-  };
 
   const handleGenerateULRs = async () => {
     if (!filterDate) {
@@ -139,35 +104,31 @@ export default function AllJobsTab({
       const searchUidLower = searchUid.trim().toLowerCase();
       const uidMatch = searchUidLower === "" || 
         job.uid_label?.toLowerCase().includes(searchUidLower) ||
-        job.job_entries?.uid?.toString().includes(searchUidLower) ||
-        job.ulr_number?.toLowerCase().includes(searchUidLower);
+        job.uid?.toString().includes(searchUidLower) ||
+        (job.job_entry_tests && job.job_entry_tests.some(t => t.ulr_number?.toLowerCase().includes(searchUidLower)));
 
       // Client Name Filter
-      const clientName = job.job_entries?.clients?.name?.toLowerCase() || "";
+      const clientName = job.clients?.name?.toLowerCase() || "";
       const clientMatch = searchClient.trim() === "" || clientName.includes(searchClient.toLowerCase().trim());
 
       // Date Filter (using inward created_at date)
-      const inwardDateStr = job.job_entries?.created_at ? new Date(job.job_entries.created_at).toISOString().split('T')[0] : "";
+      const inwardDateStr = job.created_at ? new Date(job.created_at).toISOString().split('T')[0] : "";
       const dateMatch = filterDate === "" || inwardDateStr === filterDate;
 
       // Month Filter (YYYY-MM format)
       const monthMatch = filterMonth === "" || inwardDateStr.startsWith(filterMonth);
 
-      return uidMatch && clientMatch && dateMatch && monthMatch;
-    });
-  }, [allJobs, searchUid, searchClient, filterDate, filterMonth]);
-
-  const groupedJobs = useMemo(() => {
-    const groups = new Map<string, typeof filteredJobs>();
-    for (const test of filteredJobs) {
-      const key = test.uid_label || test.id;
-      if (!groups.has(key)) {
-        groups.set(key, []);
+      // Job Type Filter
+      let jobTypeMatch = true;
+      if (filterJobType === "dummy") {
+        jobTypeMatch = (job.job_entry_tests?.length || 0) === 0;
+      } else if (filterJobType === "active") {
+        jobTypeMatch = (job.job_entry_tests?.length || 0) > 0;
       }
-      groups.get(key)!.push(test);
-    }
-    return Array.from(groups.values());
-  }, [filteredJobs]);
+
+      return uidMatch && clientMatch && dateMatch && monthMatch && jobTypeMatch;
+    });
+  }, [allJobs, searchUid, searchClient, filterDate, filterMonth, filterJobType]);
 
   return (
     <div className="space-y-4">
@@ -175,9 +136,7 @@ export default function AllJobsTab({
         {/* Subtle gradient accent */}
         <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-400 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out" />
 
-
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
           <Input
             label="UID"
             placeholder="Search by UID..."
@@ -215,6 +174,18 @@ export default function AllJobsTab({
             }}
             className="h-10 bg-slate-50/50 border-slate-200 focus-visible:ring-orange-500/20 focus-visible:border-orange-400 hover:border-orange-300 transition-all shadow-sm rounded-xl"
           />
+          <div className="w-full space-y-1.5">
+            <Dropdown
+              label="Job Type"
+              options={[
+                { label: "All Jobs", value: "all" },
+                { label: "Dummy Jobs (0 Tests)", value: "dummy" },
+                { label: "Active Jobs (1+ Tests)", value: "active" }
+              ]}
+              value={filterJobType}
+              onChange={(val) => setFilterJobType(val as any)}
+            />
+          </div>
         </div>
         
         {/* Action Bar for ULR Generation */}
@@ -235,59 +206,87 @@ export default function AllJobsTab({
           <div className="text-center text-muted-foreground py-10">
             Loading all job entries...
           </div>
-        ) : groupedJobs.length === 0 ? (
+        ) : filteredJobs.length === 0 ? (
           <div className="text-center text-muted-foreground py-10">
             No jobs found matching your filters.
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-2">
-            {groupedJobs.map((jobGroup) => {
-              const primaryTest = jobGroup[0];
-              const client = primaryTest.job_entries?.clients;
-              const groupId = primaryTest.uid_label || primaryTest.id;
+            {filteredJobs.map((job) => {
+              const client = job.clients;
+              const testCount = job.job_entry_tests?.length || 0;
+              // Pass the UID string exactly as job-cards/[id] expects
+              const groupId = job.uid_label || job.id;
               
               return (
                 <div 
-                  key={groupId} 
-                  className="group relative bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col p-5 gap-5 overflow-hidden isolate"
+                  key={job.id} 
+                  className="group relative bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col p-6 gap-6 overflow-hidden isolate cursor-pointer"
+                  onClick={() => router.push(`/job-cards/${encodeURIComponent(groupId)}`)}
                 >
-                  {/* Top-right curved accent background */}
-                  <div className="absolute top-0 right-0 w-[140px] h-[130px] bg-[#FFF8F3] rounded-bl-[120px] pointer-events-none -z-10 hidden sm:block" />
+                  {/* Accent Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-white to-orange-50/30 -z-10" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100/50 rounded-full blur-3xl -z-10 transition-transform group-hover:scale-150" />
 
-                  {/* Header */}
-                  <div className="flex items-start justify-between relative z-10">
+                  {/* Header: Icon, UID, Date */}
+                  <div className="flex items-start justify-between relative z-10 w-full">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 shrink-0 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
+                      <div className="w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20 group-hover:shadow-orange-500/40 transition-all">
                         <Briefcase className="w-7 h-7" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-800 text-lg leading-tight">
-                          Job UID: {primaryTest.uid_label || "Missing"}
-                        </h3>
-                        <p className="font-bold text-orange-500 text-sm mt-1">
-                          {jobGroup.length} Test{jobGroup.length !== 1 ? 's' : ''} • Created: {primaryTest.job_entries?.created_at ? new Date(primaryTest.job_entries.created_at).toLocaleDateString() : "-"}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-slate-800 text-xl tracking-tight">
+                            UID: {job.uid_label || "Missing"}
+                          </h3>
+                          {job.is_nabl && (
+                            <span className="bg-emerald-100 text-emerald-800 text-[10px] uppercase font-black px-2 py-0.5 rounded-full border border-emerald-200">
+                              NABL
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center text-slate-500 text-sm mt-1 gap-1.5 font-medium">
+                          <CalendarDays className="w-4 h-4 text-slate-400" />
+                          {job.created_at ? new Date(job.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "-"}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Client Badge */}
-                    <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-orange-100/50 max-w-[150px] truncate">
-                      <Building2 className="w-3.5 h-3.5 shrink-0" /> 
-                      <span className="truncate">{client?.name || "Unknown Client"}</span>
                     </div>
                   </div>
 
-                  {/* View Details Link */}
-                  <div className="flex justify-end mt-4 relative z-10">
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/job-cards/${encodeURIComponent(groupId)}`);
-                      }}
-                    >
-                      <FileText className="mr-2 h-4 w-4" />
-                      View Details
-                    </Button>
+                  {/* Body: Client, Project, Test Count */}
+                  <div className="bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-slate-100/60 shadow-sm space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Building2 className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Client Name</p>
+                        <p className="font-semibold text-slate-800 text-sm leading-snug">{client?.name || "Unknown Client"}</p>
+                      </div>
+                    </div>
+                    {job.project_name && (
+                      <div className="flex items-start gap-3 pt-3 border-t border-slate-100">
+                        <Tag className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Project Name</p>
+                          <p className="font-semibold text-slate-800 text-sm leading-snug">{job.project_name}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer: Test Count & View Button */}
+                  <div className="mt-auto pt-2 flex items-center justify-between border-t border-slate-100/60">
+                     <div className="flex items-center gap-2">
+                       <div className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                         <FlaskConical className="w-3.5 h-3.5" />
+                         {testCount} Test{testCount !== 1 ? 's' : ''}
+                       </div>
+                     </div>
+                     <Button 
+                       variant="ghost" 
+                       className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 font-bold pr-2 pl-4"
+                     >
+                       View Details <ArrowRight className="w-4 h-4 ml-1.5 transition-transform group-hover:translate-x-1" />
+                     </Button>
                   </div>
                 </div>
               );

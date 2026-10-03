@@ -30,7 +30,7 @@ function ProjectJobsList({
 }) {
   const [view, setView] = useState<"projects" | "jobs" | "tests">("projects");
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const [selectedJob, setSelectedJob] = useState<JobEntryWithTests | null>(null);
+  const [selectedJob, setSelectedJob] = useState<(JobEntryWithTests & { matchingTests: JobEntryTest[] }) | null>(null);
 
   // Filter jobEntries to only include those that have tests matching the completion status
   const filteredJobs = jobEntries
@@ -59,11 +59,11 @@ function ProjectJobsList({
 
   // Group jobs by project
   const jobsByProject = filteredJobs.reduce((acc, job) => {
-    const projName = job.project_name || job.site_name || "Unnamed project";
+    const projName = job.project_name || "Unnamed project";
     if (!acc[projName]) acc[projName] = [];
     acc[projName].push(job);
     return acc;
-  }, {} as Record<string, JobEntryWithTests[]>);
+  }, {} as Record<string, (JobEntryWithTests & { matchingTests: JobEntryTest[] })[]>);
 
   const projects = Object.keys(jobsByProject);
 

@@ -32,3 +32,12 @@ export async function getAllJobEntryTestsAction() {
     return { success: false, error: error.message };
   }
 }
+
+export async function getAllJobEntriesAction() {
+  try {
+    const data = await JobEntryService.getAllJobEntries();
+    return { success: true, data };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
