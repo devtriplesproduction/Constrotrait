@@ -183,6 +183,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       }] : [],
     } as ClientWizardValues : {
       jobEntry: {},
+      materialDetails: {},
       client: {
         name: "",
         company_name: "",
@@ -196,7 +197,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
     } as ClientWizardValues,
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "jobEntryTests"
   });
@@ -341,8 +342,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
     if (currentIndex > -1) {
       // Remove
-      if (mode === "edit") {
-        toast({ title: "Edit Mode", description: "You cannot remove the test in edit mode.", variant: "error" });
+      if (mode === "edit" && id === initialData?.jobEntryTest?.test_master_id) {
+        toast({ title: "Edit Mode", description: "You cannot remove the original test in edit mode.", variant: "error" });
         return;
       }
       const newIds = [...currentIds];
@@ -355,11 +356,6 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       }
     } else {
       // Add
-      if (mode === "edit") {
-        toast({ title: "Edit Mode", description: "You can only edit the single selected test in edit mode.", variant: "error" });
-        return;
-      }
-
       const test = availableTests.find(t => t.id === id);
       if (!test) return;
 
@@ -372,11 +368,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         });
       }
 
-      append({
+      const newTestData = {
         test_master_id: test.id,
         test_name: test.component_parameter || test.specific_test || "",
         test_method: test.test_method || "",
-        date_of_receiving: "",
         testing_age: "",
         date_of_testing: "",
         material_description: "",
@@ -387,7 +382,14 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         grade: "",
         date_of_casting: "",
         additional_details_values: initialAdditionalDetails,
-      });
+      };
+
+      if (mode === "edit" && fields.length === 1 && !fields[0].test_master_id) {
+        // Overwrite the dummy test
+        update(0, newTestData);
+      } else {
+        append(newTestData);
+      }
     }
   };
 
@@ -483,7 +485,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const paginatedTests = filteredTests.slice((testCurrentPage - 1) * testPageSize, testCurrentPage * testPageSize);
 
   return (
-    <Card className="w-full max-w-[1200px] mx-auto shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 bg-white rounded-2xl overflow-hidden flex flex-col md:flex-row h-[600px]">
+    <Card className="w-full max-w-[1400px] mx-auto shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 bg-white rounded-2xl overflow-hidden flex flex-col md:flex-row h-[80vh] min-h-[700px]">
 
       {/* Left Sidebar Stepper */}
       <div className="w-full md:w-70 lg:w-72 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-6 flex flex-col shrink-0">

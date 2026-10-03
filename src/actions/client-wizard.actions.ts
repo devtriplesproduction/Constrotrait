@@ -202,3 +202,15 @@ export async function getNextUidAction() {
     return { success: false, error: (error as Error).message };
   }
 }
+
+export async function createDummyJobCardAction(isNabl: boolean) {
+  try {
+    const jobEntry = await JobEntryService.createDummyJobCard(isNabl);
+    revalidatePath('/dashboard');
+    revalidatePath('/clients');
+    return { success: true, data: jobEntry };
+  } catch (error) {
+    console.error('Create dummy job card error:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}

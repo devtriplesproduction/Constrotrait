@@ -112,6 +112,103 @@ export class JobEntryService {
     return { jobEntry, jobEntryTests, uidsIssued };
   }
 
+  static async createDummyJobCard(isNabl: boolean) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+    const supabase = await createClient() as any;
+
+    let clientId = "";
+    const { data: existingDummy } = await supabase.from('clients').select('id').eq('name', 'Dummy Client').limit(1).single();
+    if (existingDummy) {
+      clientId = existingDummy.id;
+    } else {
+      const { data: newDummy, error: err } = await supabase.from('clients').insert({ name: 'Dummy Client', company_name: 'DUMMY' }).select('id').single();
+      if (err) throw err;
+      clientId = newDummy.id;
+    }
+
+    const createdDate = new Date();
+    const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+    const jobYear = createdDate.getFullYear();
+
+    let currentUidLabel = "";
+    let uidInt = null;
+
+    if (isNabl) {
+      const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
+      if (error) throw new Error("UID Generation failed: " + error.message);
+      currentUidLabel = data.toString();
+      uidInt = parseInt(data.toString(), 10);
+    } else {
+      const counterName = `UID_${month}`;
+      const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
+      if (error) throw new Error("UID Generation failed: " + error.message);
+      currentUidLabel = `${month}-${data.toString().padStart(2, '0')}`;
+    }
+
+    const { data: jobEntry, error: jobError } = await supabase
+      .from("job_entries")
+      .insert({ client_id: clientId, uid_label: currentUidLabel, uid: uidInt })
+      .select()
+      .single();
+    if (jobError) throw new Error(jobError.message);
+
+    return jobEntry;
+  }
+
+  static async addTestsToJobEntry(
+    jobEntryId: string,
+    testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[]
+  ) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+    if (!canManageClientsAndJobs(user.roles)) {
+      throw new Error("Unauthorized: You do not have permission to manage job entries");
+    }
+
+    const supabase = await createClient() as any;
+    const { data: jobEntry, error: jobError } = await supabase
+      .from("job_entries")
+      .select("*")
+      .eq("id", jobEntryId)
+      .single();
+    if (jobError || !jobEntry) throw new Error("Job entry not found");
+
+    if (!testsData || testsData.length === 0) return { jobEntryTests: [], uidsIssued: [] };
+
+    const testMasterIds = testsData.map((t) => t.test_master_id).filter(Boolean);
+    let testMasters: any[] = [];
+    if (testMasterIds.length > 0) {
+      const { data: tmData } = await supabase.from("test_master").select("id, category, is_nabl").in("id", testMasterIds as string[]);
+      testMasters = tmData || [];
+    }
+
+    const isNablCard = jobEntry.uid !== null;
+    const uidsIssued: string[] = [];
+    if (jobEntry.uid_label) uidsIssued.push(jobEntry.uid_label);
+
+    for (const test of testsData) {
+      const tm = testMasters.find((x: any) => x.id === test.test_master_id);
+      const isTestNabl = !!tm?.is_nabl;
+      if (isTestNabl !== isNablCard) {
+        throw new Error(`Test NABL status (${isTestNabl ? 'NABL' : 'Non-NABL'}) does not match the Job Card (${isNablCard ? 'NABL' : 'Non-NABL'}).`);
+      }
+      (test as any).uid_label = jobEntry.uid_label;
+    }
+
+    const testsToInsert = testsData.map((test) => ({ ...test, job_entry_id: jobEntry.id }));
+    const { data: insertedTests, error: testsError } = await supabase
+      .from("job_entry_tests")
+      .insert(testsToInsert)
+      .select();
+      
+    if (testsError) throw new Error(testsError.message);
+
+    await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: jobEntry.id });
+
+    return { jobEntryTests: insertedTests, uidsIssued };
+  }
+
   static async getJobEntriesByClientId(clientId: string) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");

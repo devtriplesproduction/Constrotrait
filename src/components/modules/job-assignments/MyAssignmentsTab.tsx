@@ -78,9 +78,9 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
         [`Doc No. : ${docNo}`, "Record As per ISO/IEC 17025:2017", "Doc Name: Sample Allotment Form"]
       ],
       columnStyles: {
-        0: { cellWidth: "30%" },
-        1: { cellWidth: "40%", halign: "center" },
-        2: { cellWidth: "30%", halign: "right" }
+        0: { cellWidth: (pageWidth - 28) * 0.3 },
+        1: { cellWidth: (pageWidth - 28) * 0.4, halign: "center" },
+        2: { cellWidth: (pageWidth - 28) * 0.3, halign: "right" }
       }
     });
 

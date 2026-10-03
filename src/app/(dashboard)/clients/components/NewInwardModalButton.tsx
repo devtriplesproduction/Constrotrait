@@ -24,7 +24,7 @@ export default function NewInwardModalButton() {
           />
           
           {/* Modal Content */}
-          <div className="relative z-10 w-full max-w-5xl mx-auto shadow-2xl rounded-2xl overflow-hidden bg-white animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative z-10 w-full max-w-7xl mx-auto shadow-2xl rounded-2xl overflow-hidden bg-white animate-in fade-in zoom-in-95 duration-200">
             {/* Close Button */}
             <div className="absolute top-4 right-4 z-[60]">
               <Button 

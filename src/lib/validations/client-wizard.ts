@@ -42,6 +42,7 @@ export const testDetailsSchema = z.object({
   testing_day: z.string().optional(),
   grade: z.string().optional(),
   date_of_casting: z.string().optional(),
+  date_of_receiving: z.string().optional(),
   additional_details_values: z.record(z.string(), z.string()).optional(),
 });
 
