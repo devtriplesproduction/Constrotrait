@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { clientWizardSchema, ClientWizardValues } from "@/lib/validations/client-wizard";
-import { submitClientWizard, searchClientsAction, getNextUidAction, updateClientWizardAction } from "@/actions/client-wizard.actions";
+import { submitClientWizard, searchClientsAction, getNextUidAction, updateClientWizardAction, getClientProjectsAction } from "@/actions/client-wizard.actions";
 import { getTestsAction } from "@/actions/test.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { MultiSelect } from "@/components/ui/MultiSelect";
-import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText } from "lucide-react";
+import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText, ChevronDown, MapPin, Users, Receipt, Truck, Package } from "lucide-react";
 import { Database } from "@/types/database";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -25,7 +25,8 @@ const steps = [
   { id: "step1", title: "Customer Basic Details", icon: User },
   { id: "step2", title: "Site / Project Details", icon: Building2 },
   { id: "step3", title: "Select Test", icon: FlaskConical },
-  { id: "step4", title: "Test Details", icon: FileText },
+  { id: "step4", title: "Material Details", icon: Package },
+  { id: "step5", title: "Test Details", icon: FileText },
 ];
 
 const TESTING_AGE_OPTIONS = [
@@ -70,7 +71,7 @@ export interface ClientWizardProps {
   mode?: "create" | "edit";
   initialData?: {
     client: Database["public"]["Tables"]["clients"]["Row"];
-    jobEntryTest: Database["public"]["Tables"]["job_entry_tests"]["Row"] & { uid?: number; job_entries?: { uid?: number } | null };
+    jobEntryTest: Database["public"]["Tables"]["job_entry_tests"]["Row"] & { uid?: number; uid_label?: string | null; job_entries?: { uid?: number; uid_label?: string | null } | null };
   };
   onSuccess?: () => void;
 }
@@ -87,6 +88,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const [searchResults, setSearchResults] = useState<Database["public"]["Tables"]["clients"]["Row"][]>([]);
   const [showResults, setShowResults] = useState(false);
 
+  // Projects state
+  const [clientProjects, setClientProjects] = useState<any[]>([]);
+  const [isFetchingProjects, setIsFetchingProjects] = useState(false);
+
   // Test master data
   const [availableTests, setAvailableTests] = useState<TestMaster[]>([]);
   const [testSearchQuery, setTestSearchQuery] = useState("");
@@ -96,10 +101,24 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const testPageSize = 10;
   const [isLoadingTests, setIsLoadingTests] = useState(false);
   const [showTestResults, setShowTestResults] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<string>("");
+
+  const uniqueMaterials = React.useMemo(() => {
+    const materialMap = new Map<string, string>();
+    availableTests.forEach(test => {
+      if (test.material_product) {
+        const lower = test.material_product.toLowerCase();
+        if (!materialMap.has(lower)) {
+          materialMap.set(lower, test.material_product);
+        }
+      }
+    });
+    return Array.from(materialMap.values()).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  }, [availableTests]);
 
   useEffect(() => {
     setTestCurrentPage(1);
-  }, [testSearchQuery, testNablFilter, testCategoryFilter]);
+  }, [testSearchQuery, testNablFilter, testCategoryFilter, selectedMaterial]);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -120,58 +139,69 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       client: {
         id: initialData.client.id,
         name: initialData.client.name || "",
+        company_name: initialData.client.company_name || "",
         address: initialData.client.address || "",
-        division: initialData.client.division || "",
-        site_name: initialData.client.site_name || "",
-        agency_name: initialData.client.agency_name || "",
-        project_name: initialData.client.project_name || "",
-        dispatch_name: initialData.client.dispatch_name || "",
-        dispatch_address: initialData.client.dispatch_address || "",
-        contact_person: initialData.client.contact_person || "",
         mobile: initialData.client.mobile || "",
         email: initialData.client.email || "",
-        collected_by: initialData.client.collected_by || "",
         gst_no: initialData.client.gst_no || "",
+      },
+      jobEntry: {
+        division: (initialData.jobEntryTest as any)?.job_entries?.division || "",
+        site_name: (initialData.jobEntryTest as any)?.job_entries?.site_name || "",
+        agency_name: (initialData.jobEntryTest as any)?.job_entries?.agency || "",
+        project_name: (initialData.jobEntryTest as any)?.job_entries?.project_name || "",
+        dispatch_name: (initialData.jobEntryTest as any)?.job_entries?.dispatch_name || "",
+        dispatch_address: (initialData.jobEntryTest as any)?.job_entries?.dispatch_address || "",
+        contact_person: (initialData.jobEntryTest as any)?.job_entries?.contact_person || "",
+        collected_by: (initialData.jobEntryTest as any)?.job_entries?.collected_by || "",
+        invoice_no: (initialData.jobEntryTest as any)?.job_entries?.invoice_no || "",
+        invoice_date: (initialData.jobEntryTest as any)?.job_entries?.invoice_date || "",
+        letter_reference: (initialData.jobEntryTest as any)?.job_entries?.letter_reference || "",
+        payment_status: (initialData.jobEntryTest as any)?.job_entries?.payment_status || "",
+      },
+      materialDetails: {
+        material_id: initialData.jobEntryTest.material_id || "",
+        material_details_location: initialData.jobEntryTest.material_details_location || "",
+        sample_quantity: initialData.jobEntryTest.sample_quantity || "",
+        testing_day: initialData.jobEntryTest.testing_day || "",
+        grade: initialData.jobEntryTest.grade || "",
+        date_of_casting: initialData.jobEntryTest.date_of_casting || "",
+        date_of_receiving: initialData.jobEntryTest.date_of_receiving || "",
       },
       selectedTestIds: initialData && initialData.jobEntryTest.test_master_id ? [initialData.jobEntryTest.test_master_id] : [],
       jobEntryTests: initialData ? [{
         test_master_id: initialData.jobEntryTest.test_master_id || "",
         test_name: "", // Will be updated when tests load
         test_method: initialData.jobEntryTest.test_method || "",
-        material_id: initialData.jobEntryTest.material_id || "",
-        material_details_location: initialData.jobEntryTest.material_details_location || "",
-        sample_quantity: initialData.jobEntryTest.sample_quantity || "",
-        grade: initialData.jobEntryTest.grade || "",
-        testing_day: initialData.jobEntryTest.testing_day || "",
         date_of_receiving: initialData.jobEntryTest.date_of_receiving || "",
-        date_of_casting: initialData.jobEntryTest.date_of_casting || "",
         testing_age: initialData.jobEntryTest.testing_age || "",
         date_of_testing: initialData.jobEntryTest.date_of_testing || "",
         material_description: initialData.jobEntryTest.material_description || "",
+        material_id: initialData.jobEntryTest.material_id || "",
+        material_details_location: initialData.jobEntryTest.material_details_location || "",
+        sample_quantity: initialData.jobEntryTest.sample_quantity || "",
+        testing_day: initialData.jobEntryTest.testing_day || "",
+        grade: initialData.jobEntryTest.grade || "",
+        date_of_casting: initialData.jobEntryTest.date_of_casting || "",
         additional_details_values: (initialData.jobEntryTest.additional_details_values as Record<string, string>) || {},
-    }] : [],
-  } as ClientWizardValues : {
-    client: {
+      }] : [],
+    } as ClientWizardValues : {
+      jobEntry: {},
+      materialDetails: {},
+      client: {
         name: "",
+        company_name: "",
         address: "",
-        division: "",
-        site_name: "",
-        agency_name: "",
-        project_name: "",
-        dispatch_name: "",
-        dispatch_address: "",
-        contact_person: "",
         mobile: "",
         email: "",
-        collected_by: "",
         gst_no: "",
       },
-    selectedTestIds: [],
-    jobEntryTests: [],
-  } as ClientWizardValues,
-});
+      selectedTestIds: [],
+      jobEntryTests: [],
+    } as ClientWizardValues,
+  });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "jobEntryTests"
   });
@@ -181,11 +211,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
   const uidPreviews = React.useMemo(() => {
     if (mode === "edit" || nextUidPreview === null) return [];
-    
+
     let currentNablUid = nextUidPreview;
-    const currentMonthStr = new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase();
     let currentNonNablSerial = 1;
-    
+
     const groupToUid = new Map<string, string>();
     const previews: string[] = [];
 
@@ -198,9 +227,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       const isNabl = testMaster.is_nabl;
       const category = testMaster.category || "";
       const testingAgeGroup = getTestingAgeGroup(test.testing_age || "");
-      
+
       const groupKey = `${isNabl}-${category}-${testingAgeGroup}`;
-      
+
       if (groupToUid.has(groupKey)) {
         previews.push(groupToUid.get(groupKey)!);
       } else {
@@ -210,6 +239,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           previews.push(uid);
           currentNablUid++;
         } else {
+          const inwardDateStr = test.date_of_receiving;
+          const currentMonthStr = inwardDateStr ? new Date(inwardDateStr).toLocaleString('en-US', { month: 'short' }).toUpperCase() : "MMM";
           const uid = `${currentMonthStr}-${currentNonNablSerial.toString().padStart(2, '0')}`;
           groupToUid.set(groupKey, uid);
           previews.push(uid);
@@ -255,7 +286,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         setSearchResults([]);
         setShowResults(false);
       }
-    }, 500);
+    }, 300);
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
@@ -284,18 +315,30 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const handleSelectClient = async (client: Database["public"]["Tables"]["clients"]["Row"]) => {
     setValue("client.id", client.id);
     setValue("client.name", client.name || "");
+    setValue("client.company_name", client.company_name || "");
     setValue("client.address", client.address || "");
-    setValue("client.division", client.division || "");
-    setValue("client.site_name", client.site_name || "");
-    setValue("client.agency_name", client.agency_name || "");
-    setValue("client.project_name", client.project_name || "");
-    setValue("client.dispatch_name", client.dispatch_name || "");
-    setValue("client.dispatch_address", client.dispatch_address || "");
-    setValue("client.contact_person", client.contact_person || "");
     setValue("client.mobile", client.mobile || "");
     setValue("client.email", client.email || "");
-    setValue("client.collected_by", client.collected_by || "");
     setValue("client.gst_no", client.gst_no || "");
+
+    // Clear project/site details by default, user can select from previous projects in step 2
+    setValue("jobEntry.division", "");
+    setValue("jobEntry.site_name", "");
+    setValue("jobEntry.agency_name", "");
+    setValue("jobEntry.project_name", "");
+    setValue("jobEntry.dispatch_name", "");
+    setValue("jobEntry.dispatch_address", "");
+    setValue("jobEntry.contact_person", "");
+    setValue("jobEntry.collected_by", "");
+
+    // Fetch projects for this client
+    setIsFetchingProjects(true);
+    getClientProjectsAction(client.id).then(res => {
+      if (res.success && res.data) {
+        setClientProjects(res.data);
+      }
+      setIsFetchingProjects(false);
+    });
 
     setShowResults(false);
     setSearchQuery("");
@@ -314,25 +357,20 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
     if (currentIndex > -1) {
       // Remove
-      if (mode === "edit") {
-        toast({ title: "Edit Mode", description: "You cannot remove the test in edit mode.", variant: "error" });
+      if (mode === "edit" && id === initialData?.jobEntryTest?.test_master_id) {
+        toast({ title: "Edit Mode", description: "You cannot remove the original test in edit mode.", variant: "error" });
         return;
       }
       const newIds = [...currentIds];
       newIds.splice(currentIndex, 1);
       setValue("selectedTestIds", newIds, { shouldValidate: true });
-      
+
       const testIndex = fields.findIndex(f => f.test_master_id === id);
       if (testIndex > -1) {
         remove(testIndex);
       }
     } else {
       // Add
-      if (mode === "edit") {
-        toast({ title: "Edit Mode", description: "You can only edit the single selected test in edit mode.", variant: "error" });
-        return;
-      }
-      
       const test = availableTests.find(t => t.id === id);
       if (!test) return;
 
@@ -345,22 +383,28 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         });
       }
 
-      append({
+      const newTestData = {
         test_master_id: test.id,
         test_name: test.component_parameter || test.specific_test || "",
         test_method: test.test_method || "",
-        material_id: "",
-        material_details_location: "",
-        sample_quantity: "",
-        grade: "",
-        testing_day: "",
-        date_of_receiving: "",
-        date_of_casting: "",
         testing_age: "",
         date_of_testing: "",
         material_description: "",
+        material_id: "",
+        material_details_location: "",
+        sample_quantity: "",
+        testing_day: "",
+        grade: "",
+        date_of_casting: "",
         additional_details_values: initialAdditionalDetails,
-      });
+      };
+
+      if (mode === "edit" && fields.length === 1 && !fields[0].test_master_id) {
+        // Overwrite the dummy test
+        update(0, newTestData);
+      } else {
+        append(newTestData);
+      }
     }
   };
 
@@ -369,7 +413,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
     if (currentStep === 0 || currentStep === 1) {
       isValid = await trigger("client");
-    } else if (currentStep === 2) {
+    } else if (currentStep === 2 || currentStep === 3) {
       isValid = true;
     }
 
@@ -396,6 +440,14 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   };
 
   const onSubmit = async (data: ClientWizardValues) => {
+    if (!data.selectedTestIds?.length && data.dummy_is_nabl === undefined) {
+      toast({
+        title: "Validation Error",
+        description: "Please select NABL or Non-NABL for the dummy job card."
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       let result;
@@ -410,8 +462,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           title: mode === "edit" ? "Inward Updated" : "Wizard Completed",
           description: mode === "edit"
             ? "Inward test details updated successfully."
-            : ("uids" in result && Array.isArray(result.uids) && result.uids.length > 0)
-              ? `Client and Test details saved successfully. Generated UID: ${result.uids.join(", ")}`
+            : (data.jobEntryTests && data.jobEntryTests.length > 0)
+              ? (result.uids && result.uids.length > 0 ? `UID issued: ${result.uids.join(', ')}. ULR still pending.` : "Client and Test details saved successfully. ULR pending.")
               : "Client details saved successfully (No test selected).",
         });
         reset();
@@ -437,6 +489,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   };
 
   const filteredTests = availableTests.filter((test) => {
+    if (selectedMaterial && (!test.material_product || test.material_product.toLowerCase() !== selectedMaterial.toLowerCase())) return false;
     if (testNablFilter === "nabl" && test.is_nabl !== true) return false;
     if (testNablFilter === "non-nabl" && test.is_nabl === true) return false;
     if (testCategoryFilter !== "all" && test.category !== testCategoryFilter) return false;
@@ -455,13 +508,13 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const paginatedTests = filteredTests.slice((testCurrentPage - 1) * testPageSize, testCurrentPage * testPageSize);
 
   return (
-    <Card className="w-full max-w-5xl mx-auto shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 bg-white rounded-2xl overflow-hidden flex flex-col md:flex-row h-[600px]">
+    <Card className="w-full max-w-[1300px] mx-auto shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 bg-white rounded-2xl overflow-hidden flex flex-col md:flex-row h-[70vh] min-h-[700px]">
 
       {/* Left Sidebar Stepper */}
       <div className="w-full md:w-70 lg:w-72 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-6 flex flex-col shrink-0">
         <div className="mb-10">
           <PageHeader
-            title="Client Registration"
+            title="Client Inward"
 
             className="flex-col items-start gap-6 [&_h1]:text-2xl [&_h1]:leading-tight"
           />
@@ -518,40 +571,56 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                   </div>
 
                   <div className="col-span-full mb-2 relative z-50">
-                    <div className="relative group max-w-md">
+                    <div className="relative group">
                       <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors duration-300" />
                       <Input
-                        placeholder="Search Client by Name, Mobile, Email, or GST..."
-                        className="pl-12 pr-4 h-11 rounded-xl border-slate-200/80 bg-slate-50/50 text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-orange-500/10 focus-visible:border-orange-500 transition-all duration-300"
+                        placeholder="Search company or customer name..."
+                        className="pl-12 pr-4 h-14 rounded-xl border-slate-200/80 bg-slate-50/50 text-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-orange-500/10 focus-visible:border-orange-500 transition-all duration-300"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => { if (searchResults.length > 0) setShowResults(true); }}
                         onBlur={() => setTimeout(() => setShowResults(false), 200)}
                       />
                       {isSearching && (
-                        <div className="absolute right-5 top-4">
+                        <div className="absolute right-5 top-1/2 -translate-y-1/2">
                           <Spinner className="h-5 w-5 text-orange-500" />
                         </div>
                       )}
                     </div>
 
                     {showResults && searchResults.length > 0 && (
-                      <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl overflow-hidden z-50 max-h-[350px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-slate-900/5 max-w-md">
-                        {searchResults.map((client, idx) => (
-                          <div
-                            key={client.id}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              handleSelectClient(client);
-                            }}
-                            className={`p-4 hover:bg-orange-50 cursor-pointer border-b border-slate-100 last:border-0 transition-colors duration-150 ${idx === 0 ? 'rounded-t-xl' : ''}`}
-                          >
-                            <div className="font-semibold text-slate-900 text-base">{client.name}</div>
-                            <div className="text-xs font-medium text-slate-500 mt-1.5 flex gap-4">
-                              {client.mobile && <span className="flex items-center gap-1"><span className="text-slate-400">📱</span> {client.mobile}</span>}
-                              {client.email && <span className="flex items-center gap-1"><span className="text-slate-400">✉️</span> {client.email}</span>}
-                              {client.gst_no && <span className="flex items-center gap-1"><span className="text-slate-400">📄</span> {client.gst_no}</span>}
-                            </div>
+                      <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl overflow-hidden z-50 max-h-[350px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-slate-900/5">
+                        {Object.entries(
+                          searchResults.reduce((acc, client) => {
+                            const company = client.company_name || 'Individual Customers';
+                            if (!acc[company]) acc[company] = [];
+                            acc[company].push(client);
+                            return acc;
+                          }, {} as Record<string, Database["public"]["Tables"]["clients"]["Row"][]>)
+                        ).map(([company, clients], gIdx) => (
+                          <div key={company}>
+                            {company !== 'Individual Customers' && (
+                              <div className="px-4 py-2 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider sticky top-0 border-b border-slate-100 shadow-sm z-10">{company}</div>
+                            )}
+                            {clients.map((client, idx) => (
+                              <div
+                                key={client.id}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleSelectClient(client);
+                                }}
+                                className={`p-4 hover:bg-orange-50 cursor-pointer border-b border-slate-100 last:border-0 transition-colors duration-150 ${(gIdx === 0 && idx === 0) ? 'rounded-t-xl' : ''}`}
+                              >
+                                <div className="font-semibold text-slate-900 text-base">
+                                  {client.name} {company === 'Individual Customers' && client.company_name ? ` - ${client.company_name}` : ''}
+                                </div>
+                                <div className="text-xs font-medium text-slate-500 mt-1.5 flex gap-4">
+                                  {client.mobile && <span className="flex items-center gap-1"><span className="text-slate-400">📱</span> {client.mobile}</span>}
+                                  {client.email && <span className="flex items-center gap-1"><span className="text-slate-400">✉️</span> {client.email}</span>}
+                                  {client.gst_no && <span className="flex items-center gap-1"><span className="text-slate-400">📄</span> {client.gst_no}</span>}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         ))}
                       </div>
@@ -561,6 +630,11 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Customer <span className="text-red-500">*</span></label>
                     <Input {...register("client.name")} placeholder="Customer Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                     {errors.client?.name && <p className="text-red-500 text-xs">{errors.client.name.message}</p>}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Company</label>
+                    <Input {...register("client.company_name")} placeholder="Company Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
@@ -589,10 +663,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Division</label>
-                    <Input {...register("client.division")} placeholder="Division" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+
 
                 </motion.div>
               )}
@@ -604,55 +675,167 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: -50, opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 px-2 md:px-2 pb-4"
+                  className="flex flex-col gap-8 px-2 md:px-2 pb-4"
                 >
-                  <div className="col-span-full mb-4 pb-4 border-b border-slate-200/60 flex items-center gap-3">
+                  <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 text-orange-500 shadow-sm shrink-0">
                       <Building2 className="w-5 h-5" />
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Site & Project Details</h3>
-                      <p className="text-[15px] text-slate-500 font-medium">Enter information regarding the site, agency, and project.</p>
+                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Site / Project Details</h3>
+                      <p className="text-[15px] text-slate-500 font-medium">Enter information regarding the site and project.</p>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Site</label>
-                    <Input {...register("client.site_name")} placeholder="Site Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Agency</label>
-                    <Input {...register("client.agency_name")} placeholder="Agency Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                  <div className="flex flex-col gap-6 pt-2">
+                    {clientProjects.length > 0 && (
+                      <div className="flex flex-col gap-1.5 px-6">
+                        <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Select Past Project (Optional)</label>
+                        <select
+                          className="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-2 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) {
+                              setValue("jobEntry.division", "");
+                              setValue("jobEntry.site_name", "");
+                              setValue("jobEntry.agency_name", "");
+                              setValue("jobEntry.project_name", "");
+                              setValue("jobEntry.dispatch_name", "");
+                              setValue("jobEntry.dispatch_address", "");
+                              setValue("jobEntry.contact_person", "");
+                              setValue("jobEntry.collected_by", "");
+                            } else {
+                              const proj = clientProjects.find(p => p.project_name === val);
+                              if (proj) {
+                                setValue("jobEntry.division", proj.division || "");
+                                setValue("jobEntry.site_name", proj.site_name || "");
+                                setValue("jobEntry.agency_name", proj.agency || "");
+                                setValue("jobEntry.project_name", proj.project_name || "");
+                                setValue("jobEntry.dispatch_name", proj.dispatch_name || "");
+                                setValue("jobEntry.dispatch_address", proj.dispatch_address || "");
+                                setValue("jobEntry.contact_person", proj.contact_person || "");
+                                setValue("jobEntry.collected_by", proj.collected_by || "");
+                              }
+                            }
+                          }}
+                        >
+                          <option value="">-- New Project --</option>
+                          {clientProjects.map((p, i) => (
+                            <option key={i} value={p.project_name}>{p.project_name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    {/* Site & Contact Card */}
+                    <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/50 group-hover:scale-105 transition-transform duration-300">
+                          <MapPin className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-base font-extrabold text-slate-800 tracking-tight">Site & Contact</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Site</label>
+                          <Input {...register("jobEntry.site_name")} placeholder="Site Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Project</label>
+                          <Input {...register("jobEntry.project_name")} placeholder="Project Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Contact Person</label>
+                          <Input {...register("jobEntry.contact_person")} placeholder="Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Division</label>
+                          <Input {...register("jobEntry.division")} placeholder="Division" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Project</label>
-                    <Input {...register("client.project_name")} placeholder="Project Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                    {/* Agency & Collection Card */}
+                    <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/50 group-hover:scale-105 transition-transform duration-300">
+                          <Users className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-base font-extrabold text-slate-800 tracking-tight">Agency & Collection</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Agency</label>
+                          <Input {...register("jobEntry.agency_name")} placeholder="Agency Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Collected By</label>
+                          <Input {...register("jobEntry.collected_by")} placeholder="Collected By" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Contact Person Name</label>
-                    <Input {...register("client.contact_person")} placeholder="Contact Person" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
+                    {/* Billing Details Card */}
+                    <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/50 group-hover:scale-105 transition-transform duration-300">
+                          <Receipt className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-base font-extrabold text-slate-800 tracking-tight">Billing Information</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice No.</label>
+                          <Input {...register("jobEntry.invoice_no")} placeholder="Number" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Invoice Date</label>
+                          <Controller
+                            control={control}
+                            name="jobEntry.invoice_date"
+                            render={({ field }) => (
+                              <PremiumDatePicker
+                                value={field.value}
+                                onChange={field.onChange}
+                                triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
+                              />
+                            )}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Reference</label>
+                          <Input {...register("jobEntry.letter_reference")} placeholder="Ref" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Status</label>
+                          <Input {...register("jobEntry.payment_status")} placeholder="Status" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Collected By</label>
-                    <Input {...register("client.collected_by")} placeholder="Collected By" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name for Dispatching the Report</label>
-                    <Input {...register("client.dispatch_name")} placeholder="Dispatch Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 md:col-span-2">
-                    <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Address for Dispatching the Report</label>
-                    <textarea
-                      {...register("client.dispatch_address")}
-                      placeholder="Dispatch Address"
-                      rows={3}
-                      className="flex w-full rounded-xl border border-border bg-slate-50/50 px-4 py-2.5 text-[13px] shadow-sm transition-all duration-300 placeholder:text-muted-foreground focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 hover:border-orange-500/50 disabled:cursor-not-allowed disabled:opacity-50 text-foreground border-slate-200/80 focus-visible:bg-white min-h-[80px] resize-y"
-                    />
+                    {/* Dispatch Details Card */}
+                    <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/50 group-hover:scale-105 transition-transform duration-300">
+                          <Truck className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-base font-extrabold text-slate-800 tracking-tight">Report Dispatch</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name for Dispatching</label>
+                          <Input {...register("jobEntry.dispatch_name")} placeholder="Dispatch Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5 h-full">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Address</label>
+                          <textarea
+                            {...register("jobEntry.dispatch_address")}
+                            placeholder="Dispatch Address"
+                            rows={2}
+                            className="flex w-full rounded-xl border border-border bg-slate-50/50 px-4 py-2.5 text-[13px] shadow-sm transition-all duration-300 placeholder:text-muted-foreground focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 hover:border-orange-500/50 disabled:cursor-not-allowed disabled:opacity-50 text-foreground border-slate-200/80 focus-visible:bg-white h-[44px] resize-none group-hover:bg-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -685,6 +868,16 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                       <div className="flex gap-4">
                         <Dropdown
                           options={[
+                            { label: "Select Material", value: "" },
+                            ...uniqueMaterials.map(m => ({ label: m, value: m }))
+                          ]}
+                          value={selectedMaterial}
+                          onChange={(val) => setSelectedMaterial(val as string)}
+                          buttonClassName="h-11 rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 focus:bg-white transition-all cursor-pointer"
+                          className="flex-1"
+                        />
+                        <Dropdown
+                          options={[
                             { label: "All NABL Status", value: "all" },
                             { label: "NABL Accredited", value: "nabl" },
                             { label: "Non-NABL", value: "non-nabl" }
@@ -707,57 +900,82 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                         />
                       </div>
 
-                      <div className="flex flex-col gap-4 relative z-50">
-                        <div className="relative group">
-                          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
-                          <Input
-                            placeholder="Search and select tests by name, material, or method..."
-                            value={testSearchQuery}
-                            onChange={(e) => {
-                              setTestSearchQuery(e.target.value);
-                              setShowTestResults(true);
-                            }}
-                            onFocus={() => setShowTestResults(true)}
-                            onBlur={() => setTimeout(() => setShowTestResults(false), 200)}
-                            className="pl-12 h-11 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base"
-                          />
-                        </div>
-
-                        {showTestResults && filteredTests.length > 0 && (
-                          <ScrollArea
-                            orientation="vertical"
-                            className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl z-50 max-h-[350px] animate-in fade-in slide-in-from-top-2 ring-1 ring-slate-900/5"
-                          >
-                            <div className="p-1.5 flex flex-col gap-1">
-                              {filteredTests.slice(0, 50).map((test) => (
-                                <div
-                                  key={test.id}
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      handleToggleTest(test.id);
-                                      setShowTestResults(false);
-                                      setTestSearchQuery("");
-                                    }}
-                                  className="group p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-all duration-200 flex flex-col gap-1.5"
-                                >
-                                  <div className="font-semibold text-[14px] text-slate-700 group-hover:text-slate-900 transition-colors pl-1">{test.component_parameter || test.specific_test}</div>
-                                  <div className="flex gap-4 text-[11px] text-slate-500 font-medium pl-1">
-                                    <span className="flex items-center gap-1">
-                                      <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MAT</span>
-                                      <span className="text-slate-600 truncate max-w-[150px]" title={test.material_product}>{test.material_product}</span>
-                                    </span>
-                                    {test.test_method && (
-                                      <span className="flex items-center gap-1">
-                                        <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MTH</span>
-                                        <span className="text-slate-600 truncate max-w-[150px]" title={test.test_method}>{test.test_method}</span>
-                                      </span>
-                                    )}
-                                    {test.is_nabl && <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold ml-auto border border-emerald-100 uppercase tracking-wider text-[9px]">NABL</span>}
-                                  </div>
-                                </div>
-                              ))}
+                      <div className="flex flex-col gap-4 relative z-50 mt-2">
+                        {selectedMaterial ? (
+                          <>
+                            <div className="relative group">
+                              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors pointer-events-none" />
+                              <Input
+                                id="test-search-input"
+                                placeholder="Search and select tests by name, material, or method..."
+                                value={testSearchQuery}
+                                onChange={(e) => {
+                                  setTestSearchQuery(e.target.value);
+                                  setShowTestResults(true);
+                                }}
+                                onFocus={() => setShowTestResults(true)}
+                                onClick={() => setShowTestResults(true)}
+                                onBlur={() => setTimeout(() => setShowTestResults(false), 200)}
+                                className="pl-12 pr-10 h-11 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base cursor-text"
+                              />
+                              <div
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 cursor-pointer rounded-md hover:bg-slate-100 transition-colors"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (showTestResults) {
+                                    setShowTestResults(false);
+                                  } else {
+                                    setShowTestResults(true);
+                                    document.getElementById("test-search-input")?.focus();
+                                  }
+                                }}
+                              >
+                                <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform duration-200 ${showTestResults ? "rotate-180" : ""}`} />
+                              </div>
                             </div>
-                          </ScrollArea>
+
+                            {showTestResults && filteredTests.length > 0 && (
+                              <div
+                                className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl z-50 max-h-[350px] overflow-y-auto animate-in fade-in slide-in-from-top-2 ring-1 ring-slate-900/5"
+                              >
+                                <div className="p-1.5 flex flex-col gap-1">
+                                  {filteredTests.slice(0, 50).map((test) => (
+                                    <div
+                                      key={test.id}
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        handleToggleTest(test.id);
+                                        setShowTestResults(false);
+                                        setTestSearchQuery("");
+                                      }}
+                                      className="group p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-all duration-200 flex flex-col gap-1.5"
+                                    >
+                                      <div className="font-semibold text-[14px] text-slate-700 group-hover:text-slate-900 transition-colors pl-1">{test.component_parameter || test.specific_test}</div>
+                                      <div className="flex gap-4 text-[11px] text-slate-500 font-medium pl-1">
+                                        <span className="flex items-center gap-1">
+                                          <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MAT</span>
+                                          <span className="text-slate-600 truncate max-w-[150px]" title={test.material_product}>{test.material_product}</span>
+                                        </span>
+                                        {test.test_method && (
+                                          <span className="flex items-center gap-1">
+                                            <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MTH</span>
+                                            <span className="text-slate-600 truncate max-w-[150px]" title={test.test_method}>{test.test_method}</span>
+                                          </span>
+                                        )}
+                                        {test.is_nabl && <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold ml-auto border border-emerald-100 uppercase tracking-wider text-[9px]">NABL</span>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="py-6 text-center flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
+                            <h3 className="text-slate-800 font-bold text-base mb-1">Select a Material</h3>
+                            <p className="text-slate-500 text-sm max-w-xs mx-auto">Please select a material first to see and search available tests.</p>
+                          </div>
                         )}
                       </div>
 
@@ -774,7 +992,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                     <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-100 to-orange-50 text-orange-800 text-[9px] font-bold px-3 py-1 rounded-bl-xl tracking-wider uppercase flex items-center gap-1 shadow-sm border-b border-l border-orange-200">
                                       <CheckCircle2 className="w-3 h-3 text-orange-600" /> Selected
                                     </div>
-  
+
                                     {mode !== "edit" && (
                                       <Button
                                         variant="ghost"
@@ -785,7 +1003,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                         Remove
                                       </Button>
                                     )}
-  
+
                                     <div className="flex items-start gap-3 mb-3">
                                       <div className="w-8 h-8 rounded-lg bg-orange-100/80 flex items-center justify-center shrink-0 border border-orange-200 shadow-inner mt-0.5">
                                         <Check className="w-4 h-4 text-orange-600" />
@@ -799,9 +1017,14 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                             <CheckCircle2 className="w-2.5 h-2.5" /> NABL Accredited
                                           </span>
                                         )}
+                                        {test.is_nabl && !test.category && (
+                                          <p className="text-[10px] text-red-600 font-bold mt-1.5 leading-tight">
+                                            Category required (Construction or Environmental) or UID groups will be wrong.
+                                          </p>
+                                        )}
                                       </div>
                                     </div>
-  
+
                                     <div className="flex flex-col gap-1.5 pt-2 border-t border-orange-100/50">
                                       <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/60 border border-orange-100/50 hover:bg-white transition-colors shadow-sm">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Material</span>
@@ -836,7 +1059,96 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
               {currentStep === 3 && (
                 <motion.div
-                  key="step4"
+                  key="step4_material"
+                  initial={{ x: 50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -50, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6 pb-6"
+                >
+                  <div className="mb-4 pb-4 border-b border-slate-200/60 flex items-center gap-3">
+                    <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 text-orange-500 shadow-sm shrink-0">
+                      <Package className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Material Details</h3>
+                      <p className="text-[15px] text-slate-500 font-medium">Enter material specific details applied to all tests.</p>
+                    </div>
+                  </div>
+                  {!selectedTestIds.length ? (
+                    <div className="text-center py-12 text-slate-500">
+                      No test selected. You can proceed to submit, or go back to step 3 to select a test.
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="flex flex-col gap-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:border-orange-200/60 group">
+                        <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/50 group-hover:scale-105 transition-transform duration-300">
+                            <Package className="w-5 h-5" />
+                          </div>
+                          <h4 className="text-base font-extrabold text-slate-800 tracking-tight">Common Material Properties</h4>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material ID</label>
+                            <Input {...register(`materialDetails.material_id`)} placeholder="e.g. MAT-001" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Location</label>
+                            <Input {...register(`materialDetails.material_details_location`)} placeholder="e.g. Block A" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Sample Quantity</label>
+                            <Input {...register(`materialDetails.sample_quantity`)} placeholder="e.g. 50 kg" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Day</label>
+                            <Input {...register(`materialDetails.testing_day`)} placeholder="e.g. 7, 28" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Grade</label>
+                            <Input {...register(`materialDetails.grade`)} placeholder="e.g. M25" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Casting Date</label>
+                            <PremiumDatePicker
+                              value={watch(`materialDetails.date_of_casting`)}
+                              onChange={(val) => {
+                                setValue(`materialDetails.date_of_casting`, val, { shouldValidate: true });
+                                const tests = getValues("jobEntryTests") || [];
+                                tests.forEach((test, idx) => {
+                                  if (test.testing_age) {
+                                    const testSpecificCasting = test.additional_details_values?.["Date of Casting"] || test.additional_details_values?.["Casting Date"];
+                                    const castingToUse = testSpecificCasting || val || "";
+                                    const newTestingDate = calculateTestingDate(castingToUse, test.testing_age);
+                                    setValue(`jobEntryTests.${idx}.date_of_testing`, newTestingDate, { shouldValidate: true });
+                                  }
+                                });
+                              }}
+                              side="left"
+                              triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Receiving</label>
+                            <PremiumDatePicker
+                              value={watch(`materialDetails.date_of_receiving`)}
+                              onChange={(val) => setValue(`materialDetails.date_of_receiving`, val, { shouldValidate: true })}
+                              side="left"
+                              triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {currentStep === 4 && (
+                <motion.div
+                  key="step5"
                   initial={{ x: 50, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: -50, opacity: 0 }}
@@ -853,8 +1165,57 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     </div>
                   </div>
                   {!selectedTestIds.length ? (
-                    <div className="text-center py-12 text-slate-500">
-                      No test selected. You can proceed to submit, or go back to step 3 to select a test.
+                    <div className="text-center py-12 flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
+                      <h3 className="text-slate-800 font-bold text-lg mb-2">No test selected</h3>
+                      <p className="text-slate-500 text-sm max-w-md mx-auto mb-6">
+                        You can proceed to submit this as a Dummy Job Card. Please select the type of dummy job card you want to create:
+                      </p>
+
+                      <div className="flex gap-4">
+                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
+                          <input
+                            type="radio"
+                            className="sr-only peer"
+                            name="dummy_is_nabl"
+                            value="true"
+                            onChange={() => setValue('dummy_is_nabl', true)}
+                            checked={watch('dummy_is_nabl') === true}
+                          />
+                          <div className="w-32 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all hover:bg-slate-50">
+                            NABL
+                          </div>
+                        </label>
+                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
+                          <input
+                            type="radio"
+                            className="sr-only peer"
+                            name="dummy_is_nabl"
+                            value="false"
+                            onChange={() => setValue('dummy_is_nabl', false)}
+                            checked={watch('dummy_is_nabl') === false}
+                          />
+                          <div className="w-32 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all hover:bg-slate-50">
+                            Non-NABL
+                          </div>
+                        </label>
+                      </div>
+
+                      <div className="w-full max-w-sm mt-6">
+                        <label className="text-[13px] font-semibold text-slate-700 mb-1.5 block text-left">Generate ULR After</label>
+                        <Dropdown
+                          options={[
+                            { label: "Immediate (0 days)", value: "0" },
+                            { label: "5 Days", value: "5" },
+                            { label: "7 Days", value: "7" },
+                            { label: "14 Days", value: "14" },
+                            { label: "21 Days", value: "21" },
+                            { label: "28 Days", value: "28" },
+                          ]}
+                          value={watch('dummy_scheduled_days') || "0"}
+                          onChange={(val) => setValue('dummy_scheduled_days', val, { shouldValidate: true })}
+                        />
+                        <p className="text-xs text-slate-500 mt-2 text-left">The system will wait this many days before automatically generating a Placeholder ULR if no tests are added.</p>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-6">
@@ -863,7 +1224,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                         return (
                           <div key={field.id} className="bg-slate-50 rounded-xl p-6 border border-slate-200 shadow-sm relative">
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 rounded-l-xl"></div>
-                            
+
                             {mode !== "edit" && (
                               <Button
                                 variant="ghost"
@@ -884,57 +1245,25 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                               <div className="flex flex-col gap-1.5 col-span-full md:col-span-1">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">{mode === "edit" ? "UID" : "UID Preview (final UID on test date)"}</label>
-                                <Input value={mode === "edit" ? (initialData?.jobEntryTest?.job_entries?.uid ?? initialData?.jobEntryTest?.uid ?? "") : (nextUidPreview !== null ? uidPreviews[index] || "Loading..." : "Loading...")} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
+                                <Input value={mode === "edit" ? (initialData?.jobEntryTest?.uid_label || initialData?.jobEntryTest?.job_entries?.uid_label || String(initialData?.jobEntryTest?.job_entries?.uid || "")) : (nextUidPreview !== null ? uidPreviews[index] || "Loading..." : "Loading...")} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
+                                {mode !== "edit" && !availableTests.find(t => t.id === field.test_master_id)?.category && (
+                                  <p className="text-[11px] text-amber-600 font-semibold mt-1">⚠️ Set test_master.category or preview will merge groups.</p>
+                                )}
                               </div>
 
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">MATERIAL ID <span className="text-red-500">*</span></label>
-                                <Input {...register(`jobEntryTests.${index}.material_id`)} placeholder="Material ID" />
-                                {errors.jobEntryTests?.[index]?.material_id && <p className="text-red-500 text-xs">{errors.jobEntryTests[index]?.material_id?.message}</p>}
+                              <div className="flex flex-col gap-1.5 col-span-full md:col-span-1">
+                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Report QR</label>
+                                <Input value={testMaster?.report_qr || "None"} readOnly className="bg-slate-100 text-slate-500 font-medium border-slate-200 focus-visible:ring-0" />
                               </div>
+
+
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material Description</label>
                                 <Input {...register(`jobEntryTests.${index}.material_description`)} placeholder="Material Description" />
                               </div>
 
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">MATERIAL DETAILS / Location</label>
-                                <Input {...register(`jobEntryTests.${index}.material_details_location`)} placeholder="Location / Details" />
-                              </div>
 
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">NUMBER OF SAMPLE / QTY</label>
-                                <Input {...register(`jobEntryTests.${index}.sample_quantity`)} placeholder="Quantity" />
-                              </div>
-
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">GRADE</label>
-                                <Input {...register(`jobEntryTests.${index}.grade`)} placeholder="Grade" />
-                              </div>
-
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Receiving</label>
-                                <PremiumDatePicker
-                                  value={watch(`jobEntryTests.${index}.date_of_receiving`)}
-                                  onChange={(val) => setValue(`jobEntryTests.${index}.date_of_receiving`, val, { shouldValidate: true })}
-                                  side="right"
-                                />
-                              </div>
-
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Casting</label>
-                                <PremiumDatePicker
-                                  value={watch(`jobEntryTests.${index}.date_of_casting`)}
-                                  onChange={(val) => {
-                                    setValue(`jobEntryTests.${index}.date_of_casting`, val, { shouldValidate: true });
-                                    const currentValues = getValues(`jobEntryTests.${index}`);
-                                    const newTestingDate = calculateTestingDate(val, currentValues.testing_age || "");
-                                    setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
-                                  }}
-                                  side="left"
-                                />
-                              </div>
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Age</label>
@@ -944,7 +1273,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                   onChange={(val) => {
                                     setValue(`jobEntryTests.${index}.testing_age`, val, { shouldValidate: true });
                                     const currentValues = getValues(`jobEntryTests.${index}`);
-                                    const newTestingDate = calculateTestingDate(currentValues.date_of_casting || "", val);
+                                    const globalCastingDate = getValues("materialDetails.date_of_casting");
+                                    const newTestingDate = calculateTestingDate(currentValues.additional_details_values?.["Date of Casting"] || currentValues.additional_details_values?.["Casting Date"] || globalCastingDate || "", val);
                                     setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
                                   }}
                                   placeholder="Select Testing Age..."
@@ -958,14 +1288,11 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                   value={watch(`jobEntryTests.${index}.date_of_testing`)}
                                   onChange={() => { }}
                                   disabled={true}
-                                  side="right"
+                                  side="left"
                                 />
                               </div>
 
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Day</label>
-                                <Input {...register(`jobEntryTests.${index}.testing_day`)} placeholder="Testing Day" />
-                              </div>
+
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Test Method</label>
@@ -977,15 +1304,36 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 <div className="col-span-full mt-2">
                                   <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">Additional Details</h4>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                    {testMaster.additional_details.map((detailLabel, detailIdx) => (
-                                      <div key={detailIdx} className="flex flex-col gap-1.5">
-                                        <label className="text-[13px] font-semibold text-slate-700 mb-0.5">{detailLabel}</label>
-                                        <Input
-                                          {...register(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any)}
-                                          placeholder={`Enter ${detailLabel}`}
-                                        />
-                                      </div>
-                                    ))}
+                                    {testMaster.additional_details.map((detailLabel, detailIdx) => {
+                                      const isDateField = detailLabel.toLowerCase().includes('date');
+                                      return (
+                                        <div key={detailIdx} className="flex flex-col gap-1.5">
+                                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">{detailLabel}</label>
+                                          {isDateField ? (
+                                            <PremiumDatePicker
+                                              value={watch(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any) || ""}
+                                              onChange={(val) => {
+                                                setValue(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any, val, { shouldValidate: true });
+                                                if (detailLabel.toLowerCase() === 'casting date' || detailLabel.toLowerCase() === 'date of casting') {
+                                                  const currentValues = getValues(`jobEntryTests.${index}`);
+                                                  if (currentValues.testing_age) {
+                                                    const globalCastingDate = getValues("materialDetails.date_of_casting");
+                                                    const newTestingDate = calculateTestingDate(val || globalCastingDate || "", currentValues.testing_age);
+                                                    setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
+                                                  }
+                                                }
+                                              }}
+                                              side="left"
+                                            />
+                                          ) : (
+                                            <Input
+                                              {...register(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any)}
+                                              placeholder={`Enter ${detailLabel}`}
+                                            />
+                                          )}
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               )}

@@ -32,7 +32,9 @@ export function NotificationBell() {
         if (mounted && res.success && 'count' in res && res.count !== undefined) {
           setUnreadCount(res.count as number);
         }
-      }).catch(console.error);
+      }).catch(() => {
+        // Ignore fetch errors during polling
+      });
     };
     
     fetchUnread();
@@ -55,7 +57,7 @@ export function NotificationBell() {
           setLoading(false);
         }
       }).catch(err => {
-        console.error(err);
+        // Ignore fetch error to prevent dev overlay popups
         if (mounted) setLoading(false);
       });
     }

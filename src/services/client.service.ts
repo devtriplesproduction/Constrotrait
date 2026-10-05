@@ -13,12 +13,15 @@ export class ClientService {
 
     const supabase = await createClient();
     
+    // Sanitize the query to escape commas and percent signs
+    const sanitizedQuery = query.replace(/,/g, '\\,').replace(/%/g, '\\%');
+    
     // We can use an 'or' filter for search
     const { data, error } = await supabase
       .from("clients")
       .select("*")
-      .or(`name.ilike.%${query}%,email.ilike.%${query}%,mobile.ilike.%${query}%,gst_no.ilike.%${query}%`)
-      .limit(10);
+      .or(`name.ilike.%${sanitizedQuery}%,company_name.ilike.%${sanitizedQuery}%,email.ilike.%${sanitizedQuery}%,mobile.ilike.%${sanitizedQuery}%,gst_no.ilike.%${sanitizedQuery}%`)
+      .limit(50);
 
     if (error) {
       console.error("Error searching clients:", error);

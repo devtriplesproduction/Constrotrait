@@ -3,6 +3,7 @@
 import React from "react";
 import { LayoutDashboard, Users, ClipboardList, Building2, Calendar, CalendarDays, Banknote, UserSquare } from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
+import { canManageTestMaster, canManageClientsAndJobs } from "@/config/roles";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface AdminSidebarProps {
 export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
   const isEmployeeManagementAllowed = role?.includes('ADMIN') || role === 'HR';
   const isPayrollAllowed = role === 'HR' || role?.includes('SUPER_ADMIN') || role?.includes('BRANCH_MANAGER_ADMINISTRATIVE');
+  const roleArray = role ? [role] : [];
 
   const adminLinks: SidebarLink[] = [
     { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -34,17 +36,26 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
   adminLinks.push(
     { title: "Leave", href: "/leave", icon: CalendarDays },
     { title: "Holidays", href: "/holidays", icon: Calendar },
-    { title: "Test Master", href: "/tests", icon: ClipboardList },
-    {
+  );
+
+  if (canManageTestMaster(roleArray)) {
+    adminLinks.push({ title: "Test Master", href: "/tests", icon: ClipboardList });
+  }
+
+  if (canManageClientsAndJobs(roleArray)) {
+    adminLinks.push({
       title: "Client Inward",
       icon: UserSquare,
       subLinks: [
         { title: "Clients", href: "/clients", icon: UserSquare },
         { title: "Job Assignments", href: "/job-assignments", icon: ClipboardList },
-        { title: "Sample results", href: "/results", icon: ClipboardList },
       ],
-    }
-  );
+    });
+  } else {
+    adminLinks.push(
+      { title: "Job Assignments", href: "/job-assignments", icon: ClipboardList }
+    );
+  }
 
   if (isPayrollAllowed) {
     adminLinks.push({ title: "Payroll", href: "/hr/payroll", icon: Banknote });

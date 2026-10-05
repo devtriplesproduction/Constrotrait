@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, Beaker, FileText, XCircle, Pencil, Trash2, AlertTriangle, Loader2, Search, ChevronLeft, ChevronRight as ChevronRightIcon } from "lucide-react";
+import { Plus, Beaker, FileText, XCircle, Pencil, Trash2, AlertTriangle, Loader2, Search, ChevronLeft, ChevronRight as ChevronRightIcon, Download } from "lucide-react";
 import { TestMaster } from "@/services/test.service";
 import { AddTestWizard } from "./AddTestWizard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,6 +70,27 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
     });
   };
 
+  const handleExport = () => {
+    import("xlsx").then((XLSX) => {
+      const exportData = filteredTests.map((test, index) => ({
+        "S.No": index + 1,
+        "Test Method": test.test_method,
+        "Discipline / Group": test.discipline_group,
+        "Material / Product": test.material_product,
+        "Component / Parameter": test.component_parameter,
+        "Additional Details": test.additional_details?.join(", ") || "None",
+        "NABL": test.is_nabl ? "Yes" : "No",
+        "Category": test.category || "N/A",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Tests");
+
+      XLSX.writeFile(workbook, "test_master.xlsx");
+    });
+  };
+
   const filteredTests = initialTests.filter(test => {
     if (nablFilter === "nabl" && test.is_nabl !== true) return false;
     if (nablFilter === "non-nabl" && test.is_nabl === true) return false;
@@ -131,6 +152,15 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
                 <SelectItem value="Environmental">Environmental</SelectItem>
               </Select>
             </div>
+            <Button
+              variant="outline"
+              size="none"
+              onClick={handleExport}
+              className="h-[40px] rounded-xl px-4 shadow-sm text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </Button>
             <Button
               variant="custom"
               size="none"
@@ -198,85 +228,110 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
                 <ScrollArea className="h-full w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   <div className="flex flex-col gap-4 p-4 sm:p-5">
 
-                  {/* Header: Badge + Actions */}
-                  <div className="flex justify-between items-start gap-4">
-                    {/* S.No Badge */}
-                    <div className="w-12 h-12 rounded-xl flex-shrink-0 bg-gradient-to-b from-orange-500 to-orange-700 flex flex-col items-center justify-center shadow-[0_4px_8px_-2px_rgba(234,88,12,0.6)] border border-orange-400/50">
-                      <span className="text-[8px] font-bold text-orange-100/90 uppercase tracking-widest leading-none mb-0.5">Test</span>
-                      <span className="text-white font-black text-lg leading-none drop-shadow-sm">
-                        {String((currentPage - 1) * pageSize + index + 1).padStart(2, '0')}
-                      </span>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-3 w-full">
-                      {/* Test Method */}
-                      <div className="flex flex-col items-center flex-1 text-center">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Test Method</span>
-                        <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
-                          {test.test_method}
+                    {/* Header: Badge + Actions */}
+                    <div className="flex justify-between items-start gap-4">
+                      {/* S.No Badge */}
+                      <div className="w-12 h-12 rounded-xl flex-shrink-0 bg-gradient-to-b from-orange-500 to-orange-700 flex flex-col items-center justify-center shadow-[0_4px_8px_-2px_rgba(234,88,12,0.6)] border border-orange-400/50">
+                        <span className="text-[8px] font-bold text-orange-100/90 uppercase tracking-widest leading-none mb-0.5">Test</span>
+                        <span className="text-white font-black text-lg leading-none drop-shadow-sm">
+                          {String((currentPage - 1) * pageSize + index + 1).padStart(2, '0')}
                         </span>
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex flex-row items-center justify-end gap-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-300 shrink-0 w-[68px]">
-                        <Button
-                          variant="custom"
-                          size="none"
-                          onClick={() => handleEdit(test)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 shadow-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 hover:shadow transition-all"
-                          title="Edit"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="custom"
-                          size="none"
-                          onClick={() => setDeletingTest(test)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:shadow transition-all"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                      <div className="flex items-start justify-between gap-3 w-full">
+                        {/* Test Method */}
+                        <div className="flex flex-col items-center flex-1 text-center">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Test Method</span>
+                          <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
+                            {test.test_method}
+                          </span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-row items-center justify-end gap-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-300 shrink-0 w-[68px]">
+                          <Button
+                            variant="custom"
+                            size="none"
+                            onClick={() => handleEdit(test)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 shadow-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 hover:shadow transition-all"
+                            title="Edit"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="custom"
+                            size="none"
+                            onClick={() => setDeletingTest(test)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:shadow transition-all"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Content Grid */}
-                  <div className="grid grid-cols-2 gap-y-4 gap-x-3 items-start mt-2">
-                    <div className="col-span-2">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Discipline / Group</span>
-                      <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-orange-50 border border-orange-100/80 text-orange-700 font-semibold text-xs shadow-sm break-all">
-                        {test.discipline_group}
-                      </span>
-                    </div>
-                    <div className="col-span-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Material / Product</span>
-                      <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
-                        {test.material_product}
-                      </span>
-                    </div>
-                    <div className="col-span-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Component / Parameter</span>
-                      <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
-                        {test.component_parameter}
-                      </span>
-                    </div>
-                    <div className="col-span-2 mt-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Additional Details</span>
-                      {test.additional_details && test.additional_details.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5">
-                          {test.additional_details.map((detail, idx) => (
-                            <div key={idx} className="flex items-start gap-1.5 text-slate-600 text-sm leading-tight">
-                              <span className="text-slate-400 mt-0.5">•</span>
-                              <span className="break-all">{detail}</span>
-                            </div>
-                          ))}
-                        </div>
+                    {/* Content Grid */}
+                    <div className="grid grid-cols-2 gap-y-4 gap-x-3 items-start mt-2">
+                      {test.is_nabl !== false ? (
+                        <>
+                          <div className="col-span-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Discipline / Group</span>
+                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-orange-50 border border-orange-100/80 text-orange-700 font-semibold text-xs shadow-sm break-all">
+                              {test.discipline_group || "-"}
+                            </span>
+                          </div>
+                          <div className="col-span-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Material</span>
+                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
+                              {test.material_product || "-"}
+                            </span>
+                          </div>
+                          <div className="col-span-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Component </span>
+                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
+                              {test.component_parameter || "-"}
+                            </span>
+                          </div>
+                        </>
                       ) : (
-                        <span className="text-slate-400 text-xs italic">None</span>
+                        <>
+                          <div className="col-span-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Particulars</span>
+                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-orange-50 border border-orange-100/80 text-orange-700 font-semibold text-xs shadow-sm break-all">
+                              {test.particulars || "-"}
+                            </span>
+                          </div>
+                          <div className="col-span-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Unit</span>
+                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
+                              {test.unit || "-"}
+                            </span>
+                          </div>
+                          <div className="col-span-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Sample Size</span>
+                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
+                              {test.sample_size || "-"}
+                            </span>
+                          </div>
+                        </>
                       )}
+                      <div className="col-span-2 mt-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Additional Details</span>
+                        {test.additional_details && test.additional_details.length > 0 ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5">
+                            {test.additional_details.map((detail, idx) => (
+                              <div key={idx} className="flex items-start gap-1.5 text-slate-600 text-sm leading-tight">
+                                <span className="text-slate-400 mt-0.5">•</span>
+                                <span className="break-all">{detail}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-xs italic">None</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
                   </div>
                 </ScrollArea>

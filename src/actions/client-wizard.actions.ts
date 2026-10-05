@@ -15,33 +15,35 @@ export async function submitClientWizard(data: ClientWizardValues) {
       await ClientService.updateClient(clientId, {
         name: data.client.name,
         address: data.client.address,
-        division: data.client.division,
-        site_name: data.client.site_name,
-        agency_name: data.client.agency_name,
-        project_name: data.client.project_name,
-        dispatch_name: data.client.dispatch_name,
-        dispatch_address: data.client.dispatch_address,
-        contact_person: data.client.contact_person,
         mobile: data.client.mobile,
         email: data.client.email,
-        collected_by: data.client.collected_by,
         gst_no: data.client.gst_no,
+        company_name: data.client.company_name,
+        division: data.jobEntry.division,
+        site_name: data.jobEntry.site_name,
+        agency_name: data.jobEntry.agency_name,
+        project_name: data.jobEntry.project_name,
+        dispatch_name: data.jobEntry.dispatch_name,
+        dispatch_address: data.jobEntry.dispatch_address,
+        contact_person: data.jobEntry.contact_person,
+        collected_by: data.jobEntry.collected_by,
       });
     } else {
       const newClient = await ClientService.createClient({
         name: data.client.name,
         address: data.client.address,
-        division: data.client.division,
-        site_name: data.client.site_name,
-        agency_name: data.client.agency_name,
-        project_name: data.client.project_name,
-        dispatch_name: data.client.dispatch_name,
-        dispatch_address: data.client.dispatch_address,
-        contact_person: data.client.contact_person,
         mobile: data.client.mobile,
         email: data.client.email,
-        collected_by: data.client.collected_by,
         gst_no: data.client.gst_no,
+        company_name: data.client.company_name,
+        division: data.jobEntry.division,
+        site_name: data.jobEntry.site_name,
+        agency_name: data.jobEntry.agency_name,
+        project_name: data.jobEntry.project_name,
+        dispatch_name: data.jobEntry.dispatch_name,
+        dispatch_address: data.jobEntry.dispatch_address,
+        contact_person: data.jobEntry.contact_person,
+        collected_by: data.jobEntry.collected_by,
       });
       clientId = newClient.id;
     }
@@ -52,45 +54,40 @@ export async function submitClientWizard(data: ClientWizardValues) {
       data.jobEntryTests && data.jobEntryTests.length > 0
         ? data.jobEntryTests.map((test: any) => ({
             test_master_id: toNull(test.test_master_id),
-            material_id: toNull(test.material_id),
-            material_details_location: test.material_details_location || null,
-            sample_quantity: test.sample_quantity || null,
-            grade: test.grade || null,
-            testing_day: test.testing_day || null,
-            test_method: test.test_method || null,
-            date_of_receiving: toNull(test.date_of_receiving),
-            date_of_casting: toNull(test.date_of_casting),
+            date_of_receiving: toNull(data.materialDetails?.date_of_receiving),
             testing_age: test.testing_age || null,
             date_of_testing: toNull(test.date_of_testing),
             material_description: test.material_description || null,
+            material_id: data.materialDetails?.material_id || null,
+            material_details_location: data.materialDetails?.material_details_location || null,
+            sample_quantity: data.materialDetails?.sample_quantity || null,
+            testing_day: data.materialDetails?.testing_day || null,
+            date_of_casting: toNull(data.materialDetails?.date_of_casting),
             additional_details_values: test.additional_details_values || {},
+            test_method: test.test_method || null,
+            grade: data.materialDetails?.grade || test.grade || test.additional_details_values?.Grade || test.additional_details_values?.grade || null,
           }))
-        : [
-            {
-              test_master_id: null,
-              material_id: null,
-              material_details_location: null,
-              sample_quantity: null,
-              grade: null,
-              testing_day: null,
-              test_method: null,
-              date_of_receiving: null,
-              date_of_casting: null,
-              testing_age: null,
-              date_of_testing: null,
-              material_description: null,
-              additional_details_values: {},
-            },
-          ];
+        : [];
 
-    const result = await JobEntryService.createJobEntryWithTests({ client_id: clientId }, testsData);
-    const job: any = result.jobEntry;
-    const label = job?.uid_label || job?.uid?.toString();
-    const uids = label ? [String(label)] : [];
+    const jobEntryData = {
+      client_id: clientId,
+      division: data.jobEntry.division,
+      agency: data.jobEntry.agency_name,
+      project_name: data.jobEntry.project_name,
+      dispatch_name: data.jobEntry.dispatch_name,
+      dispatch_address: data.jobEntry.dispatch_address,
+      collected_by: data.jobEntry.collected_by,
+      invoice_no: data.jobEntry.invoice_no,
+      invoice_date: data.jobEntry.invoice_date,
+      letter_reference: data.jobEntry.letter_reference,
+      payment_status: data.jobEntry.payment_status,
+    };
+
+    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData, data.dummy_is_nabl, data.dummy_scheduled_days);
 
     revalidatePath("/dashboard");
     revalidatePath("/clients");
-    return { success: true, uids };
+    return { success: true, uids: uidsIssued || [] };
   } catch (error) {
     console.error("Wizard submission error:", error);
     return { success: false, error: (error as Error).message };
@@ -104,39 +101,46 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
     await ClientService.updateClient(clientId, {
       name: data.client.name,
       address: data.client.address,
-      division: data.client.division,
-      site_name: data.client.site_name,
-      agency_name: data.client.agency_name,
-      project_name: data.client.project_name,
-      dispatch_name: data.client.dispatch_name,
-      dispatch_address: data.client.dispatch_address,
-      contact_person: data.client.contact_person,
       mobile: data.client.mobile,
       email: data.client.email,
-      collected_by: data.client.collected_by,
       gst_no: data.client.gst_no,
+      company_name: data.client.company_name,
+      division: data.jobEntry.division,
+      site_name: data.jobEntry.site_name,
+      agency_name: data.jobEntry.agency_name,
+      project_name: data.jobEntry.project_name,
+      dispatch_name: data.jobEntry.dispatch_name,
+      dispatch_address: data.jobEntry.dispatch_address,
+      contact_person: data.jobEntry.contact_person,
+      collected_by: data.jobEntry.collected_by,
     });
+    
+    // In edit mode we only update the test, we'll leave job_entries fields untouched for now
+    // as JobEntryService.updateJobEntryTest only takes testData.
+    // If needed we'd create a JobEntryService.updateJobEntry.
+
     const jobEntryTest = data.jobEntryTests[0];
     if (jobEntryTest) {
       await JobEntryService.updateJobEntryTest(testId, {
         test_master_id: toNull(jobEntryTest.test_master_id),
-        material_id: toNull(jobEntryTest.material_id),
-        material_details_location: jobEntryTest.material_details_location,
-        sample_quantity: jobEntryTest.sample_quantity,
-        grade: jobEntryTest.grade,
-        testing_day: jobEntryTest.testing_day,
-        test_method: jobEntryTest.test_method,
-        date_of_receiving: toNull(jobEntryTest.date_of_receiving),
-        date_of_casting: toNull(jobEntryTest.date_of_casting),
+        date_of_receiving: toNull(data.materialDetails?.date_of_receiving ?? jobEntryTest.date_of_receiving),
         testing_age: jobEntryTest.testing_age,
         date_of_testing: toNull(jobEntryTest.date_of_testing),
         material_description: jobEntryTest.material_description,
+        material_id: data.materialDetails?.material_id ?? jobEntryTest.material_id,
+        material_details_location: data.materialDetails?.material_details_location ?? jobEntryTest.material_details_location,
+        sample_quantity: data.materialDetails?.sample_quantity ?? jobEntryTest.sample_quantity,
+        testing_day: data.materialDetails?.testing_day ?? jobEntryTest.testing_day,
+        date_of_casting: toNull(data.materialDetails?.date_of_casting ?? jobEntryTest.date_of_casting),
         additional_details_values: jobEntryTest.additional_details_values || {},
+        test_method: jobEntryTest.test_method,
+        grade: data.materialDetails?.grade ?? jobEntryTest.grade ?? jobEntryTest.additional_details_values?.Grade ?? jobEntryTest.additional_details_values?.grade ?? null,
       });
     }
     revalidatePath("/dashboard");
     revalidatePath("/clients");
-    return { success: true };
+    revalidatePath("/", "layout");
+    return { success: true, uids: [] };
   } catch (error) {
     console.error("Wizard update error:", error);
     return { success: false, error: (error as Error).message };
@@ -152,20 +156,74 @@ export async function searchClientsAction(query: string) {
   }
 }
 
+export async function getClientProjectsAction(clientId: string) {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    
+    const { data, error } = await supabase
+      .from("job_entries")
+      .select("project_name, division, agency, dispatch_name, dispatch_address, collected_by")
+      .eq("client_id", clientId)
+      .not("project_name", "is", null)
+      .order("created_at", { ascending: false });
+      
+    if (error) throw error;
+    
+    // Deduplicate by project_name
+    const uniqueProjects = Array.from(new Map(data.filter(d => d.project_name).map(item => [item.project_name, item])).values());
+    
+    return { success: true, data: uniqueProjects };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
 export async function getNextUidAction() {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("job_entries")
-      .select("uid")
-      .not("uid", "is", null)
-      .order("uid", { ascending: false })
-      .limit(1)
+    
+    // Try lab_uid_counters first
+    const { data: counterData, error: counterError } = await supabase
+      .from("lab_uid_counters" as any)
+      .select("counter_value")
+      .eq("counter_name", "UID_NABL")
       .maybeSingle();
-    if (error) return { success: false, error: error.message };
-    return { success: true, nextUid: (data?.uid || 0) + 1 };
+      
+    if (!counterError && counterData) {
+      return { success: true, nextUid: ((counterData as any).counter_value || 0) + 1 };
+    }
+
+    // Fallback to max numeric uid_label
+    const { data: testsData } = await supabase
+      .from("job_entry_tests")
+      .select("uid_label")
+      .not("uid_label", "is", null);
+
+    let maxVal = 0;
+    if (testsData) {
+      for (const t of testsData) {
+        if (t.uid_label && /^\d+$/.test(t.uid_label)) {
+          const val = parseInt(t.uid_label, 10);
+          if (val > maxVal) maxVal = val;
+        }
+      }
+    }
+    return { success: true, nextUid: maxVal + 1 };
   } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function createDummyJobCardAction(isNabl: boolean) {
+  try {
+    const jobEntry = await JobEntryService.createDummyJobCard(isNabl);
+    revalidatePath('/dashboard');
+    revalidatePath('/clients');
+    return { success: true, data: jobEntry };
+  } catch (error) {
+    console.error('Create dummy job card error:', error);
     return { success: false, error: (error as Error).message };
   }
 }

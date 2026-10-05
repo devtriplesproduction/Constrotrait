@@ -200,6 +200,7 @@ export type Database = {
           address: string | null
           agency_name: string | null
           collected_by: string | null
+          company_name: string | null
           contact_person: string | null
           created_at: string
           created_by: string | null
@@ -220,6 +221,7 @@ export type Database = {
           address?: string | null
           agency_name?: string | null
           collected_by?: string | null
+          company_name?: string | null
           contact_person?: string | null
           created_at?: string
           created_by?: string | null
@@ -240,6 +242,7 @@ export type Database = {
           address?: string | null
           agency_name?: string | null
           collected_by?: string | null
+          company_name?: string | null
           contact_person?: string | null
           created_at?: string
           created_by?: string | null
@@ -534,33 +537,161 @@ export type Database = {
           },
         ]
       }
+      id_sequences: {
+        Row: {
+          fy: string
+          kind: string
+          last_value: number
+        }
+        Insert: {
+          fy: string
+          kind: string
+          last_value?: number
+        }
+        Update: {
+          fy?: string
+          kind?: string
+          last_value?: number
+        }
+        Relationships: []
+      }
+      job_assignments: {
+        Row: {
+          assigned_by: string | null
+          assigned_to: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          job_entry_test_id: string
+          notes: string | null
+          report_url: string | null
+          reviewer_remark: string | null
+          status: string
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          job_entry_test_id: string
+          notes?: string | null
+          report_url?: string | null
+          reviewer_remark?: string | null
+          status?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          job_entry_test_id?: string
+          notes?: string | null
+          report_url?: string | null
+          reviewer_remark?: string | null
+          status?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_assignments_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_assignments_job_entry_test_id_fkey"
+            columns: ["job_entry_test_id"]
+            isOneToOne: false
+            referencedRelation: "job_entry_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_entries: {
         Row: {
+          agency: string | null
           client_id: string
+          collected_by: string | null
           created_at: string
           created_by: string | null
+          dispatch_address: string | null
+          dispatch_name: string | null
+          division: string | null
           id: string
-          uid: number
+          invoice_date: string | null
+          invoice_no: string | null
+          inward_on: string | null
+          is_nabl: boolean | null
+          letter_reference: string | null
+          payment_status: string | null
+          project_name: string | null
+          uid: number | null
           uid_label: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          agency?: string | null
           client_id: string
+          collected_by?: string | null
           created_at?: string
           created_by?: string | null
+          dispatch_address?: string | null
+          dispatch_name?: string | null
+          division?: string | null
           id?: string
-          uid?: number
+          invoice_date?: string | null
+          invoice_no?: string | null
+          inward_on?: string | null
+          is_nabl?: boolean | null
+          letter_reference?: string | null
+          payment_status?: string | null
+          project_name?: string | null
+          uid?: number | null
           uid_label?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          agency?: string | null
           client_id?: string
+          collected_by?: string | null
           created_at?: string
           created_by?: string | null
+          dispatch_address?: string | null
+          dispatch_name?: string | null
+          division?: string | null
           id?: string
-          uid?: number
+          invoice_date?: string | null
+          invoice_no?: string | null
+          inward_on?: string | null
+          is_nabl?: boolean | null
+          letter_reference?: string | null
+          payment_status?: string | null
+          project_name?: string | null
+          uid?: number | null
           uid_label?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -589,11 +720,14 @@ export type Database = {
           material_description: string | null
           material_details_location: string | null
           material_id: string | null
+          qc_number: string | null
+          report_class: string | null
           sample_quantity: string | null
           test_master_id: string | null
           test_method: string | null
           testing_age: string | null
           testing_day: string | null
+          uid_label: string | null
           ulr_generated_at: string | null
           ulr_number: string | null
           ulr_seq: number | null
@@ -615,11 +749,14 @@ export type Database = {
           material_description?: string | null
           material_details_location?: string | null
           material_id?: string | null
+          qc_number?: string | null
+          report_class?: string | null
           sample_quantity?: string | null
           test_master_id?: string | null
           test_method?: string | null
           testing_age?: string | null
           testing_day?: string | null
+          uid_label?: string | null
           ulr_generated_at?: string | null
           ulr_number?: string | null
           ulr_seq?: number | null
@@ -641,11 +778,14 @@ export type Database = {
           material_description?: string | null
           material_details_location?: string | null
           material_id?: string | null
+          qc_number?: string | null
+          report_class?: string | null
           sample_quantity?: string | null
           test_master_id?: string | null
           test_method?: string | null
           testing_age?: string | null
           testing_day?: string | null
+          uid_label?: string | null
           ulr_generated_at?: string | null
           ulr_number?: string | null
           ulr_seq?: number | null
@@ -671,118 +811,134 @@ export type Database = {
           },
         ]
       }
-      job_assignments: {
+      lab_report_lines: {
         Row: {
-          id: string
           job_entry_test_id: string
-          team_id: string | null
-          assigned_to: string | null
-          assigned_by: string | null
-          status: string
-          due_date: string | null
-          notes: string | null
-          created_at: string
-          updated_at: string
+          report_id: string
         }
         Insert: {
-          id?: string
           job_entry_test_id: string
-          team_id?: string | null
-          assigned_to?: string | null
-          assigned_by?: string | null
-          status?: string
-          due_date?: string | null
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
+          report_id: string
         }
         Update: {
-          id?: string
           job_entry_test_id?: string
-          team_id?: string | null
-          assigned_to?: string | null
-          assigned_by?: string | null
-          status?: string
-          due_date?: string | null
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
+          report_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "job_assignments_job_entry_test_id_fkey"
+            foreignKeyName: "lab_report_lines_job_entry_test_id_fkey"
             columns: ["job_entry_test_id"]
             isOneToOne: false
             referencedRelation: "job_entry_tests"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "job_assignments_team_id_fkey"
-            columns: ["team_id"]
+            foreignKeyName: "lab_report_lines_report_id_fkey"
+            columns: ["report_id"]
             isOneToOne: false
-            referencedRelation: "teams"
+            referencedRelation: "lab_reports"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
-      teams: {
+      lab_reports: {
         Row: {
           id: string
-          name: string
-          description: string | null
-          branch_id: string | null
-          created_by: string | null
-          created_at: string
-          is_active: boolean
+          issued_at: string
+          issued_by: string | null
+          job_entry_id: string
+          qc_number: string | null
+          qr_code: string | null
+          report_class: string
+          report_no: string
+          sibling_report_id: string | null
+          status: string
+          uid_label: string | null
+          ulr_number: string | null
         }
         Insert: {
           id?: string
-          name: string
-          description?: string | null
-          branch_id?: string | null
-          created_by?: string | null
-          created_at?: string
-          is_active?: boolean
+          issued_at?: string
+          issued_by?: string | null
+          job_entry_id: string
+          qc_number?: string | null
+          qr_code?: string | null
+          report_class: string
+          report_no: string
+          sibling_report_id?: string | null
+          status?: string
+          uid_label?: string | null
+          ulr_number?: string | null
         }
         Update: {
           id?: string
-          name?: string
-          description?: string | null
-          branch_id?: string | null
-          created_by?: string | null
-          created_at?: string
-          is_active?: boolean
-        }
-        Relationships: []
-      }
-      team_members: {
-        Row: {
-          id: string
-          team_id: string
-          employee_id: string
-          added_at: string
-        }
-        Insert: {
-          id?: string
-          team_id: string
-          employee_id: string
-          added_at?: string
-        }
-        Update: {
-          id?: string
-          team_id?: string
-          employee_id?: string
-          added_at?: string
+          issued_at?: string
+          issued_by?: string | null
+          job_entry_id?: string
+          qc_number?: string | null
+          qr_code?: string | null
+          report_class?: string
+          report_no?: string
+          sibling_report_id?: string | null
+          status?: string
+          uid_label?: string | null
+          ulr_number?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "team_members_team_id_fkey"
-            columns: ["team_id"]
+            foreignKeyName: "lab_reports_job_entry_id_fkey"
+            columns: ["job_entry_id"]
             isOneToOne: false
-            referencedRelation: "teams"
+            referencedRelation: "job_entries"
             referencedColumns: ["id"]
-          }
+          },
+          {
+            foreignKeyName: "lab_reports_sibling_report_id_fkey"
+            columns: ["sibling_report_id"]
+            isOneToOne: false
+            referencedRelation: "lab_reports"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      lab_settings: {
+        Row: {
+          id: number
+          lab_code: string
+          tc_number: string
+        }
+        Insert: {
+          id?: number
+          lab_code?: string
+          tc_number?: string
+        }
+        Update: {
+          id?: number
+          lab_code?: string
+          tc_number?: string
+        }
+        Relationships: []
+      }
+      lab_uid_counters: {
+        Row: {
+          counter_name: string
+          counter_value: number
+          counter_year: number
+          id: string
+        }
+        Insert: {
+          counter_name: string
+          counter_value?: number
+          counter_year: number
+          id?: string
+        }
+        Update: {
+          counter_name?: string
+          counter_value?: number
+          counter_year?: number
+          id?: string
+        }
+        Relationships: []
       }
       leave_requests: {
         Row: {
@@ -1282,6 +1438,42 @@ export type Database = {
           },
         ]
       }
+      qr_documents: {
+        Row: {
+          code: string
+          doc_type: string | null
+          is_nabl: boolean | null
+          name: string | null
+        }
+        Insert: {
+          code: string
+          doc_type?: string | null
+          is_nabl?: boolean | null
+          name?: string | null
+        }
+        Update: {
+          code?: string
+          doc_type?: string | null
+          is_nabl?: boolean | null
+          name?: string | null
+        }
+        Relationships: []
+      }
+      report_yearly_counters: {
+        Row: {
+          last_seq: number
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          year?: number
+        }
+        Relationships: []
+      }
       salary_hikes: {
         Row: {
           created_at: string
@@ -1401,6 +1593,80 @@ export type Database = {
           },
         ]
       }
+      team_members: {
+        Row: {
+          added_at: string
+          employee_id: string
+          id: string
+          team_id: string
+        }
+        Insert: {
+          added_at?: string
+          employee_id: string
+          id?: string
+          team_id: string
+        }
+        Update: {
+          added_at?: string
+          employee_id?: string
+          id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_master: {
         Row: {
           additional_details: string[] | null
@@ -1408,14 +1674,22 @@ export type Database = {
           component_parameter: string
           created_at: string
           created_by: string | null
+          datasheet_qr: string | null
           discipline_group: string
           id: string
           is_nabl: boolean
           material_product: string
+          report_qr: string | null
           serial_no: string
           specific_test: string
           technique_equipment: string
           test_method: string
+          minimum_value: string | null
+          particulars: string | null
+          sample_size: string | null
+          tested_as_per_is: string | null
+          time_required: string | null
+          unit: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -1425,14 +1699,22 @@ export type Database = {
           component_parameter: string
           created_at?: string
           created_by?: string | null
+          datasheet_qr?: string | null
           discipline_group: string
           id?: string
           is_nabl?: boolean
           material_product: string
+          report_qr?: string | null
           serial_no: string
           specific_test: string
           technique_equipment: string
           test_method: string
+          minimum_value?: string | null
+          particulars?: string | null
+          sample_size?: string | null
+          tested_as_per_is?: string | null
+          time_required?: string | null
+          unit?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1442,22 +1724,46 @@ export type Database = {
           component_parameter?: string
           created_at?: string
           created_by?: string | null
+          datasheet_qr?: string | null
           discipline_group?: string
           id?: string
           is_nabl?: boolean
           material_product?: string
+          report_qr?: string | null
           serial_no?: string
           specific_test?: string
           technique_equipment?: string
           test_method?: string
+          minimum_value?: string | null
+          particulars?: string | null
+          sample_size?: string | null
+          tested_as_per_is?: string | null
+          time_required?: string | null
+          unit?: string | null
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "test_master_datasheet_qr_fkey"
+            columns: ["datasheet_qr"]
+            isOneToOne: false
+            referencedRelation: "qr_documents"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "test_master_report_qr_fkey"
+            columns: ["report_qr"]
+            isOneToOne: false
+            referencedRelation: "qr_documents"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       test_result_rows: {
         Row: {
           area_mm2: number | null
+          created_at: string
           id: string
           id_mark: string | null
           job_entry_test_id: string
@@ -1472,6 +1778,7 @@ export type Database = {
         }
         Insert: {
           area_mm2?: number | null
+          created_at?: string
           id?: string
           id_mark?: string | null
           job_entry_test_id: string
@@ -1486,6 +1793,7 @@ export type Database = {
         }
         Update: {
           area_mm2?: number | null
+          created_at?: string
           id?: string
           id_mark?: string | null
           job_entry_test_id?: string
@@ -1498,19 +1806,98 @@ export type Database = {
           strength_nmm2?: number | null
           width_mm?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "test_result_rows_job_entry_test_id_fkey"
+            columns: ["job_entry_test_id"]
+            isOneToOne: false
+            referencedRelation: "job_entry_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      uid_yearly_counters: {
+        Row: {
+          kind: string
+          last_seq: number
+          year: number
+        }
+        Insert: {
+          kind: string
+          last_seq?: number
+          year: number
+        }
+        Update: {
+          kind?: string
+          last_seq?: number
+          year?: number
+        }
         Relationships: []
       }
+      ulr_generation_queue: {
+        Row: {
+          created_at: string
+          job_entry_id: string
+          job_entry_test_id: string
+          processed_at: string | null
+          scheduled_on: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          job_entry_id: string
+          job_entry_test_id: string
+          processed_at?: string | null
+          scheduled_on: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          job_entry_id?: string
+          job_entry_test_id?: string
+          processed_at?: string | null
+          scheduled_on?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ulr_generation_queue_job_entry_id_fkey"
+            columns: ["job_entry_id"]
+            isOneToOne: false
+            referencedRelation: "job_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ulr_generation_queue_job_entry_test_id_fkey"
+            columns: ["job_entry_test_id"]
+            isOneToOne: false
+            referencedRelation: "job_entry_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ulr_yearly_counters: {
+        Row: {
+          last_seq: number
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          year?: number
+        }
+        Relationships: []
+      }
+
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      allocate_job_uid: {
-        Args: {
-          p_job_entry_id: string
-        }
-        Returns: undefined
-      }
+      allocate_job_uid: { Args: { p_job_entry_id: string }; Returns: string }
       approve_comp_off_leave: {
         Args: {
           p_approver_id: string
@@ -1521,6 +1908,7 @@ export type Database = {
       }
       approve_leave: { Args: { p_leave_id: string }; Returns: undefined }
       cancel_leave: { Args: { p_leave_id: string }; Returns: undefined }
+      current_fy: { Args: { p_at?: string }; Returns: string }
       delete_branch_transaction: {
         Args: { p_admin_id: string; p_branch_id: string }
         Returns: Json
@@ -1529,6 +1917,11 @@ export type Database = {
         Args: { p_leave_id: string }
         Returns: undefined
       }
+      enqueue_ulr_for_job: {
+        Args: { p_job_entry_id: string }
+        Returns: undefined
+      }
+      ensure_job_uid: { Args: { p_job_id: string }; Returns: string }
       expire_pending_comp_off_leaves: {
         Args: never
         Returns: {
@@ -1541,6 +1934,7 @@ export type Database = {
         Args: { p_branch_id: string; p_is_preview?: boolean }
         Returns: string
       }
+      generate_ulr_for_date: { Args: { p_date: string }; Returns: undefined }
       get_comp_off_balance: { Args: { p_employee_id: string }; Returns: number }
       get_today_birthdays: {
         Args: never
@@ -1554,6 +1948,10 @@ export type Database = {
       is_working_day: {
         Args: { p_date: string; p_employee_id: string }
         Returns: boolean
+      }
+      issue_reports_for_job: {
+        Args: { p_issued_by?: string; p_job_entry_id: string }
+        Returns: Json
       }
       lock_payroll_cycle:
         | {
@@ -1586,6 +1984,13 @@ export type Database = {
             }
             Returns: undefined
           }
+      next_report_seq: { Args: { p_year: number }; Returns: number }
+      next_seq: { Args: { p_fy: string; p_kind: string }; Returns: number }
+      next_uid_seq: {
+        Args: { p_name: string; p_year: number }
+        Returns: number
+      }
+      process_ulr_queue_for_date: { Args: { p_date: string }; Returns: Json }
       reject_leave: {
         Args: { p_leave_id: string; p_reason: string }
         Returns: undefined

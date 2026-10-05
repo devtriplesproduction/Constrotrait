@@ -22,7 +22,7 @@ export async function downloadJobCardAction(jobEntryTestId: string) {
       .select(`
         *,
         test_master (*),
-        job_entries (
+        job_entries!job_entry_tests_job_entry_id_fkey (
           id,
           clients (*)
         )
@@ -34,12 +34,23 @@ export async function downloadJobCardAction(jobEntryTestId: string) {
       throw new Error("Job card not found");
     }
 
-    const job = testData;
+    // Now fetch all tests on the same job_entry that share the same uid_label
+    const { data: allTests, error: allTestsError } = await supabase
+      .from("job_entry_tests")
+      .select(`
+        *,
+        test_master (*)
+      `)
+      .eq("job_entry_id", testData.job_entry_id)
+      .eq("uid_label", testData.uid_label || '');
+
+    const jobsToPass = allTests && !allTestsError ? allTests : [testData];
+
     // Handle potential array from select
     const jobEntries = Array.isArray(testData.job_entries) ? testData.job_entries[0] : testData.job_entries;
     const client = (jobEntries as any)?.clients;
 
-    const buffer = await renderToBuffer(React.createElement(JobCardPDF, { data: { job, client } }) as any);
+    const buffer = await renderToBuffer(React.createElement(JobCardPDF, { data: { jobs: jobsToPass, client, originalJob: testData } }) as any);
     const base64 = buffer.toString('base64');
 
     return { success: true, data: base64 };

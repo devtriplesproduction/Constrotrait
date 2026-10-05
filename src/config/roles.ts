@@ -44,6 +44,11 @@ export function isSuperAdminOrHR(roles?: string[] | null): boolean {
   return isSuperAdmin(roles) || isHR(roles);
 }
 
+export function isTestEngineer(roles?: string[] | null): boolean {
+  if (!roles) return false;
+  return roles.includes("TEST_ENGINEER");
+}
+
 export function isSuperAdminOrBranchManager(roles?: string[] | null): boolean {
   return isSuperAdmin(roles) || isBranchManager(roles);
 }

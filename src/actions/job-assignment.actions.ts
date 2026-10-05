@@ -12,6 +12,15 @@ export async function getAssignmentsAction(filters?: { team_id?: string; employe
   }
 }
 
+export async function getAssignmentByIdAction(id: string) {
+  try {
+    const assignment = await JobAssignmentService.getAssignmentById(id);
+    return { success: true, data: assignment };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function getUnassignedJobCardsAction() {
   try {
     const unassigned = await JobAssignmentService.getUnassignedJobCards();
@@ -46,11 +55,21 @@ export async function assignJobCardAction(data: {
   }
 }
 
-export async function updateAssignmentStatusAction(id: string, status: string) {
+export async function updateAssignmentStatusAction(id: string, status: string, payload?: { report_url?: string; reviewer_remark?: string }) {
   try {
-    const assignment = await JobAssignmentService.updateAssignmentStatus(id, status);
+    const assignment = await JobAssignmentService.updateAssignmentStatus(id, status, payload);
     revalidatePath("/job-assignments");
     return { success: true, data: assignment };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteAssignmentAction(id: string) {
+  try {
+    await JobAssignmentService.deleteAssignment(id);
+    revalidatePath("/job-assignments");
+    return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

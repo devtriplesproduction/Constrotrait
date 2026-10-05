@@ -10,7 +10,7 @@ export default async function ResultsPage() {
   const res = await listTestsForResultsAction();
   return (
     <div className="p-6">
-      <ResultsEntry initialTests={res.success ? res.data || [] : []} loadError={!res.success ? res.error : null} />
+      <ResultsEntry initialTests={res.success ? res.data || [] : []} loadError={!res.success ? res.error || null : null} />
     </div>
   );
 }
