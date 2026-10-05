@@ -45,7 +45,7 @@ export default async function EODPage({ searchParams }: PageProps) {
     }
   }
 
-  // --- Fetch Data for Submit Tab ---
+
   let history: EODReport[] = [];
   let streak = 0;
   let todayEOD: EODReport | undefined;
