@@ -1452,6 +1452,51 @@ export type Database = {
         }
         Relationships: []
       }
+      test_result_rows: {
+        Row: {
+          area_mm2: number | null
+          id: string
+          id_mark: string | null
+          job_entry_test_id: string
+          length_mm: number | null
+          load_kn: number | null
+          particulars: string | null
+          result_value: string | null
+          specified_value: string | null
+          sr_no: number
+          strength_nmm2: number | null
+          width_mm: number | null
+        }
+        Insert: {
+          area_mm2?: number | null
+          id?: string
+          id_mark?: string | null
+          job_entry_test_id: string
+          length_mm?: number | null
+          load_kn?: number | null
+          particulars?: string | null
+          result_value?: string | null
+          specified_value?: string | null
+          sr_no: number
+          strength_nmm2?: number | null
+          width_mm?: number | null
+        }
+        Update: {
+          area_mm2?: number | null
+          id?: string
+          id_mark?: string | null
+          job_entry_test_id?: string
+          length_mm?: number | null
+          load_kn?: number | null
+          particulars?: string | null
+          result_value?: string | null
+          specified_value?: string | null
+          sr_no?: number
+          strength_nmm2?: number | null
+          width_mm?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
