@@ -74,7 +74,8 @@ export async function listTestsForResultsAction() {
     }
 
     return { success: true, data: data || [] };
-  } catch (err: any) {
+} catch (err: any) {
     return { success: false, error: err.message };
   }
 }
+

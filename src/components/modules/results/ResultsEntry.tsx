@@ -19,6 +19,7 @@ const emptyRow = (testId: string, n: number): TestResultRow => ({
   specified_value: "",
 });
 
+
 export function ResultsEntry({ initialTests, loadError }: { initialTests: any[]; loadError: string | null }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [rows, setRows] = useState<TestResultRow[]>([]);
@@ -33,7 +34,7 @@ export function ResultsEntry({ initialTests, loadError }: { initialTests: any[];
       alert(res.error);
       return;
     }
-    setRows(res.data.length ? res.data : [emptyRow(id, 1), emptyRow(id, 2), emptyRow(id, 3)]);
+    setRows(res.data?.length ? res.data : [emptyRow(id, 1), emptyRow(id, 2), emptyRow(id, 3)]);
   };
 
   const save = async () => {

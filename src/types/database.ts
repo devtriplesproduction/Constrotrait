@@ -541,6 +541,7 @@ export type Database = {
           created_by: string | null
           id: string
           uid: number
+          uid_label: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -550,6 +551,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           uid?: number
+          uid_label?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -559,6 +561,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           uid?: number
+          uid_label?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1502,6 +1505,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      allocate_job_uid: {
+        Args: {
+          p_job_entry_id: string
+        }
+        Returns: undefined
+      }
       approve_comp_off_leave: {
         Args: {
           p_approver_id: string
