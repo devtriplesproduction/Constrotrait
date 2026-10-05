@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, Calendar, User, FileText, StickyNote, ArrowLeft, Edit2 } from "lucide-react";
 import { assignJobCardAction, getAssignmentsAction, getUnassignedJobCardsAction } from "@/actions/job-assignment.actions";
@@ -96,6 +96,27 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
     if (selectedBranch && emp.branch_id !== selectedBranch) return false;
     return true;
   });
+
+  const groupedRelevantAssignments = useMemo(() => {
+    const groups = new Map<string, any>();
+    relevantAssignments.forEach(a => {
+      const je = a.job_entry_tests;
+      const uidLabel = je?.uid_label || je?.job_entries?.uid_label || je?.job_entries?.uid;
+      const key = uidLabel ? `${je?.job_entry_id}-${uidLabel}` : (je?.job_entry_id ? `je-${je.job_entry_id}` : `test-${a.id}`);
+      if (!groups.has(key)) {
+        groups.set(key, {
+          ...a,
+          grouped_tests: [je],
+          all_assignments: [a]
+        });
+      } else {
+        const existing = groups.get(key);
+        existing.grouped_tests.push(je);
+        existing.all_assignments.push(a);
+      }
+    });
+    return Array.from(groups.values());
+  }, [relevantAssignments]);
 
   const handleAssign = async () => {
     if (!selectedJobEntryId) return toast({ title: "Validation Error", description: "Please select a Job Card.", variant: "warning" });
@@ -304,7 +325,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                 <h4 className="text-slate-700 font-semibold mb-1">Select {assignType === "employee" ? "an Employee" : "a Team"}</h4>
                 <p className="text-slate-500 text-sm max-w-[250px]">Please select {assignType === "employee" ? "an employee" : "a team"} or date from the form to view their assignments.</p>
               </div>
-            ) : relevantAssignments.length === 0 ? (
+            ) : groupedRelevantAssignments.length === 0 ? (
               <div className="bg-white rounded-xl p-8 text-center border border-slate-200 border-dashed h-full flex flex-col items-center justify-center">
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
                   <ClipboardList className="w-8 h-8" />
@@ -314,7 +335,10 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
               </div>
             ) : (
               <div className="space-y-3 h-full overflow-y-auto pr-2 custom-scrollbar">
-                {relevantAssignments.map((a: any) => (
+                {groupedRelevantAssignments.map((a: any) => {
+                  const aggregatedParameters = a.grouped_tests.map((t: any) => t?.test_master?.component_parameter || t?.test_parameters || 'Unknown').filter(Boolean).join(', ');
+                  const aggregatedSpecifics = a.grouped_tests.map((t: any) => t?.test_master?.specific_test || 'Test').filter(Boolean).join(', ');
+                  return (
                   <div 
                     key={a.id} 
                     className="p-4 bg-white border border-slate-200 rounded-xl flex flex-wrap lg:flex-nowrap items-center gap-4 lg:gap-6 cursor-pointer hover:border-orange-400 hover:shadow-md transition-all duration-300 group"
@@ -340,9 +364,9 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                         <FileText className="w-5 h-5" />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Test Name</div>
-                        <div className="font-semibold text-slate-800 text-sm truncate" title={a.job_entry_tests?.test_master ? `${a.job_entry_tests.test_master.component_parameter || 'Unknown'} - ${a.job_entry_tests.test_master.specific_test || 'Test'}` : `Job Card #${a.job_entry_tests?.uid}`}>
-                          {a.job_entry_tests?.test_master ? `${a.job_entry_tests.test_master.component_parameter || 'Unknown'} - ${a.job_entry_tests.test_master.specific_test || 'Test'}` : `Job Card #${a.job_entry_tests?.uid}`}
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Job Card Parameters</div>
+                        <div className="font-semibold text-slate-800 text-sm truncate" title={`${aggregatedParameters} - ${aggregatedSpecifics}`}>
+                          {aggregatedParameters} - {aggregatedSpecifics}
                         </div>
                       </div>
                     </div>
@@ -399,7 +423,8 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                       </Button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

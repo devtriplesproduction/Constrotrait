@@ -12,10 +12,10 @@ Font.register({
 
 const styles = StyleSheet.create({
   page: {
-    padding: 20,
+    padding: 12,
     fontFamily: 'Open Sans',
-    fontSize: 9,
-    lineHeight: 1.2,
+    fontSize: 8,
+    lineHeight: 1.1,
     color: '#000'
   },
   table: {
@@ -29,11 +29,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderColor: '#000',
-    minHeight: 20,
+    minHeight: 16,
   },
   lastRow: {
     flexDirection: 'row',
-    minHeight: 20,
+    minHeight: 16,
   },
   cell: {
     padding: 4,
@@ -75,7 +75,9 @@ const styles = StyleSheet.create({
 });
 
 interface JobCardData {
-  job: any;
+  jobs?: any[];
+  originalJob?: any;
+  job?: any;
   client: any;
 }
 
@@ -87,18 +89,23 @@ const formatDate = (dateStr: string | null) => {
 };
 
 export const JobCardPDF = ({ data }: { data: JobCardData }) => {
-  const { job, client } = data;
+  const { jobs, originalJob, job: fallbackJob, client } = data;
   
+  const targetJobs = jobs && jobs.length > 0 ? jobs : (originalJob ? [originalJob] : (fallbackJob ? [fallbackJob] : []));
+  const primaryJob = targetJobs[0] || {};
+
   // Extract real Sample Code No if available, fallback to material_details_location
-  const sampleCodeNo = job?.additional_details_values?.sample_code_no || job?.material_details_location || '';
+  const sampleCodeNo = primaryJob?.additional_details_values?.sample_code_no || primaryJob?.material_details_location || '';
   
-  // Extract real Test Parameters from test_master if available
-  const testParameters = job?.test_master?.specific_test || job?.test_master?.component_parameter || job?.test_parameters || 'As per Method';
+  // Aggregate Test Parameters and Methods
+  const aggregatedParameters = targetJobs.map(j => j?.test_master?.specific_test || j?.test_master?.component_parameter || j?.test_parameters || 'As per Method').filter(Boolean).join(', ');
+  
+  const aggregatedMethods = targetJobs.map(j => j?.test_master?.test_method || j?.test_method || '').filter(Boolean).join(', ');
 
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, { display: 'flex', flexDirection: 'column' }]}>
         
         {/* HEADER SECTION */}
         <View style={styles.table}>
@@ -130,7 +137,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
               </Text>
             </View>
             <View style={[styles.lastCell, { width: '50%' }]}>
-              <Text>Date of Sample Received: {formatDate(job?.date_of_receiving)}</Text>
+              <Text>Date of Sample Received: {formatDate(primaryJob?.date_of_receiving)}</Text>
             </View>
           </View>
           <View style={styles.row}>
@@ -140,10 +147,10 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             </View>
             <View style={{ width: '50%', flexDirection: 'column' }}>
               <View style={{ borderBottomWidth: 1, borderColor: '#000', flex: 1, justifyContent: 'center' }}>
-                <Text style={{ padding: 4 }}>Date of Casting: {formatDate(job?.date_of_casting)}</Text>
+                <Text style={{ padding: 4 }}>Date of Casting: {formatDate(primaryJob?.date_of_casting)}</Text>
               </View>
               <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={{ padding: 4 }}>Date of Testing: {formatDate(job?.date_of_testing)}</Text>
+                <Text style={{ padding: 4 }}>Date of Testing: {formatDate(primaryJob?.date_of_testing)}</Text>
               </View>
             </View>
           </View>
@@ -180,7 +187,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             </View>
           </View>
           <View style={styles.row}>
-            <View style={[styles.cell, { width: '50%', borderRightWidth: 1, minHeight: 40 }]}>
+            <View style={[styles.cell, { width: '50%', borderRightWidth: 1, minHeight: 30 }]}>
               <Text>5. Address of Dispatching the Report:</Text>
               <Text style={styles.bold}>{client?.dispatch_address || ''}</Text>
             </View>
@@ -222,16 +229,16 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           </View>
 
           {/* Data Row */}
-          <View style={[styles.row, { minHeight: 40 }]}>
+          <View style={[styles.row, { minHeight: 30 }]}>
             <View style={[styles.cell, { width: '10%' }]}>
-              <Text>{job?.uid_label || "UID missing"}</Text>
+              <Text>{primaryJob?.uid_label || "UID missing"}</Text>
             </View>
-            <View style={[styles.cell, { width: '25%' }]}><Text>{job?.material_description || ''}</Text></View>
-            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>{job?.testing_day || ''}</Text></View>
+            <View style={[styles.cell, { width: '25%' }]}><Text>{primaryJob?.material_description || ''}</Text></View>
+            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>{primaryJob?.testing_day || ''}</Text></View>
             <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text>{sampleCodeNo}</Text></View>
-            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>{job?.sample_quantity || ''}</Text></View>
-            <View style={[styles.cell, { width: '15%' }]}><Text>{testParameters}</Text></View>
-            <View style={[styles.lastCell, { width: '15%' }]}><Text>{job?.test_method || ''}</Text></View>
+            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>{primaryJob?.sample_quantity || ''}</Text></View>
+            <View style={[styles.cell, { width: '15%' }]}><Text>{aggregatedParameters}</Text></View>
+            <View style={[styles.lastCell, { width: '15%' }]}><Text>{aggregatedMethods}</Text></View>
           </View>
 
           {/* Checkboxes Area */}
@@ -257,7 +264,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
         </View>
 
         {/* FOR OFFICE USE ONLY */}
-        <View style={styles.table}>
+        <View style={[styles.table, { flexGrow: 1, marginBottom: 10 }]}>
           <View style={[styles.row, { padding: 5, justifyContent: 'center' }]}>
             <Text style={[styles.bold, styles.textCenter, { width: '100%', fontSize: 11 }]}>FOR OFFICE USE ONLY</Text>
           </View>
@@ -313,7 +320,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             <View style={[styles.cell, { width: '25%' }]}></View>
             <View style={[styles.lastCell, { width: '35%', padding: 0 }]}></View>
           </View>
-          <View style={[styles.lastRow, { minHeight: 35 }]}>
+          <View style={[styles.lastRow, { minHeight: 40, flexGrow: 1 }]}>
             <View style={[styles.cell, { width: '40%' }]}>
               <Text>Name and signatory :</Text>
             </View>
@@ -325,13 +332,13 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
         </View>
 
         {/* FOOTER */}
-        <View style={styles.table}>
+        <View style={[styles.table, { marginBottom: 0 }]}>
           <View style={styles.row}>
             <View style={[styles.cell, { width: '25%' }]}><Text style={styles.textCenter}>Issue No. : 00</Text></View>
             <View style={[styles.cell, { width: '50%' }]}><Text style={styles.textCenter}>Amendment No & Date : 06 & 08.06.2026</Text></View>
             <View style={[styles.lastCell, { width: '25%' }]}><Text style={styles.textCenter}>Page No: 1-1</Text></View>
           </View>
-          <View style={[styles.lastRow, { minHeight: 35 }]}>
+          <View style={[styles.lastRow, { minHeight: 25 }]}>
             <View style={[styles.cell, { width: '25%', justifyContent: 'flex-end', paddingBottom: 5 }]}><Text style={styles.textCenter}>Issue Date: 20.01.2023</Text></View>
             <View style={[styles.cell, { width: '37.5%', justifyContent: 'flex-end', paddingBottom: 5 }]}><Text>Prepared by:</Text></View>
             <View style={[styles.lastCell, { width: '37.5%', justifyContent: 'flex-end', paddingBottom: 5 }]}><Text>Reviewed & Approved by:</Text></View>

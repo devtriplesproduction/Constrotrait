@@ -37,6 +37,8 @@ export function JobAssignmentsContent({
     window.history.pushState(null, '', `?tab=${tab}`);
   };
 
+  const currentUserProfile = employees.find(e => e.id === userId);
+
   return (
     <>
       <PageHeader
@@ -65,7 +67,7 @@ export function JobAssignmentsContent({
         }
       />
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+      <div>
 
         {isManager && activeTab === "list" && (
           <AllJobsTab assignments={assignments} branches={branches} employees={employees} filterStatus={filterStatus} />
@@ -74,7 +76,7 @@ export function JobAssignmentsContent({
           <MyAssignmentsTab assignments={assignments} userId={userId} filterStatus={filterStatus} />
         )}
         {activeTab === "schedule" && (
-          <TestingScheduleTab assignments={assignments} userId={userId} />
+          <TestingScheduleTab assignments={assignments} userId={userId} filterStatus={filterStatus} currentUserProfile={currentUserProfile} />
         )}
       </div>
     </>

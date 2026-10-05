@@ -1684,6 +1684,12 @@ export type Database = {
           specific_test: string
           technique_equipment: string
           test_method: string
+          minimum_value: string | null
+          particulars: string | null
+          sample_size: string | null
+          tested_as_per_is: string | null
+          time_required: string | null
+          unit: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -1703,6 +1709,12 @@ export type Database = {
           specific_test: string
           technique_equipment: string
           test_method: string
+          minimum_value?: string | null
+          particulars?: string | null
+          sample_size?: string | null
+          tested_as_per_is?: string | null
+          time_required?: string | null
+          unit?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1722,6 +1734,12 @@ export type Database = {
           specific_test?: string
           technique_equipment?: string
           test_method?: string
+          minimum_value?: string | null
+          particulars?: string | null
+          sample_size?: string | null
+          tested_as_per_is?: string | null
+          time_required?: string | null
+          unit?: string | null
           updated_at?: string
           updated_by?: string | null
         }

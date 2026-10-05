@@ -87,7 +87,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Database["public"]["Tables"]["clients"]["Row"][]>([]);
   const [showResults, setShowResults] = useState(false);
-  
+
   // Projects state
   const [clientProjects, setClientProjects] = useState<any[]>([]);
   const [isFetchingProjects, setIsFetchingProjects] = useState(false);
@@ -330,11 +330,11 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
     setValue("jobEntry.dispatch_address", "");
     setValue("jobEntry.contact_person", "");
     setValue("jobEntry.collected_by", "");
-    
+
     // Fetch projects for this client
     setIsFetchingProjects(true);
     getClientProjectsAction(client.id).then(res => {
-      if(res.success && res.data) {
+      if (res.success && res.data) {
         setClientProjects(res.data);
       }
       setIsFetchingProjects(false);
@@ -508,7 +508,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   const paginatedTests = filteredTests.slice((testCurrentPage - 1) * testPageSize, testCurrentPage * testPageSize);
 
   return (
-    <Card className="w-full max-w-[1400px] mx-auto shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 bg-white rounded-2xl overflow-hidden flex flex-col md:flex-row h-[80vh] min-h-[700px]">
+    <Card className="w-full max-w-[1300px] mx-auto shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 bg-white rounded-2xl overflow-hidden flex flex-col md:flex-row h-[70vh] min-h-[700px]">
 
       {/* Left Sidebar Stepper */}
       <div className="w-full md:w-70 lg:w-72 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-6 flex flex-col shrink-0">
@@ -663,7 +663,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     />
                   </div>
 
-                  
+
 
                 </motion.div>
               )}
@@ -691,7 +691,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     {clientProjects.length > 0 && (
                       <div className="flex flex-col gap-1.5 px-6">
                         <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Select Past Project (Optional)</label>
-                        <select 
+                        <select
                           className="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-2 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white"
                           onChange={(e) => {
                             const val = e.target.value;
@@ -918,7 +918,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 onBlur={() => setTimeout(() => setShowTestResults(false), 200)}
                                 className="pl-12 pr-10 h-11 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base cursor-text"
                               />
-                              <div 
+                              <div
                                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 cursor-pointer rounded-md hover:bg-slate-100 transition-colors"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -1114,7 +1114,18 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                             <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Casting Date</label>
                             <PremiumDatePicker
                               value={watch(`materialDetails.date_of_casting`)}
-                              onChange={(val) => setValue(`materialDetails.date_of_casting`, val, { shouldValidate: true })}
+                              onChange={(val) => {
+                                setValue(`materialDetails.date_of_casting`, val, { shouldValidate: true });
+                                const tests = getValues("jobEntryTests") || [];
+                                tests.forEach((test, idx) => {
+                                  if (test.testing_age) {
+                                    const testSpecificCasting = test.additional_details_values?.["Date of Casting"] || test.additional_details_values?.["Casting Date"];
+                                    const castingToUse = testSpecificCasting || val || "";
+                                    const newTestingDate = calculateTestingDate(castingToUse, test.testing_age);
+                                    setValue(`jobEntryTests.${idx}.date_of_testing`, newTestingDate, { shouldValidate: true });
+                                  }
+                                });
+                              }}
                               side="right"
                               triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
                             />
@@ -1159,13 +1170,13 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                       <p className="text-slate-500 text-sm max-w-md mx-auto mb-6">
                         You can proceed to submit this as a Dummy Job Card. Please select the type of dummy job card you want to create:
                       </p>
-                      
+
                       <div className="flex gap-4">
                         <label className="flex flex-col items-center gap-2 cursor-pointer group">
-                          <input 
-                            type="radio" 
-                            className="sr-only peer" 
-                            name="dummy_is_nabl" 
+                          <input
+                            type="radio"
+                            className="sr-only peer"
+                            name="dummy_is_nabl"
                             value="true"
                             onChange={() => setValue('dummy_is_nabl', true)}
                             checked={watch('dummy_is_nabl') === true}
@@ -1175,10 +1186,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                           </div>
                         </label>
                         <label className="flex flex-col items-center gap-2 cursor-pointer group">
-                          <input 
-                            type="radio" 
-                            className="sr-only peer" 
-                            name="dummy_is_nabl" 
+                          <input
+                            type="radio"
+                            className="sr-only peer"
+                            name="dummy_is_nabl"
                             value="false"
                             onChange={() => setValue('dummy_is_nabl', false)}
                             checked={watch('dummy_is_nabl') === false}
@@ -1245,14 +1256,14 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 <Input value={testMaster?.report_qr || "None"} readOnly className="bg-slate-100 text-slate-500 font-medium border-slate-200 focus-visible:ring-0" />
                               </div>
 
-                              
+
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material Description</label>
                                 <Input {...register(`jobEntryTests.${index}.material_description`)} placeholder="Material Description" />
                               </div>
 
-                              
+
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Age</label>
@@ -1262,7 +1273,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                   onChange={(val) => {
                                     setValue(`jobEntryTests.${index}.testing_age`, val, { shouldValidate: true });
                                     const currentValues = getValues(`jobEntryTests.${index}`);
-                                    const newTestingDate = calculateTestingDate(currentValues.additional_details_values?.["Date of Casting"] || currentValues.additional_details_values?.["Casting Date"] || "", val);
+                                    const globalCastingDate = getValues("materialDetails.date_of_casting");
+                                    const newTestingDate = calculateTestingDate(currentValues.additional_details_values?.["Date of Casting"] || currentValues.additional_details_values?.["Casting Date"] || globalCastingDate || "", val);
                                     setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
                                   }}
                                   placeholder="Select Testing Age..."
@@ -1280,7 +1292,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 />
                               </div>
 
-                              
+
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Test Method</label>
@@ -1305,7 +1317,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                                 if (detailLabel.toLowerCase() === 'casting date' || detailLabel.toLowerCase() === 'date of casting') {
                                                   const currentValues = getValues(`jobEntryTests.${index}`);
                                                   if (currentValues.testing_age) {
-                                                    const newTestingDate = calculateTestingDate(val, currentValues.testing_age);
+                                                    const globalCastingDate = getValues("materialDetails.date_of_casting");
+                                                    const newTestingDate = calculateTestingDate(val || globalCastingDate || "", currentValues.testing_age);
                                                     setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
                                                   }
                                                 }

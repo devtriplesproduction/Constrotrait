@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, Fragment, useMemo } from "react";
 import { format, isSameDay, isThisWeek, isThisMonth } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -16,7 +16,8 @@ import { Trash2 } from "lucide-react";
 
 function assignmentUid(assignment: any) {
   const t = assignment.job_entry_tests;
-  if (t?.uid_label) return `Test ID: ${t.uid_label}`;
+  const uid = t?.uid_label || t?.job_entries?.uid_label || t?.job_entries?.uid;
+  if (uid) return `UID: ${uid}`;
   const testDate = t?.date_of_testing ? new Date(t.date_of_testing).toLocaleDateString() : '-';
   return `Test ID missing`;
 }
@@ -107,6 +108,30 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
     return true;
   });
 
+  const groupedAssignments = useMemo(() => {
+    const groups = new Map<string, any>();
+    filteredAssignments.forEach(a => {
+      const je = a.job_entry_tests;
+      const uidLabel = je?.uid_label || je?.job_entries?.uid_label || je?.job_entries?.uid;
+      let key = uidLabel ? `${je?.job_entry_id}-${uidLabel}` : (je?.job_entry_id ? `je-${je.job_entry_id}` : `test-${a.id}`);
+      if (a.status !== 'assigned') {
+        key = `test-${a.id}`;
+      }
+      if (!groups.has(key)) {
+        groups.set(key, {
+          ...a,
+          grouped_tests: [je],
+          all_assignments: [a]
+        });
+      } else {
+        const existing = groups.get(key);
+        existing.grouped_tests.push(je);
+        existing.all_assignments.push(a);
+      }
+    });
+    return Array.from(groups.values());
+  }, [filteredAssignments]);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "assigned":
@@ -177,12 +202,15 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {filteredAssignments.map((assignment) => {
+            {groupedAssignments.map((assignment) => {
               const assignedName = assignment.team_id 
                 ? assignment.teams?.name 
                 : `${assignment.assigned_to_profile?.first_name || ""} ${assignment.assigned_to_profile?.last_name || ""}`;
               const avatarLetter = assignment.team_id ? "T" : (assignedName.charAt(0) || "?");
               
+              const aggregatedParameters = assignment.grouped_tests.map((t: any) => t?.test_master?.component_parameter || t?.test_parameters || 'N/A').filter(Boolean).join(', ');
+              const aggregatedSpecifics = assignment.grouped_tests.map((t: any) => t?.test_master?.specific_test || 'N/A').filter(Boolean).join(', ');
+
               return (
                 <Fragment key={assignment.id}>
                   <tr 
@@ -203,9 +231,9 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-bold text-slate-700">{assignment.job_entry_tests?.test_master?.component_parameter || "N/A"}</span>
-                      <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]" title={assignment.job_entry_tests?.test_master?.specific_test || "N/A"}>
-                        {assignment.job_entry_tests?.test_master?.specific_test || "N/A"}
+                      <span className="font-bold text-slate-700 truncate max-w-[200px]" title={aggregatedParameters}>{aggregatedParameters}</span>
+                      <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]" title={aggregatedSpecifics}>
+                        {aggregatedSpecifics}
                       </span>
                     </div>
                   </td>
@@ -338,7 +366,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
               </Fragment>
               );
             })}
-            {filteredAssignments.length === 0 && (
+            {groupedAssignments.length === 0 && (
               <tr><td colSpan={6} className="px-6 py-16 text-center text-slate-500 bg-slate-50/50">
                 <div className="flex flex-col items-center gap-2">
                   <ClipboardList className="w-8 h-8 text-slate-300" />

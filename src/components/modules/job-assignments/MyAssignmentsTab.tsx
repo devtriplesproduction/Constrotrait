@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
 import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
 import { Loader2, Check, X, ClipboardList, Download, Tag, Calendar, Beaker, AlertCircle, FileText } from "lucide-react";
@@ -13,13 +14,38 @@ import autoTable from "jspdf-autotable";
 
 function uidOf(a: any) {
   const t = a.job_entry_tests;
-  if (t?.uid_label) return t.uid_label;
+  if (t?.uid_label || t?.job_entries?.uid_label || t?.job_entries?.uid) return t?.uid_label || t?.job_entries?.uid_label || t?.job_entries?.uid;
   return null;
 }
 
 export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assignments: any[], userId: string, filterStatus: string }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const router = useRouter();
+
+  const groupedMyAssignments = React.useMemo(() => {
+    const groups = new Map<string, any>();
+    assignments.forEach(a => {
+      const je = a.job_entry_tests;
+      const uidLabel = je?.uid_label || je?.job_entries?.uid_label || je?.job_entries?.uid;
+      let key = uidLabel ? `${je?.job_entry_id}-${uidLabel}` : (je?.job_entry_id ? `je-${je.job_entry_id}` : `test-${a.id}`);
+      if (a.status !== 'assigned') {
+        key = `test-${a.id}`;
+      }
+      if (!groups.has(key)) {
+        groups.set(key, {
+          ...a,
+          grouped_tests: [je],
+          all_assignments: [a]
+        });
+      } else {
+        const existing = groups.get(key);
+        existing.grouped_tests.push(je);
+        existing.all_assignments.push(a);
+      }
+    });
+    return Array.from(groups.values());
+  }, [assignments]);
 
   const handleDownloadPdf = async (testId: string, uid: string) => {
     try {
@@ -205,9 +231,9 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
   };
 
 return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
 
-      {myAssignments.length === 0 ? (
+      {groupedMyAssignments.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-white rounded-2xl border border-dashed border-slate-300">
           <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-4">
             <ClipboardList className="w-8 h-8" />
@@ -216,257 +242,199 @@ return (
           <p className="text-slate-500 max-w-sm text-sm">You don't have any job assignments matching the current criteria. Check back later.</p>
         </div>
       ) : (
-        <div className="grid gap-6">
-          {myAssignments.map((a: any) => {
-            const uid = uidOf(a);
-            
-            // Derive created/updated dates
-            const createdDate = a.created_at ? new Date(a.created_at) : null;
-            const updatedDate = a.updated_at ? new Date(a.updated_at) : new Date();
-            
-            // Format dates
-            const createdStr = createdDate ? createdDate.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : '-';
-            const updatedHours = Math.round((new Date().getTime() - updatedDate.getTime()) / (1000 * 60 * 60));
-            const updatedStr = updatedHours < 24 ? `${updatedHours} hours ago` : updatedHours < 48 ? '1 day ago' : `${Math.floor(updatedHours/24)} days ago`;
-            const dueDate = a.due_date ? new Date(a.due_date) : null;
-            const dueStr = dueDate ? dueDate.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : '-';
-            
-            // Calculate overdue
-            let isOverdue = false;
-            let overdueDays = 0;
-            if (dueDate && new Date() > dueDate && a.status !== 'approved' && a.status !== 'rejected') {
-                isOverdue = true;
-                overdueDays = Math.floor((new Date().getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-            }
-            
-            const assignedName = a.team_id 
-                ? a.teams?.name 
-                : `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`;
-            
-            const specificTest = a.job_entry_tests?.test_master?.specific_test || a.job_entry_tests?.test_master?.component_parameter || 'N/A';
+        <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-sm bg-white">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-slate-50/80 text-[11px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-200/80">
+              <tr>
+                <th className="px-6 py-4 rounded-tl-2xl">Job Card (UID)</th>
+                <th className="px-6 py-4">Test Details</th>
+                <th className="px-6 py-4">Assigned To</th>
+                <th className="px-6 py-4">Due Date</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 rounded-tr-2xl text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {groupedMyAssignments.map((a: any) => {
+                const uid = uidOf(a);
+                const dueDate = a.due_date ? new Date(a.due_date) : null;
+                const dueStr = dueDate ? dueDate.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }) : '-';
+                
+                const assignedName = a.team_id 
+                    ? a.teams?.name 
+                    : `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`;
+                const avatarLetter = a.team_id ? "T" : (assignedName.charAt(0) || "?");
+                
+                const aggregatedParameters = a.grouped_tests.map((t: any) => t?.test_master?.component_parameter || t?.test_parameters || 'N/A').filter(Boolean).join(', ');
+                const aggregatedSpecifics = a.grouped_tests.map((t: any) => t?.test_master?.specific_test || 'N/A').filter(Boolean).join(', ');
 
-            return (
-            <div key={a.id} className="relative bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-              
-              {/* Left Edge Accent & Top Gradient */}
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 z-10"></div>
-              <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-orange-50/50 to-transparent pointer-events-none"></div>
-
-              {/* Top Header Row */}
-              <div className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 relative z-10">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="bg-orange-100 text-orange-600 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">
-                    {uid || 'UID missing'}
-                  </div>
-
-                  <div className={`px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm border uppercase tracking-wide ${
-                    a.status === 'in_testing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                    a.status === 'report_uploaded' ? 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' :
-                    a.status === 'in_review' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                    a.status === 'accepted' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                    a.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
-                    a.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
-                    'bg-slate-50 text-slate-700 border-slate-200'
-                  }`}>
-                    <div className={`w-2 h-2 rounded-full ${
-                      a.status === 'in_testing' ? 'bg-blue-500' :
-                      a.status === 'report_uploaded' ? 'bg-fuchsia-500' :
-                      a.status === 'in_review' ? 'bg-amber-500' :
-                      a.status === 'accepted' ? 'bg-indigo-500' :
-                      a.status === 'approved' ? 'bg-green-500' :
-                      a.status === 'rejected' ? 'bg-red-500' :
-                      'bg-slate-400'
-                    }`}></div>
-                    {String(a.status || '').replace('_', ' ')}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-slate-400" />
-                    <div>
-                      <p className="text-xs text-slate-500 font-medium">Created on</p>
-                      <p className="font-semibold text-slate-700">{createdStr}</p>
-                    </div>
-                  </div>
-                  <div className="w-px h-8 bg-slate-200"></div>
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-5 h-5 text-slate-400" />
-                    <div>
-                      <p className="text-xs text-slate-500 font-medium">Updated</p>
-                      <p className="font-semibold text-slate-700">{updatedStr}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main Body */}
-              <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
-                {/* Left - Test Request Details */}
-                <div className="lg:col-span-5 flex gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 border border-orange-100">
-                    <Beaker className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Test Request</p>
-                    <h3 className="text-lg font-bold text-slate-900 mb-3 leading-tight">{specificTest}</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {a.job_entry_tests?.test_master?.material_product && (
-                        <span className="px-2 py-1 rounded bg-orange-100 text-orange-700 text-xs font-semibold">
-                          {a.job_entry_tests.test_master.material_product}
+                return (
+                  <tr key={a.id} onClick={() => router.push(`/job-assignments/${a.id}`)} className="hover:bg-orange-50/30 transition-colors group cursor-pointer">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                          <ClipboardList className="w-4 h-4" />
+                        </div>
+                        <div className="font-bold text-slate-800 text-[13px]">{uid ? `UID: ${uid}` : 'UID missing'}</div>
+                      </div>
+                    </td>
+                    
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-700 truncate max-w-[200px]" title={aggregatedParameters}>{aggregatedParameters}</span>
+                        <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]" title={aggregatedSpecifics}>
+                          {aggregatedSpecifics}
                         </span>
-                      )}
-                      {a.job_entry_tests?.test_master?.category && (
-                        <span className="px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-semibold">
-                          {a.job_entry_tests.test_master.category}
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold shadow-sm ${a.team_id ? "bg-indigo-100 text-indigo-700" : "bg-blue-100 text-blue-700"}`}>
+                          {avatarLetter.toUpperCase()}
+                        </div>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-slate-800 text-[13px]">{assignedName}</span>
+                            {a.team_id && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 font-bold uppercase tracking-wider border border-indigo-100">Team</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Calendar className="w-4 h-4 text-slate-400" />
+                        <span className="font-semibold text-[13px]">
+                          {dueStr}
                         </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                      </div>
+                    </td>
 
-                {/* Middle - Due Date */}
-                <div className="lg:col-span-3">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Due Date</p>
-                  </div>
-                  <p className="text-base font-bold text-slate-800 mb-2">{dueStr}</p>
-                  {isOverdue && (
-                    <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-red-100 text-red-700 text-xs font-bold border border-red-200">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      Overdue by {overdueDays} day{overdueDays !== 1 ? 's' : ''}
-                    </div>
-                  )}
-                </div>
+                    <td className="px-6 py-4">
+                      <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border capitalize ${
+                        a.status === 'in_testing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        a.status === 'report_uploaded' ? 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' :
+                        a.status === 'in_review' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        a.status === 'accepted' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                        a.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
+                        a.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                        'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}>
+                        {String(a.status || '').replace('_', ' ')}
+                      </div>
+                    </td>
 
-                {/* Right - Progress Stepper */}
-                <div className="lg:col-span-4 flex flex-col justify-center">
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Progress</p>
-                  <JobStageStepper currentStage={a.status} isRejected={a.status === 'rejected'} orientation="horizontal" />
-                </div>
-              </div>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
+                        {/* Download Job Card */}
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleDownloadPdf(a.job_entry_test_id, a.job_entry_tests?.uid_label || 'Unknown')}
+                          disabled={downloadingId === a.job_entry_test_id}
+                          className="bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm rounded-lg h-8 w-8 p-0 flex items-center justify-center shrink-0"
+                          title="Download Job Card PDF"
+                        >
+                          {downloadingId === a.job_entry_test_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        </Button>
 
-              {a.reviewer_remark && (
-                <div className="mx-6 mb-6 bg-red-50/80 p-4 rounded-xl border border-red-100 text-sm">
-                  <span className="flex items-center gap-2 font-semibold text-red-800 mb-1">
-                    <AlertCircle className="w-4 h-4" /> Reviewer Remark
-                  </span>
-                  <span className="text-red-700">{a.reviewer_remark}</span>
-                </div>
-              )}
+                        {/* Status Actions */}
+                        {a.status === 'assigned' && (
+                          <>
+                            <Button size="sm" onClick={async () => {
+                              setLoadingId(a.id);
+                              let hasError = false;
+                              for (const asg of a.all_assignments) {
+                                const res = await updateAssignmentStatusAction(asg.id, 'accepted');
+                                if (!res.success) {
+                                  alert("Error: " + res.error);
+                                  hasError = true;
+                                }
+                              }
+                              setLoadingId(null);
+                              if (!hasError) router.refresh();
+                            }} disabled={loadingId === a.id} className="bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 shadow-sm rounded-lg h-8 px-3 font-bold text-[11px]">
+                              {loadingId === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="w-3.5 h-3.5 mr-1" />}
+                              Accept
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={async () => {
+                              const remark = window.prompt("Please enter a reason for rejection:");
+                              if (remark !== null) {
+                                if (!remark.trim()) return alert("Remark is required to reject.");
+                                setLoadingId(a.id);
+                                let hasError = false;
+                                for (const asg of a.all_assignments) {
+                                  const res = await updateAssignmentStatusAction(asg.id, 'rejected', { reviewer_remark: remark });
+                                  if (!res.success) {
+                                    alert("Error: " + res.error);
+                                    hasError = true;
+                                  }
+                                }
+                                setLoadingId(null);
+                                if (!hasError) router.refresh();
+                              }
+                            }} disabled={loadingId === a.id} className="text-red-600 border-red-200 hover:bg-red-50 rounded-lg h-8 px-3 font-bold text-[11px]">
+                              Reject
+                            </Button>
+                          </>
+                        )}
 
-              {/* Bottom Footer */}
-              <div className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-auto">
-                <div className="flex flex-wrap items-center gap-6 sm:gap-8 w-full sm:w-auto text-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-orange-100/50 text-orange-600 flex items-center justify-center border border-orange-200/50">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 font-medium mb-0.5">Assigned To</p>
-                      <p className="font-bold text-slate-800">{assignedName}</p>
-                    </div>
-                  </div>
-                </div>
+                        {(a.status === 'accepted' || a.status === 'rejected') && (
+                          <Button size="sm" onClick={() => handleStatusUpdate(a.id, 'in_testing')} disabled={loadingId === a.id} className="bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 shadow-sm rounded-lg h-8 px-3 font-bold text-[11px]">
+                            {loadingId === a.id && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
+                            Start
+                          </Button>
+                        )}
 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  {a.report_url && (
-                    <a href={a.report_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 bg-orange-100 hover:bg-orange-200 px-4 py-2 rounded-lg transition-colors border border-orange-200 shadow-sm flex-1 sm:flex-none h-10">
-                      <Download className="w-4 h-4" /> View Uploaded Report
-                    </a>
-                  )}
+                        {a.status === 'in_testing' && (
+                          <>
+                            <input 
+                              type="file" 
+                              id={`file-${a.id}`} 
+                              className="hidden" 
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setLoadingId(a.id);
+                                try {
+                                  const supabase = createClient();
+                                  const fileName = `${a.id}_${Date.now()}_${file.name}`;
+                                  const { error } = await supabase.storage.from("reports").upload(fileName, file);
+                                  if (error) throw error;
+                                  const { data: urlData } = supabase.storage.from("reports").getPublicUrl(fileName);
+                                  
+                                  const res = await updateAssignmentStatusAction(a.id, "report_uploaded", { report_url: urlData.publicUrl });
+                                  if (!res.success) alert("Error: " + res.error);
+                                } catch (err: any) {
+                                  alert("Upload error: " + err.message);
+                                }
+                                setLoadingId(null);
+                              }} 
+                            />
+                            <Button size="sm" disabled={loadingId === a.id} onClick={() => document.getElementById(`file-${a.id}`)?.click()} className="bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white border border-blue-200 shadow-sm rounded-lg h-8 px-3 font-bold text-[11px]">
+                              {loadingId === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Download className="w-3.5 h-3.5 mr-1" />}
+                              Upload
+                            </Button>
+                          </>
+                        )}
 
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleDownloadPdf(a.job_entry_test_id, a.job_entry_tests?.uid_label || 'Unknown')}
-                    disabled={downloadingId === a.job_entry_test_id}
-                    className="bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm rounded-lg h-10 w-10 p-0 flex items-center justify-center shrink-0"
-                    title="Download Job Card PDF"
-                  >
-                    {downloadingId === a.job_entry_test_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-5 h-5" />}
-                  </Button>
-
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleDownloadAllotmentPdf(a)}
-                    className="bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm rounded-lg h-10 w-10 p-0 flex items-center justify-center shrink-0"
-                    title="Download Allotment Form"
-                  >
-                    <FileText className="w-5 h-5" />
-                  </Button>
-
-                  {/* Actions based on status */}
-                  {a.status === 'assigned' && (
-                    <div className="flex gap-2">
-                      <Button onClick={() => handleStatusUpdate(a.id, 'accepted')} disabled={loadingId === a.id} className="bg-orange-500 hover:bg-orange-600 shadow-sm rounded-lg px-4 h-10 text-white text-sm font-bold">
-                        {loadingId === a.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-1" />}
-                        Accept
-                      </Button>
-                      <Button variant="outline" onClick={() => {
-                        const remark = window.prompt("Please enter a reason for rejection:");
-                        if (remark !== null) {
-                          if (!remark.trim()) return alert("Remark is required to reject.");
-                          handleStatusUpdate(a.id, 'rejected', { reviewer_remark: remark });
-                        }
-                      }} disabled={loadingId === a.id} className="text-red-600 border-red-200 hover:bg-red-50 rounded-lg h-10 text-sm font-bold">
-                        Reject
-                      </Button>
-                    </div>
-                  )}
-
-                  {(a.status === 'accepted' || a.status === 'rejected') && (
-                    <Button onClick={() => handleStatusUpdate(a.id, 'in_testing')} disabled={loadingId === a.id} className="bg-orange-500 hover:bg-orange-600 shadow-sm rounded-lg px-4 h-10 text-white text-sm font-bold">
-                      {loadingId === a.id && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                      Start Testing
-                    </Button>
-                  )}
-
-                  {a.status === 'in_testing' && (
-                    <>
-                      <input 
-                        type="file" 
-                        id={`file-${a.id}`} 
-                        className="hidden" 
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          setLoadingId(a.id);
-                          try {
-                            const supabase = createClient();
-                            const fileName = `${a.id}_${Date.now()}_${file.name}`;
-                            const { error } = await supabase.storage.from("reports").upload(fileName, file);
-                            if (error) throw error;
-                            const { data: urlData } = supabase.storage.from("reports").getPublicUrl(fileName);
-                            
-                            const res = await updateAssignmentStatusAction(a.id, "report_uploaded", { report_url: urlData.publicUrl });
-                            if (!res.success) alert("Error: " + res.error);
-                          } catch (err: any) {
-                            alert("Upload error: " + err.message);
-                          }
-                          setLoadingId(null);
-                        }} 
-                      />
-                      <Button disabled={loadingId === a.id} onClick={() => document.getElementById(`file-${a.id}`)?.click()} className="bg-orange-500 hover:bg-orange-600 shadow-sm rounded-lg px-4 h-10 text-white text-sm font-bold">
-                        {loadingId === a.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-                        Upload Report
-                      </Button>
-                    </>
-                  )}
-
-                  {a.status === 'report_uploaded' && (
-                    <Button onClick={() => handleStatusUpdate(a.id, 'in_review')} disabled={loadingId === a.id} className="bg-orange-500 hover:bg-orange-600 shadow-sm text-white rounded-lg px-4 h-10 text-sm font-bold">
-                      {loadingId === a.id && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                      Submit for Review
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    )}
+                        {a.status === 'report_uploaded' && (
+                          <Button size="sm" onClick={() => handleStatusUpdate(a.id, 'in_review')} disabled={loadingId === a.id} className="bg-fuchsia-50 text-fuchsia-600 hover:bg-fuchsia-500 hover:text-white border border-fuchsia-200 shadow-sm rounded-lg h-8 px-3 font-bold text-[11px]">
+                            {loadingId === a.id && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
+                            Review
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

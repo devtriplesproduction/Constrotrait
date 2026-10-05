@@ -1,13 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getAssignmentByIdAction } from "@/actions/job-assignment.actions";
+import { getAssignmentByIdAction, getAssignmentsAction } from "@/actions/job-assignment.actions";
 import { PageHeader } from "@/components/modules/PageHeader";
-import { ClipboardList, ArrowLeft, FileText, User, Calendar } from "lucide-react";
+import { ClipboardList, ArrowLeft, FileText, User, Calendar, Beaker, GitMerge } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { JobStageStepper } from "@/components/ui/JobStageStepper";
 import { JobStage } from "@/config/jobTransitions";
+import { JobAssignmentActions } from "@/components/modules/job-assignments/JobAssignmentActions";
 
 function assignmentUid(assignment: any) {
   const t = assignment.job_entry_tests;
@@ -54,9 +55,26 @@ export default async function JobAssignmentDetailsPage(props: {
   }
 
   const assignment = res.data;
+  const jobEntryId = assignment.job_entry_tests?.job_entry_id;
+  let allAssignments: any[] = [];
+  if (jobEntryId) {
+    // We fetch all assignments for the user? Actually we can just query the DB for this job_entry_id
+    const { data: assignments } = await supabase
+      .from("job_assignments")
+      .select(`
+        *,
+        job_entry_tests!inner (
+          id, job_entry_id, test_master ( component_parameter, specific_test, test_method )
+        )
+      `)
+      .eq("job_entry_tests.job_entry_id", jobEntryId);
+    if (assignments) {
+      allAssignments = assignments;
+    }
+  }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-8">
+    <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/job-assignments" className="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-full bg-white border border-slate-200/80 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all shadow-sm">
@@ -67,96 +85,172 @@ export default async function JobAssignmentDetailsPage(props: {
       </div>
 
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 overflow-hidden relative">
-        <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-orange-400 via-pink-500 to-indigo-500" />
-        <div className="p-6 sm:p-10">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-            {/* Left side details */}
-            <div className="lg:col-span-2 space-y-8">
-              <div className="relative bg-gradient-to-br from-slate-50 to-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm overflow-hidden group hover:border-indigo-100 transition-colors">
-                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <FileText className="w-24 h-24" />
+        <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            {/* Left Section: All Tests */}
+            <div className="lg:col-span-4 xl:col-span-4 border-r border-slate-100 pr-4 lg:pr-6 flex flex-col min-w-0">
+              <div className="flex items-center gap-3 mb-6 pl-2">
+                <div className="w-9 h-9 rounded-xl bg-orange-100/50 border border-orange-200/50 flex items-center justify-center">
+                  <ClipboardList className="w-4 h-4 text-orange-600" />
                 </div>
-                
-                <div className="relative z-10 space-y-6">
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-orange-400" /> Job Card</p>
-                    <p className="font-extrabold text-slate-800 text-xl tracking-tight">{assignmentUid(assignment)}</p>
-                  </div>
+                <h4 className="font-extrabold text-slate-800 text-lg tracking-tight">All Tests</h4>
+              </div>
+              
+              <div className="flex-1 space-y-1.5 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
+                {allAssignments.map((a: any) => {
+                  const t = a.job_entry_tests;
+                  const isActive = a.id === assignment.id;
+                  const hasSpecificTest = t?.test_master?.specific_test && t.test_master.specific_test !== "-" && t.test_master.specific_test.trim() !== "";
                   
-                  <div className="w-full h-px bg-gradient-to-r from-slate-200 to-transparent" />
-                  
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><FileText className="w-4 h-4 text-blue-400" /> Test Details</p>
-                    <p className="font-bold text-slate-800 text-base">{assignment.job_entry_tests?.test_master?.component_parameter || "N/A"}</p>
-                    <p className="text-sm text-slate-500 font-medium mt-1">{assignment.job_entry_tests?.test_master?.specific_test || "N/A"}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6 pt-2">
-                    <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><User className="w-4 h-4 text-emerald-400" /> Assigned To</p>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-slate-400" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-800 text-sm leading-tight">
-                            {assignment.team_id 
-                              ? assignment.teams?.name 
-                              : `${assignment.assigned_to_profile?.first_name || ""} ${assignment.assigned_to_profile?.last_name || ""}`}
-                          </p>
-                          {assignment.team_id && (
-                            <span className="text-[10px] text-indigo-500 font-bold uppercase">Team</span>
-                          )}
+                  return (
+                    <Link key={a.id} href={`/job-assignments/${a.id}`} className="block group mb-1">
+                      <div className={`p-3 transition-all duration-200 relative ${
+                        isActive 
+                          ? 'bg-white rounded-2xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)]' 
+                          : 'bg-transparent hover:bg-slate-50/50 rounded-2xl'
+                      }`}>
+                        {isActive && (
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-orange-500 rounded-r-md" />
+                        )}
+                        
+                        <div className="flex gap-2.5 items-center">
+                           <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                             isActive 
+                               ? 'bg-orange-100 text-orange-500' 
+                               : 'bg-slate-100/80 text-slate-400 group-hover:bg-slate-200/50'
+                           }`}>
+                             <Beaker className="w-4 h-4" />
+                           </div>
+                           
+                           <div className="flex-1 min-w-0 pr-1">
+                             <p className={`font-bold text-[13.5px] leading-snug line-clamp-2 transition-colors ${
+                               isActive 
+                                 ? 'text-orange-500' 
+                                 : 'text-slate-400 group-hover:text-slate-500'
+                             }`}>
+                               {t?.test_master?.component_parameter || "Unknown Test"}
+                             </p>
+                             {hasSpecificTest && (
+                               <p className={`text-[11px] mt-0.5 line-clamp-1 font-medium transition-colors ${
+                                 isActive 
+                                   ? 'text-orange-400/80' 
+                                   : 'text-slate-400/70'
+                               }`}>
+                                 {t.test_master.specific_test}
+                               </p>
+                             )}
+                           </div>
+                           
+                           <div className="flex-shrink-0 scale-[0.80] origin-right">
+                             {getStatusBadge(a.status)}
+                           </div>
                         </div>
                       </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Calendar className="w-4 h-4 text-purple-400" /> Due Date</p>
-                      <p className="font-bold text-slate-800 text-sm mt-1">
-                        {assignment.due_date ? format(new Date(assignment.due_date), "dd MMM, yyyy") : "-"}
+                    </Link>
+                  );
+                })}
+                
+                {allAssignments.length === 0 && (
+                  <div className="text-center p-8 bg-slate-50 rounded-2xl border border-slate-100 border-dashed text-slate-500 text-sm font-medium">
+                    No other tests found.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Section: Test Details & Workflow */}
+            <div className="lg:col-span-8 xl:col-span-8 flex flex-col gap-4 min-w-0">
+              
+              {/* Job Card Details */}
+              <div className="w-full space-y-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <FileText className="w-5 h-5 text-blue-500" />
+                  <h4 className="font-bold text-slate-800 text-lg">Test Details</h4>
+                </div>
+                
+                <div className="relative bg-white p-4 rounded-2xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] overflow-x-auto custom-scrollbar flex items-start justify-between gap-4 md:gap-6 min-w-max md:min-w-0 w-full">
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5 text-orange-400" /> Job Card</p>
+                    <p className="font-bold text-slate-800 text-sm">{assignmentUid(assignment)}</p>
+                  </div>
+                  
+                  <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-blue-400" /> Parameter</p>
+                    <p className="font-bold text-slate-800 text-sm truncate" title={assignment.job_entry_tests?.test_master?.component_parameter}>{assignment.job_entry_tests?.test_master?.component_parameter || "N/A"}</p>
+                    <p className="text-[11px] text-slate-500 font-medium truncate" title={assignment.job_entry_tests?.test_master?.specific_test}>{assignment.job_entry_tests?.test_master?.specific_test || "N/A"}</p>
+                  </div>
+                  
+                  <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-purple-400" /> Due Date</p>
+                    <p className="font-semibold text-slate-700 text-[13px]">
+                      {assignment.due_date ? format(new Date(assignment.due_date), "dd MMM, yyyy") : "-"}
+                    </p>
+                  </div>
+
+                  <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-emerald-400" /> Assigned To</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                        <User className="w-3 h-3 text-slate-400" />
+                      </div>
+                      <p className="font-semibold text-slate-700 text-[13px] leading-tight truncate">
+                        {assignment.team_id 
+                          ? assignment.teams?.name 
+                          : `${assignment.assigned_to_profile?.first_name || ""} ${assignment.assigned_to_profile?.last_name || ""}`}
                       </p>
                     </div>
                   </div>
+                  
+                  <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+                  
+                  <div className="flex-1 min-w-0 pr-1 flex flex-col items-end">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 text-right">Status</p>
+                    <div className="inline-block scale-90 origin-right">{getStatusBadge(assignment.status)}</div>
+                  </div>
+                </div>
 
-                  <div className="w-full h-px bg-gradient-to-r from-slate-200 to-transparent" />
+                {assignment.notes && (
+                  <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 p-5 rounded-2xl border border-amber-100 shadow-sm relative overflow-hidden">
+                    <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-2 relative z-10 text-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      Notes & Instructions
+                    </h4>
+                    <div className="text-amber-800/90 text-sm leading-relaxed font-medium relative z-10">
+                      {assignment.notes}
+                    </div>
+                  </div>
+                )}
+              </div>
 
+              {/* Progress Flow */}
+              <div className="w-full flex flex-col space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+                    <GitMerge className="w-4 h-4 text-indigo-500" />
+                  </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Status</p>
-                    <div className="inline-block scale-110 origin-left">{getStatusBadge(assignment.status)}</div>
+                    <h4 className="font-bold text-slate-800 text-lg">Work Flow</h4>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-b from-slate-50/50 to-white border border-slate-100 shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)] p-6 sm:p-10 rounded-2xl flex flex-col justify-center overflow-x-auto">
+                  <div className="min-w-max px-4">
+                    <JobStageStepper currentStage={assignment.status as JobStage} isRejected={assignment.status === 'rejected'} orientation="horizontal" />
                   </div>
                 </div>
               </div>
-
-              {assignment.notes && (
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 p-6 rounded-3xl border border-amber-100 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <ClipboardList className="w-16 h-16 text-amber-500" />
-                  </div>
-                  <h4 className="font-bold text-amber-900 mb-3 flex items-center gap-2 relative z-10">
-                    <div className="w-2 h-2 rounded-full bg-amber-500" />
-                    Notes & Instructions
-                  </h4>
-                  <div className="text-amber-800/90 text-sm leading-relaxed font-medium relative z-10">
-                    {assignment.notes}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Right side Progress */}
-            <div className="lg:col-span-3 flex flex-col h-full">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" style={{ animationDuration: '3s' }} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-lg">Progress Flow</h4>
-                  <p className="text-sm text-slate-500 font-medium">Track the current stage of this job card</p>
-                </div>
+              
+              <div className="mt-2 border-t border-slate-100 pt-4">
+                <JobAssignmentActions assignment={assignment} currentUserId={user.id} />
               </div>
-              <div className="flex-1 bg-gradient-to-b from-slate-50/50 to-white border border-slate-100 shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)] p-6 sm:p-10 rounded-3xl flex flex-col justify-center">
-                <JobStageStepper currentStage={assignment.status as JobStage} isRejected={assignment.status === 'rejected'} />
-              </div>
+              
             </div>
           </div>
         </div>

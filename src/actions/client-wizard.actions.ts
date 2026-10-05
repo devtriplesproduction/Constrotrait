@@ -123,22 +123,23 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
     if (jobEntryTest) {
       await JobEntryService.updateJobEntryTest(testId, {
         test_master_id: toNull(jobEntryTest.test_master_id),
-        date_of_receiving: toNull(data.materialDetails?.date_of_receiving || jobEntryTest.date_of_receiving),
+        date_of_receiving: toNull(data.materialDetails?.date_of_receiving ?? jobEntryTest.date_of_receiving),
         testing_age: jobEntryTest.testing_age,
         date_of_testing: toNull(jobEntryTest.date_of_testing),
         material_description: jobEntryTest.material_description,
-        material_id: data.materialDetails?.material_id || jobEntryTest.material_id,
-        material_details_location: data.materialDetails?.material_details_location || jobEntryTest.material_details_location,
-        sample_quantity: data.materialDetails?.sample_quantity || jobEntryTest.sample_quantity,
-        testing_day: data.materialDetails?.testing_day || jobEntryTest.testing_day,
-        date_of_casting: toNull(data.materialDetails?.date_of_casting || jobEntryTest.date_of_casting),
+        material_id: data.materialDetails?.material_id ?? jobEntryTest.material_id,
+        material_details_location: data.materialDetails?.material_details_location ?? jobEntryTest.material_details_location,
+        sample_quantity: data.materialDetails?.sample_quantity ?? jobEntryTest.sample_quantity,
+        testing_day: data.materialDetails?.testing_day ?? jobEntryTest.testing_day,
+        date_of_casting: toNull(data.materialDetails?.date_of_casting ?? jobEntryTest.date_of_casting),
         additional_details_values: jobEntryTest.additional_details_values || {},
         test_method: jobEntryTest.test_method,
-        grade: data.materialDetails?.grade || jobEntryTest.grade || jobEntryTest.additional_details_values?.Grade || jobEntryTest.additional_details_values?.grade || null,
+        grade: data.materialDetails?.grade ?? jobEntryTest.grade ?? jobEntryTest.additional_details_values?.Grade ?? jobEntryTest.additional_details_values?.grade ?? null,
       });
     }
     revalidatePath("/dashboard");
     revalidatePath("/clients");
+    revalidatePath("/", "layout");
     return { success: true, uids: [] };
   } catch (error) {
     console.error("Wizard update error:", error);
