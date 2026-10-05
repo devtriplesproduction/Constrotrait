@@ -139,7 +139,7 @@ export function Select({ value, onValueChange, placeholder, children, className,
             position: "absolute",
             top: coords.top,
             ...(align === "right" ? { right: coords.right } : { left: coords.left }),
-            width: coords.width,
+            minWidth: Math.max(coords.width, 140),
             zIndex: 99999
           }}
           id="select-portal-container"
@@ -249,7 +249,7 @@ export function SelectItem({
         className
       )}
     >
-      <span className="truncate flex-1 text-left">{children}</span>
+      <span className="flex-1 text-left break-words">{children}</span>
       <span className="flex h-4 w-4 items-center justify-center shrink-0 ml-2">
         {isSelected && (
           <motion.div

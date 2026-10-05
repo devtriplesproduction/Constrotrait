@@ -4,11 +4,12 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
 import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
-import { Loader2, Check, X, ClipboardList, Download, Tag, Calendar, Beaker, AlertCircle, FileText } from "lucide-react";
+import { Loader2, Check, X, ClipboardList, Download, Tag, Calendar, Beaker, AlertCircle, FileText, Zap, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { createClient } from "@/lib/supabase/client";
 import { JobStageStepper } from "@/components/ui/JobStageStepper";
+import { Dropdown } from "@/components/ui/Dropdown";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -21,17 +22,52 @@ function uidOf(a: any) {
 export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assignments: any[], userId: string, filterStatus: string }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const router = useRouter();
+
+  const myAssignments = React.useMemo(() => {
+    return assignments.filter((a: any) => {
+      let isMine = false;
+      if (a.assigned_to === userId) isMine = true;
+      if (a.teams?.team_members?.some((m: any) => m.employee_id === userId)) isMine = true;
+      
+      if (!isMine) return false;
+      if (filterStatus !== "all" && a.status !== filterStatus) return false;
+      
+      if (searchQuery.trim() !== "") {
+        const q = searchQuery.toLowerCase();
+        const empName = `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`.toLowerCase();
+        const teamName = a.teams?.name ? String(a.teams?.name).toLowerCase() : "";
+        const assigneeStr = a.team_id ? teamName : empName;
+        
+        const je = a.job_entry_tests;
+        const uidLabel = je?.uid_label || je?.job_entries?.uid_label || je?.job_entries?.uid;
+        const uidStr = uidLabel ? String(uidLabel).toLowerCase() : "";
+        
+        const materialName = je?.material_description || je?.test_master?.material_product || "";
+        const materialStr = String(materialName).toLowerCase();
+        
+        const receivedDateObj = je?.job_entries?.created_at ? new Date(je?.job_entries?.created_at) : null;
+        const receivedStr = receivedDateObj ? receivedDateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }).toLowerCase() : '-';
+
+        const dueDateObj = a.due_date ? new Date(a.due_date) : null;
+        const dueStr = dueDateObj ? dueDateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }).toLowerCase() : '-';
+
+        if (!assigneeStr.includes(q) && !uidStr.includes(q) && !materialStr.includes(q) && !receivedStr.includes(q) && !dueStr.includes(q)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [assignments, userId, filterStatus, searchQuery]);
 
   const groupedMyAssignments = React.useMemo(() => {
     const groups = new Map<string, any>();
-    assignments.forEach(a => {
+    myAssignments.forEach(a => {
       const je = a.job_entry_tests;
       const uidLabel = je?.uid_label || je?.job_entries?.uid_label || je?.job_entries?.uid;
       let key = uidLabel ? `${je?.job_entry_id}-${uidLabel}` : (je?.job_entry_id ? `je-${je.job_entry_id}` : `test-${a.id}`);
-      if (a.status !== 'assigned') {
-        key = `test-${a.id}`;
-      }
       if (!groups.has(key)) {
         groups.set(key, {
           ...a,
@@ -45,7 +81,7 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
       }
     });
     return Array.from(groups.values());
-  }, [assignments]);
+  }, [myAssignments]);
 
   const handleDownloadPdf = async (testId: string, uid: string) => {
     try {
@@ -127,12 +163,13 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
     
     const prodName = a.job_entry_tests?.test_master?.material_product || '';
     const uidLabel = a.job_entry_tests?.uid_label || '';
+    const ulrLabel = a.job_entry_tests?.ulr_number ? ` | ULR - ${a.job_entry_tests.ulr_number}` : '';
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 4,
       theme: "plain",
       styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 10, fontStyle: 'bold' },
       body: [
-        [`Product Test Name - ${prodName}`, `UID - ${uidLabel}`]
+        [`Product Test Name - ${prodName}`, `UID - ${uidLabel}${ulrLabel}`]
       ]
     });
 
@@ -161,7 +198,7 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
     const method = a.job_entry_tests?.test_master?.test_method || '';
     
     // Sample Name = material description or additional_details_values location if present, else blank
-    const sampleName = a.job_entry_tests?.job_entries?.material_description || 
+    const sampleName = a.job_entry_tests?.material_description || 
                        a.job_entry_tests?.additional_details_values?.location || '';
                        
     // Sample Details = additional detail value if present, else blank. Do not put the quantity.
@@ -212,26 +249,50 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
     doc.save(`Sample_Allotment_Form_${uidLabel}.pdf`);
   };
 
-  const myAssignments = assignments.filter((a: any) => {
-    let isMine = false;
-    if (a.assigned_to === userId) isMine = true;
-    if (a.teams?.team_members?.some((m: any) => m.employee_id === userId)) isMine = true;
-    
-    if (!isMine) return false;
-    if (filterStatus !== "all" && a.status !== filterStatus) return false;
-    
-    return true;
-  });
 
-  const handleStatusUpdate = async (id: string, status: string, payload?: any) => {
-    setLoadingId(id);
-    const res = await updateAssignmentStatusAction(id, status, payload);
-    if (!res.success) alert("Error: " + res.error);
+
+  const handleStatusGroupUpdate = async (assignments: any[], status: string, payload?: any) => {
+    if (!assignments || assignments.length === 0) return;
+    setLoadingId(assignments[0].id);
+    let hasError = false;
+    for (const asg of assignments) {
+      const res = await updateAssignmentStatusAction(asg.id, status, payload);
+      if (!res.success) {
+        alert("Error: " + res.error);
+        hasError = true;
+      }
+    }
     setLoadingId(null);
+    if (!hasError) router.refresh();
+  };
+
+  const getAggregateStatus = (assignments: any[]) => {
+    if (!assignments || assignments.length === 0) return 'unknown';
+    if (assignments.every(asg => asg.status === 'approved')) return 'completed';
+    if (assignments.some(asg => asg.status === 'rejected')) return 'working';
+    if (assignments.some(asg => asg.status === 'in_review')) return 'in_review';
+    if (assignments.some(asg => asg.status === 'report_uploaded')) return 'report_uploaded';
+    if (assignments.some(asg => asg.status === 'in_testing')) return 'in_testing';
+    if (assignments.some(asg => asg.status === 'accepted')) return 'accepted';
+    return 'assigned';
   };
 
 return (
-    <div className="p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 mt-2">
+      <div className="flex justify-start mb-4">
+        <div className="w-full sm:w-80 relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-slate-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search Job Card, Material, Date..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-10 pl-10 pr-4 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors shadow-sm bg-white"
+          />
+        </div>
+      </div>
 
       {groupedMyAssignments.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-white rounded-2xl border border-dashed border-slate-300">
@@ -246,12 +307,13 @@ return (
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-50/80 text-[11px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-200/80">
               <tr>
-                <th className="px-6 py-4 rounded-tl-2xl">Job Card (UID)</th>
-                <th className="px-6 py-4">Test Details</th>
-                <th className="px-6 py-4">Assigned To</th>
-                <th className="px-6 py-4">Due Date</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 rounded-tr-2xl text-right">Actions</th>
+                <th className="px-6 py-4 rounded-tl-2xl whitespace-nowrap">Job Card (UID)</th>
+                <th className="px-6 py-4 whitespace-nowrap">Material</th>
+                <th className="px-6 py-4 whitespace-nowrap">Received Date</th>
+                <th className="px-6 py-4 whitespace-nowrap">Assigned To</th>
+                <th className="px-6 py-4 whitespace-nowrap">Due Date</th>
+                <th className="px-6 py-4 whitespace-nowrap">Status</th>
+                <th className="px-6 py-4 rounded-tr-2xl text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -260,13 +322,17 @@ return (
                 const dueDate = a.due_date ? new Date(a.due_date) : null;
                 const dueStr = dueDate ? dueDate.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }) : '-';
                 
+                const receivedRawDate = a.grouped_tests[0]?.job_entries?.created_at;
+                const receivedDateObj = receivedRawDate ? new Date(receivedRawDate) : null;
+                const receivedStr = receivedDateObj ? receivedDateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }) : '-';
+
                 const assignedName = a.team_id 
                     ? a.teams?.name 
                     : `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`;
                 const avatarLetter = a.team_id ? "T" : (assignedName.charAt(0) || "?");
                 
-                const aggregatedParameters = a.grouped_tests.map((t: any) => t?.test_master?.component_parameter || t?.test_parameters || 'N/A').filter(Boolean).join(', ');
-                const aggregatedSpecifics = a.grouped_tests.map((t: any) => t?.test_master?.specific_test || 'N/A').filter(Boolean).join(', ');
+                const materialName = a.grouped_tests[0]?.material_description || a.grouped_tests[0]?.test_master?.material_product || "N/A";
+                const testCount = a.grouped_tests.length;
 
                 return (
                   <tr key={a.id} onClick={() => router.push(`/job-assignments/${a.id}`)} className="hover:bg-orange-50/30 transition-colors group cursor-pointer">
@@ -275,15 +341,29 @@ return (
                         <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
                           <ClipboardList className="w-4 h-4" />
                         </div>
-                        <div className="font-bold text-slate-800 text-[13px]">{uid ? `UID: ${uid}` : 'UID missing'}</div>
+                        <div className="font-bold text-slate-800 text-[13px]">
+                          {uid ? `UID: ${uid}` : 'UID missing'}
+                          {a.grouped_tests[0]?.ulr_number && (
+                            <div className="text-emerald-600 text-[11px] mt-0.5 font-semibold">ULR: {a.grouped_tests[0].ulr_number}</div>
+                          )}
+                        </div>
                       </div>
                     </td>
                     
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-700 truncate max-w-[200px]" title={aggregatedParameters}>{aggregatedParameters}</span>
-                        <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]" title={aggregatedSpecifics}>
-                          {aggregatedSpecifics}
+                        <span className="font-bold text-slate-700 truncate max-w-[200px]" title={materialName}>{materialName}</span>
+                        <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]">
+                          {testCount} test{testCount !== 1 ? 's' : ''} assigned
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Calendar className="w-4 h-4 text-slate-400" />
+                        <span className="font-semibold text-[13px]">
+                          {receivedStr}
                         </span>
                       </div>
                     </td>
@@ -304,7 +384,7 @@ return (
                       </div>
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2 text-slate-600">
                         <Calendar className="w-4 h-4 text-slate-400" />
                         <span className="font-semibold text-[13px]">
@@ -313,17 +393,17 @@ return (
                       </div>
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border capitalize ${
-                        a.status === 'in_testing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                        a.status === 'report_uploaded' ? 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' :
-                        a.status === 'in_review' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                        a.status === 'accepted' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                        a.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
-                        a.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                        getAggregateStatus(a.all_assignments) === 'in_testing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        getAggregateStatus(a.all_assignments) === 'report_uploaded' ? 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' :
+                        getAggregateStatus(a.all_assignments) === 'in_review' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        getAggregateStatus(a.all_assignments) === 'accepted' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                        getAggregateStatus(a.all_assignments) === 'working' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                        getAggregateStatus(a.all_assignments) === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                         'bg-slate-50 text-slate-700 border-slate-200'
                       }`}>
-                        {String(a.status || '').replace('_', ' ')}
+                        {String(getAggregateStatus(a.all_assignments) || '').replace('_', ' ')}
                       </div>
                     </td>
 
@@ -341,87 +421,66 @@ return (
                         </Button>
 
                         {/* Status Actions */}
-                        {a.status === 'assigned' && (
-                          <>
-                            <Button size="sm" onClick={async () => {
-                              setLoadingId(a.id);
-                              let hasError = false;
-                              for (const asg of a.all_assignments) {
-                                const res = await updateAssignmentStatusAction(asg.id, 'accepted');
-                                if (!res.success) {
-                                  alert("Error: " + res.error);
-                                  hasError = true;
+                        {getAggregateStatus(a.all_assignments) === 'assigned' && (
+                          <div className="w-[95px]" onClick={e => e.stopPropagation()}>
+                            {loadingId === a.id ? (
+                              <div className="flex items-center justify-center h-8 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              </div>
+                            ) : (
+                              <Dropdown
+                                placeholder={
+                                  <div className="flex items-center gap-1 text-orange-600">
+                                    <Zap className="w-3 h-3" /> Action
+                                  </div>
                                 }
-                              }
-                              setLoadingId(null);
-                              if (!hasError) router.refresh();
-                            }} disabled={loadingId === a.id} className="bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 shadow-sm rounded-lg h-8 px-3 font-bold text-[11px]">
-                              {loadingId === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="w-3.5 h-3.5 mr-1" />}
-                              Accept
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={async () => {
-                              const remark = window.prompt("Please enter a reason for rejection:");
-                              if (remark !== null) {
-                                if (!remark.trim()) return alert("Remark is required to reject.");
-                                setLoadingId(a.id);
-                                let hasError = false;
-                                for (const asg of a.all_assignments) {
-                                  const res = await updateAssignmentStatusAction(asg.id, 'rejected', { reviewer_remark: remark });
-                                  if (!res.success) {
-                                    alert("Error: " + res.error);
-                                    hasError = true;
+                                options={[
+                                  { label: "Accept", value: "accept" },
+                                  { label: "Reject", value: "reject" }
+                                ]}
+                                align="right"
+                                buttonClassName="h-7 py-0 px-2 bg-white shadow-sm border-slate-200 font-medium text-[11px]"
+                                value=""
+                                onChange={async (val) => {
+                                  if (val === "accept") {
+                                    setLoadingId(a.id);
+                                    let hasError = false;
+                                    for (const asg of a.all_assignments) {
+                                      const res = await updateAssignmentStatusAction(asg.id, 'accepted');
+                                      if (!res.success) {
+                                        alert("Error: " + res.error);
+                                        hasError = true;
+                                      }
+                                    }
+                                    setLoadingId(null);
+                                    if (!hasError) router.refresh();
+                                  } else if (val === "reject") {
+                                    const remark = window.prompt("Please enter a reason for rejection:");
+                                    if (remark !== null) {
+                                      if (!remark.trim()) return alert("Remark is required to reject.");
+                                      setLoadingId(a.id);
+                                      let hasError = false;
+                                      for (const asg of a.all_assignments) {
+                                        const res = await updateAssignmentStatusAction(asg.id, 'rejected', { reviewer_remark: remark });
+                                        if (!res.success) {
+                                          alert("Error: " + res.error);
+                                          hasError = true;
+                                        }
+                                      }
+                                      setLoadingId(null);
+                                      if (!hasError) router.refresh();
+                                    }
                                   }
-                                }
-                                setLoadingId(null);
-                                if (!hasError) router.refresh();
-                              }
-                            }} disabled={loadingId === a.id} className="text-red-600 border-red-200 hover:bg-red-50 rounded-lg h-8 px-3 font-bold text-[11px]">
-                              Reject
-                            </Button>
-                          </>
+                                }}
+                              />
+                            )}
+                          </div>
                         )}
 
-                        {(a.status === 'accepted' || a.status === 'rejected') && (
-                          <Button size="sm" onClick={() => handleStatusUpdate(a.id, 'in_testing')} disabled={loadingId === a.id} className="bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 shadow-sm rounded-lg h-8 px-3 font-bold text-[11px]">
-                            {loadingId === a.id && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
-                            Start
-                          </Button>
-                        )}
 
-                        {a.status === 'in_testing' && (
-                          <>
-                            <input 
-                              type="file" 
-                              id={`file-${a.id}`} 
-                              className="hidden" 
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                setLoadingId(a.id);
-                                try {
-                                  const supabase = createClient();
-                                  const fileName = `${a.id}_${Date.now()}_${file.name}`;
-                                  const { error } = await supabase.storage.from("reports").upload(fileName, file);
-                                  if (error) throw error;
-                                  const { data: urlData } = supabase.storage.from("reports").getPublicUrl(fileName);
-                                  
-                                  const res = await updateAssignmentStatusAction(a.id, "report_uploaded", { report_url: urlData.publicUrl });
-                                  if (!res.success) alert("Error: " + res.error);
-                                } catch (err: any) {
-                                  alert("Upload error: " + err.message);
-                                }
-                                setLoadingId(null);
-                              }} 
-                            />
-                            <Button size="sm" disabled={loadingId === a.id} onClick={() => document.getElementById(`file-${a.id}`)?.click()} className="bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white border border-blue-200 shadow-sm rounded-lg h-8 px-3 font-bold text-[11px]">
-                              {loadingId === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Download className="w-3.5 h-3.5 mr-1" />}
-                              Upload
-                            </Button>
-                          </>
-                        )}
 
-                        {a.status === 'report_uploaded' && (
-                          <Button size="sm" onClick={() => handleStatusUpdate(a.id, 'in_review')} disabled={loadingId === a.id} className="bg-fuchsia-50 text-fuchsia-600 hover:bg-fuchsia-500 hover:text-white border border-fuchsia-200 shadow-sm rounded-lg h-8 px-3 font-bold text-[11px]">
+                        {getAggregateStatus(a.all_assignments) === 'report_uploaded' && (
+                          <Button size="sm" onClick={() => handleStatusGroupUpdate(a.all_assignments, 'in_review')} disabled={loadingId === a.id} className="bg-fuchsia-50 text-fuchsia-600 hover:bg-fuchsia-500 hover:text-white border border-fuchsia-200 shadow-sm rounded-lg h-8 px-3 font-bold text-[11px]">
                             {loadingId === a.id && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
                             Review
                           </Button>

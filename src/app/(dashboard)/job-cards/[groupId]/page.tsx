@@ -22,7 +22,17 @@ export default async function JobCardDetailsPage(props: {
 
   // Fetch all tests and filter
   const allTests = await JobEntryService.getAllJobEntryTests();
-  const jobGroup = allTests.filter((t: any) => (t.uid_label || t.id) === decodedGroupId);
+  const jobGroup = allTests
+    .filter((t: any) => (t.uid_label || t.id) === decodedGroupId)
+    .sort((a: any, b: any) => {
+      const dateA = a.date_of_testing ? new Date(a.date_of_testing).getTime() : Infinity;
+      const dateB = b.date_of_testing ? new Date(b.date_of_testing).getTime() : Infinity;
+      if (dateA !== dateB) return dateA - dateB;
+      
+      const dayA = parseInt(a.testing_day || a.testing_age || "0") || 0;
+      const dayB = parseInt(b.testing_day || b.testing_age || "0") || 0;
+      return dayA - dayB;
+    });
 
   if (!jobGroup || jobGroup.length === 0) {
     return (
@@ -213,6 +223,25 @@ export default async function JobCardDetailsPage(props: {
                     <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">DAY</span>
                     <span className="text-[13px] font-medium text-slate-900">{dayText}</span>
                   </div>
+                  {test.ulr_number ? (
+                    <div className="flex items-center">
+                      <div className="w-8 flex justify-center shrink-0"><Info className="w-[16px] h-[16px] text-emerald-600/80" /></div>
+                      <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">ULR NO.</span>
+                      <span className="text-[13px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">{test.ulr_number}</span>
+                    </div>
+                  ) : test.qc_number ? (
+                    <div className="flex items-center">
+                      <div className="w-8 flex justify-center shrink-0"><Info className="w-[16px] h-[16px] text-blue-600/80" /></div>
+                      <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">QC NO.</span>
+                      <span className="text-[13px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">{test.qc_number}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <div className="w-8 flex justify-center shrink-0"><Info className="w-[16px] h-[16px] text-slate-400/80" /></div>
+                      <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">DOC NO.</span>
+                      <span className="text-[12px] font-medium text-slate-500 italic">Pending</span>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Grade Block */}

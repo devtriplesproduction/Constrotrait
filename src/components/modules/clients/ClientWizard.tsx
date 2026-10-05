@@ -286,7 +286,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         setSearchResults([]);
         setShowResults(false);
       }
-    }, 500);
+    }, 300);
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
@@ -1126,7 +1126,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                   }
                                 });
                               }}
-                              side="right"
+                              side="left"
                               triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
                             />
                           </div>
@@ -1135,7 +1135,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                             <PremiumDatePicker
                               value={watch(`materialDetails.date_of_receiving`)}
                               onChange={(val) => setValue(`materialDetails.date_of_receiving`, val, { shouldValidate: true })}
-                              side="right"
+                              side="left"
                               triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
                             />
                           </div>
@@ -1288,7 +1288,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                   value={watch(`jobEntryTests.${index}.date_of_testing`)}
                                   onChange={() => { }}
                                   disabled={true}
-                                  side="right"
+                                  side="left"
                                 />
                               </div>
 
@@ -1323,7 +1323,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                                   }
                                                 }
                                               }}
-                                              side="right"
+                                              side="left"
                                             />
                                           ) : (
                                             <Input

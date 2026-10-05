@@ -38,8 +38,9 @@ export default async function DashboardLayout({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     todayTests = assignmentsRes.data.filter((a: any) => {
-      if (!a.due_date) return false;
-      const due = new Date(a.due_date);
+      const constraintDate = a.job_entry_tests?.date_of_testing || a.due_date;
+      if (!constraintDate) return false;
+      const due = new Date(constraintDate);
       due.setHours(0, 0, 0, 0);
       return due.getTime() === today.getTime();
     });

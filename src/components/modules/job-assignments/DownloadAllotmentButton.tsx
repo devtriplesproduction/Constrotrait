@@ -22,7 +22,7 @@ export function DownloadAllotmentButton({ testGroup, uid, assignments, currentUs
 
   if (!isClient) {
     return (
-      <Button variant="outline" size="sm" disabled className="text-blue-600 border-blue-200 bg-blue-50/50">
+      <Button variant="outline" size="sm" disabled className="text-orange-600 border-orange-200 bg-orange-50/50">
         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
         Preparing PDF...
       </Button>
@@ -42,7 +42,7 @@ export function DownloadAllotmentButton({ testGroup, uid, assignments, currentUs
       fileName={`Allotment_${uid}_${testGroup.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}
     >
       {({ loading }) => (
-        <Button variant="outline" size="sm" disabled={loading} className="text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100 hover:text-blue-700">
+        <Button variant="outline" size="sm" disabled={loading} className="text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100 hover:text-orange-700">
           {loading ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (

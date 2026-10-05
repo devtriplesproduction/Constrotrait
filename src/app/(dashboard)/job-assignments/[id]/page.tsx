@@ -26,6 +26,8 @@ const getStatusBadge = (status: string) => {
     case "approved": return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
     case "accepted": return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Accepted</Badge>;
     case "rejected": return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
+    case "working": return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Working</Badge>;
+    case "completed": return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Completed</Badge>;
     default: return <Badge variant="outline">{status}</Badge>;
   }
 };
@@ -174,6 +176,19 @@ export default async function JobAssignmentDetailsPage(props: {
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5 text-orange-400" /> Job Card</p>
                     <p className="font-bold text-slate-800 text-sm">{assignmentUid(assignment)}</p>
+                    {assignment.job_entry_tests?.ulr_number ? (
+                      <p className="font-bold text-emerald-600 text-xs mt-1 bg-emerald-50 inline-block px-1.5 py-0.5 rounded border border-emerald-100">
+                        ULR: {assignment.job_entry_tests.ulr_number}
+                      </p>
+                    ) : assignment.job_entry_tests?.qc_number ? (
+                      <p className="font-bold text-blue-600 text-xs mt-1 bg-blue-50 inline-block px-1.5 py-0.5 rounded border border-blue-100">
+                        QC: {assignment.job_entry_tests.qc_number}
+                      </p>
+                    ) : (
+                      <p className="font-medium text-slate-400 text-xs mt-1 italic">
+                        Doc No: Pending
+                      </p>
+                    )}
                   </div>
                   
                   <div className="w-px h-8 bg-slate-100 flex-shrink-0" />

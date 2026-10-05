@@ -108,7 +108,7 @@ export function JobAssignmentActions({ assignment, currentUserId }: { assignment
         </Button>
       )}
 
-      {assignment.status === 'in_testing' && (
+      {(assignment.status === 'in_testing' || assignment.status === 'rejected') && (
         <>
           <input 
             type="file" 
@@ -118,7 +118,7 @@ export function JobAssignmentActions({ assignment, currentUserId }: { assignment
           />
           <Button size="sm" disabled={loading} onClick={() => document.getElementById(`file-upload-${assignment.id}`)?.click()} className="bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white border border-blue-200">
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-            Upload Report
+            {assignment.status === 'rejected' ? 'Re-upload Report' : 'Upload Report'}
           </Button>
         </>
       )}

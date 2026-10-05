@@ -47,16 +47,27 @@ export function JobAssignmentsContent({
         actions={
           <div className="flex flex-wrap items-center gap-4">
             <div className="w-48 hidden md:block">
-              <Dropdown value={filterStatus} onChange={setFilterStatus} placeholder="Filter by Status" buttonClassName="bg-white !h-[48px] rounded-xl" options={[
-                { value: "all", label: "All Statuses" },
-                { value: "assigned", label: "Assigned" },
-                { value: "accepted", label: "Accepted" },
-                { value: "in_testing", label: "In Testing" },
-                { value: "report_uploaded", label: "Report Uploaded" },
-                { value: "in_review", label: "In Review" },
-                { value: "approved", label: "Approved" },
-                { value: "rejected", label: "Rejected" },
-              ]} />
+              <Dropdown 
+                value={filterStatus} 
+                onChange={setFilterStatus} 
+                placeholder={activeTab === 'schedule' ? 'Filter by Schedule' : 'Filter by Status'}
+                buttonClassName="bg-white !h-[48px] rounded-xl" 
+                options={activeTab === 'schedule' ? [
+                  { value: "all", label: "All Tests" },
+                  { value: "today", label: "Today's Tests" },
+                  { value: "overdue", label: "Older Overdue Tests" },
+                  { value: "upcoming", label: "Upcoming Tasks" },
+                ] : [
+                  { value: "all", label: "All Statuses" },
+                  { value: "assigned", label: "Assigned" },
+                  { value: "accepted", label: "Accepted" },
+                  { value: "in_testing", label: "In Testing" },
+                  { value: "report_uploaded", label: "Report Uploaded" },
+                  { value: "in_review", label: "In Review" },
+                  { value: "approved", label: "Approved" },
+                  { value: "rejected", label: "Rejected" },
+                ]} 
+              />
             </div>
             <JobAssignmentsTabsClient 
               activeTab={activeTab} 

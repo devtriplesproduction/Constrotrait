@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { ClipboardList } from 'lucide-react';
+import { Sparkles, CalendarClock, ArrowRight } from 'lucide-react';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ interface TodayTest {
   job_entry_tests: {
     test_master: {
       specific_test: string;
+      component_parameter: string;
     } | null;
   };
 }
@@ -41,45 +42,58 @@ export function TestAssignmentNotifier({ currentUserProfile, todayTests }: TestA
 
   return (
     <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-      <div className="flex flex-col items-center">
-        <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
-          <ClipboardList className="w-8 h-8" />
+      <div className="flex flex-col items-center p-2 relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute -top-12 -right-12 w-32 h-32 bg-orange-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+
+        <div className="w-20 h-20 bg-gradient-to-tr from-orange-500 to-orange-400 text-white rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-orange-500/30 transform -rotate-6 z-10">
+          <CalendarClock className="w-10 h-10 transform rotate-6" />
         </div>
         
-        <div className="mb-4 text-center">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Tests Assigned Today! 📋</h2>
+        <div className="mb-6 text-center z-10">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2 flex items-center justify-center gap-2">
+            Today's Assignments <Sparkles className="w-5 h-5 text-orange-400" />
+          </h2>
           <p className="text-slate-600">
-            Hello {currentUserProfile?.first_name}, you have <strong>{todayTests.length}</strong> test{todayTests.length > 1 ? 's' : ''} scheduled for today.
+            Welcome back, <span className="font-semibold text-slate-800">{currentUserProfile?.first_name}</span>. You have <strong className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md">{todayTests.length}</strong> test{todayTests.length > 1 ? 's' : ''} scheduled for today.
           </p>
         </div>
 
-        <div className="w-full max-h-48 overflow-y-auto space-y-2 mb-4">
-          {todayTests.map(test => (
-            <div key={test.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3 text-left">
-              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
-                {test.job_entry_tests?.test_master?.specific_test?.[0] || 'T'}
+        <div className="w-full max-h-[220px] overflow-y-auto space-y-3 mb-6 pr-1 custom-scrollbar z-10">
+          {todayTests.map(test => {
+            const specificTest = test.job_entry_tests?.test_master?.specific_test;
+            const componentParameter = test.job_entry_tests?.test_master?.component_parameter;
+            const testName = specificTest || componentParameter || 'Unknown Test';
+            const initial = testName[0]?.toUpperCase() || 'T';
+
+            return (
+              <div key={test.id} className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 text-left hover:border-orange-300 transition-colors group">
+                <div className="w-12 h-12 bg-gradient-to-br from-slate-50 to-slate-100 text-slate-700 rounded-lg flex items-center justify-center font-bold text-lg border border-slate-200 group-hover:scale-105 transition-transform shrink-0">
+                  {initial}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-800 text-[15px] truncate">{testName}</p>
+                  <p className="text-xs text-slate-500 font-medium">Pending execution</p>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-slate-900 text-sm line-clamp-1">{test.job_entry_tests?.test_master?.specific_test || 'Unknown Test'}</p>
-                <p className="text-xs text-slate-500">Please check your assignments tab</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <div className="flex gap-3 w-full mt-2">
+        <div className="flex gap-3 w-full mt-2 z-10">
           <Button
             onClick={() => setIsOpen(false)}
             variant="outline"
-            className="flex-1 py-3 px-4 font-bold rounded-xl transition-colors"
+            className="flex-1 py-6 font-bold rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
           >
-            Later
+            Remind me later
           </Button>
-          <Link href="/job-assignments?tab=schedule" onClick={() => setIsOpen(false)} className="flex-1">
+          <Link href="/job-assignments?tab=schedule" onClick={() => setIsOpen(false)} className="flex-[2]">
             <Button
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors"
+              className="w-full py-6 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/25 transition-all hover:-translate-y-0.5 group flex items-center justify-center gap-2"
             >
-              View Testing Schedule
+              View Schedule <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
         </div>

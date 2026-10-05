@@ -4,6 +4,7 @@ import { canManageJobAssignments, isHR, isTestEngineer, isSuperAdmin } from "@/c
 const TEST_SELECT = `
   id,
   job_entry_id,
+  uid_label,
   ulr_number,
   qc_number,
   report_class,

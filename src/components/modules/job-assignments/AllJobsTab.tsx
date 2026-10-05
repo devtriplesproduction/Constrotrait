@@ -28,7 +28,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
   const [initialAssignment, setInitialAssignment] = useState<any>(null);
   const [filterBranch, setFilterBranch] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<string>("today");
-  const [searchEmployee, setSearchEmployee] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [remarkObj, setRemarkObj] = useState<{ id: string; remark: string } | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -93,9 +93,29 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
       const emp = employees.find((e: any) => e.id === a.assigned_to);
       if (!emp || emp.branch_id !== filterBranch) return false;
     }
-    if (searchEmployee.trim() !== "") {
+    if (searchQuery.trim() !== "") {
+      const q = searchQuery.toLowerCase();
+      // Employee Name / Team
       const empName = `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`.toLowerCase();
-      if (!empName.includes(searchEmployee.toLowerCase())) return false;
+      const teamName = a.teams?.name ? String(a.teams?.name).toLowerCase() : "";
+      const assigneeStr = a.team_id ? teamName : empName;
+      // Job Card (UID)
+      const je = a.job_entry_tests;
+      const uidLabel = je?.uid_label || je?.job_entries?.uid_label || je?.job_entries?.uid;
+      const uidStr = uidLabel ? String(uidLabel).toLowerCase() : "";
+      // Material
+      const materialName = je?.material_description || je?.test_master?.material_product || "";
+      const materialStr = String(materialName).toLowerCase();
+      // Received Date
+      const receivedDateObj = je?.job_entries?.created_at ? new Date(je?.job_entries?.created_at) : null;
+      const receivedStr = receivedDateObj ? format(receivedDateObj, "dd MMM, yyyy").toLowerCase() : '';
+      // Due Date
+      const dueDateObj = a.due_date ? new Date(a.due_date) : null;
+      const dueStr = dueDateObj ? format(dueDateObj, "dd MMM, yyyy").toLowerCase() : '';
+
+      if (!assigneeStr.includes(q) && !uidStr.includes(q) && !materialStr.includes(q) && !receivedStr.includes(q) && !dueStr.includes(q)) {
+        return false;
+      }
     }
     if (filterDate !== "all") {
       const dateStr = a.due_date || a.created_at;
@@ -114,9 +134,6 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
       const je = a.job_entry_tests;
       const uidLabel = je?.uid_label || je?.job_entries?.uid_label || je?.job_entries?.uid;
       let key = uidLabel ? `${je?.job_entry_id}-${uidLabel}` : (je?.job_entry_id ? `je-${je.job_entry_id}` : `test-${a.id}`);
-      if (a.status !== 'assigned') {
-        key = `test-${a.id}`;
-      }
       if (!groups.has(key)) {
         groups.set(key, {
           ...a,
@@ -148,13 +165,28 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
         return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Accepted</Badge>;
       case "rejected":
         return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
+      case "working":
+        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Working</Badge>;
+      case "completed":
+        return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Completed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
+  const getAggregateStatus = (assignments: any[]) => {
+    if (!assignments || assignments.length === 0) return 'unknown';
+    if (assignments.every(a => a.status === 'approved')) return 'completed';
+    if (assignments.some(a => a.status === 'rejected')) return 'working';
+    if (assignments.some(a => a.status === 'in_review')) return 'in_review';
+    if (assignments.some(a => a.status === 'report_uploaded')) return 'report_uploaded';
+    if (assignments.some(a => a.status === 'in_testing')) return 'in_testing';
+    if (assignments.some(a => a.status === 'accepted')) return 'accepted';
+    return 'assigned';
+  };
+
   return (
-    <div className="p-6">
+    <div className="animate-in fade-in duration-500 mt-2">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div className="w-full md:w-80 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -162,9 +194,9 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
           </div>
           <input
             type="text"
-            placeholder="Search employee..."
-            value={searchEmployee}
-            onChange={(e) => setSearchEmployee(e.target.value)}
+            placeholder="Search Job Card, Material, Date, Assignee..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-10 pl-10 pr-4 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors shadow-sm bg-white"
           />
         </div>
@@ -194,7 +226,8 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
           <thead className="bg-slate-50/80 text-[11px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-200/80">
             <tr>
               <th className="px-6 py-4 rounded-tl-2xl">Job Card (UID)</th>
-              <th className="px-6 py-4">Test Details</th>
+              <th className="px-6 py-4">Material</th>
+              <th className="px-6 py-4">Received Date</th>
               <th className="px-6 py-4">Assigned To</th>
               <th className="px-6 py-4">Due Date</th>
               <th className="px-6 py-4">Status</th>
@@ -208,8 +241,12 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                 : `${assignment.assigned_to_profile?.first_name || ""} ${assignment.assigned_to_profile?.last_name || ""}`;
               const avatarLetter = assignment.team_id ? "T" : (assignedName.charAt(0) || "?");
               
-              const aggregatedParameters = assignment.grouped_tests.map((t: any) => t?.test_master?.component_parameter || t?.test_parameters || 'N/A').filter(Boolean).join(', ');
-              const aggregatedSpecifics = assignment.grouped_tests.map((t: any) => t?.test_master?.specific_test || 'N/A').filter(Boolean).join(', ');
+              const materialName = assignment.grouped_tests[0]?.material_description || assignment.grouped_tests[0]?.test_master?.material_product || "N/A";
+              const testCount = assignment.grouped_tests.length;
+              
+              const receivedRawDate = assignment.grouped_tests[0]?.job_entries?.created_at;
+              const receivedDateObj = receivedRawDate ? new Date(receivedRawDate) : null;
+              const receivedStr = receivedDateObj ? format(receivedDateObj, "dd MMM, yyyy") : '-';
 
               return (
                 <Fragment key={assignment.id}>
@@ -226,14 +263,27 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                       <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
                         <ClipboardList className="w-4 h-4" />
                       </div>
-                      <div className="font-bold text-slate-800 text-[13px]">{assignmentUid(assignment)}</div>
+                      <div className="font-bold text-slate-800 text-[13px]">
+                        {assignmentUid(assignment)}
+                        {assignment.grouped_tests[0]?.ulr_number && (
+                          <div className="text-emerald-600 text-[11px] mt-0.5 font-semibold">ULR: {assignment.grouped_tests[0].ulr_number}</div>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-bold text-slate-700 truncate max-w-[200px]" title={aggregatedParameters}>{aggregatedParameters}</span>
-                      <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]" title={aggregatedSpecifics}>
-                        {aggregatedSpecifics}
+                      <span className="font-bold text-slate-700 truncate max-w-[200px]" title={materialName}>{materialName}</span>
+                      <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]">
+                        {testCount} test{testCount !== 1 ? 's' : ''} assigned
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Calendar className="w-4 h-4 text-slate-400" />
+                      <span className="font-semibold text-[13px]">
+                        {receivedStr}
                       </span>
                     </div>
                   </td>
@@ -264,7 +314,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div>{getStatusBadge(assignment.status)}</div>
+                    <div>{getStatusBadge(getAggregateStatus(assignment.all_assignments))}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-2 items-end">
@@ -318,7 +368,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                         </Button>
                       </div>
                       
-                      {assignment.status === 'in_review' && (
+                      {getAggregateStatus(assignment.all_assignments) === 'in_review' && (
                         <div className="flex flex-col gap-2 mt-1">
                           {remarkObj && remarkObj.id === assignment.id ? (
                             <div className="flex flex-col gap-1 items-end">
@@ -332,22 +382,32 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                               />
                               <div className="flex gap-1.5 justify-end w-full">
                                 <Button size="sm" onClick={async () => {
-                                  const res = await updateAssignmentStatusAction(assignment.id, 'approved', { reviewer_remark: remarkObj.remark });
-                                  if (res.success) {
+                                  let hasError = false;
+                                  for (const asg of assignment.all_assignments) {
+                                    const res = await updateAssignmentStatusAction(asg.id, 'approved', { reviewer_remark: remarkObj.remark });
+                                    if (!res.success) {
+                                      toast({ title: "Error", description: res.error, variant: "error" });
+                                      hasError = true;
+                                    }
+                                  }
+                                  if (!hasError) {
                                     toast({ title: "Success", description: "Status updated successfully", variant: "success" });
-                                  } else {
-                                    toast({ title: "Error", description: res.error, variant: "error" });
                                   }
                                   setRemarkObj(null);
                                   router.refresh();
                                 }} className="bg-emerald-500 hover:bg-emerald-600 h-7 text-[10px] px-2.5 rounded-lg text-white font-bold shadow-sm">Approve</Button>
                                 <Button size="sm" variant="outline" onClick={async () => {
                                   if (!remarkObj.remark) return toast({ title: 'Error', description: 'Remark required for rejection', variant: 'error' });
-                                  const res = await updateAssignmentStatusAction(assignment.id, 'rejected', { reviewer_remark: remarkObj.remark });
-                                  if (res.success) {
+                                  let hasError = false;
+                                  for (const asg of assignment.all_assignments) {
+                                    const res = await updateAssignmentStatusAction(asg.id, 'rejected', { reviewer_remark: remarkObj.remark });
+                                    if (!res.success) {
+                                      toast({ title: "Error", description: res.error, variant: "error" });
+                                      hasError = true;
+                                    }
+                                  }
+                                  if (!hasError) {
                                     toast({ title: "Success", description: "Status updated successfully", variant: "success" });
-                                  } else {
-                                    toast({ title: "Error", description: res.error, variant: "error" });
                                   }
                                   setRemarkObj(null);
                                   router.refresh();

@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { getAllJobEntriesAction } from "@/actions/job-entry.actions";
-import { generateULRsForDateAction } from "@/actions/ulr.actions";
 import { Database } from "@/types/database";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -55,7 +54,6 @@ export default function AllJobsTab({
   const [filterMonth, setFilterMonth] = useState("");
   const [filterJobType, setFilterJobType] = useState<"all" | "dummy" | "active">("all");
   
-  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   const loadAllJobs = async () => {
@@ -75,28 +73,6 @@ export default function AllJobsTab({
   useEffect(() => {
     loadAllJobs();
   }, [triggerRefresh]);
-
-  const handleGenerateULRs = async () => {
-    if (!filterDate) {
-      toast({ title: "Error", description: "Please select an exact date first.", variant: "destructive" as any });
-      return;
-    }
-    setIsGenerating(true);
-    try {
-      const res = await generateULRsForDateAction(filterDate);
-      if (res.success) {
-        toast({ title: "Success", description: "ULRs generated successfully." });
-        loadAllJobs();
-      } else {
-        toast({ title: "Error", description: res.error || "Failed to generate ULRs.", variant: "destructive" as any });
-      }
-    } catch (error) {
-      console.error("Error generating ULRs:", error);
-      toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" as any });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const filteredJobs = useMemo(() => {
     return allJobs.filter((job) => {
@@ -187,18 +163,6 @@ export default function AllJobsTab({
             />
           </div>
         </div>
-        
-        {/* Action Bar for ULR Generation */}
-        <div className="flex justify-end pt-2 border-t border-slate-100/60 mt-4">
-          <Button 
-            onClick={handleGenerateULRs} 
-            disabled={isGenerating || !filterDate}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-          >
-            {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Generate ULRs for {filterDate || "Selected Date"}
-          </Button>
-        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
@@ -239,6 +203,15 @@ export default function AllJobsTab({
                           <h3 className="font-extrabold text-slate-800 text-xl tracking-tight">
                             UID: {job.uid_label || "Missing"}
                           </h3>
+                          {job.job_entry_tests?.some((t: any) => t.ulr_number) ? (
+                            <span className="bg-emerald-100 text-emerald-800 text-[10px] uppercase font-black px-2 py-0.5 rounded-full border border-emerald-200">
+                              ULR: {job.job_entry_tests.find((t: any) => t.ulr_number)?.ulr_number}
+                            </span>
+                          ) : job.job_entry_tests?.some((t: any) => t.qc_number) ? (
+                            <span className="bg-blue-100 text-blue-800 text-[10px] uppercase font-black px-2 py-0.5 rounded-full border border-blue-200">
+                              QC: {job.job_entry_tests.find((t: any) => t.qc_number)?.qc_number}
+                            </span>
+                          ) : null}
                           {job.is_nabl && (
                             <span className="bg-emerald-100 text-emerald-800 text-[10px] uppercase font-black px-2 py-0.5 rounded-full border border-emerald-200">
                               NABL
