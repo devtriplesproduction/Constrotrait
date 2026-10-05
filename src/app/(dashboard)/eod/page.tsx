@@ -12,6 +12,8 @@ import { getActiveBranches } from "@/services/branch.service";
 import { BranchSelectorClient } from "@/components/modules/eod/BranchSelectorClient";
 
 import { EodTabsClient } from "@/components/modules/eod/EodTabsClient";
+import { RecentEODLogItem } from "@/components/modules/eod/RecentEODLogItem";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 
 interface PageProps {
   searchParams: { tab?: string, branch?: string };
@@ -214,7 +216,7 @@ export default async function EODPage({ searchParams }: PageProps) {
                 <Link href="#" className="text-sm font-semibold text-orange-600 hover:text-orange-700">View all</Link>
               </div>
 
-              <div className="p-5 overflow-y-auto custom-scrollbar flex-1">
+              <ScrollArea className="p-5 flex-1" orientation="vertical">
                 {history?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full space-y-3 opacity-80">
                     <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-2">
@@ -224,45 +226,12 @@ export default async function EODPage({ searchParams }: PageProps) {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {history.slice(0, 5).map((eod) => {
-                      const eodDate = new Date(eod.report_date);
-                      const taskLines = eod.tasks_accomplished.split('\n').filter((t: string) => t.trim().length > 0).length;
-                      return (
-                        <div key={eod.id} className="flex items-center p-4 rounded-xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-shadow group">
-                          {/* Date Block */}
-                          <div className="flex flex-col items-center justify-center min-w-[50px] mr-4 text-orange-600 font-bold leading-tight">
-                            <span className="text-xl">{eodDate.getDate()}</span>
-                            <span className="text-[10px] uppercase tracking-wider">{eodDate.toLocaleString('default', { month: 'short' })}</span>
-                          </div>
-
-                          {/* Details */}
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-bold text-slate-800 truncate">
-                              {eodDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                            </h4>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              {taskLines} tasks &bull; {eod.office_hours}h logged
-                            </p>
-                          </div>
-
-                          {/* Status Badge */}
-                          <div className="ml-3 flex-shrink-0 flex items-center gap-3">
-                            <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border flex items-center gap-1 ${eod.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                              eod.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border-rose-200' :
-                                'bg-amber-50 text-amber-600 border-amber-200'
-                              }`}>
-                              {eod.status === 'Approved' && <CheckCircle2 className="w-3 h-3" />}
-                              {eod.status === 'Pending' && <Clock className="w-3 h-3" />}
-                              {eod.status}
-                            </span>
-                            <svg className="w-4 h-4 text-slate-300 group-hover:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {history.slice(0, 5).map((eod) => (
+                      <RecentEODLogItem key={eod.id} eod={eod} />
+                    ))}
                   </div>
                 )}
-              </div>
+              </ScrollArea>
             </div>
           </div>
         </div>

@@ -9,6 +9,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { Select, SelectItem, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { toast } from "@/hooks/use-toast";
+import { isTestEngineer, isSuperAdminOrBranchManager } from "@/config/roles";
 
 export function AssignJobsTab({ employees, teams, branches, initialAssignment, onSuccess }: { employees: any[], teams?: any[], branches?: any[], initialAssignment?: any, onSuccess?: () => void }) {
   const router = useRouter();
@@ -94,7 +95,8 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
 
   const filteredEmployees = employees.filter(emp => {
     if (selectedBranch && emp.branch_id !== selectedBranch) return false;
-    return true;
+    const isTestEng = isTestEngineer(emp.roles) || isSuperAdminOrBranchManager(emp.roles);
+    return isTestEng;
   });
 
   const groupedRelevantAssignments = useMemo(() => {

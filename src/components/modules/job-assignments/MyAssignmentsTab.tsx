@@ -395,15 +395,15 @@ return (
 
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border capitalize ${
-                        getAggregateStatus(a.all_assignments) === 'in_testing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                        getAggregateStatus(a.all_assignments) === 'report_uploaded' ? 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' :
-                        getAggregateStatus(a.all_assignments) === 'in_review' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                        getAggregateStatus(a.all_assignments) === 'accepted' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                        getAggregateStatus(a.all_assignments) === 'working' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                        getAggregateStatus(a.all_assignments) === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        getAggregateStatus(assignments.filter((allA: any) => allA.job_entry_tests?.job_entry_id === a.job_entry_tests?.job_entry_id)) === 'in_testing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        getAggregateStatus(assignments.filter((allA: any) => allA.job_entry_tests?.job_entry_id === a.job_entry_tests?.job_entry_id)) === 'report_uploaded' ? 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' :
+                        getAggregateStatus(assignments.filter((allA: any) => allA.job_entry_tests?.job_entry_id === a.job_entry_tests?.job_entry_id)) === 'in_review' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        getAggregateStatus(assignments.filter((allA: any) => allA.job_entry_tests?.job_entry_id === a.job_entry_tests?.job_entry_id)) === 'accepted' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                        getAggregateStatus(assignments.filter((allA: any) => allA.job_entry_tests?.job_entry_id === a.job_entry_tests?.job_entry_id)) === 'working' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                        getAggregateStatus(assignments.filter((allA: any) => allA.job_entry_tests?.job_entry_id === a.job_entry_tests?.job_entry_id)) === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                         'bg-slate-50 text-slate-700 border-slate-200'
                       }`}>
-                        {String(getAggregateStatus(a.all_assignments) || '').replace('_', ' ')}
+                        {String(getAggregateStatus(assignments.filter((allA: any) => allA.job_entry_tests?.job_entry_id === a.job_entry_tests?.job_entry_id)) || '').replace('_', ' ')}
                       </div>
                     </td>
 

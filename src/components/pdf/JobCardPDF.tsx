@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
 
 // Register font
 Font.register({
@@ -95,7 +95,15 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
   const primaryJob = targetJobs[0] || {};
 
   // Extract real Sample Code No if available, fallback to material_details_location
-  const sampleCodeNo = primaryJob?.additional_details_values?.sample_code_no || primaryJob?.material_details_location || '';
+  let sampleCodeNo = primaryJob?.additional_details_values?.sample_code_no || '';
+  if (!sampleCodeNo && primaryJob?.additional_details_values) {
+    const codeKey = Object.keys(primaryJob.additional_details_values).find(k => {
+      const lower = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return lower.includes('samplecode') || lower === 'code';
+    });
+    if (codeKey) sampleCodeNo = primaryJob.additional_details_values[codeKey];
+  }
+  sampleCodeNo = sampleCodeNo || primaryJob?.material_details_location || '';
   
   // Aggregate Test Parameters and Methods
   const aggregatedParameters = targetJobs.map(j => j?.test_master?.specific_test || j?.test_master?.component_parameter || j?.test_parameters || 'As per Method').filter(Boolean).join(', ');
@@ -338,10 +346,16 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             <View style={[styles.cell, { width: '50%' }]}><Text style={styles.textCenter}>Amendment No & Date : 06 & 08.06.2026</Text></View>
             <View style={[styles.lastCell, { width: '25%' }]}><Text style={styles.textCenter}>Page No: 1-1</Text></View>
           </View>
-          <View style={[styles.lastRow, { minHeight: 25 }]}>
+          <View style={[styles.lastRow, { minHeight: 45 }]}>
             <View style={[styles.cell, { width: '25%', justifyContent: 'flex-end', paddingBottom: 5 }]}><Text style={styles.textCenter}>Issue Date: 20.01.2023</Text></View>
-            <View style={[styles.cell, { width: '37.5%', justifyContent: 'flex-end', paddingBottom: 5 }]}><Text>Prepared by:</Text></View>
-            <View style={[styles.lastCell, { width: '37.5%', justifyContent: 'flex-end', paddingBottom: 5 }]}><Text>Reviewed & Approved by:</Text></View>
+            <View style={[styles.cell, { width: '37.5%', justifyContent: 'flex-end', paddingBottom: 5 }]}>
+              <Image src="/Sanket_sir-removebg-preview.png" style={{ width: 60, height: 30, objectFit: 'contain', marginBottom: 2 }} />
+              <Text>Prepared by:</Text>
+            </View>
+            <View style={[styles.lastCell, { width: '37.5%', justifyContent: 'flex-end', paddingBottom: 5 }]}>
+              <Image src="/MUKUND_GAIKWAD_SIGN-removebg-preview.png" style={{ width: 60, height: 30, objectFit: 'contain', marginBottom: 2 }} />
+              <Text>Reviewed & Approved by:</Text>
+            </View>
           </View>
         </View>
 

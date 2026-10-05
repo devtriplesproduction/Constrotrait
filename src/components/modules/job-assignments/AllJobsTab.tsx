@@ -150,11 +150,13 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
   }, [filteredAssignments]);
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    const s = (status || '').toLowerCase();
+    switch (s) {
       case "assigned":
         return <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">Assigned</Badge>;
       case "in_testing":
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">In Testing</Badge>;
+      case "in_progress":
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 capitalize">{s.replace('_', ' ')}</Badge>;
       case "report_uploaded":
         return <Badge variant="outline" className="bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200">Report Uploaded</Badge>;
       case "in_review":
@@ -169,8 +171,12 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
         return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Working</Badge>;
       case "completed":
         return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Completed</Badge>;
+      case "partial_complete":
+        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Partial Complete</Badge>;
+      case "pending":
+        return <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">Pending</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="capitalize">{(status || '').replace(/_/g, ' ')}</Badge>;
     }
   };
 
@@ -299,9 +305,6 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                             <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 font-bold uppercase tracking-wider border border-indigo-100">Team</span>
                           )}
                         </div>
-                        {assignment.report_url && (
-                          <a href={assignment.report_url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-500 hover:text-blue-700 font-semibold hover:underline mt-0.5">View Report &rarr;</a>
-                        )}
                       </div>
                     </div>
                   </td>
@@ -314,7 +317,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div>{getStatusBadge(getAggregateStatus(assignment.all_assignments))}</div>
+                    <div>{getStatusBadge(getAggregateStatus(assignments.filter(allA => allA.job_entry_tests?.job_entry_id === assignment.job_entry_tests?.job_entry_id)))}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-2 items-end">

@@ -31,17 +31,17 @@ export function TestAssignmentNotifier({ currentUserProfile, todayTests }: TestA
     const today = new Date().toISOString().split('T')[0];
     const storageKey = `test_notified_${currentUserProfile.id}_${today}`;
     
-    if (localStorage.getItem(storageKey)) return;
+    if (sessionStorage.getItem(storageKey)) return;
 
     const timer = setTimeout(() => {
       setIsOpen(true);
-      localStorage.setItem(storageKey, 'true');
+      sessionStorage.setItem(storageKey, 'true');
     }, 1000);
     return () => clearTimeout(timer);
   }, [currentUserProfile, todayTests]);
 
   return (
-    <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+    <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} className="max-w-md p-8">
       <div className="flex flex-col items-center p-2 relative overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute -top-12 -right-12 w-32 h-32 bg-orange-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
@@ -60,7 +60,7 @@ export function TestAssignmentNotifier({ currentUserProfile, todayTests }: TestA
           </p>
         </div>
 
-        <div className="w-full max-h-[220px] overflow-y-auto space-y-3 mb-6 pr-1 custom-scrollbar z-10">
+        <div className="w-full max-h-[320px] overflow-y-auto space-y-3 mb-6 pr-1 custom-scrollbar z-10">
           {todayTests.map(test => {
             const specificTest = test.job_entry_tests?.test_master?.specific_test;
             const componentParameter = test.job_entry_tests?.test_master?.component_parameter;

@@ -38,6 +38,7 @@ export function canTransition(from: JobStage, to: JobStage, roles: string[] | nu
     if (from === 'report_uploaded' && to === 'in_review') return true;
     if (from === 'rejected' && to === 'in_testing') return true;
     if (from === 'rejected' && to === 'report_uploaded') return true;
+    if (from === 'rejected' && to === 'in_review') return true;
   }
 
   return false;

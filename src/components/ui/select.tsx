@@ -145,9 +145,8 @@ export function Select({ value, onValueChange, placeholder, children, className,
           id="select-portal-container"
           className={cn(
             "z-[99999] rounded-xl overflow-hidden",
-            "bg-white/95  backdrop-blur-xl",
-            "border border-slate-200/80 ",
-            "shadow-xl shadow-slate-200/50 flex flex-col"
+            "bg-white border border-slate-200/60",
+            "shadow-[0_10px_38px_-10px_rgba(22,23,36,0.1),0_10px_20px_-15px_rgba(22,23,36,0.1)] flex flex-col"
           )}
         >
           <div className="p-1.5 flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent" style={{ maxHeight: "16rem" }}>
@@ -170,13 +169,13 @@ export function Select({ value, onValueChange, placeholder, children, className,
         <Button variant="custom" type="button" onClick={handleToggle}
           disabled={disabled}
           className={cn(
-            "w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 outline-none select-none",
-            "bg-white/40  backdrop-blur-md border border-slate-200/60 ",
-            "text-slate-700  shadow-sm",
-            "hover:bg-white/60 hover:border-orange-300/50",
-            "focus-visible:ring-2 focus-visible:ring-orange-500/30 focus-visible:border-orange-400",
-            open && "ring-2 ring-orange-500/20 border-orange-400  bg-white/80  shadow-md",
-            disabled && "opacity-50 cursor-not-allowed hover:bg-white/40 hover:border-slate-200/60",
+            "w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 outline-none select-none",
+            "bg-white border border-slate-200",
+            "text-slate-700 shadow-sm",
+            "hover:bg-slate-50 hover:border-slate-300",
+            "focus-visible:ring-4 focus-visible:ring-orange-500/10 focus-visible:border-orange-500",
+            open && "ring-4 ring-orange-500/10 border-orange-500 bg-white",
+            disabled && "opacity-50 cursor-not-allowed hover:bg-white hover:border-slate-200",
             buttonClassName
           )}
         >
@@ -243,9 +242,9 @@ export function SelectItem({
   return (
     <Button variant="custom" type="button" onClick={() => { context?.onValueChange(value); context?.setOpen(false); }}
       className={cn(
-        "relative flex w-full justify-between items-center text-left cursor-pointer select-none rounded-lg py-2.5 px-3.5 text-sm font-medium outline-none transition-all duration-200",
-        "text-slate-600  hover:bg-slate-100 hover:text-slate-900",
-        isSelected && "text-orange-600  font-semibold bg-orange-50/80 ",
+        "relative flex w-full justify-between items-center text-left cursor-pointer select-none rounded-md py-2 px-3 text-sm font-medium outline-none transition-colors duration-150",
+        "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900",
+        isSelected && "text-orange-600 font-semibold bg-orange-50/50 hover:bg-orange-50/80",
         className
       )}
     >

@@ -148,7 +148,15 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
 
           {assignments.map((assignment, idx) => {
             const t = assignment.job_entry_tests;
-            const codeNo = t?.additional_details_values?.sample_code_no || t?.material_details_location || '';
+            let codeNo = t?.additional_details_values?.sample_code_no || '';
+            if (!codeNo && t?.additional_details_values) {
+              const codeKey = Object.keys(t.additional_details_values).find(k => {
+                const lower = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                return lower.includes('samplecode') || lower === 'code';
+              });
+              if (codeKey) codeNo = t.additional_details_values[codeKey];
+            }
+            codeNo = codeNo || t?.material_details_location || '';
             const sampleName = t?.material_description || '';
             const testParams = t?.test_master?.component_parameter || '';
             const testMethod = t?.test_master?.test_method || '';

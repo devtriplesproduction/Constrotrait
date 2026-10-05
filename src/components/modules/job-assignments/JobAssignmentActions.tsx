@@ -130,6 +130,18 @@ export function JobAssignmentActions({ assignment, currentUserId }: { assignment
         </Button>
       )}
 
+      {assignment.report_url && (
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="border-slate-200 text-slate-700 hover:bg-slate-100"
+          onClick={() => window.open(assignment.report_url, '_blank')}
+        >
+          <Eye className="w-4 h-4 mr-2" />
+          View Report
+        </Button>
+      )}
+
       {assignment.status === 'in_review' && (
         <>
           <Button size="sm" onClick={() => setRemarkMode('approve')} disabled={loading} className="bg-green-50 text-green-600 hover:bg-green-500 hover:text-white border border-green-200">

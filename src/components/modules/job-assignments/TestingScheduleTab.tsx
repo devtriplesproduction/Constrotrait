@@ -12,6 +12,19 @@ function uidOf(a: any) {
   return null;
 }
 
+function getSampleCode(a: any) {
+  const details = a.job_entry_tests?.additional_details_values;
+  if (details) {
+    if (details.sample_code_no) return details.sample_code_no;
+    const codeKey = Object.keys(details).find(k => {
+      const lower = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return lower.includes('samplecode') || lower === 'code';
+    });
+    if (codeKey && details[codeKey]) return details[codeKey];
+  }
+  return a.job_entry_tests?.material_details_location || 'No Code';
+}
+
 export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', currentUserProfile }: { assignments: any[], userId: string, filterStatus?: string, currentUserProfile?: any }) {
   // Filter only my assignments first
   const myAssignments = useMemo(() => {
@@ -116,7 +129,7 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-bold text-slate-700 text-sm truncate group-hover:text-orange-700 transition-colors">{a.job_entry_tests?.additional_details_values?.sample_code_no || a.job_entry_tests?.material_details_location || 'No Code'}</p>
+                    <p className="font-bold text-slate-700 text-sm truncate group-hover:text-orange-700 transition-colors">{getSampleCode(a)}</p>
                     {a.job_entry_tests?.ulr_number ? (
                       <span className="text-xs font-semibold bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md border border-teal-200 shadow-sm shrink-0">
                         ULR: {a.job_entry_tests.ulr_number}
