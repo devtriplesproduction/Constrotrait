@@ -56,7 +56,7 @@ export async function listTestsForResultsAction() {
       .from("job_entry_tests")
       .select(`
         id,
-        job_entries (
+        job_entries!job_entry_tests_job_entry_id_fkey (
           uid,
           uid_label
         ),
