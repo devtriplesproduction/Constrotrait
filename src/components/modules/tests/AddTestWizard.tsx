@@ -144,7 +144,7 @@ export function AddTestWizard({
 
       if (result.success) {
         toast({
-          title: `Test Master ${initialData ? "Updated" : "Created"}`,
+          title: `Add Test ${initialData ? "Updated" : "Created"}`,
           description: `The test has been successfully ${initialData ? "updated" : "registered"}.`,
         });
         router.refresh();

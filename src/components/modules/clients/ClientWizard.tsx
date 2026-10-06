@@ -1085,6 +1085,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                             <Input {...register(`materialDetails.material_details_location`)} placeholder="e.g. Block A" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
                           </div>
                           <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material Initials</label>
+                            <Input {...register(`materialDetails.material_initials`)} placeholder="e.g. CC" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
                             <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Sample Quantity</label>
                             <Input {...register(`materialDetails.sample_quantity`)} placeholder="e.g. 50 kg" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
                           </div>

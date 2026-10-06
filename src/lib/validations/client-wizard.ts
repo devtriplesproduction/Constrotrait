@@ -50,6 +50,7 @@ export type TestDetailsValues = z.infer<typeof testDetailsSchema>;
 
 export const materialDetailsSchema = z.object({
   material_id: z.string().optional(),
+  material_initials: z.string().optional(),
   material_details_location: z.string().optional(),
   sample_quantity: z.string().optional(),
   testing_day: z.string().optional(),

@@ -4,12 +4,26 @@ import { getAuthenticatedUserWithRoles } from "./auth.service";
 import { canManageClientsAndJobs } from "@/config/roles";
 
 export class JobEntryService {
+  static toRoman(num: number): string {
+    const roman: { [key: string]: number } = {
+      M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90,
+      L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1
+    };
+    let str = '';
+    for (let i of Object.keys(roman)) {
+      let q = Math.floor(num / roman[i]);
+      num -= q * roman[i];
+      str += i.repeat(q);
+    }
+    return str;
+  }
   static async createJobEntryWithTests(
     jobData: Database["public"]["Tables"]["job_entries"]["Insert"],
     testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[],
     isDummyNabl?: boolean,
     dummyScheduledDays?: string,
-    nonNablMonth?: string
+    nonNablMonth?: string,
+    materialInitials?: string
   ) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
@@ -20,12 +34,12 @@ export class JobEntryService {
     const supabase = await createClient() as any;
     
     let isNabl = false;
+    let testMasters: any[] = [];
 
     if (testsData && testsData.length > 0) {
       const testMasterIds = testsData.map((t) => t.test_master_id).filter(Boolean);
-      let testMasters: any[] = [];
       if (testMasterIds.length > 0) {
-        const { data: tmData } = await supabase.from("test_master").select("id, is_nabl").in("id", testMasterIds as string[]);
+        const { data: tmData } = await supabase.from("test_master").select("id, is_nabl, category").in("id", testMasterIds as string[]);
         testMasters = tmData || [];
       }
 
@@ -79,9 +93,35 @@ export class JobEntryService {
     let jobEntryTests: any[] | null = [];
     let uidsIssued: string[] = [firstUidLabel as string];
 
+    let sampleCodes: string[] = [];
+    if (materialInitials && testsData && testsData.length > 0 && testMasters.length > 0) {
+      const firstTestMaster = testMasters.find((x: any) => x.id === testsData[0].test_master_id);
+      const category = firstTestMaster?.category?.toUpperCase().includes('ENV') ? 'ENV' : 'CON';
+      const yy = jobYear.toString().slice(-2);
+      const nextYy = (jobYear + 1).toString().slice(-2);
+      const yearSegment = `${yy}-${nextYy}`;
+
+      const { data: sampleData, error: sampleError } = await supabase.rpc("next_uid_seq", { p_name: "SAMPLE", p_year: jobYear });
+      if (!sampleError && sampleData) {
+        const sampleNo = sampleData.toString();
+        const sampleQuantityStr = testsData[0].sample_quantity || "1";
+        const sampleQuantityMatch = sampleQuantityStr.match(/\d+/);
+        let qty = sampleQuantityMatch ? parseInt(sampleQuantityMatch[0], 10) : 1;
+        if (isNaN(qty) || qty <= 0) qty = 1;
+
+        for (let i = 1; i <= qty; i++) {
+          sampleCodes.push(`CMTS/${category}/${materialInitials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
+        }
+      }
+    }
+
     if (testsData && testsData.length > 0) {
       for (const t of testsData) {
         (t as any).uid_label = firstUidLabel;
+        if (sampleCodes.length > 0) {
+          if (!t.additional_details_values) t.additional_details_values = {};
+          (t.additional_details_values as any).sample_code_no = sampleCodes.join(', ');
+        }
       }
 
       const testsToInsert = testsData.map((test) => ({ ...test, job_entry_id: jobEntry.id }));

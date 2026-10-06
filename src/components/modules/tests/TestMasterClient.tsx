@@ -55,7 +55,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
       const result = await deleteTestMasterAction(deletingTest.id);
       if (result.success) {
         toast({
-          title: "Test Master Deleted",
+          title: "Add Test Deleted",
           description: "The test has been successfully deleted.",
         });
         router.refresh();
@@ -113,7 +113,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Test Master"
+        title="Add Test"
         subtitle="Manage all registered tests and methodologies"
         icon={Beaker}
         actions={
