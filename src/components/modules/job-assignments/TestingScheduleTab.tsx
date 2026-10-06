@@ -13,6 +13,7 @@ function uidOf(a: any) {
 }
 
 function getSampleCode(a: any) {
+  if (a.job_entry_tests?.sample_code_no) return a.job_entry_tests.sample_code_no;
   const details = a.job_entry_tests?.additional_details_values;
   if (details) {
     if (details.sample_code_no) return details.sample_code_no;

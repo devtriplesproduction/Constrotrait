@@ -10,6 +10,7 @@ const TEST_SELECT = `
   report_class,
   date_of_testing,
   additional_details_values,
+  sample_code_no:additional_details_values->>sample_code_no,
   material_description,
   material_details_location,
   sample_quantity,
