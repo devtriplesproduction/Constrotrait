@@ -30,7 +30,7 @@ export class JobEntryService {
     }
 
     const firstTestMaster = testMasters.find((x: any) => x.id === testsData[0].test_master_id);
-    const category = firstTestMaster?.category?.toUpperCase().includes('ENV') ? 'ENV' : 'CON';
+    const category = firstTestMaster?.category === 'Environmental' ? 'ENV' : 'CON';
     const yy = jobYear.toString().slice(-2);
     const nextYy = (jobYear + 1).toString().slice(-2);
     const yearSegment = `${yy}-${nextYy}`;
