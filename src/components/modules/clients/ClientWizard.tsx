@@ -29,41 +29,7 @@ const steps = [
   { id: "step5", title: "Test Details", icon: FileText },
 ];
 
-const TESTING_AGE_OPTIONS = [
-  "Same Day (0 days)",
-  "1 Day",
-  "3 Days",
-  "5 Days",
-  "7 Days",
-  "14 Days",
-  "21 Days",
-  "28 Days"
-];
 
-function calculateTestingDate(castingDateStr: string, testingAgeStr: string): string {
-  if (!castingDateStr) return "";
-
-  const castingDate = new Date(castingDateStr);
-  if (isNaN(castingDate.getTime())) return "";
-
-  let daysToAdd = 0;
-  const match = testingAgeStr.match(/(\d+)/);
-  if (match) {
-    daysToAdd = parseInt(match[1], 10);
-  }
-
-  const testingDate = new Date(castingDate);
-  testingDate.setDate(testingDate.getDate() + daysToAdd);
-
-  return testingDate.toISOString().split('T')[0];
-}
-
-function getTestingAgeGroup(testingAgeStr: string): number {
-  if (!testingAgeStr) return 0;
-  if (testingAgeStr.includes("28")) return 28;
-  if (testingAgeStr.includes("7")) return 7;
-  return 0;
-}
 
 type TestMaster = Database["public"]["Tables"]["test_master"]["Row"];
 
@@ -238,9 +204,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       }
       const isNabl = testMaster.is_nabl;
       const category = testMaster.category || "";
-      const testingAgeGroup = getTestingAgeGroup(test.testing_age || "");
+      const testingDateGroup = test.date_of_testing || "";
 
-      const groupKey = `${isNabl}-${category}-${testingAgeGroup}`;
+      const groupKey = `${isNabl}-${category}-${testingDateGroup}`;
 
       if (groupToUid.has(groupKey)) {
         previews.push(groupToUid.get(groupKey)!);
@@ -1136,15 +1102,6 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                               value={watch(`materialDetails.date_of_casting`)}
                               onChange={(val) => {
                                 setValue(`materialDetails.date_of_casting`, val, { shouldValidate: true });
-                                const tests = getValues("jobEntryTests") || [];
-                                tests.forEach((test, idx) => {
-                                  if (test.testing_age) {
-                                    const testSpecificCasting = test.additional_details_values?.["Date of Casting"] || test.additional_details_values?.["Casting Date"];
-                                    const castingToUse = testSpecificCasting || val || "";
-                                    const newTestingDate = calculateTestingDate(castingToUse, test.testing_age);
-                                    setValue(`jobEntryTests.${idx}.date_of_testing`, newTestingDate, { shouldValidate: true });
-                                  }
-                                });
                               }}
                               side="left"
                               triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
@@ -1276,28 +1233,12 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
 
                               <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Age</label>
-                                <Dropdown
-                                  options={TESTING_AGE_OPTIONS.map(opt => ({ label: opt, value: opt }))}
-                                  value={watch(`jobEntryTests.${index}.testing_age` as any)}
-                                  onChange={(val) => {
-                                    setValue(`jobEntryTests.${index}.testing_age`, val, { shouldValidate: true });
-                                    const currentValues = getValues(`jobEntryTests.${index}`);
-                                    const globalCastingDate = getValues("materialDetails.date_of_casting");
-                                    const newTestingDate = calculateTestingDate(currentValues.additional_details_values?.["Date of Casting"] || currentValues.additional_details_values?.["Casting Date"] || globalCastingDate || "", val);
-                                    setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
-                                  }}
-                                  placeholder="Select Testing Age..."
-                                  buttonClassName="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-[13px] font-semibold text-slate-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 focus:bg-white cursor-pointer"
-                                />
-                              </div>
-
-                              <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Testing</label>
                                 <PremiumDatePicker
                                   value={watch(`jobEntryTests.${index}.date_of_testing`)}
-                                  onChange={() => { }}
-                                  disabled={true}
+                                  onChange={(val) => {
+                                    setValue(`jobEntryTests.${index}.date_of_testing`, val, { shouldValidate: true });
+                                  }}
                                   side="left"
                                 />
                               </div>
@@ -1324,14 +1265,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                               value={watch(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any) || ""}
                                               onChange={(val) => {
                                                 setValue(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any, val, { shouldValidate: true });
-                                                if (detailLabel.toLowerCase() === 'casting date' || detailLabel.toLowerCase() === 'date of casting') {
-                                                  const currentValues = getValues(`jobEntryTests.${index}`);
-                                                  if (currentValues.testing_age) {
-                                                    const globalCastingDate = getValues("materialDetails.date_of_casting");
-                                                    const newTestingDate = calculateTestingDate(val || globalCastingDate || "", currentValues.testing_age);
-                                                    setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
-                                                  }
-                                                }
+                                                // No testing date auto-calculation needed anymore
                                               }}
                                               side="left"
                                             />
