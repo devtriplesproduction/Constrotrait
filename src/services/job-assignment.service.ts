@@ -14,8 +14,9 @@ const TEST_SELECT = `
   material_description,
   material_details_location,
   sample_quantity,
+  date_of_receiving,
   test_master ( component_parameter, specific_test, test_method, category, is_nabl, datasheet_qr, material_product, sample_size ),
-  job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label, created_at, date_of_receiving )
+  job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label, created_at )
 `;
 
 export class JobAssignmentService {
