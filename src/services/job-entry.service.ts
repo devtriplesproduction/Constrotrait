@@ -17,6 +17,41 @@ export class JobEntryService {
     }
     return str;
   }
+
+  private static async buildSampleCodes(
+    supabase: any,
+    jobYear: number,
+    materialInitials: string | undefined,
+    testMasters: any[],
+    testsData: any[]
+  ): Promise<string[]> {
+    if (!materialInitials || !testsData || testsData.length === 0 || !testMasters || testMasters.length === 0) {
+      return [];
+    }
+
+    const firstTestMaster = testMasters.find((x: any) => x.id === testsData[0].test_master_id);
+    const category = firstTestMaster?.category?.toUpperCase().includes('ENV') ? 'ENV' : 'CON';
+    const yy = jobYear.toString().slice(-2);
+    const nextYy = (jobYear + 1).toString().slice(-2);
+    const yearSegment = `${yy}-${nextYy}`;
+
+    const { data: sampleData, error: sampleError } = await supabase.rpc("next_uid_seq", { p_name: "SAMPLE", p_year: jobYear });
+    if (sampleError || !sampleData) {
+      return [];
+    }
+    
+    const sampleNo = sampleData.toString();
+    const sampleQuantityStr = testsData[0].sample_quantity || "1";
+    const sampleQuantityMatch = sampleQuantityStr.match(/\d+/);
+    let qty = sampleQuantityMatch ? parseInt(sampleQuantityMatch[0], 10) : 1;
+    if (isNaN(qty) || qty <= 0) qty = 1;
+
+    const sampleCodes: string[] = [];
+    for (let i = 1; i <= qty; i++) {
+      sampleCodes.push(`CMTS/${category}/${materialInitials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
+    }
+    return sampleCodes;
+  }
   static async createJobEntryWithTests(
     jobData: Database["public"]["Tables"]["job_entries"]["Insert"],
     testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[],
@@ -93,27 +128,7 @@ export class JobEntryService {
     let jobEntryTests: any[] | null = [];
     let uidsIssued: string[] = [firstUidLabel as string];
 
-    let sampleCodes: string[] = [];
-    if (materialInitials && testsData && testsData.length > 0 && testMasters.length > 0) {
-      const firstTestMaster = testMasters.find((x: any) => x.id === testsData[0].test_master_id);
-      const category = firstTestMaster?.category?.toUpperCase().includes('ENV') ? 'ENV' : 'CON';
-      const yy = jobYear.toString().slice(-2);
-      const nextYy = (jobYear + 1).toString().slice(-2);
-      const yearSegment = `${yy}-${nextYy}`;
-
-      const { data: sampleData, error: sampleError } = await supabase.rpc("next_uid_seq", { p_name: "SAMPLE", p_year: jobYear });
-      if (!sampleError && sampleData) {
-        const sampleNo = sampleData.toString();
-        const sampleQuantityStr = testsData[0].sample_quantity || "1";
-        const sampleQuantityMatch = sampleQuantityStr.match(/\d+/);
-        let qty = sampleQuantityMatch ? parseInt(sampleQuantityMatch[0], 10) : 1;
-        if (isNaN(qty) || qty <= 0) qty = 1;
-
-        for (let i = 1; i <= qty; i++) {
-          sampleCodes.push(`CMTS/${category}/${materialInitials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
-        }
-      }
-    }
+    let sampleCodes: string[] = await JobEntryService.buildSampleCodes(supabase, jobYear, materialInitials, testMasters, testsData);
 
     if (testsData && testsData.length > 0) {
       for (const t of testsData) {
@@ -206,7 +221,8 @@ export class JobEntryService {
 
   static async addTestsToJobEntry(
     jobEntryId: string,
-    testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[]
+    testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[],
+    materialInitials?: string
   ) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
@@ -235,6 +251,26 @@ export class JobEntryService {
     const uidsIssued: string[] = [];
     if (jobEntry.uid_label) uidsIssued.push(jobEntry.uid_label);
 
+    const { data: existingTests } = await supabase
+      .from("job_entry_tests")
+      .select("additional_details_values")
+      .eq("job_entry_id", jobEntryId)
+      .limit(1);
+
+    let existingSampleCodeNo: string | null = null;
+    if (existingTests && existingTests.length > 0) {
+      existingSampleCodeNo = (existingTests[0].additional_details_values as any)?.sample_code_no;
+    }
+
+    let sampleCodesStr = existingSampleCodeNo;
+    if (!sampleCodesStr) {
+      const jobYear = new Date(jobEntry.created_at).getFullYear();
+      const sampleCodes = await JobEntryService.buildSampleCodes(supabase, jobYear, materialInitials, testMasters, testsData);
+      if (sampleCodes.length > 0) {
+        sampleCodesStr = sampleCodes.join(', ');
+      }
+    }
+
     for (const test of testsData) {
       const tm = testMasters.find((x: any) => x.id === test.test_master_id);
       const isTestNabl = !!tm?.is_nabl;
@@ -242,6 +278,10 @@ export class JobEntryService {
         throw new Error(`Test NABL status (${isTestNabl ? 'NABL' : 'Non-NABL'}) does not match the Job Card (${isNablCard ? 'NABL' : 'Non-NABL'}).`);
       }
       (test as any).uid_label = jobEntry.uid_label;
+      if (sampleCodesStr) {
+        if (!test.additional_details_values) test.additional_details_values = {};
+        (test.additional_details_values as any).sample_code_no = sampleCodesStr;
+      }
     }
 
     const testsToInsert = testsData.map((test) => ({ ...test, job_entry_id: jobEntry.id }));

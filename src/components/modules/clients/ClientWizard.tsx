@@ -430,6 +430,15 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       return;
     }
 
+    if (data.selectedTestIds?.length && !data.materialDetails?.material_initials) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter Material Initials in the Material Details step.",
+        variant: "error"
+      });
+      return;
+    }
+
     if (!data.selectedTestIds?.length) {
       data.dummy_is_nabl = true;
     }
