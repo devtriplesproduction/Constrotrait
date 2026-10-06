@@ -450,12 +450,22 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   };
 
   const onSubmit = async (data: ClientWizardValues) => {
-    if (!data.selectedTestIds?.length && data.dummy_is_nabl === undefined) {
+    const hasNonNabl = data.jobEntryTests?.some(test => {
+      const testMaster = availableTests.find(t => t.id === test.test_master_id);
+      return testMaster && !testMaster.is_nabl;
+    });
+
+    if (hasNonNabl && !data.non_nabl_month) {
       toast({
         title: "Validation Error",
-        description: "Please select NABL or Non-NABL for the dummy job card."
+        description: "Please select a billing month for Non-NABL tests.",
+        variant: "error"
       });
       return;
+    }
+
+    if (!data.selectedTestIds?.length) {
+      data.dummy_is_nabl = true;
     }
 
     setIsSubmitting(true);
@@ -1178,24 +1188,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     <div className="text-center py-12 flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
                       <h3 className="text-slate-800 font-bold text-lg mb-2">No test selected</h3>
                       <p className="text-slate-500 text-sm max-w-md mx-auto mb-6">
-                        You can proceed to submit this as a Dummy Job Card. Please select the type of dummy job card you want to create:
+                        You can proceed to submit this as a Dummy Job Card.
+                        <br />
+                        <span className="font-semibold text-orange-600 mt-2 block">Note: This will be created as a NABL Dummy Job Card.</span>
                       </p>
-
-                      <div className="flex gap-4">
-                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
-                          <input
-                            type="radio"
-                            className="sr-only peer"
-                            name="dummy_is_nabl"
-                            value="true"
-                            onChange={() => setValue('dummy_is_nabl', true)}
-                            checked={true} // Dummy is always NABL
-                          />
-                          <div className="w-32 py-3 rounded-xl border-2 border-orange-500 bg-orange-50 text-orange-700 font-bold text-center transition-all">
-                            NABL Dummy
-                          </div>
-                        </label>
-                      </div>
 
                       <div className="w-full max-w-sm mt-6">
                         <label className="text-[13px] font-semibold text-slate-700 mb-1.5 block text-left">Generate ULR After</label>
@@ -1226,7 +1222,6 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                             className="w-full md:w-1/3 h-11 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer"
                             required
                           >
-                            <option value="">Select Month</option>
                             {["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"].map((m) => (
                               <option key={m} value={m}>{m}</option>
                             ))}

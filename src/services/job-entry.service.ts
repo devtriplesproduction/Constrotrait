@@ -44,8 +44,6 @@ export class JobEntryService {
     }
 
     const createdDate = new Date();
-    // Default to current month if nonNablMonth is not provided
-    const month = nonNablMonth || createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
     const jobYear = createdDate.getFullYear();
     let firstUidLabel: string | null = null;
     let firstUid: number | null = null;
@@ -56,6 +54,8 @@ export class JobEntryService {
       firstUidLabel = data.toString();
       firstUid = parseInt(firstUidLabel as string, 10);
     } else {
+      if (!nonNablMonth) throw new Error("A valid month must be provided for non-NABL tests.");
+      const month = nonNablMonth;
       const counterName = `UID_${month}`;
       const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
       if (error) throw new Error("UID Generation failed: " + error.message);
@@ -147,27 +147,16 @@ export class JobEntryService {
     }
 
     const createdDate = new Date();
-    const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
     const jobYear = createdDate.getFullYear();
 
-    let currentUidLabel = "";
-    let uidInt = null;
-
-    if (isNabl) {
-      const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
-      if (error) throw new Error("UID Generation failed: " + error.message);
-      currentUidLabel = data.toString();
-      uidInt = parseInt(data.toString(), 10);
-    } else {
-      const counterName = `UID_${month}`;
-      const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
-      if (error) throw new Error("UID Generation failed: " + error.message);
-      currentUidLabel = `${month}-${data.toString().padStart(2, '0')}`;
-    }
+    const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
+    if (error) throw new Error("UID Generation failed: " + error.message);
+    const currentUidLabel = data.toString();
+    const uidInt = parseInt(data.toString(), 10);
 
     const { data: jobEntry, error: jobError } = await supabase
       .from("job_entries")
-      .insert({ client_id: clientId, uid_label: currentUidLabel, uid: uidInt, is_nabl: isNabl })
+      .insert({ client_id: clientId, uid_label: currentUidLabel, uid: uidInt, is_nabl: true })
       .select()
       .single();
     if (jobError) throw new Error(jobError.message);
