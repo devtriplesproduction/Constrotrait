@@ -185,6 +185,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         date_of_casting: initialData.jobEntryTest.date_of_casting || "",
         additional_details_values: (initialData.jobEntryTest.additional_details_values as Record<string, string>) || {},
       }] : [],
+      non_nabl_month: (initialData.jobEntryTest as any)?.job_entries?.uid_label?.split('-')[0] || new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+      dummy_is_nabl: true,
     } as ClientWizardValues : {
       jobEntry: {},
       materialDetails: {},
@@ -198,6 +200,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       },
       selectedTestIds: [],
       jobEntryTests: [],
+      non_nabl_month: new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+      dummy_is_nabl: true,
     } as ClientWizardValues,
   });
 
@@ -208,6 +212,14 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
   const selectedTestIds = watch("selectedTestIds");
   const jobEntryTests = watch("jobEntryTests");
+  const nonNablMonth = watch("non_nabl_month") || new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase();
+
+  const hasNonNablTest = React.useMemo(() => {
+    return jobEntryTests.some(test => {
+      const testMaster = availableTests.find(t => t.id === test.test_master_id);
+      return testMaster && !testMaster.is_nabl;
+    });
+  }, [jobEntryTests, availableTests]);
 
   const uidPreviews = React.useMemo(() => {
     if (mode === "edit" || nextUidPreview === null) return [];
@@ -239,9 +251,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           previews.push(uid);
           currentNablUid++;
         } else {
-          const inwardDateStr = test.date_of_receiving;
-          const currentMonthStr = inwardDateStr ? new Date(inwardDateStr).toLocaleString('en-US', { month: 'short' }).toUpperCase() : "MMM";
-          const uid = `${currentMonthStr}-${currentNonNablSerial.toString().padStart(2, '0')}`;
+          const uid = `${nonNablMonth}-${currentNonNablSerial.toString().padStart(2, '0')}`;
           groupToUid.set(groupKey, uid);
           previews.push(uid);
           currentNonNablSerial++;
@@ -250,7 +260,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
     });
 
     return previews;
-  }, [jobEntryTests, availableTests, nextUidPreview, mode]);
+  }, [jobEntryTests, availableTests, nextUidPreview, mode, nonNablMonth]);
 
   // Enable submit button after delay
   useEffect(() => {
@@ -1179,23 +1189,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                             name="dummy_is_nabl"
                             value="true"
                             onChange={() => setValue('dummy_is_nabl', true)}
-                            checked={watch('dummy_is_nabl') === true}
+                            checked={true} // Dummy is always NABL
                           />
-                          <div className="w-32 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all hover:bg-slate-50">
-                            NABL
-                          </div>
-                        </label>
-                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
-                          <input
-                            type="radio"
-                            className="sr-only peer"
-                            name="dummy_is_nabl"
-                            value="false"
-                            onChange={() => setValue('dummy_is_nabl', false)}
-                            checked={watch('dummy_is_nabl') === false}
-                          />
-                          <div className="w-32 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all hover:bg-slate-50">
-                            Non-NABL
+                          <div className="w-32 py-3 rounded-xl border-2 border-orange-500 bg-orange-50 text-orange-700 font-bold text-center transition-all">
+                            NABL Dummy
                           </div>
                         </label>
                       </div>
@@ -1219,6 +1216,24 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     </div>
                   ) : (
                     <div className="space-y-6">
+                      {hasNonNablTest && (
+                        <div className="bg-slate-50 rounded-xl p-6 border border-slate-200 shadow-sm">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-2 block">
+                            Billing Month for Non-NABL Tests <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            {...register("non_nabl_month")}
+                            className="w-full md:w-1/3 h-11 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer"
+                            required
+                          >
+                            <option value="">Select Month</option>
+                            {["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"].map((m) => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
                       {fields.map((field, index) => {
                         const testMaster = availableTests.find(t => t.id === field.test_master_id);
                         return (

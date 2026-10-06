@@ -71,58 +71,54 @@ export default function ClientsTab({
           return (
             <Card
               key={client.id}
-              className="group relative bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex p-5 gap-5 cursor-pointer overflow-hidden isolate"
+              className="group relative bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all flex flex-col p-5 gap-4 cursor-pointer overflow-hidden isolate"
               onClick={() => setSelectedClient(client)}
             >
               {/* Top-right curved accent background */}
-              <div className="absolute top-0 right-0 w-[140px] h-[130px] bg-[#FFF8F3] rounded-bl-[120px] pointer-events-none -z-10" />
+              <div className="absolute top-0 right-0 w-[120px] h-[120px] bg-orange-50/50 rounded-bl-full pointer-events-none -z-10" />
 
-              {/* Left Section */}
-              <div className="flex-1 flex flex-col gap-5 relative z-10">
-
-                {/* Header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 shrink-0 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
-                      <User className="w-7 h-7" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-lg leading-tight">{client.name}</h3>
-                      <p className="font-bold text-orange-500 text-sm mt-1">{client.email || "No Email"}</p>
-                    </div>
+              {/* Header */}
+              <div className="flex items-start justify-between relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 shrink-0 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-500/20">
+                    <User className="w-6 h-6" />
                   </div>
-
-                  {/* Client Badge */}
-                  <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-orange-100/50">
-                    <User className="w-3.5 h-3.5" /> {client.company_name || "Client Profile"}
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-base leading-tight">{client.name}</h3>
+                    <p className="font-semibold text-orange-500 text-xs mt-1">{client.email || "No Email"}</p>
                   </div>
                 </div>
 
-                {/* Middle block */}
-                <div className="bg-slate-50/80 rounded-2xl p-4 flex gap-6 border border-slate-100/50">
-                  <div className="flex-1">
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Phone</p>
-                    <p className="text-[15px] font-semibold text-slate-700">{client.mobile || "-"}</p>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">GST No</p>
-                    <div className="bg-slate-200/50 px-3 py-1 rounded-lg text-sm font-semibold text-slate-700 inline-block border border-slate-200/60">
-                      {client.gst_no || "N/A"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom block */}
-                <div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Address</p>
-                  <p className="text-[15px] font-medium text-slate-600">{client.address || "No address provided"}</p>
+                {/* Client Badge */}
+                <div className="bg-orange-50 text-orange-700 px-2.5 py-1 rounded-md text-[10px] font-bold flex items-center gap-1.5 border border-orange-100/50">
+                  <User className="w-3 h-3" /> {client.company_name || "Client Profile"}
                 </div>
               </div>
 
-              {/* Right Section */}
-              <div className="w-[140px] shrink-0 border-l border-slate-100 pl-5 flex flex-col justify-center gap-3 relative z-10">
+              {/* Information Grid */}
+              <div className="bg-slate-50/80 rounded-xl p-4 grid grid-cols-2 gap-4 border border-slate-100/50 relative z-10">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Phone</p>
+                  <p className="text-sm font-semibold text-slate-700">{client.mobile || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">GST No</p>
+                  <div className="bg-slate-200/50 px-2.5 py-0.5 rounded-md text-xs font-semibold text-slate-700 inline-block border border-slate-200/60">
+                    {client.gst_no || "N/A"}
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Address</p>
+                  <p className="text-sm font-medium text-slate-600 line-clamp-1" title={client.address || "No address provided"}>
+                    {client.address || "No address provided"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="flex justify-end mt-1 relative z-10">
                 <Button
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-md shadow-orange-500/20 font-bold h-11"
+                  className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-sm shadow-orange-500/20 font-bold h-9 px-5 text-sm w-full sm:w-auto transition-colors"
                 >
                   View Details
                 </Button>

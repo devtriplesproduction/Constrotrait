@@ -83,7 +83,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
       payment_status: data.jobEntry.payment_status,
     };
 
-    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData, data.dummy_is_nabl, data.dummy_scheduled_days);
+    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData, data.dummy_is_nabl, data.dummy_scheduled_days, data.non_nabl_month);
 
     revalidatePath("/dashboard");
     revalidatePath("/clients");

@@ -8,7 +8,8 @@ export class JobEntryService {
     jobData: Database["public"]["Tables"]["job_entries"]["Insert"],
     testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[],
     isDummyNabl?: boolean,
-    dummyScheduledDays?: string
+    dummyScheduledDays?: string,
+    nonNablMonth?: string
   ) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
@@ -43,7 +44,8 @@ export class JobEntryService {
     }
 
     const createdDate = new Date();
-    const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+    // Default to current month if nonNablMonth is not provided
+    const month = nonNablMonth || createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
     const jobYear = createdDate.getFullYear();
     let firstUidLabel: string | null = null;
     let firstUid: number | null = null;
