@@ -9,8 +9,12 @@ const TEST_SELECT = `
   qc_number,
   report_class,
   date_of_testing,
+  additional_details_values,
+  material_description,
+  material_details_location,
+  sample_quantity,
   test_master ( component_parameter, specific_test, test_method, category, is_nabl, datasheet_qr, material_product, sample_size ),
-  job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label, created_at )
+  job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label, created_at, date_of_receiving )
 `;
 
 export class JobAssignmentService {

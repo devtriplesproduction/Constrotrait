@@ -26,16 +26,9 @@ function getSampleCode(a: any) {
 }
 
 export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', currentUserProfile }: { assignments: any[], userId: string, filterStatus?: string, currentUserProfile?: any }) {
-  // Filter only my assignments first
-  const myAssignments = useMemo(() => {
-    return assignments.filter((a: any) => {
-      let isMine = false;
-      if (a.assigned_to === userId) isMine = true;
-      if (a.teams?.team_members?.some((m: any) => m.employee_id === userId)) isMine = true;
-      
-      return isMine;
-    });
-  }, [assignments, userId]);
+  const scheduleAssignments = useMemo(() => {
+    return assignments;
+  }, [assignments]);
 
   // Group by testing date categories
   const groupedAssignments = useMemo(() => {
@@ -54,7 +47,7 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
       overdue: [],
     };
 
-    myAssignments.forEach((a) => {
+    scheduleAssignments.forEach((a) => {
       // Due date is usually the testing date constraint
       const dueDateStr = a.job_entry_tests?.date_of_testing || a.due_date;
       if (!dueDateStr) {
@@ -77,7 +70,7 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
     });
 
     return groups;
-  }, [myAssignments]);
+  }, [scheduleAssignments]);
 
   const renderGroup = (title: string, items: any[], icon: React.ReactNode, bgColor: string, textColor: string, isToday = false) => {
     if (items.length === 0 && title !== "Today's Tests") return null;
@@ -86,50 +79,38 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
     let content;
     
     if (items.length > 0) {
-      const groupedByTest: Record<string, { uids: Set<string>, testGroup: string, assignments: any[] }> = {};
-      items.forEach(a => {
+      content = items.map((a, idx) => {
         const uid = uidOf(a) || 'No UID';
         const specificTest = a.job_entry_tests?.test_master?.specific_test || a.job_entry_tests?.test_master?.component_parameter || 'Unknown Test';
-        const key = specificTest;
-        if (!groupedByTest[key]) {
-          groupedByTest[key] = { uids: new Set(), testGroup: specificTest, assignments: [] };
-        }
-        groupedByTest[key].uids.add(uid);
-        groupedByTest[key].assignments.push(a);
-      });
-
-      content = Object.values(groupedByTest).map((group, idx) => {
-        const uidString = Array.from(group.uids).join(', ');
+        
         return (
-        <div key={idx} className="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 flex flex-col">
+        <div key={a.id || idx} className="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 flex flex-col">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
             <div>
               <div className="flex items-center gap-3">
-                 <h4 className="font-bold text-lg text-slate-800 tracking-tight">{group.testGroup}</h4>
-                 <span className="px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-bold">{group.assignments.length} Samples</span>
+                 <h4 className="font-bold text-lg text-slate-800 tracking-tight">{specificTest}</h4>
+                 <span className="font-bold text-slate-700 text-sm truncate">{getSampleCode(a)}</span>
               </div>
               <p className="text-sm text-slate-500 mt-2 flex items-center gap-2">
-                 <span className="font-semibold text-orange-700 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-md shadow-sm">UIDs: {uidString}</span> 
+                 <span className="font-semibold text-orange-700 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-md shadow-sm">UID: {uid}</span> 
               </p>
             </div>
             <div className="shrink-0 bg-white shadow-sm rounded-xl border border-slate-100 p-1">
               <DownloadAllotmentButton 
-                testGroup={group.testGroup} 
-                uid={uidString} 
-                assignments={group.assignments} 
+                testGroup={specificTest} 
+                uid={uid} 
+                assignments={[a]} 
                 currentUserProfile={currentUserProfile} 
               />
             </div>
           </div>
           <div className="grid gap-2">
-            {group.assignments.map(a => (
-              <div key={a.id} className="flex flex-col md:flex-row md:items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm hover:border-orange-200 hover:shadow-md transition-all group ring-1 ring-slate-900/5">
+              <div className="flex flex-col md:flex-row md:items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm hover:border-orange-200 hover:shadow-md transition-all group ring-1 ring-slate-900/5">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100/50 text-orange-500 flex items-center justify-center shrink-0 border border-orange-100 group-hover:scale-110 transition-transform shadow-inner">
                   <Beaker className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-bold text-slate-700 text-sm truncate group-hover:text-orange-700 transition-colors">{getSampleCode(a)}</p>
                     {a.job_entry_tests?.ulr_number ? (
                       <span className="text-xs font-semibold bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md border border-teal-200 shadow-sm shrink-0">
                         ULR: {a.job_entry_tests.ulr_number}
@@ -170,7 +151,6 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
                   </span>
                 </div>
               </div>
-            ))}
           </div>
         </div>
         );
@@ -205,7 +185,7 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 mt-2">
-      {myAssignments.length === 0 ? (
+      {scheduleAssignments.length === 0 ? (
          <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-white rounded-3xl border border-dashed border-slate-300 shadow-sm">
            <div className="w-20 h-20 bg-gradient-to-br from-slate-50 to-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-5 shadow-inner border border-slate-200">
              <ClipboardList className="w-10 h-10" />

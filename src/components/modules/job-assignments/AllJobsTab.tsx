@@ -27,7 +27,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [initialAssignment, setInitialAssignment] = useState<any>(null);
   const [filterBranch, setFilterBranch] = useState<string>("all");
-  const [filterDate, setFilterDate] = useState<string>("today");
+  const [filterDate, setFilterDate] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [remarkObj, setRemarkObj] = useState<{ id: string; remark: string } | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);

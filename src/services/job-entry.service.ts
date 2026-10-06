@@ -25,8 +25,11 @@ export class JobEntryService {
     testMasters: any[],
     testsData: any[]
   ): Promise<string[]> {
-    if (!materialInitials || !testsData || testsData.length === 0 || !testMasters || testMasters.length === 0) {
+    if (!testsData || testsData.length === 0 || !testMasters || testMasters.length === 0) {
       return [];
+    }
+    if (!materialInitials) {
+      throw new Error("material_initials is required for code generation.");
     }
 
     const firstTestMaster = testMasters.find((x: any) => x.id === testsData[0].test_master_id);
@@ -35,9 +38,10 @@ export class JobEntryService {
     const nextYy = (jobYear + 1).toString().slice(-2);
     const yearSegment = `${yy}-${nextYy}`;
 
-    const { data: sampleData, error: sampleError } = await supabase.rpc("next_uid_seq", { p_name: "SAMPLE", p_year: jobYear });
+    const seqName = category === 'ENV' ? 'SAMPLE_ENV' : 'SAMPLE_CON';
+    const { data: sampleData, error: sampleError } = await supabase.rpc("next_uid_seq", { p_name: seqName, p_year: jobYear });
     if (sampleError || !sampleData) {
-      return [];
+      throw new Error(`Sample Code Generation failed for ${seqName}: ` + (sampleError?.message || "No sequence returned"));
     }
     
     const sampleNo = sampleData.toString();
@@ -254,12 +258,17 @@ export class JobEntryService {
     const { data: existingTests } = await supabase
       .from("job_entry_tests")
       .select("additional_details_values")
-      .eq("job_entry_id", jobEntryId)
-      .limit(1);
+      .eq("job_entry_id", jobEntryId);
 
     let existingSampleCodeNo: string | null = null;
     if (existingTests && existingTests.length > 0) {
-      existingSampleCodeNo = (existingTests[0].additional_details_values as any)?.sample_code_no;
+      for (const t of existingTests) {
+        const code = (t.additional_details_values as any)?.sample_code_no;
+        if (code) {
+          existingSampleCodeNo = code;
+          break;
+        }
+      }
     }
 
     let sampleCodesStr = existingSampleCodeNo;

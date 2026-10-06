@@ -146,33 +146,45 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
             <View style={[styles.lastCell, { width: '10%', alignItems: 'center' }]}><Text style={styles.bold}>Remark</Text></View>
           </View>
 
-          {assignments.map((assignment, idx) => {
+          {assignments.flatMap((assignment, idx) => {
             const t = assignment.job_entry_tests;
             let codeNo = t?.additional_details_values?.sample_code_no || '';
-            if (!codeNo && t?.additional_details_values) {
-              const codeKey = Object.keys(t.additional_details_values).find(k => {
-                const lower = k.toLowerCase().replace(/[^a-z0-9]/g, '');
-                return lower.includes('samplecode') || lower === 'code';
-              });
-              if (codeKey) codeNo = t.additional_details_values[codeKey];
+            let codes: string[] = [];
+
+            if (codeNo) {
+              codes = codeNo.split(',').map((c: string) => c.trim()).filter(Boolean);
             }
-            codeNo = codeNo || t?.material_details_location || '';
+            if (codes.length === 0) {
+              if (t?.additional_details_values) {
+                const codeKey = Object.keys(t.additional_details_values).find(k => {
+                  const lower = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                  return lower.includes('samplecode') || lower === 'code';
+                });
+                if (codeKey) codeNo = t.additional_details_values[codeKey];
+              }
+              codeNo = codeNo || t?.material_details_location || '';
+              codes = [codeNo];
+            }
+
             const sampleName = t?.material_description || '';
             const testParams = t?.test_master?.component_parameter || '';
             const testMethod = t?.test_master?.test_method || '';
             const sampleDetails = t?.sample_quantity || 'ok';
             const remark = assignment.status === 'approved' ? 'ok' : 'pending';
 
-            return (
-              <View key={idx} style={[idx === assignments.length - 1 ? styles.lastRow : styles.row, { minHeight: 25 }]}>
-                <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>{codeNo}</Text></View>
-                <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>{sampleName}</Text></View>
-                <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>{testParams}</Text></View>
-                <View style={[styles.cell, { width: '15%' }]}><Text style={styles.textCenter}>{testMethod}</Text></View>
-                <View style={[styles.cell, { width: '15%' }]}><Text style={styles.textCenter}>{sampleDetails}</Text></View>
-                <View style={[styles.lastCell, { width: '10%' }]}><Text style={styles.textCenter}>{remark}</Text></View>
-              </View>
-            );
+            return codes.map((code, codeIdx) => {
+              const isLastRow = idx === assignments.length - 1 && codeIdx === codes.length - 1;
+              return (
+                <View key={`${idx}-${codeIdx}`} style={[isLastRow ? styles.lastRow : styles.row, { minHeight: 25 }]}>
+                  <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>{code}</Text></View>
+                  <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>{sampleName}</Text></View>
+                  <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>{testParams}</Text></View>
+                  <View style={[styles.cell, { width: '15%' }]}><Text style={styles.textCenter}>{testMethod}</Text></View>
+                  <View style={[styles.cell, { width: '15%' }]}><Text style={styles.textCenter}>{sampleDetails}</Text></View>
+                  <View style={[styles.lastCell, { width: '10%' }]}><Text style={styles.textCenter}>{remark}</Text></View>
+                </View>
+              );
+            });
           })}
         </View>
 
