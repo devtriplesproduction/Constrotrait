@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { MultiSelect } from "@/components/ui/MultiSelect";
-import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText, ChevronDown, MapPin, Users, Receipt, Truck, Package } from "lucide-react";
+import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText, ChevronDown, MapPin, Users, Receipt, Truck, Package, Copy } from "lucide-react";
 import { Database } from "@/types/database";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -40,6 +40,7 @@ export interface ClientWizardProps {
     jobEntryTest: Database["public"]["Tables"]["job_entry_tests"]["Row"] & { uid?: number; uid_label?: string | null; job_entries?: { uid?: number; uid_label?: string | null } | null };
   };
   onSuccess?: () => void;
+  onClose?: () => void;
 }
 
 export function ClientWizard({ mode = "create", initialData, onSuccess }: ClientWizardProps) {
@@ -288,6 +289,28 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
     }
   }, [currentStep, availableTests.length, mode, initialData, setValue]);
 
+  const handleApplyToAll = (sourceIndex: number) => {
+    const sourceTest = getValues(`jobEntryTests.${sourceIndex}`);
+    
+    fields.forEach((field, targetIndex) => {
+      if (targetIndex !== sourceIndex) {
+        setValue(`jobEntryTests.${targetIndex}.material_description`, sourceTest.material_description, { shouldValidate: true });
+        setValue(`jobEntryTests.${targetIndex}.date_of_testing`, sourceTest.date_of_testing, { shouldValidate: true });
+        
+        if (sourceTest.additional_details_values) {
+          Object.entries(sourceTest.additional_details_values).forEach(([key, value]) => {
+            setValue(`jobEntryTests.${targetIndex}.additional_details_values.${key}` as any, value as string, { shouldValidate: true });
+          });
+        }
+      }
+    });
+
+    toast({
+      title: "Applied to all",
+      description: "Test details have been applied to all other tests.",
+    });
+  };
+
   const handleSelectClient = async (client: Database["public"]["Tables"]["clients"]["Row"]) => {
     setValue("client.id", client.id);
     setValue("client.name", client.name || "");
@@ -430,14 +453,6 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       return;
     }
 
-    if (data.selectedTestIds?.length && !data.materialDetails?.material_initials) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter Material Initials in the Material Details step.",
-        variant: "error"
-      });
-      return;
-    }
 
     if (!data.selectedTestIds?.length) {
       data.dummy_is_nabl = true;
@@ -686,11 +701,16 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     {clientProjects.length > 0 && (
                       <div className="flex flex-col gap-1.5 px-6">
                         <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Select Past Project (Optional)</label>
-                        <select
-                          className="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-2 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white"
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (!val) {
+                        <Dropdown
+                          buttonClassName="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white"
+                          options={[
+                            { label: "-- New Project --", value: "new_project" },
+                            ...clientProjects.map((p) => ({ label: p.project_name, value: p.project_name }))
+                          ]}
+                          // Force reload and provide value for controlled behavior
+                          value={watch("jobEntry.project_name") || "new_project"}
+                          onChange={(val) => {
+                            if (val === "new_project") {
                               setValue("jobEntry.division", "");
                               setValue("jobEntry.site_name", "");
                               setValue("jobEntry.agency_name", "");
@@ -713,12 +733,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                               }
                             }
                           }}
-                        >
-                          <option value="">-- New Project --</option>
-                          {clientProjects.map((p, i) => (
-                            <option key={i} value={p.project_name}>{p.project_name}</option>
-                          ))}
-                        </select>
+                        />
                       </div>
                     )}
                     {/* Site & Contact Card */}
@@ -1206,15 +1221,28 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 rounded-l-xl"></div>
 
                             {mode !== "edit" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-4 top-4 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => handleToggleTest(field.test_master_id!)}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Remove Test
-                              </Button>
+                              <div className="absolute right-4 top-4 flex gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                    onClick={() => handleApplyToAll(index)}
+                                  >
+                                    <Copy className="w-4 h-4 mr-2" />
+                                    Apply to All
+                                  </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleToggleTest(field.test_master_id!)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Remove Test
+                                </Button>
+                              </div>
                             )}
 
                             <div className="mb-4 pb-3 border-b border-slate-200 pr-24">

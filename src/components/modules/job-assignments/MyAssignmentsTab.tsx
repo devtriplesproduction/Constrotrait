@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
 import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
-import { Loader2, Check, X, ClipboardList, Download, Tag, Calendar, Beaker, AlertCircle, FileText, Zap, Search } from "lucide-react";
+import { Loader2, Check, X, ClipboardList, Download, Tag, Calendar, Beaker, AlertCircle, FileText, Zap, Search, SlidersHorizontal, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { createClient } from "@/lib/supabase/client";
@@ -19,10 +19,11 @@ function uidOf(a: any) {
   return null;
 }
 
-export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assignments: any[], userId: string, filterStatus: string }) {
+export function MyAssignmentsTab({ assignments, userId, filterStatus, setFilterStatus }: { assignments: any[], userId: string, filterStatus: string, setFilterStatus: (s: string) => void }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filterDate, setFilterDate] = useState<string>("all");
   const router = useRouter();
 
   const myAssignments = React.useMemo(() => {
@@ -32,6 +33,7 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
       if (a.teams?.team_members?.some((m: any) => m.employee_id === userId)) isMine = true;
       
       if (!isMine) return false;
+      if (a.status === 'approved') return false;
       if (filterStatus !== "all" && a.status !== filterStatus) return false;
       
       if (searchQuery.trim() !== "") {
@@ -58,9 +60,24 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
         }
       }
       
+      if (filterDate !== "all") {
+        const d = a.job_entry_tests?.job_entries?.created_at ? new Date(a.job_entry_tests.job_entries.created_at) : null;
+        if (!d) return false;
+        const today = new Date();
+        if (filterDate === "today") {
+          if (d.toDateString() !== today.toDateString()) return false;
+        } else if (filterDate === "week") {
+          const weekAgo = new Date();
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          if (d < weekAgo) return false;
+        } else if (filterDate === "month") {
+          if (d.getMonth() !== today.getMonth() || d.getFullYear() !== today.getFullYear()) return false;
+        }
+      }
+      
       return true;
     });
-  }, [assignments, userId, filterStatus, searchQuery]);
+  }, [assignments, userId, filterStatus, searchQuery, filterDate]);
 
   const groupedMyAssignments = React.useMemo(() => {
     const groups = new Map<string, any>();
@@ -279,18 +296,71 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus }: { assign
 
 return (
     <div className="space-y-6 animate-in fade-in duration-500 mt-2">
-      <div className="flex justify-start mb-4">
-        <div className="w-full sm:w-80 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-slate-400" />
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+          <div className="flex items-center gap-2 text-slate-800 font-bold">
+            <SlidersHorizontal className="w-5 h-5 text-orange-500" />
+            <span>Filter Assignments</span>
           </div>
-          <input
-            type="text"
-            placeholder="Search Job Card, Material, Date..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors shadow-sm bg-white"
-          />
+        </div>
+
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search Job Card, Material, Date..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors shadow-sm bg-white"
+              />
+            </div>
+          </div>
+          <div className="w-full sm:w-48">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
+            <Dropdown 
+              value={filterStatus} 
+              onChange={setFilterStatus} 
+              placeholder="All Statuses"
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" 
+              options={[
+                { value: "all", label: "All Statuses" },
+                { value: "assigned", label: "Assigned" },
+                { value: "accepted", label: "Accepted" },
+                { value: "in_testing", label: "In Testing" },
+                { value: "report_uploaded", label: "Report Uploaded" },
+                { value: "in_review", label: "In Review" },
+                { value: "approved", label: "Approved" },
+                { value: "rejected", label: "Rejected" },
+              ]} 
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Range</label>
+            <Dropdown value={filterDate} onChange={setFilterDate} placeholder="All Time" buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" options={[
+              { value: "today", label: "Today" },
+              { value: "week", label: "This Week" },
+              { value: "month", label: "This Month" },
+              { value: "all", label: "All Time" },
+            ]} />
+          </div>
+          <div className="w-full sm:w-auto">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSearchQuery("");
+                setFilterStatus("all");
+                setFilterDate("all");
+              }}
+              className="w-full sm:w-auto h-10 px-4 rounded-xl text-orange-600 border-orange-200 bg-orange-50/50 hover:bg-orange-100 hover:text-orange-700 font-bold text-xs flex items-center gap-2 shadow-sm transition-colors"
+            >
+              <RefreshCcw className="w-4 h-4" /> Refresh
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -343,9 +413,7 @@ return (
                         </div>
                         <div className="font-bold text-slate-800 text-[13px]">
                           {uid ? `UID: ${uid}` : 'UID missing'}
-                          {a.grouped_tests[0]?.ulr_number && (
-                            <div className="text-emerald-600 text-[11px] mt-0.5 font-semibold">ULR: {a.grouped_tests[0].ulr_number}</div>
-                          )}
+
                         </div>
                       </div>
                     </td>
@@ -409,44 +477,57 @@ return (
 
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-                        {/* Download Job Card */}
-                        <Button 
-                          variant="outline" 
-                          onClick={() => handleDownloadPdf(a.job_entry_test_id, a.job_entry_tests?.uid_label || 'Unknown')}
-                          disabled={downloadingId === a.job_entry_test_id}
-                          className="bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm rounded-lg h-8 w-8 p-0 flex items-center justify-center shrink-0"
-                          title="Download Job Card PDF"
-                        >
-                          {downloadingId === a.job_entry_test_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        </Button>
-
-                        {/* Status Actions */}
-                        {getAggregateStatus(a.all_assignments) === 'assigned' && (
-                          <div className="w-[95px]" onClick={e => e.stopPropagation()}>
-                            {loadingId === a.id ? (
-                              <div className="flex items-center justify-center h-8 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              </div>
-                            ) : (
-                              <Dropdown
-                                placeholder={
-                                  <div className="flex items-center gap-1 text-orange-600">
-                                    <Zap className="w-3 h-3" /> Action
+                        <div className="w-[110px]" onClick={e => e.stopPropagation()}>
+                          {loadingId === a.id ? (
+                            <div className="flex items-center justify-center h-8 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            </div>
+                          ) : (
+                            <Dropdown
+                              placeholder={
+                                downloadingId === a.job_entry_test_id ? (
+                                  <div className="flex items-center gap-1.5 text-orange-700 font-bold text-xs tracking-wide">
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Action
                                   </div>
-                                }
-                                options={[
+                                ) : (
+                                  <div className="flex items-center gap-1.5 text-orange-700 font-bold text-xs tracking-wide">
+                                    <Zap className="w-3.5 h-3.5 fill-orange-500 text-orange-600 group-hover:scale-110 transition-transform duration-200" /> Action
+                                  </div>
+                                )
+                              }
+                              options={[
+                                { label: "Download Job Card", value: "download" },
+                                ...(getAggregateStatus(a.all_assignments) === 'assigned' ? [
                                   { label: "Accept", value: "accept" },
                                   { label: "Reject", value: "reject" }
-                                ]}
-                                align="right"
-                                buttonClassName="h-7 py-0 px-2 bg-white shadow-sm border-slate-200 font-medium text-[11px]"
-                                value=""
-                                onChange={async (val) => {
-                                  if (val === "accept") {
+                                ] : [])
+                              ]}
+                              align="right"
+                              buttonClassName="h-8 py-0 px-3 bg-gradient-to-r from-orange-50 to-amber-50 hover:from-orange-100 hover:to-amber-100 border border-orange-200 shadow-sm rounded-full transition-all duration-200 group"
+                              value=""
+                              onChange={async (val) => {
+                                if (val === "download") {
+                                  handleDownloadPdf(a.job_entry_test_id, a.job_entry_tests?.uid_label || 'Unknown');
+                                } else if (val === "accept") {
+                                  setLoadingId(a.id);
+                                  let hasError = false;
+                                  for (const asg of a.all_assignments) {
+                                    const res = await updateAssignmentStatusAction(asg.id, 'accepted');
+                                    if (!res.success) {
+                                      alert("Error: " + res.error);
+                                      hasError = true;
+                                    }
+                                  }
+                                  setLoadingId(null);
+                                  if (!hasError) router.refresh();
+                                } else if (val === "reject") {
+                                  const remark = window.prompt("Please enter a reason for rejection:");
+                                  if (remark !== null) {
+                                    if (!remark.trim()) return alert("Remark is required to reject.");
                                     setLoadingId(a.id);
                                     let hasError = false;
                                     for (const asg of a.all_assignments) {
-                                      const res = await updateAssignmentStatusAction(asg.id, 'accepted');
+                                      const res = await updateAssignmentStatusAction(asg.id, 'rejected', { reviewer_remark: remark });
                                       if (!res.success) {
                                         alert("Error: " + res.error);
                                         hasError = true;
@@ -454,28 +535,12 @@ return (
                                     }
                                     setLoadingId(null);
                                     if (!hasError) router.refresh();
-                                  } else if (val === "reject") {
-                                    const remark = window.prompt("Please enter a reason for rejection:");
-                                    if (remark !== null) {
-                                      if (!remark.trim()) return alert("Remark is required to reject.");
-                                      setLoadingId(a.id);
-                                      let hasError = false;
-                                      for (const asg of a.all_assignments) {
-                                        const res = await updateAssignmentStatusAction(asg.id, 'rejected', { reviewer_remark: remark });
-                                        if (!res.success) {
-                                          alert("Error: " + res.error);
-                                          hasError = true;
-                                        }
-                                      }
-                                      setLoadingId(null);
-                                      if (!hasError) router.refresh();
-                                    }
                                   }
-                                }}
-                              />
-                            )}
-                          </div>
-                        )}
+                                }
+                              }}
+                            />
+                          )}
+                        </div>
 
 
 

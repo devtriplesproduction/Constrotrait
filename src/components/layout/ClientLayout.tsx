@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { AdminSidebar } from "@/components/layout/sidebars/AdminSidebar";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 
 import { User } from "@supabase/supabase-js";
 
@@ -24,9 +25,11 @@ export function ClientLayout({ children, user, role, branchName }: ClientLayoutP
 
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar user={user} role={role} branchName={branchName} onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-auto p-4 md:p-6 lg:px-8 lg:py-6">
-          {children}
-        </main>
+        <ScrollArea className="flex-1" orientation="vertical">
+          <main className="p-4 md:p-6 lg:px-8 lg:py-6">
+            {children}
+          </main>
+        </ScrollArea>
       </div>
     </div>
   );

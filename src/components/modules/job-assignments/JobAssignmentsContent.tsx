@@ -46,29 +46,6 @@ export function JobAssignmentsContent({
         className="mb-6"
         actions={
           <div className="flex flex-wrap items-center gap-4">
-            <div className="w-48 hidden md:block">
-              <Dropdown 
-                value={filterStatus} 
-                onChange={setFilterStatus} 
-                placeholder={activeTab === 'schedule' ? 'Filter by Schedule' : 'Filter by Status'}
-                buttonClassName="bg-white !h-[48px] rounded-xl" 
-                options={activeTab === 'schedule' ? [
-                  { value: "all", label: "All Tests" },
-                  { value: "today", label: "Today's Tests" },
-                  { value: "overdue", label: "Older Overdue Tests" },
-                  { value: "upcoming", label: "Upcoming Tasks" },
-                ] : [
-                  { value: "all", label: "All Statuses" },
-                  { value: "assigned", label: "Assigned" },
-                  { value: "accepted", label: "Accepted" },
-                  { value: "in_testing", label: "In Testing" },
-                  { value: "report_uploaded", label: "Report Uploaded" },
-                  { value: "in_review", label: "In Review" },
-                  { value: "approved", label: "Approved" },
-                  { value: "rejected", label: "Rejected" },
-                ]} 
-              />
-            </div>
             <JobAssignmentsTabsClient 
               activeTab={activeTab} 
               isManager={isManager} 
@@ -81,13 +58,13 @@ export function JobAssignmentsContent({
       <div>
 
         {isManager && activeTab === "list" && (
-          <AllJobsTab assignments={assignments} branches={branches} employees={employees} filterStatus={filterStatus} />
+          <AllJobsTab assignments={assignments} branches={branches} employees={employees} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
         )}
         {activeTab === "my" && (
-          <MyAssignmentsTab assignments={assignments} userId={userId} filterStatus={filterStatus} />
+          <MyAssignmentsTab assignments={assignments} userId={userId} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
         )}
         {activeTab === "schedule" && (
-          <TestingScheduleTab assignments={assignments} userId={userId} filterStatus={filterStatus} currentUserProfile={currentUserProfile} />
+          <TestingScheduleTab assignments={assignments} userId={userId} filterStatus={filterStatus} setFilterStatus={setFilterStatus} currentUserProfile={currentUserProfile} />
         )}
       </div>
     </>

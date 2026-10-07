@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Pencil, User, Mail, Phone, MapPin, FileText, Search, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,7 +18,6 @@ interface JobEntryWithTests extends JobEntry {
   job_entry_tests: JobEntryTest[];
 }
 
-import ClientDetailsWizard from "./ClientDetailsWizard";
 
 export default function ClientsTab({
   initialClients,
@@ -28,7 +28,7 @@ export default function ClientsTab({
   onEditClick: (test: JobEntryTest, client: Client) => void;
   triggerRefresh: number;
 }) {
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredClients = initialClients.filter((client) => {
@@ -66,13 +66,13 @@ export default function ClientsTab({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredClients.map((client) => {
           return (
             <Card
               key={client.id}
-              className="group relative bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all flex flex-col p-5 gap-4 cursor-pointer overflow-hidden isolate"
-              onClick={() => setSelectedClient(client)}
+              className="group relative bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all flex flex-col p-4 gap-3 cursor-pointer overflow-hidden isolate"
+              onClick={() => router.push(`/clients/${client.id}`)}
             >
               {/* Top-right curved accent background */}
               <div className="absolute top-0 right-0 w-[120px] h-[120px] bg-orange-50/50 rounded-bl-full pointer-events-none -z-10" />
@@ -88,15 +88,10 @@ export default function ClientsTab({
                     <p className="font-semibold text-orange-500 text-xs mt-1">{client.email || "No Email"}</p>
                   </div>
                 </div>
-
-                {/* Client Badge */}
-                <div className="bg-orange-50 text-orange-700 px-2.5 py-1 rounded-md text-[10px] font-bold flex items-center gap-1.5 border border-orange-100/50">
-                  <User className="w-3 h-3" /> {client.company_name || "Client Profile"}
-                </div>
               </div>
 
               {/* Information Grid */}
-              <div className="bg-slate-50/80 rounded-xl p-4 grid grid-cols-2 gap-4 border border-slate-100/50 relative z-10">
+              <div className="bg-slate-50/80 rounded-xl p-3 grid grid-cols-2 gap-3 border border-slate-100/50 relative z-10">
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Phone</p>
                   <p className="text-sm font-semibold text-slate-700">{client.mobile || "-"}</p>
@@ -107,18 +102,18 @@ export default function ClientsTab({
                     {client.gst_no || "N/A"}
                   </div>
                 </div>
-                <div className="col-span-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Address</p>
-                  <p className="text-sm font-medium text-slate-600 line-clamp-1" title={client.address || "No address provided"}>
-                    {client.address || "No address provided"}
-                  </p>
-                </div>
               </div>
 
               {/* Action Button */}
-              <div className="flex justify-end mt-1 relative z-10">
+              <div className="flex items-center justify-between mt-1 relative z-10">
+                {/* Client Badge */}
+                <div className="bg-orange-50 text-orange-700 px-2.5 py-1 rounded-md text-[10px] font-bold flex items-center gap-1.5 border border-orange-100/50 max-w-[50%]">
+                  <User className="w-3 h-3 shrink-0" /> 
+                  <span className="truncate">{client.company_name || "Client Profile"}</span>
+                </div>
+                
                 <Button
-                  className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-sm shadow-orange-500/20 font-bold h-9 px-5 text-sm w-full sm:w-auto transition-colors"
+                  className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-sm shadow-orange-500/20 font-bold h-9 px-5 text-sm w-auto transition-colors shrink-0"
                 >
                   View Details
                 </Button>
@@ -134,13 +129,7 @@ export default function ClientsTab({
         </div>
       )}
 
-      {selectedClient && (
-        <ClientDetailsWizard
-            client={selectedClient}
-            onClose={() => setSelectedClient(null)}
-            onEditClick={onEditClick}
-          />
-      )}
+
     </div>
   );
 }

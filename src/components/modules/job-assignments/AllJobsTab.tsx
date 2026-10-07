@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { ClipboardList, X, Search, Calendar, FileText, User, Download, Loader2 } from "lucide-react";
+import { ClipboardList, X, Search, Calendar, FileText, User, Download, Loader2, SlidersHorizontal, RefreshCcw } from "lucide-react";
 import { AssignJobsTab } from "./AssignJobsTab";
 import { updateAssignmentStatusAction, deleteAssignmentAction } from "@/actions/job-assignment.actions";
 import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
@@ -22,7 +22,7 @@ function assignmentUid(assignment: any) {
   return `Test ID missing`;
 }
 
-export function AllJobsTab({ assignments, branches, employees, filterStatus }: { assignments: any[], branches: any[], employees: any[], filterStatus: string }) {
+export function AllJobsTab({ assignments, branches, employees, filterStatus, setFilterStatus }: { assignments: any[], branches: any[], employees: any[], filterStatus: string, setFilterStatus: (s: string) => void }) {
   const router = useRouter();
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [initialAssignment, setInitialAssignment] = useState<any>(null);
@@ -193,37 +193,82 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
 
   return (
     <div className="animate-in fade-in duration-500 mt-2">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div className="w-full md:w-80 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-slate-400" />
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+          <div className="flex items-center gap-2 text-slate-800 font-bold">
+            <SlidersHorizontal className="w-5 h-5 text-orange-500" />
+            <span>Filter Assignments</span>
           </div>
-          <input
-            type="text"
-            placeholder="Search Job Card, Material, Date, Assignee..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors shadow-sm bg-white"
-          />
+          <Button onClick={() => { setInitialAssignment(null); setIsAssignModalOpen(true); }} className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2 h-9 px-4 rounded-xl text-xs shadow-sm">
+            <ClipboardList className="w-4 h-4" /> Assign Jobs
+          </Button>
         </div>
-        <div className="flex flex-wrap gap-4 items-center justify-end flex-1">
-          <div className="w-48">
-            <Dropdown value={filterBranch} onChange={setFilterBranch} placeholder="Filter by Branch" buttonClassName="bg-white" options={[
+
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search Job Card, Material, Date, Assignee..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors shadow-sm bg-white"
+              />
+            </div>
+          </div>
+          <div className="w-full sm:w-48">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
+            <Dropdown 
+              value={filterStatus} 
+              onChange={setFilterStatus} 
+              placeholder="All Statuses"
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" 
+              options={[
+                { value: "all", label: "All Statuses" },
+                { value: "assigned", label: "Assigned" },
+                { value: "accepted", label: "Accepted" },
+                { value: "in_testing", label: "In Testing" },
+                { value: "report_uploaded", label: "Report Uploaded" },
+                { value: "in_review", label: "In Review" },
+                { value: "approved", label: "Approved" },
+                { value: "rejected", label: "Rejected" },
+              ]} 
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Branch</label>
+            <Dropdown value={filterBranch} onChange={setFilterBranch} placeholder="All Branches" buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" options={[
               { value: "all", label: "All Branches" },
               ...branches.map((b: any) => ({ value: b.id, label: b.name })),
             ]} />
           </div>
-          <div className="w-48">
-            <Dropdown value={filterDate} onChange={setFilterDate} placeholder="Filter by Date" buttonClassName="bg-white" options={[
+          <div className="w-full sm:w-48">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Range</label>
+            <Dropdown value={filterDate} onChange={setFilterDate} placeholder="All Time" buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" options={[
               { value: "today", label: "Today" },
               { value: "week", label: "This Week" },
               { value: "month", label: "This Month" },
               { value: "all", label: "All Time" },
             ]} />
           </div>
-          <Button onClick={() => { setInitialAssignment(null); setIsAssignModalOpen(true); }} className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2">
-            <ClipboardList className="w-4 h-4" /> Assign Jobs
-          </Button>
+          <div className="w-full sm:w-auto">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSearchQuery("");
+                setFilterStatus("all");
+                setFilterBranch("all");
+                setFilterDate("all");
+              }}
+              className="w-full sm:w-auto h-10 px-4 rounded-xl text-orange-600 border-orange-200 bg-orange-50/50 hover:bg-orange-100 hover:text-orange-700 font-bold text-xs flex items-center gap-2 shadow-sm transition-colors"
+            >
+              <RefreshCcw className="w-4 h-4" /> Refresh
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -271,9 +316,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                       </div>
                       <div className="font-bold text-slate-800 text-[13px]">
                         {assignmentUid(assignment)}
-                        {assignment.grouped_tests[0]?.ulr_number && (
-                          <div className="text-emerald-600 text-[11px] mt-0.5 font-semibold">ULR: {assignment.grouped_tests[0].ulr_number}</div>
-                        )}
+
                       </div>
                     </div>
                   </td>
@@ -321,59 +364,46 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus }: {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-2 items-end">
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownloadPdf(assignment.job_entry_test_id, assignment.job_entry_tests?.uid_label || 'Unknown');
-                          }}
-                          size="sm" 
-                          variant="outline" 
-                          disabled={downloadingId === assignment.job_entry_test_id}
-                          className="text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-100 shadow-sm rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-all"
-                          title="Download Job Card"
-                        >
-                          {downloadingId === assignment.job_entry_test_id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <Button onClick={() => {
-                          setInitialAssignment({
-                            job_entry_test_id: assignment.job_entry_test_id,
-                            uid: assignment.job_entry_tests?.job_entries?.uid,
-                            assigned_to: assignment.assigned_to,
-                            team_id: assignment.team_id,
-                            due_date: assignment.due_date,
-                            notes: assignment.notes,
-                          });
-                          setIsAssignModalOpen(true);
-                        }} size="sm" variant="outline" className="text-orange-600 hover:text-white border-orange-200 hover:bg-orange-500 hover:border-orange-500 shadow-sm rounded-xl h-8 px-4 text-xs font-bold transition-all">
-                          Edit
-                        </Button>
-                        <Button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteAssignment(assignment.id);
-                          }}
-                          size="sm" 
-                          variant="outline" 
-                          disabled={deletingId === assignment.id}
-                          className="text-red-600 hover:text-red-900 border-red-200 hover:bg-red-50 shadow-sm rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-all"
-                          title="Delete Assignment"
-                        >
-                          {deletingId === assignment.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
+                      {getAggregateStatus(assignment.all_assignments) !== 'report_uploaded' && getAggregateStatus(assignment.all_assignments) !== 'in_review' && getAggregateStatus(assignment.all_assignments) !== 'completed' && (
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadPdf(assignment.job_entry_test_id, assignment.job_entry_tests?.uid_label || 'Unknown');
+                            }}
+                            size="sm" 
+                            variant="outline" 
+                            disabled={downloadingId === assignment.job_entry_test_id}
+                            className="text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-100 shadow-sm rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-all"
+                            title="Download Job Card"
+                          >
+                            {downloadingId === assignment.job_entry_test_id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Download className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <Button onClick={() => {
+                            setInitialAssignment({
+                              job_entry_test_id: assignment.job_entry_test_id,
+                              uid: assignment.job_entry_tests?.job_entries?.uid,
+                              assigned_to: assignment.assigned_to,
+                              team_id: assignment.team_id,
+                              due_date: assignment.due_date,
+                              notes: assignment.notes,
+                            });
+                            setIsAssignModalOpen(true);
+                          }} size="sm" variant="outline" className="text-orange-600 hover:text-white border-orange-200 hover:bg-orange-500 hover:border-orange-500 shadow-sm rounded-xl h-8 px-4 text-xs font-bold transition-all">
+                            Edit
+                          </Button>
+                        </div>
+                      )}
                       
-                      {getAggregateStatus(assignment.all_assignments) === 'in_review' && (
+                      {(getAggregateStatus(assignment.all_assignments) === 'in_review' || getAggregateStatus(assignment.all_assignments) === 'report_uploaded') && (
                         <div className="flex flex-col gap-2 mt-1">
-                          {remarkObj && remarkObj.id === assignment.id ? (
+                          {getAggregateStatus(assignment.all_assignments) === 'report_uploaded' ? (
+                            <Button size="sm" disabled className="bg-amber-500 h-7 text-[10px] px-3 text-white rounded-lg font-bold shadow-sm opacity-50 cursor-not-allowed">Review Report</Button>
+                          ) : remarkObj && remarkObj.id === assignment.id ? (
                             <div className="flex flex-col gap-1 items-end">
                               <input
                                 type="text"

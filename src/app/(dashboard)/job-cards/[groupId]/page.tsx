@@ -9,6 +9,8 @@ import { JobStage } from "@/config/jobTransitions";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { EditTestModal } from "../components/EditTestModal";
+import { PageHeader } from "@/components/modules/PageHeader";
+import { TestCard } from "../components/TestCard";
 
 export default async function JobCardDetailsPage(props: {
   params: Promise<{ groupId: string }>;
@@ -51,6 +53,10 @@ export default async function JobCardDetailsPage(props: {
   const primaryTest = jobGroup[0];
   const client = primaryTest.job_entries?.clients;
 
+  // Extract unique material names
+  const materials = Array.from(new Set(jobGroup.map((t: any) => t.material_description).filter(Boolean)));
+  const materialDisplay = materials.length > 0 ? materials.join(", ") : "Unknown Material";
+
   // Extract all unique dates
   const inwardDates = jobGroup
     .map((t: any) => t.job_entries?.inward_on || t.date_of_receiving)
@@ -79,69 +85,40 @@ export default async function JobCardDetailsPage(props: {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-screen-xl mx-auto min-h-screen bg-[#FFF9F5] flex flex-col gap-4">
+    <div className="w-full max-w-screen-xl mx-auto min-h-screen flex flex-col gap-4">
       
-      {/* Back Navigation */}
-      <div>
-        <Link href="/job-cards" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-orange-500 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Job Cards
-        </Link>
-      </div>
-
       {/* 1. Header Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex items-center justify-between p-6 pl-0 relative">
-        <div className="absolute left-0 top-0 bottom-0 w-[5px] bg-orange-500" />
-        <div className="flex items-center gap-5 pl-8">
-          <div className="w-14 h-14 rounded-full bg-orange-50 border-[2px] border-orange-300 flex items-center justify-center shrink-0">
-             <Briefcase className="w-6 h-6 text-orange-500" strokeWidth={2} />
-          </div>
-          <div>
-             <div className="flex items-center gap-3">
-               <h1 className="text-[28px] font-bold text-slate-900 tracking-tight leading-none">Job Card {decodedGroupId}</h1>
-               <div className="bg-orange-100 text-orange-700 px-3.5 py-1 rounded-full text-xs font-bold shadow-sm">
-                 Pending
-               </div>
-             </div>
-             <p className="text-slate-500 mt-2 flex items-center gap-2 font-medium text-sm">
-               {client?.name || "Unknown Client"} &middot; {jobGroup.length} tests
-             </p>
-          </div>
-        </div>
-        
-        <div className="hidden lg:flex items-center gap-3">
-          <div className="bg-[#F8F9FA] rounded-xl p-4 flex items-center gap-4">
-            <Calendar className="w-5 h-5 text-slate-400" />
-            <div>
-              <p className="text-[11px] text-slate-400 mb-0.5">Received</p>
-              <p className="text-sm font-bold text-slate-700">
-                {getDisplayDate(inwardDates)}
-              </p>
+      <PageHeader
+        title={
+          <div className="flex items-center gap-3">
+            <span>Job Card <span className="text-orange-500">{decodedGroupId}</span></span>
+            <div className="bg-orange-100 text-orange-700 px-3.5 py-1 rounded-full text-xs font-bold shadow-sm">
+              Pending
             </div>
           </div>
-          <div className="bg-[#F8F9FA] rounded-xl p-4 flex items-center gap-4">
-            <Calendar className="w-5 h-5 text-slate-400" />
-            <div>
-              <p className="text-[11px] text-slate-400 mb-0.5">Cast</p>
-              <p className="text-sm font-bold text-slate-700">
-                {getDisplayDate(castingDates)}
-              </p>
+        }
+        subtitle={
+          <span className="flex items-center gap-2">
+            {materialDisplay} &middot; {jobGroup.length} test{jobGroup.length !== 1 ? 's' : ''}
+          </span>
+        }
+        icon={Briefcase}
+        iconClassName="text-orange-500"
+        actions={
+          <Link 
+            href="/clients?tab=all-jobs" 
+            className="group inline-flex items-center gap-3 text-sm font-bold text-slate-600 hover:text-orange-600 transition-all duration-300 bg-white hover:bg-orange-50/50 px-4 py-2 rounded-xl border border-slate-200 hover:border-orange-200 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_12px_-2px_rgba(249,115,22,0.12)]"
+          >
+            <div className="bg-slate-50 group-hover:bg-orange-100 text-slate-400 group-hover:text-orange-500 p-1.5 rounded-lg transition-colors border border-slate-100 group-hover:border-orange-200/50">
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-300" strokeWidth={2.5} />
             </div>
-          </div>
-          <div className="bg-[#F8F9FA] rounded-xl p-4 flex items-center gap-4">
-            <Calendar className="w-5 h-5 text-slate-400" />
-            <div>
-              <p className="text-[11px] text-slate-400 mb-0.5">Test</p>
-              <p className="text-sm font-bold text-slate-700">
-                {getDisplayDate(testingDates)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+            Back to All Jobs
+          </Link>
+        }
+      />
 
-      {/* 2. Client Details (3 Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* 2. Client Details (4 Cards) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
             <User className="w-5 h-5 text-orange-500" strokeWidth={2} />
@@ -169,100 +146,22 @@ export default async function JobCardDetailsPage(props: {
             <p className="text-base font-bold text-slate-900">{client?.email || "-"}</p>
           </div>
         </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+            <Calendar className="w-5 h-5 text-orange-500" strokeWidth={2} />
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 mb-0.5 font-medium">Received Date</p>
+            <p className="text-base font-bold text-slate-900">{getDisplayDate(inwardDates)}</p>
+          </div>
+        </div>
       </div>
 
       {/* 3. Tests */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {jobGroup.map((test: any, index: number) => {
-          const latestAssignment = test.job_assignments && test.job_assignments.length > 0 ? test.job_assignments[0] : null;
-          const status = (latestAssignment?.status as JobStage | 'rejected') || "pending";
-          
-          let dayText = test.testing_day || test.testing_age || '-';
-          if (dayText !== '-' && !dayText.toString().toLowerCase().includes('day')) {
-             dayText = `${dayText} Day${Number(dayText) > 1 ? 's' : ''}`;
-          }
-
-          return (
-            <div key={test.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col sm:flex-row relative">
-              
-              {/* Right absolute badge */}
-              <div className="absolute top-5 right-5">
-                <div className="bg-orange-500 text-white px-3.5 py-1 rounded-full font-bold text-[12px] shadow-sm">
-                  {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-                </div>
-              </div>
-              
-              <div className="sm:w-[260px] md:w-[280px] flex-shrink-0 sm:border-r border-slate-200 sm:pr-6 flex flex-col">
-                <div className="flex items-center justify-between mb-1.5 pr-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                    <span className="text-[13px] font-bold text-orange-500 uppercase tracking-widest">TEST {index + 1}</span>
-                  </div>
-                  <EditTestModal client={client} test={test} />
-                </div>
-                <h3 className="text-2xl font-extrabold text-slate-900 mb-5">{test.material_description || "XX"}</h3>
-                
-                <div className="space-y-2.5 mb-5">
-                  <div className="flex items-center">
-                    <div className="w-8 flex justify-center shrink-0"><Info className="w-[16px] h-[16px] text-orange-600/80" /></div>
-                    <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">METHOD</span>
-                    <span className="text-[13px] font-medium text-slate-900">{test.test_method || '-'}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-8 flex justify-center shrink-0"><Target className="w-[16px] h-[16px] text-orange-600/80" /></div>
-                    <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">PARAMETERS</span>
-                    <span className="text-[13px] font-medium text-slate-900 truncate" title={test.test_master?.component_parameter || '-'}>{test.test_master?.component_parameter || '-'}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-8 flex justify-center shrink-0"><User className="w-[16px] h-[16px] text-orange-600/80" /></div>
-                    <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">SAMPLES</span>
-                    <span className="text-[13px] font-medium text-slate-900">{test.sample_quantity || '-'}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-8 flex justify-center shrink-0"><Clock className="w-[16px] h-[16px] text-orange-600/80" /></div>
-                    <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">DAY</span>
-                    <span className="text-[13px] font-medium text-slate-900">{dayText}</span>
-                  </div>
-                  {test.ulr_number ? (
-                    <div className="flex items-center">
-                      <div className="w-8 flex justify-center shrink-0"><Info className="w-[16px] h-[16px] text-emerald-600/80" /></div>
-                      <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">ULR NO.</span>
-                      <span className="text-[13px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">{test.ulr_number}</span>
-                    </div>
-                  ) : test.qc_number ? (
-                    <div className="flex items-center">
-                      <div className="w-8 flex justify-center shrink-0"><Info className="w-[16px] h-[16px] text-blue-600/80" /></div>
-                      <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">QC NO.</span>
-                      <span className="text-[13px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">{test.qc_number}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center">
-                      <div className="w-8 flex justify-center shrink-0"><Info className="w-[16px] h-[16px] text-slate-400/80" /></div>
-                      <span className="w-24 text-[11px] font-bold text-slate-500 uppercase tracking-widest">DOC NO.</span>
-                      <span className="text-[12px] font-medium text-slate-500 italic">Pending</span>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Grade Block */}
-                <div className="bg-orange-50/50 rounded-xl p-3 flex items-center gap-3 w-fit pr-8 border border-orange-100/50">
-                   <div className="w-8 h-8 rounded-full border-[1.5px] border-orange-300 flex items-center justify-center shrink-0">
-                     <Briefcase className="w-4 h-4 text-orange-400" /> {/* Ribbon icon proxy */}
-                   </div>
-                   <div>
-                     <p className="text-[9px] font-bold text-orange-500 uppercase tracking-widest mb-0.5">GRADE</p>
-                     <p className="text-xl font-bold text-orange-500 leading-none">{test.grade || (test.additional_details_values as any)?.Grade || (test.additional_details_values as any)?.grade || "-"}</p>
-                   </div>
-                </div>
-              </div>
-              
-              {/* Right Column: Workflow */}
-              <div className="flex-1 sm:pl-6 pt-6 sm:pt-0">
-                <JobStageStepper currentStage={status} isRejected={status === 'rejected'} />
-              </div>
-            </div>
-          );
-        })}
+      <div className="flex flex-col gap-6">
+        {jobGroup.map((test: any) => (
+          <TestCard key={test.id} test={test} client={client} />
+        ))}
       </div>
     </div>
   );

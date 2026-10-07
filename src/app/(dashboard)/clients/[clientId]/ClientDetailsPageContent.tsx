@@ -8,6 +8,8 @@ import { getJobEntriesByClientIdAction } from "@/actions/job-entry.actions";
 import { Loader2 } from "lucide-react";
 import { clsx } from "clsx";
 import { ScrollArea } from "@/components/ui/ScrollArea";
+import { useRouter } from "next/navigation";
+import { ClientWizard } from "@/components/modules/clients/ClientWizard";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntry = Database["public"]["Tables"]["job_entries"]["Row"];
@@ -32,7 +34,6 @@ function ProjectJobsList({
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<(JobEntryWithTests & { matchingTests: JobEntryTest[] }) | null>(null);
 
-  // Filter jobEntries to only include those that have tests matching the completion status
   const filteredJobs = jobEntries
     .map((job) => {
       const matchingTests = (job.job_entry_tests || []).filter((t) =>
@@ -44,7 +45,6 @@ function ProjectJobsList({
       if (isCompleted) {
         return job.matchingTests.length > 0;
       } else {
-        // Include jobs with pending tests OR jobs with 0 tests (dummy job cards)
         return job.matchingTests.length > 0 || (job.job_entry_tests && job.job_entry_tests.length === 0);
       }
     });
@@ -57,7 +57,6 @@ function ProjectJobsList({
     );
   }
 
-  // Group jobs by project
   const jobsByProject = filteredJobs.reduce((acc, job) => {
     const projName = job.project_name || "Unnamed project";
     if (!acc[projName]) acc[projName] = [];
@@ -69,39 +68,39 @@ function ProjectJobsList({
 
   if (view === "projects") {
     return (
-      <ScrollArea className="animate-in fade-in slide-in-from-right-4 duration-300 h-full pr-3 pb-2">
-        <div className="space-y-4">
+      <div className="animate-in fade-in slide-in-from-right-4 duration-300 pr-3 pb-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {projects.map(projName => (
           <div 
             key={projName}
-            className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 cursor-pointer hover:border-orange-300 hover:shadow-md transition-all flex justify-between items-center group"
+            className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 sm:p-4 cursor-pointer hover:border-orange-300 hover:shadow-md transition-all flex justify-between items-center group"
             onClick={() => { setSelectedProject(projName); setView("jobs"); }}
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center border border-orange-100 group-hover:bg-orange-100 transition-colors">
-                <Briefcase className="w-6 h-6 text-orange-500" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center border border-orange-100 group-hover:bg-orange-100 transition-colors">
+                <Briefcase className="w-5 h-5 text-orange-500" />
               </div>
               <div>
-                <h4 className="font-bold text-slate-800 text-lg m-0">{projName}</h4>
-                <p className="text-sm font-semibold text-slate-500 mt-0.5">
+                <h4 className="font-bold text-slate-800 text-base m-0">{projName}</h4>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">
                   {jobsByProject[projName].length} Job{jobsByProject[projName].length !== 1 ? 's' : ''}
                 </p>
               </div>
             </div>
-            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-orange-50 transition-colors">
-              <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-orange-500 transition-colors" />
+            <div className="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-orange-50 transition-colors">
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-orange-500 transition-colors" />
             </div>
           </div>
         ))}
         </div>
-      </ScrollArea>
+      </div>
     );
   }
 
   if (view === "jobs" && selectedProject) {
     const projectJobs = jobsByProject[selectedProject] || [];
     return (
-      <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col h-full">
+      <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col">
         <div className="flex items-center justify-between mb-2 shrink-0">
           <button 
             className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-orange-600 transition-colors bg-slate-50 hover:bg-orange-50 px-3 py-1.5 rounded-lg border border-slate-100"
@@ -114,39 +113,39 @@ function ProjectJobsList({
           </div>
         </div>
         
-        <ScrollArea className="flex-1 pr-3 pb-2">
-          <div className="grid gap-4">
+        <div className="pr-3 pb-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {projectJobs.map(job => (
               <div 
                 key={job.id}
-                className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 cursor-pointer hover:border-orange-300 hover:shadow-md transition-all flex justify-between items-center group"
+                className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 sm:p-4 cursor-pointer hover:border-orange-300 hover:shadow-md transition-all flex justify-between items-center group"
                 onClick={() => { setSelectedJob(job); setView("tests"); }}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center border border-orange-100 group-hover:bg-orange-100 transition-colors">
-                    <Briefcase className="w-6 h-6 text-orange-500" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center border border-orange-100 group-hover:bg-orange-100 transition-colors">
+                    <Briefcase className="w-5 h-5 text-orange-500" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-800 text-lg m-0">Job UID: {job.uid_label || String(job.uid || "") || job.job_entry_tests?.find(t => t.uid_label)?.uid_label || "Missing"}</h4>
-                    <p className="text-sm font-semibold text-slate-500 mt-0.5">
+                    <h4 className="font-bold text-slate-800 text-base m-0">Job UID: {job.uid_label || String(job.uid || "") || job.job_entry_tests?.find(t => t.uid_label)?.uid_label || "Missing"}</h4>
+                    <p className="text-xs font-semibold text-slate-500 mt-0.5">
                       {job.matchingTests.length} Test{job.matchingTests.length !== 1 ? 's' : ''} • Created: {new Date(job.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-orange-50 transition-colors">
-                  <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-orange-500 transition-colors" />
+                <div className="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-orange-50 transition-colors">
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-orange-500 transition-colors" />
                 </div>
               </div>
             ))}
           </div>
-        </ScrollArea>
+        </div>
       </div>
     );
   }
 
   if (view === "tests" && selectedJob) {
     return (
-      <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col h-full">
+      <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col">
         <div className="flex items-center justify-between mb-2 shrink-0">
           <button 
             className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-orange-600 transition-colors bg-slate-50 hover:bg-orange-50 px-3 py-1.5 rounded-lg border border-slate-100"
@@ -159,7 +158,7 @@ function ProjectJobsList({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 pr-3 pb-2">
+        <div className="pr-3 pb-2">
           <div className="space-y-3">
           {(!selectedJob.job_entry_tests || selectedJob.job_entry_tests.length === 0) ? (
             <div className="text-center p-8 text-slate-500 border border-dashed rounded-xl bg-slate-50">
@@ -173,13 +172,9 @@ function ProjectJobsList({
                   key={test.id}
                   className="group relative bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row p-5 gap-5 overflow-hidden isolate"
                 >
-                  {/* Top-right curved accent background */}
                   <div className="absolute top-0 right-0 w-[140px] h-[130px] bg-[#FFF8F3] rounded-bl-[120px] pointer-events-none -z-10 hidden sm:block" />
 
-                  {/* Left Section */}
                   <div className="flex-1 flex flex-col gap-5 relative z-10">
-
-                    {/* Header */}
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 shrink-0 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
@@ -195,13 +190,11 @@ function ProjectJobsList({
                         </div>
                       </div>
 
-                      {/* Badge */}
                       <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-orange-100/50">
                         <FlaskConical className="w-3.5 h-3.5 shrink-0" /> Test
                       </div>
                     </div>
 
-                    {/* Middle block */}
                     <div className="bg-slate-50/80 rounded-2xl p-4 flex gap-4 border border-slate-100/50">
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Material</p>
@@ -219,7 +212,6 @@ function ProjectJobsList({
                       </div>
                     </div>
 
-                    {/* Bottom block */}
                     <div>
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Key Dates</p>
                       <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -230,7 +222,6 @@ function ProjectJobsList({
                     </div>
                   </div>
 
-                  {/* Right Section */}
                   <div className="sm:w-[140px] shrink-0 sm:border-l sm:border-slate-100 sm:pl-5 flex flex-row sm:flex-col justify-center gap-3 relative z-10 pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                     <Button
                       className="flex-1 sm:flex-none w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-md shadow-orange-500/20 font-bold h-11"
@@ -248,7 +239,7 @@ function ProjectJobsList({
           </div>
           )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
     );
   }
@@ -256,18 +247,16 @@ function ProjectJobsList({
   return null;
 }
 
-export default function ClientDetailsWizard({
+export default function ClientDetailsPageContent({
   client,
-  onClose,
-  onEditClick,
 }: {
   client: Client;
-  onClose: () => void;
-  onEditClick: (test: JobEntryTest & { job_entries?: any }, client: Client) => void;
 }) {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [jobEntries, setJobEntries] = useState<JobEntryWithTests[]>([]);
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+  const [editingTest, setEditingTest] = useState<any | null>(null);
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -286,6 +275,10 @@ export default function ClientDetailsWizard({
     loadJobs();
   }, [client.id]);
 
+  const handleEditClick = (test: JobEntryTest & { job_entries?: any }, client: Client) => {
+    setEditingTest({ test, client });
+  };
+
   const initials = client.name
     ? client.name
         .split(" ")
@@ -296,13 +289,9 @@ export default function ClientDetailsWizard({
     : "?";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-      <div className="relative z-10 w-full max-w-4xl mx-auto shadow-2xl rounded-2xl overflow-hidden bg-white animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+    <div className="space-y-6">
+      <div className="w-full shadow-sm rounded-2xl overflow-hidden bg-white border border-slate-200 flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 border border-orange-300/50 flex items-center justify-center shadow-sm">
               <span className="text-orange-700 font-bold text-lg tracking-wider">
@@ -314,19 +303,17 @@ export default function ClientDetailsWizard({
               <p className="text-sm text-slate-500 font-medium">Client Details & Projects</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full h-8 w-8 bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors"
-            onClick={onClose}
+          <Button 
+            variant="outline" 
+            onClick={() => router.push('/clients')}
+            className="rounded-full shadow-sm bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
           >
-            <X className="h-4 w-4" />
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Clients
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
-          {/* Stepper */}
-          <div className="flex items-center justify-center mb-8">
+        <div className="px-6 py-5 bg-slate-50/30">
+          <div className="flex items-center justify-center mb-5">
             {[1, 2, 3].map((s, idx) => (
               <React.Fragment key={s}>
                 <div
@@ -338,7 +325,7 @@ export default function ClientDetailsWizard({
                 >
                   <div
                     className={clsx(
-                      "w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm transition-colors duration-300",
+                      "w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-sm transition-colors duration-300",
                       step === s
                         ? "bg-orange-500 text-white border-2 border-orange-200 ring-4 ring-orange-50"
                         : step > s
@@ -347,16 +334,16 @@ export default function ClientDetailsWizard({
                     )}
                   >
                     {s === 1 ? (
-                      <User className="w-4 h-4" />
+                      <User className="w-3.5 h-3.5" />
                     ) : s === 2 ? (
-                      <Briefcase className="w-4 h-4" />
+                      <Briefcase className="w-3.5 h-3.5" />
                     ) : (
-                      <CheckCircle className="w-4 h-4" />
+                      <CheckCircle className="w-3.5 h-3.5" />
                     )}
                   </div>
                   <span
                     className={clsx(
-                      "text-xs font-bold uppercase tracking-wider",
+                      "text-[11px] font-bold uppercase tracking-wider",
                       step === s ? "text-orange-600" : "text-slate-400"
                     )}
                   >
@@ -366,7 +353,7 @@ export default function ClientDetailsWizard({
                 {idx < 2 && (
                   <div
                     className={clsx(
-                      "w-16 sm:w-24 h-0.5 mx-2 rounded-full transition-colors duration-300",
+                      "w-12 sm:w-20 h-0.5 mx-1 rounded-full transition-colors duration-300",
                       step > s ? "bg-orange-300" : "bg-slate-200"
                     )}
                   />
@@ -375,15 +362,24 @@ export default function ClientDetailsWizard({
             ))}
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm h-[400px] flex flex-col">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
             {step === 1 && (
-              <ScrollArea className="animate-in slide-in-from-right-4 fade-in duration-300 h-full pr-3 pb-2">
+              <div className="animate-in slide-in-from-right-4 fade-in duration-300">
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
                     <Building className="w-5 h-5 text-orange-500" /> Client Information
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
+                      <div className="flex gap-3">
+                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          <User className="w-4 h-4 text-slate-500" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-400 uppercase">Client Name</p>
+                          <p className="text-sm font-semibold text-slate-700">{client.name || "-"}</p>
+                        </div>
+                      </div>
                       <div className="flex gap-3">
                         <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
                           <Mail className="w-4 h-4 text-slate-500" />
@@ -433,11 +429,11 @@ export default function ClientDetailsWizard({
                     </div>
                   </div>
                 </div>
-              </ScrollArea>
+              </div>
             )}
 
             {step === 2 && (
-              <div className="animate-in slide-in-from-right-4 fade-in duration-300 h-full flex flex-col overflow-hidden">
+              <div className="animate-in slide-in-from-right-4 fade-in duration-300 flex flex-col">
                 <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4 shrink-0 flex items-center gap-2">
                   <Briefcase className="w-5 h-5 text-orange-500" /> Current Projects
                 </h3>
@@ -446,11 +442,11 @@ export default function ClientDetailsWizard({
                     <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
                   </div>
                 ) : (
-                  <div className="flex-1 overflow-hidden">
+                  <div>
                     <ProjectJobsList
                       jobEntries={jobEntries}
                       isCompleted={false}
-                      onEditClick={onEditClick}
+                      onEditClick={handleEditClick}
                       client={client}
                     />
                   </div>
@@ -459,7 +455,7 @@ export default function ClientDetailsWizard({
             )}
 
             {step === 3 && (
-              <div className="animate-in slide-in-from-right-4 fade-in duration-300 h-full flex flex-col overflow-hidden">
+              <div className="animate-in slide-in-from-right-4 fade-in duration-300 flex flex-col">
                 <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4 shrink-0 flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-emerald-500" /> Completed Projects
                 </h3>
@@ -468,11 +464,11 @@ export default function ClientDetailsWizard({
                     <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
                   </div>
                 ) : (
-                  <div className="flex-1 overflow-hidden">
+                  <div>
                     <ProjectJobsList
                       jobEntries={jobEntries}
                       isCompleted={true}
-                      onEditClick={onEditClick}
+                      onEditClick={handleEditClick}
                       client={client}
                     />
                   </div>
@@ -499,14 +495,25 @@ export default function ClientDetailsWizard({
               >
                 Next
               </Button>
-            ) : (
-              <Button onClick={onClose} className="bg-orange-500 hover:bg-orange-600 text-white">
-                Close Wizard
-              </Button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
+      
+      {editingTest && (
+        <ClientWizard
+          mode="edit"
+          initialData={{
+            client: editingTest.client,
+            jobEntryTest: editingTest.test,
+          }}
+          onClose={() => setEditingTest(null)}
+          onSuccess={() => {
+            setEditingTest(null);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
