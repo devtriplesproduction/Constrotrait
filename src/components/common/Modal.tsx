@@ -41,7 +41,7 @@ export function Modal({ isOpen, onClose, children, className = "" }: ModalProps)
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
+          className="absolute z-50 top-4 right-4 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
         >
           <X className="w-5 h-5" />
         </Button>

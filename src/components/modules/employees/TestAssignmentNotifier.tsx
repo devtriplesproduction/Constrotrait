@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Sparkles, CalendarClock, ArrowRight } from 'lucide-react';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/ScrollArea';
 import Link from 'next/link';
 
 interface TodayTest {
@@ -60,7 +61,8 @@ export function TestAssignmentNotifier({ currentUserProfile, todayTests }: TestA
           </p>
         </div>
 
-        <div className="w-full max-h-[320px] overflow-y-auto space-y-3 mb-6 pr-1 custom-scrollbar z-10">
+        <ScrollArea className="w-full max-h-[320px] mb-6 pr-3 z-10">
+          <div className="flex flex-col gap-3">
           {todayTests.map(test => {
             const specificTest = test.job_entry_tests?.test_master?.specific_test;
             const componentParameter = test.job_entry_tests?.test_master?.component_parameter;
@@ -79,7 +81,8 @@ export function TestAssignmentNotifier({ currentUserProfile, todayTests }: TestA
               </div>
             );
           })}
-        </div>
+          </div>
+        </ScrollArea>
 
         <div className="flex gap-3 w-full mt-2 z-10">
           <Button
