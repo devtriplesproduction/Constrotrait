@@ -87,9 +87,9 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
         return (
         <div key={a.id || idx} className="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 flex flex-col">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3">
-                 <h4 className="font-bold text-lg text-slate-800 tracking-tight">{specificTest}</h4>
+                 <h4 className="font-bold text-lg text-slate-800 tracking-tight shrink-0">{specificTest}</h4>
                  <span className="font-bold text-slate-700 text-sm truncate">{getSampleCode(a)}</span>
               </div>
               <p className="text-sm text-slate-500 mt-2 flex items-center gap-2">
