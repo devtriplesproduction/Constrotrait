@@ -50,6 +50,7 @@ export type TestDetailsValues = z.infer<typeof testDetailsSchema>;
 
 export const materialDetailsSchema = z.object({
   material_id: z.string().optional(),
+  material_initials: z.string().optional(),
   material_details_location: z.string().optional(),
   sample_quantity: z.string().optional(),
   testing_day: z.string().optional(),
@@ -67,6 +68,7 @@ export const clientWizardSchema = z.object({
   jobEntryTests: z.array(testDetailsSchema).default([]),
   dummy_is_nabl: z.boolean().optional(),
   dummy_scheduled_days: z.string().optional(),
+  non_nabl_month: z.string().optional(),
 });
 
 export type ClientWizardValues = z.infer<typeof clientWizardSchema>;

@@ -39,7 +39,7 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
   );
 
   if (canManageTestMaster(roleArray)) {
-    adminLinks.push({ title: "Test Master", href: "/tests", icon: ClipboardList });
+    adminLinks.push({ title: "Create Test", href: "/tests", icon: ClipboardList });
   }
 
   if (canManageClientsAndJobs(roleArray)) {

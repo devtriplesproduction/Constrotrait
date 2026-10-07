@@ -55,9 +55,10 @@ export function PageHeader({
     if (typeof title === 'string') {
       const words = title.split(' ');
       if (words.length > 1) {
+        const isJobFirst = words[0].toLowerCase() === 'job';
         return (
           <>
-            {words[0]}{' '}
+            {isJobFirst ? <span className="text-orange-500">{words[0]}</span> : words[0]}{' '}
             <span className="text-orange-500">{words[1]}</span>
             {words.length > 2 && ' ' + words.slice(2).join(' ')}
           </>

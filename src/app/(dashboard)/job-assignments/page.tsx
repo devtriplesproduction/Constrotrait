@@ -27,27 +27,19 @@ export default async function JobAssignmentsPage(props: {
   const defaultTab = isManager ? "list" : "my";
   const tab = typeof searchParams.tab === "string" ? searchParams.tab : defaultTab;
 
-  if (!isManager && tab !== "my") {
+  if (!isManager && tab !== "my" && tab !== "schedule") {
     redirect("/job-assignments?tab=my");
   }
 
-  let branches: any[] = [];
-  let assignments: any[] = [];
-  let employees: any[] = [];
+  const [branchesRes, assignmentsRes, employeesRes] = await Promise.all([
+    getActiveBranchesAction(),
+    getAssignmentsAction(),
+    getAllEmployeesAction()
+  ]);
 
-  if (isManager) {
-    const [branchesRes, assignmentsRes, employeesRes] = await Promise.all([
-      getActiveBranchesAction(),
-      getAssignmentsAction(),
-      getAllEmployeesAction()
-    ]);
-    branches = branchesRes.success ? (branchesRes.data || []) : [];
-    assignments = assignmentsRes.success ? (assignmentsRes.data || []) : [];
-    employees = employeesRes.success ? (employeesRes.data || []) : [];
-  } else {
-    const assignmentsRes = await getMyAssignmentsAction(user.id);
-    assignments = assignmentsRes.success ? (assignmentsRes.data || []) : [];
-  }
+  const branches = branchesRes.success ? (branchesRes.data || []) : [];
+  const assignments = assignmentsRes.success ? (assignmentsRes.data || []) : [];
+  const employees = employeesRes.success ? (employeesRes.data || []) : [];
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">

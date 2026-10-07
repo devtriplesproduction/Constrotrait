@@ -8,8 +8,12 @@ import { createClient } from "@/lib/supabase/client";
 import { Loader2, Check, X, Download, Play, Upload, Eye, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-export function JobAssignmentActions({ assignment, currentUserId }: { assignment: any, currentUserId: string }) {
+export function JobAssignmentActions({ assignment, currentUserId, allAssignments = [] }: { assignment: any, currentUserId: string, allAssignments?: any[] }) {
   const [loading, setLoading] = useState(false);
+
+  const allTestsStarted = allAssignments.length > 0 
+    ? allAssignments.every(a => !['pending', 'assigned', 'accepted'].includes(a.status)) 
+    : true;
   const [remarkMode, setRemarkMode] = useState<"approve" | "reject" | null>(null);
   const [remark, setRemark] = useState("");
   const router = useRouter();
@@ -33,6 +37,30 @@ export function JobAssignmentActions({ assignment, currentUserId }: { assignment
     }
   };
 
+  const handleCombinedStatusUpdate = async (status: string, validCurrentStatuses: string[], successMessage: string) => {
+    setLoading(true);
+    try {
+      const updatableAssignments = allAssignments.filter(a => validCurrentStatuses.includes(a.status));
+      if (updatableAssignments.length === 0) return;
+
+      const results = await Promise.all(
+        updatableAssignments.map(a => updateAssignmentStatusAction(a.id, status))
+      );
+      
+      const allSuccess = results.every(r => r.success);
+      if (allSuccess) {
+        toast({ title: "Success", description: successMessage, variant: "success" });
+      } else {
+        toast({ title: "Warning", description: "Some tests failed to update.", variant: "error" });
+      }
+      router.refresh();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -44,12 +72,20 @@ export function JobAssignmentActions({ assignment, currentUserId }: { assignment
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("reports").getPublicUrl(fileName);
       
-      const res = await updateAssignmentStatusAction(assignment.id, "report_uploaded", { report_url: urlData.publicUrl });
-      if (res.success) {
-        toast({ title: "Success", description: "Report uploaded successfully.", variant: "success" });
+      const updatableAssignments = allAssignments.filter(a => ['in_testing', 'report_uploaded', 'rejected'].includes(a.status));
+      const results = await Promise.all(
+        updatableAssignments.map(a => 
+          updateAssignmentStatusAction(a.id, "report_uploaded", { report_url: urlData.publicUrl })
+        )
+      );
+      
+      const allSuccess = results.every(r => r.success);
+      if (allSuccess) {
+        toast({ title: "Success", description: "Combined report uploaded successfully.", variant: "success" });
         router.refresh();
       } else {
-        toast({ title: "Error", description: res.error, variant: "error" });
+        toast({ title: "Warning", description: "Uploaded, but some tests failed to update.", variant: "error" });
+        router.refresh();
       }
     } catch (err: any) {
       toast({ title: "Error", description: "Upload error: " + err.message, variant: "error" });
@@ -101,6 +137,13 @@ export function JobAssignmentActions({ assignment, currentUserId }: { assignment
 
   return (
     <div className="flex flex-wrap items-center justify-end w-full gap-3">
+      {assignment.status === 'assigned' && (
+        <Button size="sm" onClick={() => handleCombinedStatusUpdate('accepted', ['assigned'], 'Job Card accepted successfully.')} disabled={loading} className="bg-indigo-50 text-indigo-600 hover:bg-indigo-500 hover:text-white border border-indigo-200">
+          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+          Accept Job Card
+        </Button>
+      )}
+
       {assignment.status === 'accepted' && (
         <Button size="sm" onClick={() => handleStatusUpdate('in_testing')} disabled={loading} className="bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200">
           {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
@@ -109,18 +152,18 @@ export function JobAssignmentActions({ assignment, currentUserId }: { assignment
       )}
 
       {(assignment.status === 'in_testing' || assignment.status === 'rejected') && (
-        <>
+        <div title={!allTestsStarted ? "Upload available after all tests under this Job Card are in 'In Testing' stage." : undefined}>
           <input 
             type="file" 
             id={`file-upload-${assignment.id}`} 
             className="hidden" 
             onChange={handleFileUpload} 
           />
-          <Button size="sm" disabled={loading} onClick={() => document.getElementById(`file-upload-${assignment.id}`)?.click()} className="bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white border border-blue-200">
+          <Button size="sm" disabled={loading || !allTestsStarted} onClick={() => document.getElementById(`file-upload-${assignment.id}`)?.click()} className="bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200">
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-            {assignment.status === 'rejected' ? 'Re-upload Report' : 'Upload Report'}
+            {assignment.status === 'rejected' ? 'Re-upload Combined Report' : 'Upload Combined Report'}
           </Button>
-        </>
+        </div>
       )}
 
       {assignment.status === 'report_uploaded' && (

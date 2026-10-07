@@ -138,41 +138,46 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
         {/* ITEMS TABLE */}
         <View style={styles.table}>
           <View style={styles.row}>
-            <View style={[styles.cell, { width: '20%', alignItems: 'center' }]}><Text style={styles.bold}>Sample Code No.</Text></View>
-            <View style={[styles.cell, { width: '20%', alignItems: 'center' }]}><Text style={styles.bold}>Sample Name</Text></View>
-            <View style={[styles.cell, { width: '20%', alignItems: 'center' }]}><Text style={styles.bold}>Test Parameters</Text></View>
+            <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text style={styles.bold}>Sample ID</Text></View>
+            <View style={[styles.cell, { width: '25%', alignItems: 'center' }]}><Text style={styles.bold}>Material Name</Text></View>
+            <View style={[styles.cell, { width: '25%', alignItems: 'center' }]}><Text style={styles.bold}>Test Parameters</Text></View>
             <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text style={styles.bold}>Method</Text></View>
-            <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text style={styles.bold}>Sample Details</Text></View>
+            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text style={styles.bold}>Sample Details</Text></View>
             <View style={[styles.lastCell, { width: '10%', alignItems: 'center' }]}><Text style={styles.bold}>Remark</Text></View>
           </View>
 
-          {assignments.map((assignment, idx) => {
+          {assignments.flatMap((assignment, idx) => {
             const t = assignment.job_entry_tests;
-            let codeNo = t?.additional_details_values?.sample_code_no || '';
-            if (!codeNo && t?.additional_details_values) {
-              const codeKey = Object.keys(t.additional_details_values).find(k => {
-                const lower = k.toLowerCase().replace(/[^a-z0-9]/g, '');
-                return lower.includes('samplecode') || lower === 'code';
-              });
-              if (codeKey) codeNo = t.additional_details_values[codeKey];
+            let codeNo = t?.additional_details_values?.sample_code_no || t?.sample_code_no || '';
+            let codes: string[] = [];
+
+            if (codeNo) {
+              codes = codeNo.split(',').map((c: string) => c.trim()).filter(Boolean);
             }
-            codeNo = codeNo || t?.material_details_location || '';
-            const sampleName = t?.material_description || '';
+            if (codes.length === 0) {
+              codes = [''];
+            }
+
+            const materialName = t?.test_master?.material_product || t?.material_description || '';
             const testParams = t?.test_master?.component_parameter || '';
             const testMethod = t?.test_master?.test_method || '';
             const sampleDetails = t?.sample_quantity || 'ok';
             const remark = assignment.status === 'approved' ? 'ok' : 'pending';
 
-            return (
-              <View key={idx} style={[idx === assignments.length - 1 ? styles.lastRow : styles.row, { minHeight: 25 }]}>
-                <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>{codeNo}</Text></View>
-                <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>{sampleName}</Text></View>
-                <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>{testParams}</Text></View>
-                <View style={[styles.cell, { width: '15%' }]}><Text style={styles.textCenter}>{testMethod}</Text></View>
-                <View style={[styles.cell, { width: '15%' }]}><Text style={styles.textCenter}>{sampleDetails}</Text></View>
-                <View style={[styles.lastCell, { width: '10%' }]}><Text style={styles.textCenter}>{remark}</Text></View>
-              </View>
-            );
+            return codes.map((code, codeIdx) => {
+              const isLastRow = idx === assignments.length - 1 && codeIdx === codes.length - 1;
+
+              return (
+                <View key={`${idx}-${codeIdx}`} style={[isLastRow ? styles.lastRow : styles.row, { minHeight: 25 }]}>
+                  <View style={[styles.cell, { width: '15%' }]}><Text style={styles.textCenter}>{code}</Text></View>
+                  <View style={[styles.cell, { width: '25%' }]}><Text style={styles.textCenter}>{materialName}</Text></View>
+                  <View style={[styles.cell, { width: '25%' }]}><Text style={styles.textCenter}>{testParams}</Text></View>
+                  <View style={[styles.cell, { width: '15%' }]}><Text style={styles.textCenter}>{testMethod}</Text></View>
+                  <View style={[styles.cell, { width: '10%' }]}><Text style={styles.textCenter}>{sampleDetails}</Text></View>
+                  <View style={[styles.lastCell, { width: '10%' }]}><Text style={styles.textCenter}>{remark}</Text></View>
+                </View>
+              );
+            });
           })}
         </View>
 
@@ -194,7 +199,7 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
           {/* Column 2 */}
           <View style={{ width: '40%', borderRightWidth: 1, borderColor: '#000', display: 'flex', flexDirection: 'column' }}>
             <View style={{ padding: 4, borderBottomWidth: 1, borderColor: '#000' }}>
-              <Text>Amendment No & Date :02 & 08.06.2026</Text>
+              <Text>Amendment No & Date : </Text>
             </View>
             <View style={{ padding: 4, flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{ alignSelf: 'flex-start' }}>Prepared by :</Text>

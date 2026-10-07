@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, Beaker, FileText, XCircle, Pencil, Trash2, AlertTriangle, Loader2, Search, ChevronLeft, ChevronRight as ChevronRightIcon, Download } from "lucide-react";
+import { Plus, Beaker, FileText, XCircle, Pencil, Trash2, AlertTriangle, Loader2, Search, ChevronLeft, ChevronRight as ChevronRightIcon, Download, SlidersHorizontal, RefreshCcw } from "lucide-react";
 import { TestMaster } from "@/services/test.service";
 import { AddTestWizard } from "./AddTestWizard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,7 +55,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
       const result = await deleteTestMasterAction(deletingTest.id);
       if (result.success) {
         toast({
-          title: "Test Master Deleted",
+          title: "Add Test Deleted",
           description: "The test has been successfully deleted.",
         });
         router.refresh();
@@ -113,45 +113,11 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Test Master"
+        title="Add Test"
         subtitle="Manage all registered tests and methodologies"
         icon={Beaker}
         actions={
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64 group">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
-              </div>
-              <Input
-                type="text"
-                placeholder="Search tests..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-[40px] border-slate-200 bg-white hover:border-slate-300 focus:ring-orange-500/20 focus:border-orange-500"
-              />
-            </div>
-            <div className="w-full sm:w-[150px]">
-              <Select
-                value={nablFilter}
-                onValueChange={(val) => setNablFilter(val as any)}
-                buttonClassName="h-[40px] bg-white rounded-xl"
-              >
-                <SelectItem value="all">All NABL</SelectItem>
-                <SelectItem value="nabl">NABL</SelectItem>
-                <SelectItem value="non-nabl">NON-NABL</SelectItem>
-              </Select>
-            </div>
-            <div className="w-full sm:w-[160px]">
-              <Select
-                value={categoryFilter}
-                onValueChange={(val) => setCategoryFilter(val as any)}
-                buttonClassName="h-[40px] bg-white rounded-xl"
-              >
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="Construction">Construction</SelectItem>
-                <SelectItem value="Environmental">Environmental</SelectItem>
-              </Select>
-            </div>
+          <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="none"
@@ -173,6 +139,73 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
           </div>
         }
       />
+
+      {/* Filter Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-6 h-6 rounded-md bg-orange-50 flex items-center justify-center">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-orange-600" />
+          </div>
+          <h3 className="font-bold text-slate-800 text-[15px]">Filter Tests</h3>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row items-end gap-4">
+          <div className="flex-1 w-full space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Search</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+              </div>
+              <Input
+                type="text"
+                placeholder="Search tests..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-[40px] border-slate-200 bg-white hover:border-slate-300 focus:ring-orange-500/20 focus:border-orange-500 rounded-xl"
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1 w-full space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">NABL Status</label>
+            <Select
+              value={nablFilter}
+              onValueChange={(val) => setNablFilter(val as any)}
+              buttonClassName="h-[40px] bg-white rounded-xl border-slate-200 hover:border-slate-300"
+            >
+              <SelectItem value="all">All NABL</SelectItem>
+              <SelectItem value="nabl">NABL</SelectItem>
+              <SelectItem value="non-nabl">NON-NABL</SelectItem>
+            </Select>
+          </div>
+          
+          <div className="flex-1 w-full space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
+            <Select
+              value={categoryFilter}
+              onValueChange={(val) => setCategoryFilter(val as any)}
+              buttonClassName="h-[40px] bg-white rounded-xl border-slate-200 hover:border-slate-300"
+            >
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="Construction">Construction</SelectItem>
+              <SelectItem value="Environmental">Environmental</SelectItem>
+            </Select>
+          </div>
+
+          <Button
+            variant="outline"
+            size="none"
+            onClick={() => {
+              setSearchQuery("");
+              setNablFilter("all");
+              setCategoryFilter("all");
+            }}
+            className="h-[40px] px-5 rounded-xl border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 font-semibold shadow-sm flex items-center gap-2 transition-colors whitespace-nowrap"
+          >
+            <RefreshCcw className="w-4 h-4" /> Refresh
+          </Button>
+        </div>
+      </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
@@ -220,121 +253,103 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
 
       {filteredTests.length > 0 ? (
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {paginatedTests.map((test, index) => (
-              <Card key={test.id} className="relative h-[320px] rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-orange-200 transition-all duration-200 group overflow-hidden">
-                {/* Subtle Top Accent Line */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10" />
-                <ScrollArea className="h-full w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                  <div className="flex flex-col gap-4 p-4 sm:p-5">
-
-                    {/* Header: Badge + Actions */}
-                    <div className="flex justify-between items-start gap-4">
-                      {/* S.No Badge */}
-                      <div className="w-12 h-12 rounded-xl flex-shrink-0 bg-gradient-to-b from-orange-500 to-orange-700 flex flex-col items-center justify-center shadow-[0_4px_8px_-2px_rgba(234,88,12,0.6)] border border-orange-400/50">
-                        <span className="text-[8px] font-bold text-orange-100/90 uppercase tracking-widest leading-none mb-0.5">Test</span>
-                        <span className="text-white font-black text-lg leading-none drop-shadow-sm">
-                          {String((currentPage - 1) * pageSize + index + 1).padStart(2, '0')}
+              <Card key={test.id} className="group relative flex flex-col h-full bg-white rounded-xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-orange-300/60 transition-all duration-300 overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                <div className="p-3 flex-1 flex flex-col">
+                  {/* Header: Badges & Actions */}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200/50 text-[10px] font-extrabold tracking-wider shadow-sm uppercase">
+                        TEST {String((currentPage - 1) * pageSize + index + 1).padStart(2, '0')}
+                      </span>
+                      {test.is_nabl && (
+                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[10px] font-extrabold tracking-wider shadow-sm uppercase">
+                          NABL
                         </span>
-                      </div>
-
-                      <div className="flex items-start justify-between gap-3 w-full">
-                        {/* Test Method */}
-                        <div className="flex flex-col items-center flex-1 text-center">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Test Method</span>
-                          <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
-                            {test.test_method}
-                          </span>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex flex-row items-center justify-end gap-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-300 shrink-0 w-[68px]">
-                          <Button
-                            variant="custom"
-                            size="none"
-                            onClick={() => handleEdit(test)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 shadow-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 hover:shadow transition-all"
-                            title="Edit"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="custom"
-                            size="none"
-                            onClick={() => setDeletingTest(test)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:shadow transition-all"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Content Grid */}
-                    <div className="grid grid-cols-2 gap-y-4 gap-x-3 items-start mt-2">
-                      {test.is_nabl !== false ? (
-                        <>
-                          <div className="col-span-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Discipline / Group</span>
-                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-orange-50 border border-orange-100/80 text-orange-700 font-semibold text-xs shadow-sm break-all">
-                              {test.discipline_group || "-"}
-                            </span>
-                          </div>
-                          <div className="col-span-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Material</span>
-                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
-                              {test.material_product || "-"}
-                            </span>
-                          </div>
-                          <div className="col-span-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Component </span>
-                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
-                              {test.component_parameter || "-"}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="col-span-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Particulars</span>
-                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-orange-50 border border-orange-100/80 text-orange-700 font-semibold text-xs shadow-sm break-all">
-                              {test.particulars || "-"}
-                            </span>
-                          </div>
-                          <div className="col-span-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Unit</span>
-                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
-                              {test.unit || "-"}
-                            </span>
-                          </div>
-                          <div className="col-span-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Sample Size</span>
-                            <span className="inline-block w-fit max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-700 font-medium text-xs shadow-sm break-all">
-                              {test.sample_size || "-"}
-                            </span>
-                          </div>
-                        </>
                       )}
-                      <div className="col-span-2 mt-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Additional Details</span>
-                        {test.additional_details && test.additional_details.length > 0 ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5">
-                            {test.additional_details.map((detail, idx) => (
-                              <div key={idx} className="flex items-start gap-1.5 text-slate-600 text-sm leading-tight">
-                                <span className="text-slate-400 mt-0.5">•</span>
-                                <span className="break-all">{detail}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 text-xs italic">None</span>
-                        )}
-                      </div>
                     </div>
-
+                    
+                    <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200 -mt-1 -mr-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(test)}
+                        className="h-6 w-6 rounded-full text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeletingTest(test)}
+                        className="h-6 w-6 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
-                </ScrollArea>
+
+                  {/* Title */}
+                  <h3 className="text-[15px] font-extrabold text-slate-900 leading-snug mb-2 line-clamp-2">
+                    {test.test_method || "Unknown Test Method"}
+                  </h3>
+
+                  {/* Details Grid */}
+                  <div className="grid gap-1.5 mb-2 flex-1">
+                    {test.is_nabl !== false ? (
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <div className="bg-slate-50/80 rounded-md p-1.5 border border-slate-100 min-w-0">
+                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest block mb-0.5 truncate">Discipline</span>
+                          <span className="text-xs font-bold text-slate-800 truncate block" title={test.discipline_group}>{test.discipline_group || "-"}</span>
+                        </div>
+                        <div className="bg-slate-50/80 rounded-md p-1.5 border border-slate-100 min-w-0">
+                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest block mb-0.5 truncate">Material</span>
+                          <span className="text-xs font-bold text-slate-800 truncate block" title={test.material_product}>{test.material_product || "-"}</span>
+                        </div>
+                        <div className="bg-slate-50/80 rounded-md p-1.5 border border-slate-100 min-w-0">
+                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest block mb-0.5 truncate">Component</span>
+                          <span className="text-xs font-bold text-slate-800 truncate block" title={test.component_parameter}>{test.component_parameter || "-"}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <div className="bg-orange-50/50 rounded-md p-1.5 border border-orange-100/50 min-w-0 col-span-1">
+                          <span className="text-[9px] font-extrabold text-orange-600 uppercase tracking-widest block mb-0.5 truncate">Particulars</span>
+                          <span className="text-xs font-bold text-orange-950 truncate block" title={test.particulars || undefined}>{test.particulars || "-"}</span>
+                        </div>
+                        <div className="bg-slate-50/80 rounded-md p-1.5 border border-slate-100 min-w-0">
+                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest block mb-0.5 truncate">Unit</span>
+                          <span className="text-xs font-bold text-slate-800 truncate block" title={test.unit || undefined}>{test.unit || "-"}</span>
+                        </div>
+                        <div className="bg-slate-50/80 rounded-md p-1.5 border border-slate-100 min-w-0">
+                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest block mb-0.5 truncate">Sample Size</span>
+                          <span className="text-xs font-bold text-slate-800 truncate block" title={test.sample_size || undefined}>{test.sample_size || "-"}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer: Additional Details */}
+                  <div className="pt-2 border-t border-slate-100 mt-auto">
+                    <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest block mb-1 flex items-center gap-1">
+                      <FileText className="w-3 h-3" /> Additional Details
+                    </span>
+                    {test.additional_details && test.additional_details.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {test.additional_details.map((detail, idx) => (
+                          <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-slate-700 bg-slate-100/80 border border-slate-200/60 text-[11px] font-bold">
+                            {detail}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-slate-500 font-medium text-[11px] italic">No additional details provided.</span>
+                    )}
+                  </div>
+                </div>
               </Card>
             ))}
           </div>

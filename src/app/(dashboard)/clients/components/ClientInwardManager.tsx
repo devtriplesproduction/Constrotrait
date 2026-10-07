@@ -11,6 +11,7 @@ import NewInwardModalButton from "./NewInwardModalButton";
 
 import { PageHeader } from "@/components/modules/PageHeader";
 import { clsx } from "clsx";
+import { useSearchParams } from "next/navigation";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
@@ -20,7 +21,9 @@ export default function ClientInwardManager({
 }: {
   initialClients: Client[];
 }) {
-  const [activeTab, setActiveTab] = useState<"clients" | "all-jobs">("clients");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") === "all-jobs" ? "all-jobs" : "clients";
+  const [activeTab, setActiveTab] = useState<"clients" | "all-jobs">(initialTab);
 
   // Global editing state for the Wizard modal
   const [editingTest, setEditingTest] = useState<JobEntryTest | null>(null);

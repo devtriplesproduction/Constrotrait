@@ -4,11 +4,65 @@ import { getAuthenticatedUserWithRoles } from "./auth.service";
 import { canManageClientsAndJobs } from "@/config/roles";
 
 export class JobEntryService {
+  static toRoman(num: number): string {
+    const roman: { [key: string]: number } = {
+      M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90,
+      L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1
+    };
+    let str = '';
+    for (let i of Object.keys(roman)) {
+      let q = Math.floor(num / roman[i]);
+      num -= q * roman[i];
+      str += i.repeat(q);
+    }
+    return str;
+  }
+
+  private static async buildSampleCodes(
+    supabase: any,
+    jobYear: number,
+    materialInitials: string | undefined,
+    testMasters: any[],
+    testsData: any[]
+  ): Promise<string[]> {
+    if (!testsData || testsData.length === 0 || !testMasters || testMasters.length === 0) {
+      return [];
+    }
+    if (!materialInitials) {
+      throw new Error("material_initials is required for code generation.");
+    }
+
+    const firstTestMaster = testMasters.find((x: any) => x.id === testsData[0].test_master_id);
+    const category = firstTestMaster?.category === 'Environmental' ? 'ENV' : 'CON';
+    const yy = jobYear.toString().slice(-2);
+    const nextYy = (jobYear + 1).toString().slice(-2);
+    const yearSegment = `${yy}-${nextYy}`;
+
+    const seqName = category === 'ENV' ? 'SAMPLE_ENV' : 'SAMPLE_CON';
+    const { data: sampleData, error: sampleError } = await supabase.rpc("next_uid_seq", { p_name: seqName, p_year: jobYear });
+    if (sampleError || !sampleData) {
+      throw new Error(`Sample Code Generation failed for ${seqName}: ` + (sampleError?.message || "No sequence returned"));
+    }
+    
+    const sampleNo = sampleData.toString();
+    const sampleQuantityStr = testsData[0].sample_quantity || "1";
+    const sampleQuantityMatch = sampleQuantityStr.match(/\d+/);
+    let qty = sampleQuantityMatch ? parseInt(sampleQuantityMatch[0], 10) : 1;
+    if (isNaN(qty) || qty <= 0) qty = 1;
+
+    const sampleCodes: string[] = [];
+    for (let i = 1; i <= qty; i++) {
+      sampleCodes.push(`CMTS/${category}/${materialInitials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
+    }
+    return sampleCodes;
+  }
   static async createJobEntryWithTests(
     jobData: Database["public"]["Tables"]["job_entries"]["Insert"],
     testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[],
     isDummyNabl?: boolean,
-    dummyScheduledDays?: string
+    dummyScheduledDays?: string,
+    nonNablMonth?: string,
+    materialInitials?: string
   ) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
@@ -19,12 +73,12 @@ export class JobEntryService {
     const supabase = await createClient() as any;
     
     let isNabl = false;
+    let testMasters: any[] = [];
 
     if (testsData && testsData.length > 0) {
       const testMasterIds = testsData.map((t) => t.test_master_id).filter(Boolean);
-      let testMasters: any[] = [];
       if (testMasterIds.length > 0) {
-        const { data: tmData } = await supabase.from("test_master").select("id, is_nabl").in("id", testMasterIds as string[]);
+        const { data: tmData } = await supabase.from("test_master").select("id, is_nabl, category").in("id", testMasterIds as string[]);
         testMasters = tmData || [];
       }
 
@@ -43,7 +97,6 @@ export class JobEntryService {
     }
 
     const createdDate = new Date();
-    const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
     const jobYear = createdDate.getFullYear();
     let firstUidLabel: string | null = null;
     let firstUid: number | null = null;
@@ -54,6 +107,8 @@ export class JobEntryService {
       firstUidLabel = data.toString();
       firstUid = parseInt(firstUidLabel as string, 10);
     } else {
+      if (!nonNablMonth) throw new Error("A valid month must be provided for non-NABL tests.");
+      const month = nonNablMonth;
       const counterName = `UID_${month}`;
       const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
       if (error) throw new Error("UID Generation failed: " + error.message);
@@ -77,9 +132,15 @@ export class JobEntryService {
     let jobEntryTests: any[] | null = [];
     let uidsIssued: string[] = [firstUidLabel as string];
 
+    let sampleCodes: string[] = await JobEntryService.buildSampleCodes(supabase, jobYear, materialInitials, testMasters, testsData);
+
     if (testsData && testsData.length > 0) {
       for (const t of testsData) {
         (t as any).uid_label = firstUidLabel;
+        if (sampleCodes.length > 0) {
+          if (!t.additional_details_values) t.additional_details_values = {};
+          (t.additional_details_values as any).sample_code_no = sampleCodes.join(', ');
+        }
       }
 
       const testsToInsert = testsData.map((test) => ({ ...test, job_entry_id: jobEntry.id }));
@@ -145,27 +206,16 @@ export class JobEntryService {
     }
 
     const createdDate = new Date();
-    const month = createdDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
     const jobYear = createdDate.getFullYear();
 
-    let currentUidLabel = "";
-    let uidInt = null;
-
-    if (isNabl) {
-      const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
-      if (error) throw new Error("UID Generation failed: " + error.message);
-      currentUidLabel = data.toString();
-      uidInt = parseInt(data.toString(), 10);
-    } else {
-      const counterName = `UID_${month}`;
-      const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
-      if (error) throw new Error("UID Generation failed: " + error.message);
-      currentUidLabel = `${month}-${data.toString().padStart(2, '0')}`;
-    }
+    const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
+    if (error) throw new Error("UID Generation failed: " + error.message);
+    const currentUidLabel = data.toString();
+    const uidInt = parseInt(data.toString(), 10);
 
     const { data: jobEntry, error: jobError } = await supabase
       .from("job_entries")
-      .insert({ client_id: clientId, uid_label: currentUidLabel, uid: uidInt, is_nabl: isNabl })
+      .insert({ client_id: clientId, uid_label: currentUidLabel, uid: uidInt, is_nabl: true })
       .select()
       .single();
     if (jobError) throw new Error(jobError.message);
@@ -175,7 +225,8 @@ export class JobEntryService {
 
   static async addTestsToJobEntry(
     jobEntryId: string,
-    testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[]
+    testsData: Omit<Database["public"]["Tables"]["job_entry_tests"]["Insert"], "job_entry_id">[],
+    materialInitials?: string
   ) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
@@ -204,6 +255,31 @@ export class JobEntryService {
     const uidsIssued: string[] = [];
     if (jobEntry.uid_label) uidsIssued.push(jobEntry.uid_label);
 
+    const { data: existingTests } = await supabase
+      .from("job_entry_tests")
+      .select("additional_details_values")
+      .eq("job_entry_id", jobEntryId);
+
+    let existingSampleCodeNo: string | null = null;
+    if (existingTests && existingTests.length > 0) {
+      for (const t of existingTests) {
+        const code = (t.additional_details_values as any)?.sample_code_no;
+        if (code) {
+          existingSampleCodeNo = code;
+          break;
+        }
+      }
+    }
+
+    let sampleCodesStr = existingSampleCodeNo;
+    if (!sampleCodesStr) {
+      const jobYear = new Date(jobEntry.created_at).getFullYear();
+      const sampleCodes = await JobEntryService.buildSampleCodes(supabase, jobYear, materialInitials, testMasters, testsData);
+      if (sampleCodes.length > 0) {
+        sampleCodesStr = sampleCodes.join(', ');
+      }
+    }
+
     for (const test of testsData) {
       const tm = testMasters.find((x: any) => x.id === test.test_master_id);
       const isTestNabl = !!tm?.is_nabl;
@@ -211,6 +287,10 @@ export class JobEntryService {
         throw new Error(`Test NABL status (${isTestNabl ? 'NABL' : 'Non-NABL'}) does not match the Job Card (${isNablCard ? 'NABL' : 'Non-NABL'}).`);
       }
       (test as any).uid_label = jobEntry.uid_label;
+      if (sampleCodesStr) {
+        if (!test.additional_details_values) test.additional_details_values = {};
+        (test.additional_details_values as any).sample_code_no = sampleCodesStr;
+      }
     }
 
     const testsToInsert = testsData.map((test) => ({ ...test, job_entry_id: jobEntry.id }));

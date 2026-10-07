@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { MultiSelect } from "@/components/ui/MultiSelect";
-import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText, ChevronDown, MapPin, Users, Receipt, Truck, Package } from "lucide-react";
+import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText, ChevronDown, MapPin, Users, Receipt, Truck, Package, Copy } from "lucide-react";
 import { Database } from "@/types/database";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -29,41 +29,7 @@ const steps = [
   { id: "step5", title: "Test Details", icon: FileText },
 ];
 
-const TESTING_AGE_OPTIONS = [
-  "Same Day (0 days)",
-  "1 Day",
-  "3 Days",
-  "5 Days",
-  "7 Days",
-  "14 Days",
-  "21 Days",
-  "28 Days"
-];
 
-function calculateTestingDate(castingDateStr: string, testingAgeStr: string): string {
-  if (!castingDateStr) return "";
-
-  const castingDate = new Date(castingDateStr);
-  if (isNaN(castingDate.getTime())) return "";
-
-  let daysToAdd = 0;
-  const match = testingAgeStr.match(/(\d+)/);
-  if (match) {
-    daysToAdd = parseInt(match[1], 10);
-  }
-
-  const testingDate = new Date(castingDate);
-  testingDate.setDate(testingDate.getDate() + daysToAdd);
-
-  return testingDate.toISOString().split('T')[0];
-}
-
-function getTestingAgeGroup(testingAgeStr: string): number {
-  if (!testingAgeStr) return 0;
-  if (testingAgeStr.includes("28")) return 28;
-  if (testingAgeStr.includes("7")) return 7;
-  return 0;
-}
 
 type TestMaster = Database["public"]["Tables"]["test_master"]["Row"];
 
@@ -74,6 +40,7 @@ export interface ClientWizardProps {
     jobEntryTest: Database["public"]["Tables"]["job_entry_tests"]["Row"] & { uid?: number; uid_label?: string | null; job_entries?: { uid?: number; uid_label?: string | null } | null };
   };
   onSuccess?: () => void;
+  onClose?: () => void;
 }
 
 export function ClientWizard({ mode = "create", initialData, onSuccess }: ClientWizardProps) {
@@ -185,6 +152,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
         date_of_casting: initialData.jobEntryTest.date_of_casting || "",
         additional_details_values: (initialData.jobEntryTest.additional_details_values as Record<string, string>) || {},
       }] : [],
+      non_nabl_month: (initialData.jobEntryTest as any)?.job_entries?.uid_label?.split('-')[0] || new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+      dummy_is_nabl: true,
     } as ClientWizardValues : {
       jobEntry: {},
       materialDetails: {},
@@ -198,6 +167,8 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       },
       selectedTestIds: [],
       jobEntryTests: [],
+      non_nabl_month: new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+      dummy_is_nabl: true,
     } as ClientWizardValues,
   });
 
@@ -208,6 +179,14 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
   const selectedTestIds = watch("selectedTestIds");
   const jobEntryTests = watch("jobEntryTests");
+  const nonNablMonth = watch("non_nabl_month") || new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase();
+
+  const hasNonNablTest = React.useMemo(() => {
+    return jobEntryTests.some(test => {
+      const testMaster = availableTests.find(t => t.id === test.test_master_id);
+      return testMaster && !testMaster.is_nabl;
+    });
+  }, [jobEntryTests, availableTests]);
 
   const uidPreviews = React.useMemo(() => {
     if (mode === "edit" || nextUidPreview === null) return [];
@@ -226,9 +205,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       }
       const isNabl = testMaster.is_nabl;
       const category = testMaster.category || "";
-      const testingAgeGroup = getTestingAgeGroup(test.testing_age || "");
+      const testingDateGroup = test.date_of_testing || "";
 
-      const groupKey = `${isNabl}-${category}-${testingAgeGroup}`;
+      const groupKey = `${isNabl}-${category}-${testingDateGroup}`;
 
       if (groupToUid.has(groupKey)) {
         previews.push(groupToUid.get(groupKey)!);
@@ -239,9 +218,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           previews.push(uid);
           currentNablUid++;
         } else {
-          const inwardDateStr = test.date_of_receiving;
-          const currentMonthStr = inwardDateStr ? new Date(inwardDateStr).toLocaleString('en-US', { month: 'short' }).toUpperCase() : "MMM";
-          const uid = `${currentMonthStr}-${currentNonNablSerial.toString().padStart(2, '0')}`;
+          const uid = `${nonNablMonth}-${currentNonNablSerial.toString().padStart(2, '0')}`;
           groupToUid.set(groupKey, uid);
           previews.push(uid);
           currentNonNablSerial++;
@@ -250,7 +227,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
     });
 
     return previews;
-  }, [jobEntryTests, availableTests, nextUidPreview, mode]);
+  }, [jobEntryTests, availableTests, nextUidPreview, mode, nonNablMonth]);
 
   // Enable submit button after delay
   useEffect(() => {
@@ -311,6 +288,28 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
       fetchTests();
     }
   }, [currentStep, availableTests.length, mode, initialData, setValue]);
+
+  const handleApplyToAll = (sourceIndex: number) => {
+    const sourceTest = getValues(`jobEntryTests.${sourceIndex}`);
+    
+    fields.forEach((field, targetIndex) => {
+      if (targetIndex !== sourceIndex) {
+        setValue(`jobEntryTests.${targetIndex}.material_description`, sourceTest.material_description, { shouldValidate: true });
+        setValue(`jobEntryTests.${targetIndex}.date_of_testing`, sourceTest.date_of_testing, { shouldValidate: true });
+        
+        if (sourceTest.additional_details_values) {
+          Object.entries(sourceTest.additional_details_values).forEach(([key, value]) => {
+            setValue(`jobEntryTests.${targetIndex}.additional_details_values.${key}` as any, value as string, { shouldValidate: true });
+          });
+        }
+      }
+    });
+
+    toast({
+      title: "Applied to all",
+      description: "Test details have been applied to all other tests.",
+    });
+  };
 
   const handleSelectClient = async (client: Database["public"]["Tables"]["clients"]["Row"]) => {
     setValue("client.id", client.id);
@@ -440,12 +439,23 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   };
 
   const onSubmit = async (data: ClientWizardValues) => {
-    if (!data.selectedTestIds?.length && data.dummy_is_nabl === undefined) {
+    const hasNonNabl = data.jobEntryTests?.some(test => {
+      const testMaster = availableTests.find(t => t.id === test.test_master_id);
+      return testMaster && !testMaster.is_nabl;
+    });
+
+    if (hasNonNabl && !data.non_nabl_month) {
       toast({
         title: "Validation Error",
-        description: "Please select NABL or Non-NABL for the dummy job card."
+        description: "Please select a billing month for Non-NABL tests.",
+        variant: "error"
       });
       return;
+    }
+
+
+    if (!data.selectedTestIds?.length) {
+      data.dummy_is_nabl = true;
     }
 
     setIsSubmitting(true);
@@ -691,11 +701,16 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     {clientProjects.length > 0 && (
                       <div className="flex flex-col gap-1.5 px-6">
                         <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Select Past Project (Optional)</label>
-                        <select
-                          className="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-2 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white"
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (!val) {
+                        <Dropdown
+                          buttonClassName="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white"
+                          options={[
+                            { label: "-- New Project --", value: "new_project" },
+                            ...clientProjects.map((p) => ({ label: p.project_name, value: p.project_name }))
+                          ]}
+                          // Force reload and provide value for controlled behavior
+                          value={watch("jobEntry.project_name") || "new_project"}
+                          onChange={(val) => {
+                            if (val === "new_project") {
                               setValue("jobEntry.division", "");
                               setValue("jobEntry.site_name", "");
                               setValue("jobEntry.agency_name", "");
@@ -718,12 +733,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                               }
                             }
                           }}
-                        >
-                          <option value="">-- New Project --</option>
-                          {clientProjects.map((p, i) => (
-                            <option key={i} value={p.project_name}>{p.project_name}</option>
-                          ))}
-                        </select>
+                        />
                       </div>
                     )}
                     {/* Site & Contact Card */}
@@ -1099,6 +1109,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                             <Input {...register(`materialDetails.material_details_location`)} placeholder="e.g. Block A" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
                           </div>
                           <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material Initials</label>
+                            <Input {...register(`materialDetails.material_initials`)} placeholder="e.g. CC" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
                             <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Sample Quantity</label>
                             <Input {...register(`materialDetails.sample_quantity`)} placeholder="e.g. 50 kg" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
                           </div>
@@ -1116,15 +1130,6 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                               value={watch(`materialDetails.date_of_casting`)}
                               onChange={(val) => {
                                 setValue(`materialDetails.date_of_casting`, val, { shouldValidate: true });
-                                const tests = getValues("jobEntryTests") || [];
-                                tests.forEach((test, idx) => {
-                                  if (test.testing_age) {
-                                    const testSpecificCasting = test.additional_details_values?.["Date of Casting"] || test.additional_details_values?.["Casting Date"];
-                                    const castingToUse = testSpecificCasting || val || "";
-                                    const newTestingDate = calculateTestingDate(castingToUse, test.testing_age);
-                                    setValue(`jobEntryTests.${idx}.date_of_testing`, newTestingDate, { shouldValidate: true });
-                                  }
-                                });
                               }}
                               side="left"
                               triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
@@ -1168,37 +1173,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     <div className="text-center py-12 flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
                       <h3 className="text-slate-800 font-bold text-lg mb-2">No test selected</h3>
                       <p className="text-slate-500 text-sm max-w-md mx-auto mb-6">
-                        You can proceed to submit this as a Dummy Job Card. Please select the type of dummy job card you want to create:
+                        You can proceed to submit this as a Dummy Job Card.
+                        <br />
+                        <span className="font-semibold text-orange-600 mt-2 block">Note: This will be created as a NABL Dummy Job Card.</span>
                       </p>
-
-                      <div className="flex gap-4">
-                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
-                          <input
-                            type="radio"
-                            className="sr-only peer"
-                            name="dummy_is_nabl"
-                            value="true"
-                            onChange={() => setValue('dummy_is_nabl', true)}
-                            checked={watch('dummy_is_nabl') === true}
-                          />
-                          <div className="w-32 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all hover:bg-slate-50">
-                            NABL
-                          </div>
-                        </label>
-                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
-                          <input
-                            type="radio"
-                            className="sr-only peer"
-                            name="dummy_is_nabl"
-                            value="false"
-                            onChange={() => setValue('dummy_is_nabl', false)}
-                            checked={watch('dummy_is_nabl') === false}
-                          />
-                          <div className="w-32 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all hover:bg-slate-50">
-                            Non-NABL
-                          </div>
-                        </label>
-                      </div>
 
                       <div className="w-full max-w-sm mt-6">
                         <label className="text-[13px] font-semibold text-slate-700 mb-1.5 block text-left">Generate ULR After</label>
@@ -1219,6 +1197,23 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                     </div>
                   ) : (
                     <div className="space-y-6">
+                      {hasNonNablTest && (
+                        <div className="bg-slate-50 rounded-xl p-6 border border-slate-200 shadow-sm">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-2 block">
+                            Billing Month for Non-NABL Tests <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            {...register("non_nabl_month")}
+                            className="w-full md:w-1/3 h-11 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer"
+                            required
+                          >
+                            {["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"].map((m) => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
                       {fields.map((field, index) => {
                         const testMaster = availableTests.find(t => t.id === field.test_master_id);
                         return (
@@ -1226,15 +1221,28 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 rounded-l-xl"></div>
 
                             {mode !== "edit" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-4 top-4 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => handleToggleTest(field.test_master_id!)}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Remove Test
-                              </Button>
+                              <div className="absolute right-4 top-4 flex gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                    onClick={() => handleApplyToAll(index)}
+                                  >
+                                    <Copy className="w-4 h-4 mr-2" />
+                                    Apply to All
+                                  </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleToggleTest(field.test_master_id!)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Remove Test
+                                </Button>
+                              </div>
                             )}
 
                             <div className="mb-4 pb-3 border-b border-slate-200 pr-24">
@@ -1266,28 +1274,12 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
 
                               <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Age</label>
-                                <Dropdown
-                                  options={TESTING_AGE_OPTIONS.map(opt => ({ label: opt, value: opt }))}
-                                  value={watch(`jobEntryTests.${index}.testing_age` as any)}
-                                  onChange={(val) => {
-                                    setValue(`jobEntryTests.${index}.testing_age`, val, { shouldValidate: true });
-                                    const currentValues = getValues(`jobEntryTests.${index}`);
-                                    const globalCastingDate = getValues("materialDetails.date_of_casting");
-                                    const newTestingDate = calculateTestingDate(currentValues.additional_details_values?.["Date of Casting"] || currentValues.additional_details_values?.["Casting Date"] || globalCastingDate || "", val);
-                                    setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
-                                  }}
-                                  placeholder="Select Testing Age..."
-                                  buttonClassName="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-[13px] font-semibold text-slate-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 focus:bg-white cursor-pointer"
-                                />
-                              </div>
-
-                              <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Testing</label>
                                 <PremiumDatePicker
                                   value={watch(`jobEntryTests.${index}.date_of_testing`)}
-                                  onChange={() => { }}
-                                  disabled={true}
+                                  onChange={(val) => {
+                                    setValue(`jobEntryTests.${index}.date_of_testing`, val, { shouldValidate: true });
+                                  }}
                                   side="left"
                                 />
                               </div>
@@ -1314,14 +1306,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                               value={watch(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any) || ""}
                                               onChange={(val) => {
                                                 setValue(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any, val, { shouldValidate: true });
-                                                if (detailLabel.toLowerCase() === 'casting date' || detailLabel.toLowerCase() === 'date of casting') {
-                                                  const currentValues = getValues(`jobEntryTests.${index}`);
-                                                  if (currentValues.testing_age) {
-                                                    const globalCastingDate = getValues("materialDetails.date_of_casting");
-                                                    const newTestingDate = calculateTestingDate(val || globalCastingDate || "", currentValues.testing_age);
-                                                    setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
-                                                  }
-                                                }
+                                                // No testing date auto-calculation needed anymore
                                               }}
                                               side="left"
                                             />
