@@ -36,6 +36,7 @@ export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
   adminLinks.push(
     { title: "Leave", href: "/leave", icon: CalendarDays },
     { title: "Holidays", href: "/holidays", icon: Calendar },
+    { title: "Applications", href: "/applications", icon: ClipboardList }
   );
 
   if (canManageTestMaster(roleArray)) {
