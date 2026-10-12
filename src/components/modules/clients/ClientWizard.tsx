@@ -43,8 +43,8 @@ export interface ClientWizardProps {
   onClose?: () => void;
 }
 
-export function ClientWizard({ mode = "create", initialData, onSuccess }: ClientWizardProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+export function ClientWizard({ mode = "create", initialData, onSuccess, onClose }: ClientWizardProps) {
+  const [currentStep, setCurrentStep] = useState(mode === "edit" ? 4 : 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitEnabled, setSubmitEnabled] = useState(false);
   const [nextUidPreview, setNextUidPreview] = useState<number | null>(null);
@@ -422,6 +422,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   };
 
   const handlePrev = () => {
+    if (currentStep === 0) {
+      onClose?.();
+      return;
+    }
     setCurrentStep((prev) => prev - 1);
   };
 
@@ -534,14 +538,15 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           {steps.map((step, index) => {
             const isActive = currentStep === index;
             const isCompleted = currentStep > index;
+            const canNavigate = isCompleted || mode === "edit";
             return (
-              <div key={step.id} className="relative z-10" onClick={() => isCompleted && setCurrentStep(index)}>
-                <div className={`relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer overflow-hidden ${isActive ? 'bg-white shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-slate-200/60 text-orange-600' : isCompleted ? 'text-slate-600 hover:bg-slate-200/40' : 'text-slate-400 opacity-60'}`}>
+              <div key={step.id} className="relative z-10" onClick={() => canNavigate && setCurrentStep(index)}>
+                <div className={`relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer overflow-hidden ${isActive ? 'bg-white shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-slate-200/60 text-orange-600' : canNavigate ? 'text-slate-600 hover:bg-slate-200/40' : 'text-slate-400 opacity-60'}`}>
                   {isActive && (
                     <motion.div layoutId="activeStep" className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500" />
                   )}
-                  <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0 ${isActive ? 'bg-orange-100 text-orange-600' : isCompleted ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
-                    {isCompleted ? <Check className="w-3.5 h-3.5" /> : <step.icon className="w-3.5 h-3.5" />}
+                  <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0 ${isActive ? 'bg-orange-100 text-orange-600' : (isCompleted || mode === "edit") ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
+                    {(isCompleted || (mode === "edit" && !isActive)) ? <Check className="w-3.5 h-3.5" /> : <step.icon className="w-3.5 h-3.5" />}
                   </div>
                   <span className="text-sm font-bold truncate">{step.title}</span>
                 </div>
@@ -1350,10 +1355,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
             type="button"
             variant="outline"
             onClick={handlePrev}
-            disabled={currentStep === 0 || isSubmitting}
+            disabled={isSubmitting || (currentStep === 0 && !onClose)}
             className="text-slate-600 hover:text-slate-900 font-semibold tracking-wide px-8 h-12 rounded-xl bg-white border-slate-200 shadow-sm transition-all"
           >
-            &larr; CANCEL
+            &larr; {currentStep === 0 && onClose ? "CLOSE" : "CANCEL"}
           </Button>
 
           {currentStep < steps.length - 1 ? (
