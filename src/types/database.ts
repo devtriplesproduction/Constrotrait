@@ -296,6 +296,60 @@ export type Database = {
           },
         ]
       }
+      employee_applications: {
+        Row: {
+          application_date: string
+          approval_for: string
+          created_at: string
+          employee_id: string
+          id: string
+          reason: string
+          reviewed_by: string | null
+          reviewer_remark: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          application_date: string
+          approval_for: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          reason: string
+          reviewed_by?: string | null
+          reviewer_remark?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          application_date?: string
+          approval_for?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          reason?: string
+          reviewed_by?: string | null
+          reviewer_remark?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_applications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       employee_financial_ledger: {
         Row: {
           adjustment_category: string
