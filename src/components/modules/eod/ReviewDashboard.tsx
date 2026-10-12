@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dropdown } from '@/components/ui/Dropdown';
-import { Search, SlidersHorizontal, RefreshCcw, CheckCircle2, Clock, XCircle, AlertCircle, FileSearch, FileText, User, Calendar, MapPin, AlertTriangle, X } from 'lucide-react';
+import { Search, SlidersHorizontal, RefreshCcw, CheckCircle2, Clock, XCircle, AlertCircle, FileSearch, FileText, User, Calendar, MapPin, AlertTriangle, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { EODReport } from '@/services/eod.service';
 import { reviewEODAction } from '@/actions/eod.actions';
@@ -42,6 +42,13 @@ export function ReviewDashboard({
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedEmployee, fromDate, toDate]);
 
   const supabase = createClient();
 
@@ -168,6 +175,9 @@ export function ReviewDashboard({
       return true;
     });
   }, [eods, search, selectedEmployee, fromDate, toDate]);
+
+  const totalPages = Math.ceil(filteredEods.length / itemsPerPage);
+  const paginatedEods = filteredEods.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Statistics
   const totalReports = filteredEods.length;
@@ -358,7 +368,7 @@ export function ReviewDashboard({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredEods.map((eod) => (
+                  {paginatedEods.map((eod) => (
                     <tr key={eod.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-semibold text-slate-800">
@@ -389,6 +399,36 @@ export function ReviewDashboard({
                 </tbody>
               </table>
             </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-white">
+                <div className="text-sm text-slate-500">
+                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredEods.length)} of {filteredEods.length} entries
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                  </Button>
+                  <div className="text-sm font-medium text-slate-600 px-2">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

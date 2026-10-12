@@ -9,7 +9,7 @@ import { validateFileMagicBytes, getAllowedExtension } from "@/lib/file-validati
 import { createClient } from "@/lib/supabase/server";
 
 export async function onboardEmployeeAction(data: OnboardFormData) {
-  // Validate data server-side
+
   const validationResult = onboardSchema.safeParse(data);
   if (!validationResult.success) {
     return { success: false, error: "Validation failed: " + validationResult.error.errors[0].message };
@@ -102,7 +102,7 @@ export async function uploadEmployeeFileAction(formData: FormData) {
   const supabase = await createClient();
   const storageScope = branchId || "unassigned";
   const finalName = `onboarding/${storageScope}/${crypto.randomUUID()}.${ext}`;
-  
+
   const { error } = await supabase.storage
     .from('employee-documents')
     .upload(finalName, file);
@@ -160,7 +160,7 @@ export async function deleteEmployeeDocumentAction(path: string) {
 
 export async function updateEmployeeWorkEmailAction(employeeId: string, newEmail: string) {
   const { workEmailSchema } = await import("@/lib/validations/onboard");
-  
+
   // Validate email format
   const validationResult = workEmailSchema.safeParse(newEmail);
   if (!validationResult.success) {
@@ -174,10 +174,10 @@ export async function updateEmployeeWorkEmailAction(employeeId: string, newEmail
 
   const { updateEmployeeWorkEmail } = await import("@/services/employee.service");
   const result = await updateEmployeeWorkEmail(employeeId, newEmail);
-  
+
   if (result.success) {
     revalidatePath("/employees", "page");
   }
-  
+
   return result;
 }

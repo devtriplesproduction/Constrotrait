@@ -293,9 +293,14 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-[15px] font-extrabold text-slate-900 leading-snug mb-2 line-clamp-2">
+                  <h3 className="text-[15px] font-extrabold text-slate-900 leading-snug mb-1 line-clamp-2">
                     {test.test_method || "Unknown Test Method"}
                   </h3>
+                  <p className="text-[13px] font-semibold text-slate-600 mb-2">
+                    {test.is_nabl !== false 
+                      ? (test.component_parameter || "Unknown Component") 
+                      : (test.particulars || "Unknown Particulars")}
+                  </p>
 
                   {/* Details Grid */}
                   <div className="grid gap-1.5 mb-2 flex-1">
