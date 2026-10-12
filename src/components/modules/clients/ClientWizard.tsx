@@ -1247,7 +1247,15 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
                             <div className="mb-4 pb-3 border-b border-slate-200 pr-24">
                               <h3 className="text-lg font-bold text-slate-900">{field.test_name}</h3>
-                              <p className="text-sm text-slate-500">Method: {field.test_method}</p>
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 mt-1">
+                                <p>Method: <span className="font-semibold text-slate-700">{field.test_method || "—"}</span></p>
+                                {(testMaster?.component_parameter || field.test_name) && (
+                                  <>
+                                    <span className="text-slate-300">•</span>
+                                    <p>Tested: <span className="font-semibold text-slate-700">{testMaster?.component_parameter || field.test_name}</span></p>
+                                  </>
+                                )}
+                              </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -1264,14 +1272,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 <Input value={testMaster?.report_qr || "None"} readOnly className="bg-slate-100 text-slate-500 font-medium border-slate-200 focus-visible:ring-0" />
                               </div>
 
-
-
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material Description</label>
                                 <Input {...register(`jobEntryTests.${index}.material_description`)} placeholder="Material Description" />
                               </div>
-
-
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Testing</label>
@@ -1284,11 +1288,18 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 />
                               </div>
 
-
-
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Test Method</label>
-                                <Input {...register(`jobEntryTests.${index}.test_method`)} readOnly className="bg-slate-100 text-slate-500" />
+                                <Input {...register(`jobEntryTests.${index}.test_method`)} readOnly className="bg-slate-100 text-slate-500 font-medium" />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Component, parameter or characteristic tested</label>
+                                <Input
+                                  value={testMaster?.component_parameter || (testMaster as any)?.particulars || field.test_name || "—"}
+                                  readOnly
+                                  className="bg-slate-100 text-slate-500 font-medium"
+                                />
                               </div>
 
                               {/* Render dynamic additional details inputs if available */}

@@ -90,8 +90,8 @@ export function ApplicationFormModal({ isOpen, onClose, userProfile }: Applicati
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className={cn(
-        "bg-white rounded-lg shadow-lg w-full max-h-[95vh] flex flex-col overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200/80 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300/80 transition-all duration-300",
-        step === 1 ? "max-w-3xl" : "max-w-5xl"
+        "bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-h-[92vh] flex flex-col overflow-hidden transition-all duration-300",
+        step === 1 ? "max-w-3xl" : "max-w-4xl"
       )}>
         <div className="p-5 border-b flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-md z-10 rounded-t-lg">
           <div className="flex flex-col">
@@ -162,12 +162,8 @@ export function ApplicationFormModal({ isOpen, onClose, userProfile }: Applicati
                 </div>
               </div>
             ) : (
-              <div className="flex justify-center p-4">
-                <div className="bg-white shadow-[0_0_40px_rgba(0,0,0,0.1)] rounded-sm max-w-4xl w-full mx-auto ring-1 ring-slate-200 overflow-hidden transition-shadow duration-300 hover:shadow-[0_0_50px_rgba(0,0,0,0.15)]">
-                  <div className="bg-[repeating-linear-gradient(0deg,transparent,transparent_27px,#e5e7eb_28px)] min-h-full">
-                    <PrintableApplication application={previewApp} userProfile={userProfile} />
-                  </div>
-                </div>
+              <div className="p-4 sm:p-6 bg-white overflow-y-auto flex-1">
+                <PrintableApplication application={previewApp} userProfile={userProfile} />
               </div>
             )}
 

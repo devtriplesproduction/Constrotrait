@@ -274,10 +274,65 @@ export function ApplicationList({
             </div>
 
             {/* Document Body */}
-            <div className="p-4 sm:p-8 bg-slate-100/60 overflow-y-auto flex justify-center flex-1">
-              <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-200/80 max-w-3xl w-full p-4 sm:p-8">
-                <PrintableApplication ref={printRef} application={selectedApp} userProfile={userProfile} />
+            <div className="p-4 sm:p-6 bg-white overflow-y-auto flex-1">
+              <PrintableApplication ref={printRef} application={selectedApp} userProfile={userProfile} />
+            </div>
+
+            {/* Review Decision & Remark Section */}
+            <div className="print:hidden border-t border-slate-200/80 bg-slate-50/90 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3 w-full sm:w-auto">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    selectedApp.status === "approved"
+                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200/60"
+                      : selectedApp.status === "rejected"
+                      ? "bg-rose-100 text-rose-700 border border-rose-200/60"
+                      : "bg-amber-100 text-amber-700 border border-amber-200/60"
+                  }`}
+                >
+                  {selectedApp.status === "approved" ? (
+                    <CheckCircle2 className="w-4.5 h-4.5" />
+                  ) : selectedApp.status === "rejected" ? (
+                    <XCircle className="w-4.5 h-4.5" />
+                  ) : (
+                    <Clock className="w-4.5 h-4.5" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                      {selectedApp.status === "pending"
+                        ? "Review Status: Pending"
+                        : `Review Decision: ${selectedApp.status.toUpperCase()}`}
+                    </span>
+                  </div>
+                  {selectedApp.reviewer_remark ? (
+                    <div className="mt-1.5 bg-white p-3 rounded-xl border border-slate-200 shadow-xs max-w-xl">
+                      <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3" /> Reviewer Remark
+                      </span>
+                      <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                        {selectedApp.reviewer_remark}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {selectedApp.status === "pending"
+                        ? "Your application is awaiting review by the management."
+                        : "No specific remark was provided by the reviewer."}
+                    </p>
+                  )}
+                </div>
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedApp(null)}
+                className="rounded-xl border-slate-200 text-xs font-medium self-end sm:self-center shrink-0"
+              >
+                Close
+              </Button>
             </div>
           </div>
         </div>

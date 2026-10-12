@@ -110,82 +110,82 @@ export function ApplicationsClientPage({
       />
 
       {/* KPI Cards Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Total Card */}
-        <div className="bg-white/90 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-4.5 shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="bg-white/90 backdrop-blur-sm border border-slate-200/80 rounded-xl px-3.5 py-2.5 shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               {isReviewTab ? "Review Queue" : "Total Applications"}
             </span>
-            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
-              {isReviewTab ? <ClipboardCheck className="w-4.5 h-4.5" /> : <Inbox className="w-4.5 h-4.5" />}
+            <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
+              {isReviewTab ? <ClipboardCheck className="w-3.5 h-3.5" /> : <Inbox className="w-3.5 h-3.5" />}
             </div>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-slate-900 tracking-tight">
+          <div className="mt-1.5 flex items-baseline justify-between">
+            <span className="text-xl font-bold text-slate-900 tracking-tight">
               {isReviewTab ? reviewTotal : myTotal}
             </span>
-            <span className="text-xs font-medium text-slate-400">
+            <span className="text-[11px] font-medium text-slate-400">
               {isReviewTab ? "Total submissions" : "All-time total"}
             </span>
           </div>
         </div>
 
         {/* Pending Card */}
-        <div className="bg-white/90 backdrop-blur-sm border border-amber-200/80 rounded-2xl p-4.5 shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="bg-white/90 backdrop-blur-sm border border-amber-200/80 rounded-xl px-3.5 py-2.5 shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-700">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
               Pending Review
             </span>
-            <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-200/60">
-              <Clock className="w-4.5 h-4.5" />
+            <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-200/60">
+              <Clock className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-amber-700 tracking-tight">
+          <div className="mt-1.5 flex items-baseline justify-between">
+            <span className="text-xl font-bold text-amber-700 tracking-tight">
               {isReviewTab ? reviewPending : myPending}
             </span>
-            <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/50">
+            <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/50">
               Requires attention
             </span>
           </div>
         </div>
 
         {/* Approved Card */}
-        <div className="bg-white/90 backdrop-blur-sm border border-emerald-200/80 rounded-2xl p-4.5 shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="bg-white/90 backdrop-blur-sm border border-emerald-200/80 rounded-xl px-3.5 py-2.5 shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
               Approved
             </span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200/60">
-              <CheckCircle2 className="w-4.5 h-4.5" />
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200/60">
+              <CheckCircle2 className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-emerald-700 tracking-tight">
+          <div className="mt-1.5 flex items-baseline justify-between">
+            <span className="text-xl font-bold text-emerald-700 tracking-tight">
               {isReviewTab ? reviewApproved : myApproved}
             </span>
-            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/50">
+            <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/50">
               Granted
             </span>
           </div>
         </div>
 
         {/* Rejected Card */}
-        <div className="bg-white/90 backdrop-blur-sm border border-rose-200/80 rounded-2xl p-4.5 shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="bg-white/90 backdrop-blur-sm border border-rose-200/80 rounded-xl px-3.5 py-2.5 shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-700">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700">
               Rejected
             </span>
-            <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-200/60">
-              <XCircle className="w-4.5 h-4.5" />
+            <div className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-200/60">
+              <XCircle className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-rose-700 tracking-tight">
+          <div className="mt-1.5 flex items-baseline justify-between">
+            <span className="text-xl font-bold text-rose-700 tracking-tight">
               {isReviewTab ? reviewRejected : myRejected}
             </span>
-            <span className="text-xs font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/50">
+            <span className="text-[10px] font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/50">
               Closed
             </span>
           </div>
@@ -248,7 +248,7 @@ export function ApplicationsClientPage({
         {/* Search & Status Filter */}
         <div className="flex items-center gap-2.5">
           {/* Search Box */}
-          <div className="relative flex-1 md:w-64">
+          <div className="relative w-full sm:w-80 md:w-96 lg:w-[400px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
