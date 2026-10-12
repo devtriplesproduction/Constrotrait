@@ -52,7 +52,7 @@ export async function createApplication(data: {
     return { success: false, error: error.message };
   }
 
-  return { success: true, data: inserted as EmployeeApplication };
+  return { success: true, data: (inserted as unknown) as EmployeeApplication };
 }
 
 export async function getMyApplications() {
@@ -71,7 +71,7 @@ export async function getMyApplications() {
     return { success: false, error: error.message, data: [] };
   }
 
-  return { success: true, data: data as EmployeeApplication[] };
+  return { success: true, data: (data as unknown) as EmployeeApplication[] };
 }
 
 export async function getApplicationsToReview() {
@@ -89,7 +89,7 @@ export async function getApplicationsToReview() {
     return { success: false, error: error.message, data: [] };
   }
 
-  return { success: true, data: data as EmployeeApplication[] };
+  return { success: true, data: (data as unknown) as EmployeeApplication[] };
 }
 
 export async function updateApplicationStatus(
@@ -117,5 +117,5 @@ export async function updateApplicationStatus(
     return { success: false, error: error.message };
   }
 
-  return { success: true, data: data as EmployeeApplication };
+  return { success: true, data: (data as unknown) as EmployeeApplication };
 }

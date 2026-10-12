@@ -66,6 +66,7 @@ function getBorderLeftColor(variant: ToastVariant = "default") {
     case "success":
       return "bg-emerald-500";
     case "error":
+    case "destructive":
       return "bg-rose-500";
     case "warning":
       return "bg-amber-500";
@@ -79,6 +80,7 @@ function getIcon(variant: ToastVariant = "default") {
     case "success":
       return <CheckCircle2 className="h-5 w-5 text-emerald-500" />;
     case "error":
+    case "destructive":
       return <AlertCircle className="h-5 w-5 text-rose-500" />;
     case "warning":
       return <AlertTriangle className="h-5 w-5 text-amber-500" />;
