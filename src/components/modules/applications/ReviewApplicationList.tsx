@@ -1,29 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { EmployeeApplication, EmployeeApplicationStatus } from "@/services/employee-application.service";
 import { updateApplicationStatus } from "@/actions/employee-application.actions";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PrintableApplication } from "./PrintableApplication";
 import { format } from "date-fns";
-import { Printer, X } from "lucide-react";
+import { 
+  Printer, 
+  X, 
+  Calendar, 
+  CheckCircle2, 
+  Clock, 
+  XCircle, 
+  MessageSquare, 
+  ShieldCheck, 
+  Send,
+  Eye,
+  RotateCcw,
+  UserCheck
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { printElement } from "@/lib/print";
 
 interface ReviewApplicationListProps {
   applications: EmployeeApplication[];
+  hasFiltersActive?: boolean;
+  onResetFilters?: () => void;
 }
 
-export function ReviewApplicationList({ applications }: ReviewApplicationListProps) {
+export function ReviewApplicationList({ 
+  applications,
+  hasFiltersActive,
+  onResetFilters
+}: ReviewApplicationListProps) {
   const [selectedApp, setSelectedApp] = useState<EmployeeApplication | null>(null);
   const [remark, setRemark] = useState("");
   const [loading, setLoading] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "approved": return <Badge className="bg-green-500">Approved</Badge>;
-      case "rejected": return <Badge variant="destructive">Rejected</Badge>;
-      default: return <Badge variant="secondary">Pending</Badge>;
+      case "approved":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70 shadow-2xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            Approved
+          </span>
+        );
+      case "rejected":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/70 shadow-2xs">
+            <XCircle className="w-3.5 h-3.5 text-rose-600" />
+            Rejected
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/70 shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-amber-600" />
+            Pending Action
+          </span>
+        );
     }
   };
 
@@ -34,7 +73,7 @@ export function ReviewApplicationList({ applications }: ReviewApplicationListPro
     try {
       const res = await updateApplicationStatus(selectedApp.id, status, remark);
       if (res.success) {
-        toast({ title: `Application ${status}` });
+        toast({ title: `Application ${status} successfully`, variant: "success" });
         setSelectedApp(null);
         setRemark("");
       } else {
@@ -48,7 +87,9 @@ export function ReviewApplicationList({ applications }: ReviewApplicationListPro
   };
 
   const handlePrint = () => {
-    window.print();
+    if (printRef.current) {
+      printElement(printRef.current, `Application_${selectedApp?.profiles?.first_name || 'Review'}`);
+    }
   };
 
   const closeModal = () => {
@@ -58,100 +99,262 @@ export function ReviewApplicationList({ applications }: ReviewApplicationListPro
 
   return (
     <div>
-      <div className="border rounded-md overflow-hidden">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-muted text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium">Employee</th>
-              <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Subject</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {applications.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="text-center py-8 text-muted-foreground">
-                  No applications found.
-                </td>
+      {/* Table Container */}
+      <div className="w-full overflow-hidden bg-white rounded-3xl border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/80 border-b border-slate-200/80">
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Employee
+                </th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Subject & Details
+                </th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
+                  Actions
+                </th>
               </tr>
-            ) : (
-              applications.map(app => (
-                <tr key={app.id} className="hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-3">
-                    {app.profiles?.first_name} {app.profiles?.last_name}
-                    <div className="text-xs text-muted-foreground">{app.profiles?.designation}</div>
-                  </td>
-                  <td className="px-4 py-3">{format(new Date(app.application_date), "PP")}</td>
-                  <td className="px-4 py-3">{app.subject}</td>
-                  <td className="px-4 py-3">{getStatusBadge(app.status)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Button variant="outline" size="sm" onClick={() => setSelectedApp(app)}>
-                      Review
-                    </Button>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {applications.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-14 text-center">
+                    <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                      <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mb-4 ring-8 ring-orange-50/50 shadow-inner">
+                        <UserCheck className="w-8 h-8 stroke-[1.5]" />
+                      </div>
+                      <h4 className="text-base font-bold text-slate-800">
+                        {hasFiltersActive ? "No Matching Review Requests" : "Review Queue Clear"}
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1.5 mb-4 leading-relaxed">
+                        {hasFiltersActive
+                          ? "No applications match your search or status filter."
+                          : "Great job! All team applications have been reviewed and processed."}
+                      </p>
+                      {hasFiltersActive && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={onResetFilters}
+                          className="rounded-xl border-slate-200 text-xs font-medium text-slate-600 hover:text-slate-900 gap-1.5"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" /> Reset Filters
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                applications.map((app) => {
+                  const firstName = app.profiles?.first_name || "Employee";
+                  const lastName = app.profiles?.last_name || "";
+                  const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase() || "E";
+                  const isPending = app.status === "pending";
+
+                  return (
+                    <tr key={app.id} className="hover:bg-orange-50/20 transition-colors group">
+                      {/* Employee Info */}
+                      <td className="px-6 py-4.5 align-top whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xs shadow-2xs border border-orange-200/50 shrink-0">
+                            {initials}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 text-sm">
+                              {firstName} {lastName}
+                            </p>
+                            <p className="text-[11px] text-slate-500 font-medium">
+                              {app.profiles?.designation || "Staff"}
+                              {app.profiles?.department && (
+                                <span className="text-slate-400"> • {app.profiles.department}</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Date */}
+                      <td className="px-6 py-4.5 whitespace-nowrap align-top">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-slate-400" />
+                          <span className="text-sm font-semibold text-slate-700">
+                            {format(new Date(app.application_date), "MMM dd, yyyy")}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Subject */}
+                      <td className="px-6 py-4.5 align-top max-w-sm">
+                        <p className="font-semibold text-slate-900 text-sm line-clamp-1 group-hover:text-orange-600 transition-colors" title={app.subject}>
+                          {app.subject}
+                        </p>
+                        {app.approval_for && (
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-1 leading-relaxed" title={app.approval_for}>
+                            <span className="font-medium text-slate-600">Request:</span> {app.approval_for}
+                          </p>
+                        )}
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-6 py-4.5 whitespace-nowrap align-top">
+                        {getStatusBadge(app.status)}
+                      </td>
+
+                      {/* Action */}
+                      <td className="px-6 py-4.5 text-right whitespace-nowrap align-top">
+                        <Button
+                          size="sm"
+                          onClick={() => setSelectedApp(app)}
+                          className={`rounded-xl text-xs h-8.5 px-4 font-semibold shadow-2xs gap-1.5 ${
+                            isPending
+                              ? "bg-orange-600 hover:bg-orange-700 text-white shadow-orange-500/20"
+                              : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          {isPending ? (
+                            <>
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <span>Review</span>
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>View</span>
+                            </>
+                          )}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* Review Modal Dialog */}
       {!!selectedApp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto flex flex-col relative">
-            <div className="print:hidden p-4 border-b flex justify-between items-center sticky top-0 bg-white z-10">
-              <h2 className="text-xl font-semibold">Review Application</h2>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handlePrint}>
-                  <Printer className="mr-2 h-4 w-4" /> Print PDF
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="print:hidden p-5 border-b border-slate-200/80 bg-white/95 backdrop-blur flex justify-between items-center sticky top-0 z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-sm">
+                  {selectedApp.profiles?.first_name?.[0] || "A"}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 leading-snug">
+                    Review Application: {selectedApp.profiles?.first_name} {selectedApp.profiles?.last_name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-slate-500">
+                      {selectedApp.profiles?.designation || "Staff"} • {format(new Date(selectedApp.application_date), "dd MMM yyyy")}
+                    </span>
+                    <span className="text-slate-300">•</span>
+                    {getStatusBadge(selectedApp.status)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handlePrint}
+                  className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 gap-2 shadow-sm"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print PDF</span>
                 </Button>
-                <Button variant="ghost" size="icon" onClick={closeModal}>
-                  <X className="h-4 w-4" />
-                </Button>
+                <button
+                  onClick={closeModal}
+                  className="w-9 h-9 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            <div className="print:block print:w-full print:absolute print:top-0 print:left-0 print:m-0 print:p-0">
-              <PrintableApplication application={selectedApp} />
+            {/* Document Content */}
+            <div className="p-4 sm:p-8 bg-slate-100/60 overflow-y-auto flex justify-center flex-1">
+              <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-200/80 max-w-3xl w-full p-4 sm:p-8">
+                <PrintableApplication ref={printRef} application={selectedApp} />
+              </div>
             </div>
 
-            {selectedApp.status === "pending" && (
-              <div className="mt-8 space-y-4 print:hidden p-6 border-t bg-muted/30">
+            {/* Action Bar */}
+            {selectedApp.status === "pending" ? (
+              <div className="print:hidden p-5 border-t border-slate-200/80 bg-white space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Remark (Optional)</label>
-                  <textarea 
-                    value={remark} 
-                    onChange={(e) => setRemark(e.target.value)} 
-                    placeholder="Add a remark for the employee..."
-                    className="w-full mt-1 min-h-[80px] p-2 text-sm rounded-md border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
+                    Reviewer Feedback / Remark (Optional)
+                  </label>
+                  <textarea
+                    value={remark}
+                    onChange={(e) => setRemark(e.target.value)}
+                    placeholder="Enter any comments, notes, or instructions for the employee..."
+                    className="w-full min-h-[70px] p-3 text-sm rounded-xl border border-slate-200 bg-slate-50/50 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all resize-none"
                   />
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => handleAction("rejected")}
-                    disabled={loading}
-                  >
-                    Reject
-                  </Button>
-                  <Button 
-                    className="bg-green-600 hover:bg-green-700 text-white" 
-                    onClick={() => handleAction("approved")}
-                    disabled={loading}
-                  >
-                    Approve
-                  </Button>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs text-slate-400 font-medium">
+                    This decision will be officially logged and visible to the applicant.
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleAction("rejected")}
+                      disabled={loading}
+                      className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 h-10 px-5 font-semibold text-xs"
+                    >
+                      <XCircle className="w-4 h-4 mr-1.5" /> Reject
+                    </Button>
+                    <Button
+                      onClick={() => handleAction("approved")}
+                      disabled={loading}
+                      className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 font-semibold text-xs shadow-md shadow-emerald-500/20"
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-1.5" /> Approve Application
+                    </Button>
+                  </div>
                 </div>
               </div>
-            )}
-
-            {selectedApp.status !== "pending" && (
-              <div className="mt-8 print:hidden border-t p-6 bg-muted/30">
-                <h4 className="font-semibold mb-2">Review Details</h4>
-                <p><strong>Status:</strong> {selectedApp.status}</p>
-                <p><strong>Remark:</strong> {selectedApp.reviewer_remark || "N/A"}</p>
+            ) : (
+              <div className="print:hidden p-5 border-t border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                    selectedApp.status === "approved"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-rose-100 text-rose-700"
+                  }`}>
+                    {selectedApp.status === "approved" ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-800">
+                      Application was marked as {selectedApp.status.toUpperCase()}
+                    </p>
+                    {selectedApp.reviewer_remark && (
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Remark: "{selectedApp.reviewer_remark}"
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={closeModal}
+                  className="rounded-xl border-slate-200 text-xs font-medium"
+                >
+                  Close
+                </Button>
               </div>
             )}
           </div>

@@ -6,7 +6,10 @@ import { isBranchManager, isHR, isSuperAdmin } from "@/config/roles";
 
 export const metadata = {
   title: "Employee Applications | ConstroTrait",
+  description: "Manage official employee applications and review workflows.",
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function ApplicationsPage() {
   const user = await getAuthenticatedUserWithRoles();
@@ -33,8 +36,7 @@ export default async function ApplicationsPage() {
   const applicationsToReview = toApproveRes.success && toApproveRes.data ? toApproveRes.data : [];
 
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold tracking-tight">Applications</h1>
+    <div className="w-full space-y-6 animate-in fade-in duration-500">
       <ApplicationsClientPage
         myApplications={myApplications}
         canApprove={canApprove}
