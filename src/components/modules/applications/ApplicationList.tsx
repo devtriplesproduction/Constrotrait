@@ -75,15 +75,6 @@ export function ApplicationList({
     }
   };
 
-  const handleQuickPrint = (app: EmployeeApplication) => {
-    setSelectedApp(app);
-    setTimeout(() => {
-      if (printRef.current) {
-        printElement(printRef.current, `Application_${userProfile?.first_name || 'Form'}`);
-      }
-    }, 150);
-  };
-
   return (
     <div>
       {/* Table Container */}
@@ -212,15 +203,6 @@ export function ApplicationList({
                         >
                           <Eye className="w-3.5 h-3.5" />
                           <span>View</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleQuickPrint(app)}
-                          className="rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 h-8.5 w-8.5 p-0"
-                          title="Print Application"
-                        >
-                          <Printer className="w-4 h-4" />
                         </Button>
                       </div>
                     </td>

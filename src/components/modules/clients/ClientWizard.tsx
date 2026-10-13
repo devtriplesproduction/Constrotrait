@@ -704,7 +704,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess, onClose 
 
                   <div className="flex flex-col gap-6 pt-2">
                     {clientProjects.length > 0 && (
-                      <div className="flex flex-col gap-1.5 px-6">
+                      <div className="flex flex-col gap-1.5 w-full">
                         <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Select Past Project (Optional)</label>
                         <Dropdown
                           buttonClassName="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white"
