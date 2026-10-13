@@ -10,8 +10,8 @@ export class JobEntryService {
       L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1
     };
     let str = '';
-    for (let i of Object.keys(roman)) {
-      let q = Math.floor(num / roman[i]);
+    for (const i of Object.keys(roman)) {
+      const q = Math.floor(num / roman[i]);
       num -= q * roman[i];
       str += i.repeat(q);
     }
@@ -130,9 +130,9 @@ export class JobEntryService {
     if (jobError || !jobEntry) throw new Error(jobError?.message || "Failed to create job entry");
 
     let jobEntryTests: any[] | null = [];
-    let uidsIssued: string[] = [firstUidLabel as string];
+    const uidsIssued: string[] = [firstUidLabel as string];
 
-    let sampleCodes: string[] = await JobEntryService.buildSampleCodes(supabase, jobYear, materialInitials, testMasters, testsData);
+    const sampleCodes: string[] = await JobEntryService.buildSampleCodes(supabase, jobYear, materialInitials, testMasters, testsData);
 
     if (testsData && testsData.length > 0) {
       for (const t of testsData) {
@@ -162,7 +162,7 @@ export class JobEntryService {
     } else {
       // It's a dummy job card, enqueue it with the scheduled date
       if (dummyScheduledDays) {
-        let scheduledDate = new Date();
+        const scheduledDate = new Date();
         const days = parseInt(dummyScheduledDays, 10);
         if (!isNaN(days) && days > 0) {
           scheduledDate.setDate(scheduledDate.getDate() + days);

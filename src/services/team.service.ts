@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import { AppRole, canManageJobAssignments } from "@/config/roles";
+import { canManageJobAssignments } from "@/config/roles";
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 export class TeamService {
   /**
    * Check if the user has permission to manage teams
    */
-  private static async checkPermission(supabase: any) {
+  private static async checkPermission(supabase: SupabaseServerClient) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error("Unauthorized");
 

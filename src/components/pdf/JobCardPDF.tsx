@@ -122,7 +122,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           </View>
           <View style={styles.row}>
             <View style={[styles.cell, { width: '70%' }]}>
-              <Text style={[styles.bold, styles.textCenter]}>Doc Name .: Customer's Service Request Form</Text>
+              <Text style={[styles.bold, styles.textCenter]}>Doc Name .: Customer&#39;s Service Request Form</Text>
             </View>
             <View style={[styles.lastCell, { width: '30%' }]}>
               <Text style={[styles.bold, styles.textCenter]}>Doc. No. QR/16</Text>

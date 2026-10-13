@@ -1,4 +1,4 @@
-import { AppRole, isSuperAdmin, isBranchManager, isHR, isTestEngineer } from "./roles";
+import { isSuperAdmin, isBranchManager, isHR, isTestEngineer } from "./roles";
 
 export type JobStage = 
   | 'pending'
