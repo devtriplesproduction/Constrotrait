@@ -84,7 +84,7 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus, setFilterS
     myAssignments.forEach(a => {
       const je = a.job_entry_tests;
       const uidLabel = je?.uid_label || je?.job_entries?.uid_label || je?.job_entries?.uid;
-      let key = uidLabel ? `${je?.job_entry_id}-${uidLabel}` : (je?.job_entry_id ? `je-${je.job_entry_id}` : `test-${a.id}`);
+      const key = uidLabel ? `${je?.job_entry_id}-${uidLabel}` : (je?.job_entry_id ? `je-${je.job_entry_id}` : `test-${a.id}`);
       if (!groups.has(key)) {
         groups.set(key, {
           ...a,

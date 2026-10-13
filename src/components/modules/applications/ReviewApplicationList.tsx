@@ -282,10 +282,8 @@ export function ReviewApplicationList({
             </div>
 
             {/* Document Content */}
-            <div className="p-4 sm:p-8 bg-slate-100/60 overflow-y-auto flex justify-center flex-1">
-              <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-200/80 max-w-3xl w-full p-4 sm:p-8">
-                <PrintableApplication ref={printRef} application={selectedApp} />
-              </div>
+            <div className="p-4 sm:p-6 bg-white overflow-y-auto flex-1">
+              <PrintableApplication ref={printRef} application={selectedApp} />
             </div>
 
             {/* Action Bar */}
@@ -327,22 +325,31 @@ export function ReviewApplicationList({
                 </div>
               </div>
             ) : (
-              <div className="print:hidden p-5 border-t border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+              <div className="print:hidden border-t border-slate-200/80 bg-slate-50/90 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3 w-full sm:w-auto">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                     selectedApp.status === "approved"
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-rose-100 text-rose-700"
+                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200/60"
+                      : "bg-rose-100 text-rose-700 border border-rose-200/60"
                   }`}>
-                    {selectedApp.status === "approved" ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                    {selectedApp.status === "approved" ? <CheckCircle2 className="w-4.5 h-4.5" /> : <XCircle className="w-4.5 h-4.5" />}
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-800">
-                      Application was marked as {selectedApp.status.toUpperCase()}
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                      Application marked as {selectedApp.status.toUpperCase()}
                     </p>
-                    {selectedApp.reviewer_remark && (
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Remark: "{selectedApp.reviewer_remark}"
+                    {selectedApp.reviewer_remark ? (
+                      <div className="mt-1.5 bg-white p-3 rounded-xl border border-slate-200 shadow-xs max-w-xl">
+                        <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3" /> Reviewer Remark
+                        </span>
+                        <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                          {selectedApp.reviewer_remark}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        No remark was entered for this decision.
                       </p>
                     )}
                   </div>
@@ -351,7 +358,7 @@ export function ReviewApplicationList({
                   variant="outline"
                   size="sm"
                   onClick={closeModal}
-                  className="rounded-xl border-slate-200 text-xs font-medium"
+                  className="rounded-xl border-slate-200 text-xs font-medium self-end sm:self-center shrink-0"
                 >
                   Close
                 </Button>

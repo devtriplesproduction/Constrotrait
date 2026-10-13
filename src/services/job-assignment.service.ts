@@ -175,7 +175,7 @@ export class JobAssignmentService {
       throw new Error("Must provide either a team_id or an assigned_to employee.");
     }
 
-    let actualJobEntryTestId = data.job_entry_test_id;
+    const actualJobEntryTestId = data.job_entry_test_id;
 
     const { data: testRow, error: testErr } = await supabase
       .from("job_entry_tests").select("id, job_entry_id").eq("id", actualJobEntryTestId).single();

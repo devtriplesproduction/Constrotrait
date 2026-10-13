@@ -213,11 +213,11 @@ function ProjectJobsList({
                     </div>
 
                     <div>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Key Dates</p>
-                      <div className="flex flex-wrap gap-x-6 gap-y-2">
-                        <div className="text-[13px] font-medium text-slate-600"><span className="font-bold text-slate-800">Cast:</span> {test.date_of_casting ? new Date(test.date_of_casting).toLocaleDateString() : "-"}</div>
-                        <div className="text-[13px] font-medium text-slate-600"><span className="font-bold text-slate-800">Recv:</span> {test.date_of_receiving ? new Date(test.date_of_receiving).toLocaleDateString() : "-"}</div>
-                        <div className="text-[13px] font-medium text-slate-600"><span className="font-bold text-slate-800">Test:</span> {test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : "-"}</div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Key Dates</p>
+                      <div className="flex items-center gap-3 sm:gap-5 flex-nowrap whitespace-nowrap">
+                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0"><span className="font-bold text-slate-800">Cast:</span> {test.date_of_casting ? new Date(test.date_of_casting).toLocaleDateString() : "-"}</div>
+                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0"><span className="font-bold text-slate-800">Recv:</span> {test.date_of_receiving ? new Date(test.date_of_receiving).toLocaleDateString() : "-"}</div>
+                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0"><span className="font-bold text-slate-800">Test:</span> {test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : "-"}</div>
                       </div>
                     </div>
                   </div>
@@ -258,20 +258,21 @@ export default function ClientDetailsPageContent({
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
   const [editingTest, setEditingTest] = useState<any | null>(null);
 
-  useEffect(() => {
-    const loadJobs = async () => {
-      setIsLoadingJobs(true);
-      try {
-        const res = await getJobEntriesByClientIdAction(client.id);
-        if (res.success && res.data) {
-          setJobEntries(res.data as JobEntryWithTests[]);
-        }
-      } catch (error) {
-        console.error("Failed to load job entries", error);
-      } finally {
-        setIsLoadingJobs(false);
+  const loadJobs = async () => {
+    setIsLoadingJobs(true);
+    try {
+      const res = await getJobEntriesByClientIdAction(client.id);
+      if (res.success && res.data) {
+        setJobEntries(res.data as JobEntryWithTests[]);
       }
-    };
+    } catch (error) {
+      console.error("Failed to load job entries", error);
+    } finally {
+      setIsLoadingJobs(false);
+    }
+  };
+
+  useEffect(() => {
     loadJobs();
   }, [client.id]);
 
@@ -501,18 +502,40 @@ export default function ClientDetailsPageContent({
       </div>
       
       {editingTest && (
-        <ClientWizard
-          mode="edit"
-          initialData={{
-            client: editingTest.client,
-            jobEntryTest: editingTest.test,
-          }}
-          onClose={() => setEditingTest(null)}
-          onSuccess={() => {
-            setEditingTest(null);
-            router.refresh();
-          }}
-        />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setEditingTest(null)}
+          />
+
+          <div className="relative z-10 w-full max-w-7xl mx-auto shadow-2xl rounded-2xl overflow-hidden bg-white animate-in fade-in zoom-in-95 duration-200">
+            <div className="absolute top-4 right-4 z-[60]">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setEditingTest(null)}
+                className="h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-red-50 hover:text-red-600 text-slate-500 shadow-sm"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </div>
+
+            <ClientWizard
+              mode="edit"
+              initialData={{
+                client: editingTest.client,
+                jobEntryTest: editingTest.test,
+              }}
+              onClose={() => setEditingTest(null)}
+              onSuccess={() => {
+                setEditingTest(null);
+                loadJobs();
+                router.refresh();
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

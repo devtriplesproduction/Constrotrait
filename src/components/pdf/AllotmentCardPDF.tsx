@@ -148,7 +148,7 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
 
           {assignments.flatMap((assignment, idx) => {
             const t = assignment.job_entry_tests;
-            let codeNo = t?.additional_details_values?.sample_code_no || t?.sample_code_no || '';
+            const codeNo = t?.additional_details_values?.sample_code_no || t?.sample_code_no || '';
             let codes: string[] = [];
 
             if (codeNo) {

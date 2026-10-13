@@ -2,6 +2,7 @@
 
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
 import { isHR, isSuperAdmin, isBranchManager } from "@/config/roles";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateSalarySlipPdfBuffer } from "@/lib/pdfGenerator";
 import { Database } from "@/types/database";
@@ -25,9 +26,9 @@ export async function getMySalarySlipsAction() {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) return { success: false, error: "Unauthorized" };
 
-    const supabaseAdmin = createAdminClient();
+    const supabase = await createClient();
 
-    const { data: slips, error } = await supabaseAdmin
+    const { data: slips, error } = await supabase
       .from('salary_slips')
       .select(`
         id,

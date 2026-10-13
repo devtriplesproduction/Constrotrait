@@ -113,7 +113,7 @@ export function Select({ value, onValueChange, placeholder, children, className,
     React.Children.forEach(nodes, (child) => {
       if (found) return;
       if (React.isValidElement(child)) {
-        const props = child.props as { value?: any; children?: React.ReactNode };
+        const props = child.props as { value?: unknown; children?: React.ReactNode };
         if (props.value !== undefined && props.value === val) {
           found = child as React.ReactElement;
         } else if (props.children) {

@@ -40,18 +40,19 @@ export function printElement(element: HTMLElement, title: string = "Document") {
         <style>
           @page {
             size: A4 portrait;
-            margin: 15mm 20mm;
+            margin: 0;
           }
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            box-sizing: border-box !important;
           }
           html, body {
             background-color: #ffffff !important;
             background: #ffffff !important;
             color: #000000 !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 14mm 12mm !important;
             width: 100% !important;
             height: auto !important;
             overflow: visible !important;

@@ -24,7 +24,7 @@ export const PrintableApplication = forwardRef<HTMLDivElement, PrintableApplicat
     };
 
     return (
-      <div ref={ref} className="p-8 text-black font-serif text-base leading-relaxed w-full bg-transparent">
+      <div ref={ref} className="py-6 px-4 sm:px-6 print:p-0 print:m-0 text-black font-serif text-base leading-relaxed w-full bg-transparent">
         <div className="text-center font-bold mb-8">
           <h2 className="text-2xl mb-2">CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI</h2>
           <h3 className="text-xl underline">APPLICATION FORM</h3>

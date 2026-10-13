@@ -43,8 +43,8 @@ export interface ClientWizardProps {
   onClose?: () => void;
 }
 
-export function ClientWizard({ mode = "create", initialData, onSuccess }: ClientWizardProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+export function ClientWizard({ mode = "create", initialData, onSuccess, onClose }: ClientWizardProps) {
+  const [currentStep, setCurrentStep] = useState(mode === "edit" ? 4 : 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitEnabled, setSubmitEnabled] = useState(false);
   const [nextUidPreview, setNextUidPreview] = useState<number | null>(null);
@@ -422,6 +422,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
   };
 
   const handlePrev = () => {
+    if (currentStep === 0) {
+      onClose?.();
+      return;
+    }
     setCurrentStep((prev) => prev - 1);
   };
 
@@ -534,14 +538,15 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
           {steps.map((step, index) => {
             const isActive = currentStep === index;
             const isCompleted = currentStep > index;
+            const canNavigate = isCompleted || mode === "edit";
             return (
-              <div key={step.id} className="relative z-10" onClick={() => isCompleted && setCurrentStep(index)}>
-                <div className={`relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer overflow-hidden ${isActive ? 'bg-white shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-slate-200/60 text-orange-600' : isCompleted ? 'text-slate-600 hover:bg-slate-200/40' : 'text-slate-400 opacity-60'}`}>
+              <div key={step.id} className="relative z-10" onClick={() => canNavigate && setCurrentStep(index)}>
+                <div className={`relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer overflow-hidden ${isActive ? 'bg-white shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-slate-200/60 text-orange-600' : canNavigate ? 'text-slate-600 hover:bg-slate-200/40' : 'text-slate-400 opacity-60'}`}>
                   {isActive && (
                     <motion.div layoutId="activeStep" className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500" />
                   )}
-                  <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0 ${isActive ? 'bg-orange-100 text-orange-600' : isCompleted ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
-                    {isCompleted ? <Check className="w-3.5 h-3.5" /> : <step.icon className="w-3.5 h-3.5" />}
+                  <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0 ${isActive ? 'bg-orange-100 text-orange-600' : (isCompleted || mode === "edit") ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
+                    {(isCompleted || (mode === "edit" && !isActive)) ? <Check className="w-3.5 h-3.5" /> : <step.icon className="w-3.5 h-3.5" />}
                   </div>
                   <span className="text-sm font-bold truncate">{step.title}</span>
                 </div>
@@ -699,7 +704,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
                   <div className="flex flex-col gap-6 pt-2">
                     {clientProjects.length > 0 && (
-                      <div className="flex flex-col gap-1.5 px-6">
+                      <div className="flex flex-col gap-1.5 w-full">
                         <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Select Past Project (Optional)</label>
                         <Dropdown
                           buttonClassName="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white"
@@ -1247,7 +1252,15 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
 
                             <div className="mb-4 pb-3 border-b border-slate-200 pr-24">
                               <h3 className="text-lg font-bold text-slate-900">{field.test_name}</h3>
-                              <p className="text-sm text-slate-500">Method: {field.test_method}</p>
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 mt-1">
+                                <p>Method: <span className="font-semibold text-slate-700">{field.test_method || "—"}</span></p>
+                                {(testMaster?.component_parameter || field.test_name) && (
+                                  <>
+                                    <span className="text-slate-300">•</span>
+                                    <p>Tested: <span className="font-semibold text-slate-700">{testMaster?.component_parameter || field.test_name}</span></p>
+                                  </>
+                                )}
+                              </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -1264,14 +1277,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 <Input value={testMaster?.report_qr || "None"} readOnly className="bg-slate-100 text-slate-500 font-medium border-slate-200 focus-visible:ring-0" />
                               </div>
 
-
-
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material Description</label>
                                 <Input {...register(`jobEntryTests.${index}.material_description`)} placeholder="Material Description" />
                               </div>
-
-
 
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Testing</label>
@@ -1284,11 +1293,18 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
                                 />
                               </div>
 
-
-
                               <div className="flex flex-col gap-1.5">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Test Method</label>
-                                <Input {...register(`jobEntryTests.${index}.test_method`)} readOnly className="bg-slate-100 text-slate-500" />
+                                <Input {...register(`jobEntryTests.${index}.test_method`)} readOnly className="bg-slate-100 text-slate-500 font-medium" />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Component, parameter or characteristic tested</label>
+                                <Input
+                                  value={testMaster?.component_parameter || (testMaster as any)?.particulars || field.test_name || "—"}
+                                  readOnly
+                                  className="bg-slate-100 text-slate-500 font-medium"
+                                />
                               </div>
 
                               {/* Render dynamic additional details inputs if available */}
@@ -1339,10 +1355,10 @@ export function ClientWizard({ mode = "create", initialData, onSuccess }: Client
             type="button"
             variant="outline"
             onClick={handlePrev}
-            disabled={currentStep === 0 || isSubmitting}
+            disabled={isSubmitting || (currentStep === 0 && !onClose)}
             className="text-slate-600 hover:text-slate-900 font-semibold tracking-wide px-8 h-12 rounded-xl bg-white border-slate-200 shadow-sm transition-all"
           >
-            &larr; CANCEL
+            &larr; {currentStep === 0 && onClose ? "CLOSE" : "CANCEL"}
           </Button>
 
           {currentStep < steps.length - 1 ? (
