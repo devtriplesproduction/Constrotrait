@@ -20,6 +20,12 @@ interface JobEntryWithRelations {
   uid_label: string | null;
   created_at: string;
   client_id: string;
+  branch_id?: string | null;
+  branches?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
   project_name: string | null;
   is_nabl: boolean | null;
   clients: {
@@ -38,9 +44,13 @@ interface JobEntryWithRelations {
 }
 
 export default function AllJobsTab({
+  branches = [],
+  isSuperAdmin = false,
   onEditClick,
   triggerRefresh,
 }: {
+  branches?: any[];
+  isSuperAdmin?: boolean;
   onEditClick: (test: JobEntryTest, client: Client) => void;
   triggerRefresh: number;
 }) {
@@ -52,13 +62,14 @@ export default function AllJobsTab({
   const [searchClient, setSearchClient] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterJobType, setFilterJobType] = useState<"all" | "dummy" | "active">("all");
+  const [filterBranch, setFilterBranch] = useState("all");
   
   const { toast } = useToast();
 
-  const loadAllJobs = async () => {
+  const loadAllJobs = async (branch?: string) => {
     setIsLoading(true);
     try {
-      const res = await getAllJobEntriesAction();
+      const res = await getAllJobEntriesAction(branch && branch !== "all" ? branch : undefined);
       if (res.success && res.data) {
         setAllJobs(res.data as unknown as JobEntryWithRelations[]);
       }
@@ -70,11 +81,17 @@ export default function AllJobsTab({
   };
 
   useEffect(() => {
-    loadAllJobs();
-  }, [triggerRefresh]);
+    loadAllJobs(filterBranch);
+  }, [triggerRefresh, filterBranch]);
 
   const filteredJobs = useMemo(() => {
     return allJobs.filter((job) => {
+      // Branch Filter
+      if (filterBranch !== "all") {
+        const jobBranch = job.branch_id || job.branches?.id;
+        if (jobBranch && jobBranch !== filterBranch) return false;
+      }
+
       // UID Filter
       const searchUidLower = searchUid.trim().toLowerCase();
       const uidMatch = searchUidLower === "" || 
@@ -100,7 +117,7 @@ export default function AllJobsTab({
 
       return uidMatch && clientMatch && dateMatch && jobTypeMatch;
     });
-  }, [allJobs, searchUid, searchClient, filterDate, filterJobType]);
+  }, [allJobs, searchUid, searchClient, filterDate, filterJobType, filterBranch]);
 
   return (
     <div className="space-y-4">
@@ -153,6 +170,19 @@ export default function AllJobsTab({
               onChange={(val) => setFilterJobType(val as any)}
             />
           </div>
+          {isSuperAdmin && branches.length > 0 && (
+            <div className="flex-1 w-full space-y-1.5">
+              <Dropdown
+                label="Branch"
+                options={[
+                  { label: "All Branches", value: "all" },
+                  ...branches.map((b) => ({ label: b.name, value: b.id })),
+                ]}
+                value={filterBranch}
+                onChange={(val) => setFilterBranch(val)}
+              />
+            </div>
+          )}
           <div className="w-full md:w-auto shrink-0 mb-0.5">
             <Button
               variant="outline"
@@ -162,6 +192,7 @@ export default function AllJobsTab({
                 setSearchClient("");
                 setFilterDate("");
                 setFilterJobType("all");
+                setFilterBranch("all");
               }}
             >
               <RefreshCw className="w-4 h-4" />
@@ -209,7 +240,11 @@ export default function AllJobsTab({
                           <h3 className="font-semibold text-slate-800 text-lg tracking-tight">
                             UID: {job.uid_label || "Missing"}
                           </h3>
-
+                          {job.branches?.name && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/50 text-xs font-bold">
+                              {job.branches.name}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

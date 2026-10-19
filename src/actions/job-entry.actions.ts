@@ -24,18 +24,18 @@ export async function getJobEntriesByClientIdAction(clientId: string) {
   }
 }
 
-export async function getAllJobEntryTestsAction() {
+export async function getAllJobEntryTestsAction(branchId?: string) {
   try {
-    const data = await JobEntryService.getAllJobEntryTests();
+    const data = await JobEntryService.getAllJobEntryTests(branchId);
     return { success: true, data };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
-export async function getAllJobEntriesAction() {
+export async function getAllJobEntriesAction(branchId?: string) {
   try {
-    const data = await JobEntryService.getAllJobEntries();
+    const data = await JobEntryService.getAllJobEntries(branchId);
     return { success: true, data };
   } catch (error: any) {
     return { success: false, error: error.message };

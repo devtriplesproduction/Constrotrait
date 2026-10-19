@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { getAuthenticatedUserWithRoles } from "./auth.service";
-import { canManageClientsAndJobs } from "@/config/roles";
+import { canManageClientsAndJobs, isSuperAdmin } from "@/config/roles";
 
 export class JobEntryService {
   static toRoman(num: number): string {
@@ -70,6 +70,12 @@ export class JobEntryService {
       throw new Error("Unauthorized: You do not have permission to manage job entries");
     }
 
+    const isSuper = isSuperAdmin(user.roles);
+    const targetBranchId = jobData.branch_id || (isSuper ? jobData.branch_id : user.branch_id) || user.branch_id;
+    if (!targetBranchId) {
+      throw new Error("A valid branch must be assigned to create an inward job entry.");
+    }
+
     const supabase = await createClient() as any;
     
     let isNabl = false;
@@ -117,6 +123,7 @@ export class JobEntryService {
     
     const jobInsertData = { 
       ...jobData, 
+      branch_id: targetBranchId,
       uid_label: firstUidLabel, 
       uid: firstUid, 
       is_nabl: isNabl 
@@ -125,7 +132,7 @@ export class JobEntryService {
     const { data: jobEntry, error: jobError } = await supabase
       .from("job_entries")
       .insert([jobInsertData])
-      .select()
+      .select("*, branches ( id, name, code )")
       .single();
     if (jobError || !jobEntry) throw new Error(jobError?.message || "Failed to create job entry");
 
@@ -190,17 +197,21 @@ export class JobEntryService {
     return { jobEntry, jobEntryTests, uidsIssued };
   }
 
-  static async createDummyJobCard(isNabl: boolean) {
+  static async createDummyJobCard(isNabl: boolean, branchId?: string) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
     const supabase = await createClient() as any;
 
+    const isSuper = isSuperAdmin(user.roles);
+    const targetBranchId = (isSuper && branchId && branchId !== "all") ? branchId : user.branch_id;
+    if (!targetBranchId) throw new Error("A valid branch is required to create a dummy job card.");
+
     let clientId = "";
-    const { data: existingDummy } = await supabase.from('clients').select('id').eq('name', 'Dummy Client').limit(1).single();
+    const { data: existingDummy } = await supabase.from('clients').select('id').eq('name', 'Dummy Client').eq('branch_id', targetBranchId).limit(1).maybeSingle();
     if (existingDummy) {
       clientId = existingDummy.id;
     } else {
-      const { data: newDummy, error: err } = await supabase.from('clients').insert({ name: 'Dummy Client', company_name: 'DUMMY' }).select('id').single();
+      const { data: newDummy, error: err } = await supabase.from('clients').insert({ name: 'Dummy Client', company_name: 'DUMMY', branch_id: targetBranchId }).select('id').single();
       if (err) throw err;
       clientId = newDummy.id;
     }
@@ -215,8 +226,8 @@ export class JobEntryService {
 
     const { data: jobEntry, error: jobError } = await supabase
       .from("job_entries")
-      .insert({ client_id: clientId, uid_label: currentUidLabel, uid: uidInt, is_nabl: true })
-      .select()
+      .insert({ client_id: clientId, branch_id: targetBranchId, uid_label: currentUidLabel, uid: uidInt, is_nabl: true })
+      .select("*, branches ( id, name, code )")
       .single();
     if (jobError) throw new Error(jobError.message);
 
@@ -337,32 +348,62 @@ export class JobEntryService {
     return data;
   }
 
-  static async getAllJobEntryTests() {
+  static async getAllJobEntryTests(branchId?: string) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
     if (!canManageClientsAndJobs(user.roles)) {
       throw new Error("Unauthorized: You do not have permission to view job entries");
     }
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from("job_entry_tests")
-      .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!job_entry_tests_job_entry_id_fkey ( id, created_at, client_id, uid, uid_label, inward_on, clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person ) ), test_master ( id, component_parameter, specific_test )`)
+      .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!job_entry_tests_job_entry_id_fkey!inner ( id, created_at, client_id, branch_id, uid, uid_label, inward_on, clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person ), branches ( id, name, code ) ), test_master ( id, component_parameter, specific_test )`)
       .order("created_at", { ascending: false });
+
+    const isSuper = isSuperAdmin(user.roles);
+    if (isSuper) {
+      if (branchId && branchId !== "all") {
+        query = query.eq("job_entries.branch_id", branchId);
+      }
+    } else {
+      if (user.branch_id) {
+        query = query.eq("job_entries.branch_id", user.branch_id);
+      } else {
+        return [];
+      }
+    }
+
+    const { data, error } = await query;
     if (error) throw new Error(error.message);
     return data;
   }
 
-  static async getAllJobEntries() {
+  static async getAllJobEntries(branchId?: string) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
     if (!canManageClientsAndJobs(user.roles)) {
       throw new Error("Unauthorized: You do not have permission to view job entries");
     }
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from("job_entries")
-      .select(`*, job_entry_tests!job_entry_tests_job_entry_id_fkey (*, job_assignments(id, status, report_url, reviewer_remark), test_master(id, component_parameter, specific_test)), clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person )`)
+      .select(`*, branches ( id, name, code ), job_entry_tests!job_entry_tests_job_entry_id_fkey (*, job_assignments(id, status, report_url, reviewer_remark), test_master(id, component_parameter, specific_test)), clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person )`)
       .order("created_at", { ascending: false });
+
+    const isSuper = isSuperAdmin(user.roles);
+    if (isSuper) {
+      if (branchId && branchId !== "all") {
+        query = query.eq("branch_id", branchId);
+      }
+    } else {
+      if (user.branch_id) {
+        query = query.eq("branch_id", user.branch_id);
+      } else {
+        return [];
+      }
+    }
+
+    const { data, error } = await query;
     if (error) throw new Error(error.message);
     return data;
   }

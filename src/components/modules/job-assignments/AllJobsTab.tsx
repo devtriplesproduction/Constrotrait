@@ -90,8 +90,8 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
   const filteredAssignments = assignments.filter((a) => {
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
     if (filterBranch !== "all") {
-      const emp = employees.find((e: any) => e.id === a.assigned_to);
-      if (!emp || emp.branch_id !== filterBranch) return false;
+      const assignmentBranch = a.branch_id || a.job_entry_tests?.job_entries?.branch_id || employees.find((e: any) => e.id === a.assigned_to)?.branch_id;
+      if (assignmentBranch !== filterBranch) return false;
     }
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase();
@@ -314,9 +314,13 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
                       <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
                         <ClipboardList className="w-4 h-4" />
                       </div>
-                      <div className="font-bold text-slate-800 text-[13px]">
-                        {assignmentUid(assignment)}
-
+                      <div className="font-bold text-slate-800 text-[13px] flex items-center gap-1.5 flex-wrap">
+                        <span>{assignmentUid(assignment)}</span>
+                        {(assignment.branches?.name || branches.find((b: any) => b.id === (assignment.branch_id || assignment.job_entry_tests?.job_entries?.branch_id))?.name) && (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/50 text-[10px] font-bold">
+                            {assignment.branches?.name || branches.find((b: any) => b.id === (assignment.branch_id || assignment.job_entry_tests?.job_entries?.branch_id))?.name}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>

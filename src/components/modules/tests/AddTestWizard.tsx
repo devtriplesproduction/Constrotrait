@@ -24,10 +24,16 @@ const steps = [
 
 export function AddTestWizard({
   onSuccess,
-  initialData
+  initialData,
+  branches = [],
+  userBranchId,
+  isSuperAdmin = false,
 }: {
-  onSuccess?: () => void,
-  initialData?: TestMaster
+  onSuccess?: () => void;
+  initialData?: TestMaster;
+  branches?: any[];
+  userBranchId?: string | null;
+  isSuperAdmin?: boolean;
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,6 +45,8 @@ export function AddTestWizard({
     : [];
 
   const [details, setDetails] = useState<string[]>(defaultAdditionalDetails);
+
+  const initialBranchId = initialData?.branch_id || (isSuperAdmin ? (branches[0]?.id || "") : (userBranchId || ""));
 
   const {
     register,
@@ -65,6 +73,7 @@ export function AddTestWizard({
       minimum_value: initialData?.minimum_value || "",
       time_required: initialData?.time_required || "",
       tested_as_per_is: initialData?.tested_as_per_is || "",
+      branch_id: initialBranchId,
     },
   });
 
@@ -73,6 +82,7 @@ export function AddTestWizard({
   const report_qr = watch("report_qr");
   const datasheet_qr = watch("datasheet_qr");
   const discipline_group = watch("discipline_group");
+  const branch_id = watch("branch_id");
 
   const prevIsNablRef = React.useRef(initialData?.is_nabl ?? true);
 
@@ -218,6 +228,30 @@ export function AddTestWizard({
               >
                 <ScrollArea orientation="vertical" className="h-[380px] pr-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 pb-2">
+                    {isSuperAdmin && branches.length > 0 ? (
+                      <div className="col-span-1 md:col-span-2 flex flex-col justify-end gap-1.5">
+                        <label className="text-sm font-semibold text-slate-700">Branch <span className="text-red-500">*</span></label>
+                        <Select
+                          value={branch_id || branches[0]?.id || ""}
+                          onValueChange={(val) => setValue("branch_id", val)}
+                        >
+                          {branches.map((b) => (
+                            <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>
+                          ))}
+                        </Select>
+                        {errors.branch_id && <p className="text-red-500 text-xs">{errors.branch_id.message}</p>}
+                      </div>
+                    ) : (
+                      branches.length > 0 && (
+                        <div className="col-span-1 md:col-span-2 flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Branch</span>
+                          <span className="text-sm font-semibold text-slate-800">
+                            {branches.find(b => b.id === (initialBranchId || userBranchId))?.name || "Assigned Branch"}
+                          </span>
+                        </div>
+                      )
+                    )}
+
                     <div className="flex flex-col justify-end gap-1.5">
                       <label className="text-sm font-semibold text-slate-700">Category <span className="text-red-500">*</span></label>
                       <Select

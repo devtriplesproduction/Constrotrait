@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { CreateTestInput } from "@/lib/validations/test";
 import { getAuthenticatedUserWithRoles } from "./auth.service";
-import { canManageTestMaster } from "@/config/roles";
+import { canManageTestMaster, isSuperAdmin } from "@/config/roles";
 
 export interface TestMaster {
   id: string;
@@ -23,6 +23,12 @@ export interface TestMaster {
   additional_details: string[] | null;
   report_qr: string | null;
   datasheet_qr: string | null;
+  branch_id?: string | null;
+  branches?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
   created_at: string;
   created_by: string | null;
   updated_at: string;
@@ -30,11 +36,17 @@ export interface TestMaster {
 }
 
 export const testService = {
-  async createTestMaster(data: CreateTestInput) {
+  async createTestMaster(data: CreateTestInput & { branch_id?: string }) {
     try {
       const user = await getAuthenticatedUserWithRoles();
       if (!user) return { success: false, error: "Unauthorized" };
       if (!canManageTestMaster(user.roles)) return { success: false, error: "Unauthorized: You do not have permission to manage tests" };
+
+      const isSuper = isSuperAdmin(user.roles);
+      const branchId = isSuper ? (data.branch_id || user.branch_id) : user.branch_id;
+      if (!branchId) {
+        return { success: false, error: "A valid branch must be assigned to create tests." };
+      }
 
       const supabase = await createClient();
 
@@ -77,10 +89,11 @@ export const testService = {
           additional_details: data.additional_details || [],
           report_qr: data.report_qr || null,
           datasheet_qr: data.datasheet_qr || null,
+          branch_id: branchId,
           created_by: user.id,
           updated_by: user.id,
         })
-        .select()
+        .select(`*, branches ( id, name, code )`)
         .single();
 
       if (error) {
@@ -88,69 +101,104 @@ export const testService = {
         return { success: false, error: error.message };
       }
 
-      return { success: true, data: testData as TestMaster };
+      return { success: true, data: testData as unknown as TestMaster };
     } catch (error) {
       console.error("Error creating test master:", error);
       return { success: false, error: "An unexpected error occurred" };
     }
   },
 
-  async getTests() {
+  async getTests(branchId?: string) {
     try {
       const user = await getAuthenticatedUserWithRoles();
       if (!user) return { success: false, error: "Unauthorized" };
 
       const supabase = await createClient();
-      const { data, error } = await supabase
+      let query = supabase
         .from("test_master")
-        .select("id, serial_no, discipline_group, material_product, component_parameter, specific_test, test_method, technique_equipment, is_nabl, category, particulars, unit, sample_size, minimum_value, time_required, tested_as_per_is, additional_details, report_qr, datasheet_qr, created_at, created_by, updated_at, updated_by")
+        .select(`
+          id, serial_no, discipline_group, material_product, component_parameter, specific_test,
+          test_method, technique_equipment, is_nabl, category, particulars, unit, sample_size,
+          minimum_value, time_required, tested_as_per_is, additional_details, report_qr, datasheet_qr,
+          branch_id, created_at, created_by, updated_at, updated_by,
+          branches ( id, name, code )
+        `)
         .order("created_at", { ascending: false });
+
+      const isSuper = isSuperAdmin(user.roles);
+      if (isSuper) {
+        if (branchId && branchId !== "all") {
+          query = query.eq("branch_id", branchId);
+        }
+      } else {
+        if (user.branch_id) {
+          query = query.eq("branch_id", user.branch_id);
+        } else {
+          return { success: true, data: [] };
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching tests:", error);
         return { success: false, error: error.message };
       }
 
-      return { success: true, data: data as TestMaster[] };
+      return { success: true, data: (data || []) as unknown as TestMaster[] };
     } catch (error) {
       console.error("Error fetching tests:", error);
       return { success: false, error: "An unexpected error occurred" };
     }
   },
 
-  async updateTestMaster(id: string, data: CreateTestInput) {
+  async updateTestMaster(id: string, data: CreateTestInput & { branch_id?: string }) {
     try {
       const user = await getAuthenticatedUserWithRoles();
       if (!user) return { success: false, error: "Unauthorized" };
       if (!canManageTestMaster(user.roles)) return { success: false, error: "Unauthorized: You do not have permission to manage tests" };
 
       const supabase = await createClient();
+      const isSuper = isSuperAdmin(user.roles);
+
+      if (!isSuper) {
+        const { data: existing } = await supabase.from("test_master").select("branch_id").eq("id", id).single();
+        if (existing && existing.branch_id !== user.branch_id) {
+          return { success: false, error: "Unauthorized: Cross-branch test editing is not permitted" };
+        }
+      }
+
+      const updatePayload: any = {
+        discipline_group: data.discipline_group,
+        material_product: data.material_product,
+        component_parameter: data.component_parameter,
+        specific_test: data.specific_test || "",
+        test_method: data.test_method,
+        technique_equipment: data.technique_equipment || "",
+        is_nabl: data.is_nabl ?? false,
+        category: data.category || "",
+        particulars: data.particulars || null,
+        unit: data.unit || null,
+        sample_size: data.sample_size || null,
+        minimum_value: data.minimum_value || null,
+        time_required: data.time_required || null,
+        tested_as_per_is: data.tested_as_per_is || null,
+        additional_details: data.additional_details || [],
+        report_qr: data.report_qr || null,
+        datasheet_qr: data.datasheet_qr || null,
+        updated_at: new Date().toISOString(),
+        updated_by: user.id,
+      };
+
+      if (isSuper && data.branch_id) {
+        updatePayload.branch_id = data.branch_id;
+      }
 
       const { data: testData, error } = await supabase
         .from("test_master")
-        .update({
-          discipline_group: data.discipline_group,
-          material_product: data.material_product,
-          component_parameter: data.component_parameter,
-          specific_test: data.specific_test || "",
-          test_method: data.test_method,
-          technique_equipment: data.technique_equipment || "",
-          is_nabl: data.is_nabl ?? false,
-          category: data.category || "",
-          particulars: data.particulars || null,
-          unit: data.unit || null,
-          sample_size: data.sample_size || null,
-          minimum_value: data.minimum_value || null,
-          time_required: data.time_required || null,
-          tested_as_per_is: data.tested_as_per_is || null,
-          additional_details: data.additional_details || [],
-          report_qr: data.report_qr || null,
-          datasheet_qr: data.datasheet_qr || null,
-          updated_at: new Date().toISOString(),
-          updated_by: user.id,
-        })
+        .update(updatePayload)
         .eq("id", id)
-        .select()
+        .select(`*, branches ( id, name, code )`)
         .single();
 
       if (error) {
@@ -158,7 +206,7 @@ export const testService = {
         return { success: false, error: error.message };
       }
 
-      return { success: true, data: testData as TestMaster };
+      return { success: true, data: testData as unknown as TestMaster };
     } catch (error) {
       console.error("Error updating test master:", error);
       return { success: false, error: "An unexpected error occurred" };
@@ -172,6 +220,15 @@ export const testService = {
       if (!canManageTestMaster(user.roles)) return { success: false, error: "Unauthorized: You do not have permission to manage tests" };
 
       const supabase = await createClient();
+      const isSuper = isSuperAdmin(user.roles);
+
+      if (!isSuper) {
+        const { data: existing } = await supabase.from("test_master").select("branch_id").eq("id", id).single();
+        if (existing && existing.branch_id !== user.branch_id) {
+          return { success: false, error: "Unauthorized: Cross-branch test deletion is not permitted" };
+        }
+      }
+
       const { error } = await supabase
         .from("test_master")
         .delete()

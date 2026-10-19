@@ -16,11 +16,19 @@ import { useSearchParams } from "next/navigation";
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
 
+interface ClientInwardManagerProps {
+  initialClients: (Client & { branches?: { id: string; name: string; code: string } | null })[];
+  branches?: any[];
+  userBranchId?: string | null;
+  isSuperAdmin?: boolean;
+}
+
 export default function ClientInwardManager({
   initialClients,
-}: {
-  initialClients: Client[];
-}) {
+  branches = [],
+  userBranchId,
+  isSuperAdmin = false,
+}: ClientInwardManagerProps) {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "all-jobs" ? "all-jobs" : "clients";
   const [activeTab, setActiveTab] = useState<"clients" | "all-jobs">(initialTab);
@@ -83,7 +91,11 @@ export default function ClientInwardManager({
         actions={
           <div className="flex items-center">
             {TabNavigation}
-            <NewInwardModalButton />
+            <NewInwardModalButton
+              branches={branches}
+              userBranchId={userBranchId}
+              isSuperAdmin={isSuperAdmin}
+            />
 
           </div>
         }
@@ -94,11 +106,15 @@ export default function ClientInwardManager({
         {activeTab === "clients" ? (
           <ClientsTab 
             initialClients={initialClients} 
+            branches={branches}
+            isSuperAdmin={isSuperAdmin}
             onEditClick={handleEditClick}
             triggerRefresh={triggerRefresh}
           />
         ) : (
           <AllJobsTab 
+            branches={branches}
+            isSuperAdmin={isSuperAdmin}
             onEditClick={handleEditClick}
             triggerRefresh={triggerRefresh}
           />
@@ -129,6 +145,9 @@ export default function ClientInwardManager({
             <ClientWizard
               mode="edit"
               initialData={{ client: editingClient, jobEntryTest: editingTest }}
+              branches={branches}
+              userBranchId={userBranchId}
+              isSuperAdmin={isSuperAdmin}
               onSuccess={onWizardClose}
             />
           </div>

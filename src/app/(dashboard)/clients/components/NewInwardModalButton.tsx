@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { ClientWizard } from "@/components/modules/clients/ClientWizard";
 
-export default function NewInwardModalButton() {
+export default function NewInwardModalButton({
+  branches = [],
+  userBranchId,
+  isSuperAdmin = false,
+}: {
+  branches?: any[];
+  userBranchId?: string | null;
+  isSuperAdmin?: boolean;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -38,7 +46,12 @@ export default function NewInwardModalButton() {
               </Button>
             </div>
             
-            <ClientWizard onSuccess={() => setIsOpen(false)} />
+            <ClientWizard
+              branches={branches}
+              userBranchId={userBranchId}
+              isSuperAdmin={isSuperAdmin}
+              onSuccess={() => setIsOpen(false)}
+            />
           </div>
         </div>
       )}

@@ -55,17 +55,33 @@ export class JobAssignmentService {
     return user;
   }
 
-  static async getUnassignedJobCards() {
+  static async getUnassignedJobCards(branchId?: string) {
     const supabase = await createClient();
-    await this.checkPermission(supabase);
+    const user = await this.checkPermission(supabase);
+    const { data: profile } = await supabase.from("profiles").select("roles, branch_id").eq("id", user.id).single();
+    const isSuper = isSuperAdmin(profile?.roles);
 
-    const { data: tests, error: testsErr } = await supabase
+    let query = supabase
       .from("job_entry_tests")
       .select(`
         id, job_entry_id, date_of_testing, uid_label, test_master_id,
         test_master:test_master_id ( component_parameter, specific_test, category, is_nabl ),
-        job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label )
+        job_entries!job_entry_tests_job_entry_id_fkey!inner ( id, uid, uid_label, branch_id, branches ( id, name, code ) )
       `);
+
+    if (isSuper) {
+      if (branchId && branchId !== "all") {
+        query = query.eq("job_entries.branch_id", branchId);
+      }
+    } else {
+      if (profile?.branch_id) {
+        query = query.eq("job_entries.branch_id", profile.branch_id);
+      } else {
+        return [];
+      }
+    }
+
+    const { data: tests, error: testsErr } = await query;
     if (testsErr) throw new Error(testsErr.message);
 
     const { data: assignments, error: asgnErr } = await supabase
@@ -77,7 +93,7 @@ export class JobAssignmentService {
     return (tests || []).filter((test: any) => !assignedIds.has(test.id));
   }
 
-  static async getAssignments(filters?: { team_id?: string; employee_id?: string; status?: string }) {
+  static async getAssignments(filters?: { team_id?: string; employee_id?: string; status?: string; branch_id?: string }) {
     const supabase = await createClient();
     const user = await this.checkViewPermission(supabase);
     const { data: profile } = await supabase.from("profiles").select("roles, branch_id").eq("id", user.id).single();
@@ -89,7 +105,8 @@ export class JobAssignmentService {
         job_entry_tests!inner ( ${TEST_SELECT} ),
         teams ( id, name, branch_id, team_members(employee_id) ),
         assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name, branch_id ),
-        assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name, branch_id )
+        assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name, branch_id ),
+        branches ( id, name, code )
       `)
       .order("created_at", { ascending: false });
       
@@ -97,26 +114,23 @@ export class JobAssignmentService {
     if (filters?.employee_id) query = query.eq("assigned_to", filters.employee_id);
     if (filters?.status) query = query.eq("status", filters.status);
     
+    const isSuper = isSuperAdmin(profile?.roles);
+    if (isSuper) {
+      if (filters?.branch_id && filters.branch_id !== "all") {
+        query = query.eq("branch_id", filters.branch_id);
+      }
+    } else {
+      if (profile?.branch_id) {
+        query = query.eq("branch_id", profile.branch_id);
+      } else {
+        return [];
+      }
+    }
+
     const { data, error } = await query;
     if (error) throw new Error(error.message);
     
-    // For branch scope filtering if needed
-    let filteredData = data;
-    const isSuper = isSuperAdmin(profile?.roles);
-    if (!isSuper && profile?.branch_id) {
-       filteredData = filteredData.filter((a: any) => {
-         // assigned_to matches branch
-         if (a.assigned_to_profile?.branch_id === profile.branch_id) return true;
-         // assigned_to is null, check assigned_by
-         if (!a.assigned_to && a.assigned_by_profile?.branch_id === profile.branch_id) return true;
-         // check team members matching branch
-         if (a.teams?.branch_id === profile.branch_id) return true;
-         
-         return false;
-       });
-    }
-    
-    return filteredData;
+    return data || [];
   }
 
   static async getAssignmentById(id: string) {
@@ -130,7 +144,8 @@ export class JobAssignmentService {
         job_entry_tests!inner ( ${TEST_SELECT} ),
         teams ( id, name, branch_id, team_members(employee_id) ),
         assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name, branch_id ),
-        assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name, branch_id )
+        assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name, branch_id ),
+        branches ( id, name, code )
       `)
       .eq("id", id)
       .single();
@@ -152,7 +167,8 @@ export class JobAssignmentService {
         job_entry_tests!inner ( ${TEST_SELECT} ),
         teams ( id, name, team_members(employee_id) ),
         assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),
-        assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name )
+        assigned_by_profile:profiles!job_assignments_assigned_by_fkey ( id, first_name, last_name ),
+        branches ( id, name, code )
       `)
       .order("created_at", { ascending: false });
     if (teamIds.length > 0) query = query.or(`assigned_to.eq.${user.id},team_id.in.(${teamIds.join(",")})`);
@@ -168,6 +184,7 @@ export class JobAssignmentService {
     assigned_to?: string;
     due_date?: string;
     notes?: string;
+    branch_id?: string;
   }) {
     const supabase = await createClient();
     const user = await this.checkPermission(supabase);
@@ -178,10 +195,13 @@ export class JobAssignmentService {
     const actualJobEntryTestId = data.job_entry_test_id;
 
     const { data: testRow, error: testErr } = await supabase
-      .from("job_entry_tests").select("id, job_entry_id").eq("id", actualJobEntryTestId).single();
+      .from("job_entry_tests")
+      .select("id, job_entry_id, job_entries!job_entry_tests_job_entry_id_fkey!inner ( id, branch_id )")
+      .eq("id", actualJobEntryTestId)
+      .single();
     if (testErr || !testRow) throw new Error("Job card test not found");
 
-
+    const jobBranchId = (testRow as any)?.job_entries?.branch_id || data.branch_id;
 
     const { data: existing, error: existingError } = await supabase
       .from("job_assignments").select("id").eq("job_entry_test_id", actualJobEntryTestId).maybeSingle();
@@ -191,6 +211,7 @@ export class JobAssignmentService {
       team_id: data.team_id || null,
       assigned_to: data.assigned_to || null,
       assigned_by: user.id,
+      branch_id: jobBranchId,
       due_date: data.due_date,
       notes: data.notes,
       status: "assigned",
