@@ -199,6 +199,7 @@ export type Database = {
         Row: {
           address: string | null
           agency_name: string | null
+          branch_id: string | null
           collected_by: string | null
           company_name: string | null
           contact_person: string | null
@@ -220,6 +221,7 @@ export type Database = {
         Insert: {
           address?: string | null
           agency_name?: string | null
+          branch_id?: string | null
           collected_by?: string | null
           company_name?: string | null
           contact_person?: string | null
@@ -241,6 +243,7 @@ export type Database = {
         Update: {
           address?: string | null
           agency_name?: string | null
+          branch_id?: string | null
           collected_by?: string | null
           company_name?: string | null
           contact_person?: string | null
@@ -259,7 +262,15 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comp_off_ledger: {
         Row: {
@@ -613,6 +624,7 @@ export type Database = {
         Row: {
           assigned_by: string | null
           assigned_to: string | null
+          branch_id: string | null
           created_at: string
           due_date: string | null
           id: string
@@ -627,6 +639,7 @@ export type Database = {
         Insert: {
           assigned_by?: string | null
           assigned_to?: string | null
+          branch_id?: string | null
           created_at?: string
           due_date?: string | null
           id?: string
@@ -641,6 +654,7 @@ export type Database = {
         Update: {
           assigned_by?: string | null
           assigned_to?: string | null
+          branch_id?: string | null
           created_at?: string
           due_date?: string | null
           id?: string
@@ -668,6 +682,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "job_assignments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "job_assignments_job_entry_test_id_fkey"
             columns: ["job_entry_test_id"]
             isOneToOne: false
@@ -686,6 +707,7 @@ export type Database = {
       job_entries: {
         Row: {
           agency: string | null
+          branch_id: string | null
           client_id: string
           collected_by: string | null
           created_at: string
@@ -708,6 +730,7 @@ export type Database = {
         }
         Insert: {
           agency?: string | null
+          branch_id?: string | null
           client_id: string
           collected_by?: string | null
           created_at?: string
@@ -730,6 +753,7 @@ export type Database = {
         }
         Update: {
           agency?: string | null
+          branch_id?: string | null
           client_id?: string
           collected_by?: string | null
           created_at?: string
@@ -751,6 +775,13 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "job_entries_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "job_entries_client_id_fkey"
             columns: ["client_id"]
@@ -1724,6 +1755,7 @@ export type Database = {
       test_master: {
         Row: {
           additional_details: string[] | null
+          branch_id: string | null
           category: string
           component_parameter: string
           created_at: string
@@ -1749,6 +1781,7 @@ export type Database = {
         }
         Insert: {
           additional_details?: string[] | null
+          branch_id?: string | null
           category: string
           component_parameter: string
           created_at?: string
@@ -1774,6 +1807,7 @@ export type Database = {
         }
         Update: {
           additional_details?: string[] | null
+          branch_id?: string | null
           category?: string
           component_parameter?: string
           created_at?: string
@@ -1798,6 +1832,13 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "test_master_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "test_master_datasheet_qr_fkey"
             columns: ["datasheet_qr"]

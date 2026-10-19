@@ -37,13 +37,30 @@ export interface ClientWizardProps {
   mode?: "create" | "edit";
   initialData?: {
     client: Database["public"]["Tables"]["clients"]["Row"];
-    jobEntryTest: Database["public"]["Tables"]["job_entry_tests"]["Row"] & { uid?: number; uid_label?: string | null; job_entries?: { uid?: number; uid_label?: string | null } | null };
+    jobEntryTest: Database["public"]["Tables"]["job_entry_tests"]["Row"] & { uid?: number; uid_label?: string | null; job_entries?: { uid?: number; uid_label?: string | null; branch_id?: string | null } | null };
   };
+  branches?: any[];
+  userBranchId?: string | null;
+  isSuperAdmin?: boolean;
   onSuccess?: () => void;
   onClose?: () => void;
 }
 
-export function ClientWizard({ mode = "create", initialData, onSuccess, onClose }: ClientWizardProps) {
+export function ClientWizard({
+  mode = "create",
+  initialData,
+  branches = [],
+  userBranchId,
+  isSuperAdmin = false,
+  onSuccess,
+  onClose,
+}: ClientWizardProps) {
+  const initialBranchId = 
+    (initialData?.jobEntryTest as any)?.job_entries?.branch_id ||
+    initialData?.client?.branch_id ||
+    (isSuperAdmin ? (branches[0]?.id || "") : (userBranchId || ""));
+
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(initialBranchId);
   const [currentStep, setCurrentStep] = useState(mode === "edit" ? 4 : 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitEnabled, setSubmitEnabled] = useState(false);
@@ -113,6 +130,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess, onClose 
         gst_no: initialData.client.gst_no || "",
       },
       jobEntry: {
+        branch_id: (initialData.jobEntryTest as any)?.job_entries?.branch_id || initialBranchId,
         division: (initialData.jobEntryTest as any)?.job_entries?.division || "",
         site_name: (initialData.jobEntryTest as any)?.job_entries?.site_name || "",
         agency_name: (initialData.jobEntryTest as any)?.job_entries?.agency || "",
@@ -155,7 +173,9 @@ export function ClientWizard({ mode = "create", initialData, onSuccess, onClose 
       non_nabl_month: (initialData.jobEntryTest as any)?.job_entries?.uid_label?.split('-')[0] || new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase(),
       dummy_is_nabl: true,
     } as ClientWizardValues : {
-      jobEntry: {},
+      jobEntry: {
+        branch_id: initialBranchId,
+      },
       materialDetails: {},
       client: {
         name: "",
@@ -164,6 +184,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess, onClose 
         mobile: "",
         email: "",
         gst_no: "",
+        branch_id: initialBranchId,
       },
       selectedTestIds: [],
       jobEntryTests: [],
@@ -253,7 +274,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess, onClose 
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery.length >= 2) {
         setIsSearching(true);
-        const result = await searchClientsAction(searchQuery);
+        const result = await searchClientsAction(searchQuery, selectedBranchId || undefined);
         if (result.success && result.data) {
           setSearchResults(result.data);
           setShowResults(true);
@@ -265,14 +286,14 @@ export function ClientWizard({ mode = "create", initialData, onSuccess, onClose 
       }
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [searchQuery, selectedBranchId]);
 
   // Fetch tests when reaching step 2
   useEffect(() => {
     if ((currentStep === 1 || mode === "edit") && availableTests.length === 0) {
       const fetchTests = async () => {
         setIsLoadingTests(true);
-        const result = await getTestsAction();
+        const result = await getTestsAction(selectedBranchId || undefined);
         if (result.success && result.data) {
           setAvailableTests(result.data as TestMaster[]);
           // If in edit mode, set the test name based on the loaded tests
@@ -287,7 +308,7 @@ export function ClientWizard({ mode = "create", initialData, onSuccess, onClose 
       };
       fetchTests();
     }
-  }, [currentStep, availableTests.length, mode, initialData, setValue]);
+  }, [currentStep, availableTests.length, mode, initialData, setValue, selectedBranchId]);
 
   const handleApplyToAll = (sourceIndex: number) => {
     const sourceTest = getValues(`jobEntryTests.${sourceIndex}`);
@@ -443,6 +464,15 @@ export function ClientWizard({ mode = "create", initialData, onSuccess, onClose 
   };
 
   const onSubmit = async (data: ClientWizardValues) => {
+    if (!data.client?.branch_id && selectedBranchId) {
+      if (!data.client) (data as any).client = {};
+      data.client.branch_id = selectedBranchId;
+    }
+    if (!data.jobEntry?.branch_id && selectedBranchId) {
+      if (!data.jobEntry) (data as any).jobEntry = {};
+      data.jobEntry.branch_id = selectedBranchId;
+    }
+
     const hasNonNabl = data.jobEntryTests?.some(test => {
       const testMaster = availableTests.find(t => t.id === test.test_master_id);
       return testMaster && !testMaster.is_nabl;
@@ -641,6 +671,41 @@ export function ClientWizard({ mode = "create", initialData, onSuccess, onClose 
                       </div>
                     )}
                   </div>
+
+                  {branches && branches.length > 0 && (
+                    <div className="col-span-full mb-2">
+                      {isSuperAdmin ? (
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">
+                            Branch <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={selectedBranchId}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSelectedBranchId(val);
+                              setValue("client.branch_id", val);
+                              setValue("jobEntry.branch_id", val);
+                              setAvailableTests([]); // Reload tests for newly selected branch
+                            }}
+                            className="h-11 px-4 text-[13px] font-medium bg-slate-50/50 border border-slate-200/80 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                          >
+                            {branches.map((b) => (
+                              <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Branch</span>
+                          <span className="text-sm font-semibold text-slate-800">
+                            {branches.find(b => b.id === (selectedBranchId || userBranchId))?.name || "Assigned Branch"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Name of Customer <span className="text-red-500">*</span></label>
                     <Input {...register("client.name")} placeholder="Customer Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20" />

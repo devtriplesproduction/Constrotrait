@@ -10,6 +10,7 @@ const toNull = (v: string | null | undefined) => (v && v.trim() !== "" ? v : nul
 export async function submitClientWizard(data: ClientWizardValues) {
   try {
     let clientId = data.client.id;
+    const branchId = data.jobEntry?.branch_id || data.client?.branch_id;
 
     if (clientId) {
       await ClientService.updateClient(clientId, {
@@ -19,6 +20,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
         email: data.client.email,
         gst_no: data.client.gst_no,
         company_name: data.client.company_name,
+        branch_id: branchId,
         division: data.jobEntry.division,
         site_name: data.jobEntry.site_name,
         agency_name: data.jobEntry.agency_name,
@@ -36,6 +38,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
         email: data.client.email,
         gst_no: data.client.gst_no,
         company_name: data.client.company_name,
+        branch_id: branchId,
         division: data.jobEntry.division,
         site_name: data.jobEntry.site_name,
         agency_name: data.jobEntry.agency_name,
@@ -71,6 +74,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
 
     const jobEntryData = {
       client_id: clientId,
+      branch_id: branchId,
       division: data.jobEntry.division,
       agency: data.jobEntry.agency_name,
       project_name: data.jobEntry.project_name,
@@ -147,9 +151,9 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
   }
 }
 
-export async function searchClientsAction(query: string) {
+export async function searchClientsAction(query: string, branchId?: string) {
   try {
-    const clients = await ClientService.searchClients(query);
+    const clients = await ClientService.searchClients(query, branchId);
     return { success: true, data: clients };
   } catch (error) {
     return { success: false, error: (error as Error).message };

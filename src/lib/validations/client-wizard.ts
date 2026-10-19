@@ -8,11 +8,13 @@ export const clientDetailsSchema = z.object({
   mobile: z.string().optional(),
   email: z.string().email("Invalid email format").optional().or(z.literal("")),
   gst_no: z.string().optional(),
+  branch_id: z.string().optional(),
 });
 
 export type ClientDetailsValues = z.infer<typeof clientDetailsSchema>;
 
 export const jobEntryDetailsSchema = z.object({
+  branch_id: z.string().optional(),
   division: z.string().optional(),
   site_name: z.string().optional(),
   agency_name: z.string().optional(),

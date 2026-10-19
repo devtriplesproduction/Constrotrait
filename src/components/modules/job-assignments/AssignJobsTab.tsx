@@ -27,8 +27,8 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
   const [existingAssignments, setExistingAssignments] = useState<any[]>([]);
   const [unassignedJobCards, setUnassignedJobCards] = useState<any[]>([]);
 
-  const fetchExisting = async () => {
-    const res = await getAssignmentsAction();
+  const fetchExisting = async (branch?: string) => {
+    const res = await getAssignmentsAction(branch ? { branch_id: branch } : undefined);
     if (res.success && res.data) {
       setExistingAssignments(res.data);
     } else if (!res.success) {
@@ -36,7 +36,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
       toast({ title: "Error loading assignments", description: res.error, variant: "error" });
     }
 
-    const unassignedRes = await getUnassignedJobCardsAction();
+    const unassignedRes = await getUnassignedJobCardsAction(branch || undefined);
     if (unassignedRes.success && unassignedRes.data) {
       setUnassignedJobCards(unassignedRes.data);
     } else if (!unassignedRes.success) {
@@ -46,8 +46,8 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
   };
 
   useEffect(() => {
-    fetchExisting();
-  }, []);
+    fetchExisting(selectedBranch);
+  }, [selectedBranch]);
 
   const allJobCards = [
     ...unassignedJobCards.map(uc => ({
@@ -138,6 +138,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
         team_id: assignType === "team" ? selectedTeam : undefined,
         due_date: dueDate || undefined,
         notes: notes || undefined,
+        branch_id: selectedBranch || undefined,
       };
 
       const res = await assignJobCardAction(data);
@@ -150,7 +151,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
 
     if (successCount > 0) {
       toast({ title: "Success", description: `Successfully assigned ${successCount} tests from the Job Card!`, variant: "success" });
-      fetchExisting();
+      fetchExisting(selectedBranch);
       setSelectedJobEntryId("");
       if (onSuccess) onSuccess();
     }

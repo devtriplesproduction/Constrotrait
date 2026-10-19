@@ -20,8 +20,8 @@ export async function createTestMasterAction(data: CreateTestInput) {
   return result;
 }
 
-export async function getTestsAction() {
-  return await testService.getTests();
+export async function getTestsAction(branchId?: string) {
+  return await testService.getTests(branchId);
 }
 
 export async function getQrDocumentsAction() {

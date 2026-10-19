@@ -21,22 +21,33 @@ interface JobEntryWithTests extends JobEntry {
 
 export default function ClientsTab({
   initialClients,
+  branches = [],
+  isSuperAdmin = false,
   onEditClick,
   triggerRefresh, // Used to re-fetch if needed
 }: {
-  initialClients: Client[];
+  initialClients: (Client & { branches?: { id: string; name: string; code: string } | null })[];
+  branches?: any[];
+  isSuperAdmin?: boolean;
   onEditClick: (test: JobEntryTest, client: Client) => void;
   triggerRefresh: number;
 }) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [branchFilter, setBranchFilter] = useState("all");
 
   const filteredClients = initialClients.filter((client) => {
+    if (branchFilter !== "all") {
+      const clientBranch = client.branch_id || client.branches?.id;
+      if (clientBranch !== branchFilter) return false;
+    }
+
     const query = searchQuery.toLowerCase();
     return (
       client.name?.toLowerCase().includes(query) ||
       client.email?.toLowerCase().includes(query) ||
-      client.mobile?.toLowerCase().includes(query)
+      client.mobile?.toLowerCase().includes(query) ||
+      (client.branches?.name && client.branches.name.toLowerCase().includes(query))
     );
   });
 
@@ -55,12 +66,25 @@ export default function ClientsTab({
             Search Clients
           </h3>
 
-          <div className="w-full sm:max-w-md">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:max-w-xl">
+            {isSuperAdmin && branches.length > 0 && (
+              <select
+                value={branchFilter}
+                onChange={(e) => setBranchFilter(e.target.value)}
+                className="h-10 px-3 text-xs font-semibold bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              >
+                <option value="all">All Branches</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            )}
+
             <Input
               placeholder="Search by name, email, or contact..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 bg-slate-50/50 border-slate-200 focus-visible:ring-orange-500/20 focus-visible:border-orange-400 hover:border-orange-300 transition-all shadow-sm rounded-xl"
+              className="h-10 bg-slate-50/50 border-slate-200 focus-visible:ring-orange-500/20 focus-visible:border-orange-400 hover:border-orange-300 transition-all shadow-sm rounded-xl flex-1"
             />
           </div>
         </div>
@@ -84,7 +108,14 @@ export default function ClientsTab({
                     <User className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-800 text-base leading-tight">{client.name}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-slate-800 text-base leading-tight">{client.name}</h3>
+                      {client.branches?.name && (
+                        <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/50 text-[10px] font-bold">
+                          {client.branches.name}
+                        </span>
+                      )}
+                    </div>
                     <p className="font-semibold text-orange-500 text-xs mt-1">{client.email || "No Email"}</p>
                   </div>
                 </div>

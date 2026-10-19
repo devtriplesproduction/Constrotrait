@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const createTestSchema = z.object({
   serial_no: z.string().optional(),
+  branch_id: z.string().optional(),
   discipline_group: z.string().optional(),
   material_product: z.string().optional(),
   component_parameter: z.string().optional(),

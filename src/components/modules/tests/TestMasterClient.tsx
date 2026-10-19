@@ -17,15 +17,24 @@ import { ScrollArea } from "@/components/ui/ScrollArea";
 
 interface TestMasterClientProps {
   initialTests: TestMaster[];
+  branches?: any[];
+  userBranchId?: string | null;
+  isSuperAdmin?: boolean;
 }
 
-export function TestMasterClient({ initialTests }: TestMasterClientProps) {
+export function TestMasterClient({
+  initialTests,
+  branches = [],
+  userBranchId,
+  isSuperAdmin = false,
+}: TestMasterClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTest, setEditingTest] = useState<TestMaster | null>(null);
   const [deletingTest, setDeletingTest] = useState<TestMaster | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [nablFilter, setNablFilter] = useState<"all" | "nabl" | "non-nabl">("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "Construction" | "Environmental">("all");
+  const [branchFilter, setBranchFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 9;
 
@@ -35,7 +44,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, nablFilter, categoryFilter]);
+  }, [searchQuery, nablFilter, categoryFilter, branchFilter]);
 
   const handleEdit = (test: TestMaster) => {
     setEditingTest(test);
@@ -81,6 +90,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
         "Additional Details": test.additional_details?.join(", ") || "None",
         "NABL": test.is_nabl ? "Yes" : "No",
         "Category": test.category || "N/A",
+        "Branch": test.branches?.name || "N/A",
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -95,6 +105,10 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
     if (nablFilter === "nabl" && test.is_nabl !== true) return false;
     if (nablFilter === "non-nabl" && test.is_nabl === true) return false;
     if (categoryFilter !== "all" && test.category !== categoryFilter) return false;
+    if (branchFilter !== "all") {
+      const testBranch = test.branch_id || test.branches?.id;
+      if (testBranch !== branchFilter) return false;
+    }
 
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
@@ -103,6 +117,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
       test.material_product.toLowerCase().includes(query) ||
       test.component_parameter.toLowerCase().includes(query) ||
       test.test_method.toLowerCase().includes(query) ||
+      (test.branches?.name && test.branches.name.toLowerCase().includes(query)) ||
       (test.additional_details && test.additional_details.some(d => d.toLowerCase().includes(query)))
     );
   });
@@ -192,6 +207,22 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
             </Select>
           </div>
 
+          {isSuperAdmin && branches.length > 0 && (
+            <div className="flex-1 w-full space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Branch</label>
+              <Select
+                value={branchFilter}
+                onValueChange={(val) => setBranchFilter(val)}
+                buttonClassName="h-[40px] bg-white rounded-xl border-slate-200 hover:border-slate-300"
+              >
+                <SelectItem value="all">All Branches</SelectItem>
+                {branches.map(b => (
+                  <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                ))}
+              </Select>
+            </div>
+          )}
+
           <Button
             variant="outline"
             size="none"
@@ -199,6 +230,7 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
               setSearchQuery("");
               setNablFilter("all");
               setCategoryFilter("all");
+              setBranchFilter("all");
             }}
             className="h-[40px] px-5 rounded-xl border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 font-semibold shadow-sm flex items-center gap-2 transition-colors whitespace-nowrap"
           >
@@ -218,7 +250,13 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
             >
               <XCircle className="w-5 h-5" />
             </Button>
-            <AddTestWizard onSuccess={handleCloseModal} initialData={editingTest || undefined} />
+            <AddTestWizard
+              onSuccess={handleCloseModal}
+              initialData={editingTest || undefined}
+              branches={branches}
+              userBranchId={userBranchId}
+              isSuperAdmin={isSuperAdmin}
+            />
           </div>
         </div>
       )}
@@ -268,6 +306,11 @@ export function TestMasterClient({ initialTests }: TestMasterClientProps) {
                       {test.is_nabl && (
                         <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[10px] font-extrabold tracking-wider shadow-sm uppercase">
                           NABL
+                        </span>
+                      )}
+                      {test.branches?.name && (
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/50 text-[10px] font-extrabold tracking-wider shadow-sm uppercase">
+                          {test.branches.name}
                         </span>
                       )}
                     </div>
