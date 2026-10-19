@@ -14,9 +14,7 @@ export interface Notification {
   updated_at: string;
 }
 
-/**
- * Creates a notification for all users who have SUPER_ADMIN or HR roles.
- */
+
 export async function createAdminNotification(message: string, type: NotificationType) {
   try {
     const supabaseAdmin = createAdminClient();
@@ -92,18 +90,18 @@ export async function createHolidayNotification(
     const targetProfiles = profiles.filter(profile => {
       // Always notify management roles for this branch
       if (profile.roles && (
-        profile.roles.includes('BRANCH_MANAGER_ADMINISTRATIVE') || 
-        profile.roles.includes('HR') || 
+        profile.roles.includes('BRANCH_MANAGER_ADMINISTRATIVE') ||
+        profile.roles.includes('HR') ||
         profile.roles.includes('SUPER_ADMIN')
       )) {
         return true;
       }
-      
+
       // If department is specified, check if employee matches
       if (depts) {
         return profile.department && depts.includes(profile.department);
       }
-      
+
       // If no department specified (e.g. all departments), notify everyone
       return true;
     });
