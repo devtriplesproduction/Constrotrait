@@ -110,3 +110,31 @@ export function canIssueLabReport(roles?: string[] | null): boolean {
     || roles.includes("TEST_ENGINEER")
     || roles.includes("BRANCH_MANAGER_ADMINISTRATIVE");
 }
+
+export function isAccountant(roles?: string[] | null): boolean {
+  if (!roles) return false;
+  return roles.includes("ACCOUNTANT");
+}
+
+/** Accountant can add/edit/cancel/view financial transactions */
+export function canManageAccountingTransactions(roles?: string[] | null): boolean {
+  if (!roles) return false;
+  return isSuperAdmin(roles) || isAccountant(roles);
+}
+
+/** Owner/Director (Super Admin) and Branch Manager: approvals and audits only */
+export function canApproveAccounting(roles?: string[] | null): boolean {
+  if (!roles) return false;
+  return isSuperAdmin(roles) || isBranchManager(roles);
+}
+
+/** View accounting module (transactions or audit) */
+export function canViewAccounting(roles?: string[] | null): boolean {
+  if (!roles) return false;
+  return isSuperAdmin(roles) || isAccountant(roles) || isBranchManager(roles);
+}
+
+/** Excel export restricted to Super Admin */
+export function canExportAccountingExcel(roles?: string[] | null): boolean {
+  return isSuperAdmin(roles);
+}
