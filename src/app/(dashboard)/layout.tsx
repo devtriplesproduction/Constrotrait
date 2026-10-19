@@ -49,7 +49,7 @@ export default async function DashboardLayout({
   const branchName = currentUserProfile?.branches?.name || "";
 
   return (
-    <ClientLayout user={user} role={role} branchName={branchName}>
+    <ClientLayout user={user} role={role} roles={roles} branchName={branchName}>
       <BirthdayNotifier currentUserProfile={currentUserProfile} todayBirthdays={todayBirthdays} />
       <TestAssignmentNotifier currentUserProfile={currentUserProfile} todayTests={todayTests} />
       {children}

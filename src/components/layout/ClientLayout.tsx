@@ -11,17 +11,18 @@ interface ClientLayoutProps {
   children: React.ReactNode;
   user: User;
   role: string;
+  roles?: string[];
   branchName?: string;
 }
 
-export function ClientLayout({ children, user, role, branchName }: ClientLayoutProps) {
+export function ClientLayout({ children, user, role, roles, branchName }: ClientLayoutProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Sidebar - we can dynamically select the sidebar based on role later, 
           for now we use AdminSidebar if role is SUPER_ADMIN or HR */}
-      <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} role={role} />
+      <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} role={role} roles={roles} />
 
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar user={user} role={role} branchName={branchName} onMenuClick={() => setSidebarOpen(true)} />

@@ -357,7 +357,7 @@ export class JobEntryService {
     const supabase = await createClient();
     let query = supabase
       .from("job_entry_tests")
-      .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!inner ( id, created_at, client_id, branch_id, uid, uid_label, inward_on, clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person ), branches ( id, name, code ) ), test_master ( id, component_parameter, specific_test )`)
+      .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!job_entry_tests_job_entry_id_fkey!inner ( id, created_at, client_id, branch_id, uid, uid_label, inward_on, clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person ), branches ( id, name, code ) ), test_master ( id, component_parameter, specific_test )`)
       .order("created_at", { ascending: false });
 
     const isSuper = isSuperAdmin(user.roles);

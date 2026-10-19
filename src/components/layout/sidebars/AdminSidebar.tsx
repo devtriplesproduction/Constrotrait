@@ -9,19 +9,20 @@ interface AdminSidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   role?: string;
+  roles?: string[];
 }
 
-export function AdminSidebar({ isOpen, setIsOpen, role }: AdminSidebarProps) {
-  const isEmployeeManagementAllowed = role?.includes('ADMIN') || role === 'HR';
-  const isPayrollAllowed = role === 'HR' || role?.includes('SUPER_ADMIN') || role?.includes('BRANCH_MANAGER_ADMINISTRATIVE');
-  const roleArray = role ? [role] : [];
+export function AdminSidebar({ isOpen, setIsOpen, role, roles }: AdminSidebarProps) {
+  const roleArray = roles && roles.length > 0 ? roles : (role ? [role] : []);
+  const isEmployeeManagementAllowed = roleArray.some(r => r.includes('ADMIN') || r === 'HR');
+  const isPayrollAllowed = roleArray.some(r => r === 'HR' || r.includes('SUPER_ADMIN') || r.includes('BRANCH_MANAGER_ADMINISTRATIVE'));
 
   const adminLinks: SidebarLink[] = [
     { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { title: "EOD Reports", href: "/eod", icon: ClipboardList },
   ];
 
-  if (role?.includes('SUPER_ADMIN')) {
+  if (roleArray.some(r => r.includes('SUPER_ADMIN'))) {
     adminLinks.push({ title: "Branch Management", href: "/branches", icon: Building2 });
   }
 

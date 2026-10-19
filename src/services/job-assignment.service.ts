@@ -66,7 +66,7 @@ export class JobAssignmentService {
       .select(`
         id, job_entry_id, date_of_testing, uid_label, test_master_id,
         test_master:test_master_id ( component_parameter, specific_test, category, is_nabl ),
-        job_entries!inner ( id, uid, uid_label, branch_id, branches ( id, name, code ) )
+        job_entries!job_entry_tests_job_entry_id_fkey!inner ( id, uid, uid_label, branch_id, branches ( id, name, code ) )
       `);
 
     if (isSuper) {
@@ -196,7 +196,7 @@ export class JobAssignmentService {
 
     const { data: testRow, error: testErr } = await supabase
       .from("job_entry_tests")
-      .select("id, job_entry_id, job_entries!inner ( id, branch_id )")
+      .select("id, job_entry_id, job_entries!job_entry_tests_job_entry_id_fkey!inner ( id, branch_id )")
       .eq("id", actualJobEntryTestId)
       .single();
     if (testErr || !testRow) throw new Error("Job card test not found");

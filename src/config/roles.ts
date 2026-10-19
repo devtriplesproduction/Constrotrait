@@ -77,14 +77,29 @@ export function canManageTestMaster(roles?: string[] | null): boolean {
   return roles.includes("SUPER_ADMIN") || roles.includes("QUALITY_MANAGER") || roles.includes("TECHNICAL_MANAGER") || roles.includes("BRANCH_MANAGER_ADMINISTRATIVE") || roles.includes("ADMIN_INWARD_CRE");
 }
 
+export function isAdminInwardCRE(roles?: string[] | null): boolean {
+  if (!roles) return false;
+  return roles.includes("ADMIN_INWARD_CRE");
+}
+
 export function canManageClientsAndJobs(roles?: string[] | null): boolean {
   if (!roles) return false;
-  return roles.includes("SUPER_ADMIN") || roles.includes("BRANCH_MANAGER_ADMINISTRATIVE") || roles.includes("ADMIN_INWARD_CRE");
+  return (
+    roles.includes("SUPER_ADMIN") ||
+    roles.includes("BRANCH_MANAGER_ADMINISTRATIVE") ||
+    roles.includes("ADMIN_INWARD_CRE") ||
+    roles.includes("HR")
+  );
 }
 
 export function canManageJobAssignments(roles?: string[] | null): boolean {
   if (!roles) return false;
-  return roles.includes("SUPER_ADMIN") || roles.includes("BRANCH_MANAGER_ADMINISTRATIVE");
+  return (
+    roles.includes("SUPER_ADMIN") ||
+    roles.includes("BRANCH_MANAGER_ADMINISTRATIVE") ||
+    roles.includes("ADMIN_INWARD_CRE") ||
+    roles.includes("HR")
+  );
 }
 
 export function canIssueLabReport(roles?: string[] | null): boolean {

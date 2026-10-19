@@ -1,4 +1,4 @@
-import { isSuperAdmin, isBranchManager, isHR, isTestEngineer } from "./roles";
+import { canManageJobAssignments, isTestEngineer } from "./roles";
 
 export type JobStage = 
   | 'pending'
@@ -13,15 +13,11 @@ export type JobStage =
 export function canTransition(from: JobStage, to: JobStage, roles: string[] | null | undefined): boolean {
   if (!roles) return false;
   
-  const isSuperAdminOrBranchManager = isSuperAdmin(roles) || isBranchManager(roles);
-  const isTestEng = isTestEngineer(roles) || isSuperAdminOrBranchManager;
-  const isHRRole = isHR(roles);
+  const isManager = canManageJobAssignments(roles);
+  const isTestEng = isTestEngineer(roles) || isManager;
 
-  // HR is read-only
-  if (isHRRole && !isSuperAdminOrBranchManager) return false;
-
-  // Super Admin & Branch Manager can assign, approve, reject
-  if (isSuperAdminOrBranchManager) {
+  // Managers (Super Admin, Branch Manager, Admin Inward CRE, HR) can assign, approve, reject
+  if (isManager) {
     if (from === 'pending' && to === 'assigned') return true;
     if (from === 'report_uploaded' && to === 'in_review') return true;
     if (from === 'in_review' && to === 'approved') return true;

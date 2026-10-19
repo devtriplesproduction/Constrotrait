@@ -187,7 +187,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                   <SelectGroup>
                     <SelectLabel className="text-orange-600 bg-orange-50/80">⚠️ Unassigned Job Cards</SelectLabel>
                     {uniqueJobEntries.filter(je => !je.isAssigned && (!searchJobCard || je.uid_label?.toLowerCase().includes(searchJobCard.toLowerCase()) || je.name?.toLowerCase().includes(searchJobCard.toLowerCase()))).map(je => {
-                      const uidStr = je.uid_label ? `ID: ${je.uid_label}` : `Unknown ID (${je.name})`;
+                      const uidStr = je.uid_label ? `UID: ${je.uid_label}` : `Unknown UID (${je.name})`;
                       return (
                         <SelectItem key={je.job_entry_id} value={je.job_entry_id}>
                           {`${uidStr} (${je.testCount} tests)`}
@@ -198,7 +198,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
                   <SelectGroup>
                     <SelectLabel className="text-emerald-600 bg-emerald-50/80 mt-1">🔄 Assigned Job Cards</SelectLabel>
                     {uniqueJobEntries.filter(je => je.isAssigned && (!searchJobCard || je.uid_label?.toLowerCase().includes(searchJobCard.toLowerCase()) || je.name?.toLowerCase().includes(searchJobCard.toLowerCase()))).map(je => {
-                      const uidStr = je.uid_label ? `ID: ${je.uid_label}` : `Unknown ID (${je.name})`;
+                      const uidStr = je.uid_label ? `UID: ${je.uid_label}` : `Unknown UID (${je.name})`;
                       return (
                         <SelectItem key={je.job_entry_id} value={je.job_entry_id}>
                           {`${uidStr} (${je.testCount} tests)`}
