@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
-import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
+import { downloadJobCardAction, getJobCardPdfAction } from "@/actions/job-card-pdf.actions";
+import { isTestEngineer, isSuperAdmin, isBranchManager } from "@/config/roles";
 import { Loader2, Check, X, ClipboardList, Download, Tag, Calendar, Beaker, AlertCircle, FileText, Zap, Search, SlidersHorizontal, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/modules/PageHeader";
@@ -19,12 +20,35 @@ function uidOf(a: any) {
   return null;
 }
 
-export function MyAssignmentsTab({ assignments, userId, filterStatus, setFilterStatus }: { assignments: any[], userId: string, filterStatus: string, setFilterStatus: (s: string) => void }) {
+export function MyAssignmentsTab({ 
+  assignments, 
+  userId, 
+  userRoles = [],
+  filterStatus, 
+  setFilterStatus 
+}: { 
+  assignments: any[], 
+  userId: string, 
+  userRoles?: string[],
+  filterStatus: string, 
+  setFilterStatus: (s: string) => void 
+}) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
+  const [previewPdf, setPreviewPdf] = useState<{
+    url: string;
+    uid: string;
+    material: string;
+  } | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filterDate, setFilterDate] = useState<string>("all");
   const router = useRouter();
+
+  const effectiveRoles = userRoles && userRoles.length > 0
+    ? userRoles
+    : (assignments.find((a: any) => a.assigned_to === userId)?.assigned_to_profile?.roles || []);
+  const isTestEngineerUser = isTestEngineer(effectiveRoles) && !isSuperAdmin(effectiveRoles) && !isBranchManager(effectiveRoles);
 
   const myAssignments = React.useMemo(() => {
     return assignments.filter((a: any) => {
@@ -130,8 +154,35 @@ export function MyAssignmentsTab({ assignments, userId, filterStatus, setFilterS
     } catch (error) {
       console.error("Error downloading PDF:", error);
       alert("Error generating Job Card.");
-      } finally {
+    } finally {
       setDownloadingId(null);
+    }
+  };
+
+  const handleViewPdf = async (testId: string, uid: string, material: string) => {
+    try {
+      setViewingId(testId);
+      const res = await getJobCardPdfAction(testId);
+      if (res.success && res.data) {
+        // Convert base64 to blob
+        const byteCharacters = atob(res.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        setPreviewPdf({ url, uid, material });
+      } else {
+        console.error("Failed to load PDF:", res.error);
+        alert(res.error || "Failed to load Job Card PDF.");
+      }
+    } catch (error) {
+      console.error("Error viewing PDF:", error);
+      alert("Error generating Job Card.");
+    } finally {
+      setViewingId(null);
     }
   };
 
@@ -485,7 +536,7 @@ return (
                           ) : (
                             <Dropdown
                               placeholder={
-                                downloadingId === a.job_entry_test_id ? (
+                                downloadingId === a.job_entry_test_id || viewingId === a.job_entry_test_id ? (
                                   <div className="flex items-center gap-1.5 text-orange-700 font-bold text-xs tracking-wide">
                                     <Loader2 className="w-3.5 h-3.5 animate-spin" /> Action
                                   </div>
@@ -496,7 +547,13 @@ return (
                                 )
                               }
                               options={[
-                                { label: "Download Job Card", value: "download" },
+                                ...(isTestEngineerUser
+                                  ? [{ label: "View Job Card", value: "view" }]
+                                  : [
+                                      { label: "View Job Card", value: "view" },
+                                      { label: "Download Job Card", value: "download" },
+                                    ]
+                                ),
                                 ...(getAggregateStatus(a.all_assignments) === 'assigned' ? [
                                   { label: "Accept", value: "accept" },
                                   { label: "Reject", value: "reject" }
@@ -506,7 +563,13 @@ return (
                               buttonClassName="h-8 py-0 px-3 bg-gradient-to-r from-orange-50 to-amber-50 hover:from-orange-100 hover:to-amber-100 border border-orange-200 shadow-sm rounded-full transition-all duration-200 group"
                               value=""
                               onChange={async (val) => {
-                                if (val === "download") {
+                                if (val === "view") {
+                                  handleViewPdf(
+                                    a.job_entry_test_id,
+                                    a.job_entry_tests?.uid_label || 'Unknown',
+                                    a.job_entry_tests?.material_description || a.job_entry_tests?.test_master?.material_product || ''
+                                  );
+                                } else if (val === "download") {
                                   handleDownloadPdf(a.job_entry_test_id, a.job_entry_tests?.uid_label || 'Unknown');
                                 } else if (val === "accept") {
                                   setLoadingId(a.id);
@@ -557,6 +620,92 @@ return (
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* View Job Card Modal */}
+      {previewPdf && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => {
+            window.URL.revokeObjectURL(previewPdf.url);
+            setPreviewPdf(null);
+          }}
+        >
+          <div 
+            className="relative w-full max-w-5xl h-[88vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/90">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-slate-900 text-base sm:text-lg truncate">
+                      Job Card &mdash; UID: {previewPdf.uid}
+                    </h3>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200 shrink-0">
+                      View Only
+                    </span>
+                  </div>
+                  {previewPdf.material && (
+                    <p className="text-xs text-slate-500 font-medium truncate max-w-lg">
+                      {previewPdf.material}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {!isTestEngineerUser && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = previewPdf.url;
+                      link.download = `JobCard_${previewPdf.uid}.pdf`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    className="text-slate-600 hover:text-slate-900 border-slate-200 h-9 px-3 gap-1.5 text-xs font-semibold"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download
+                  </Button>
+                )}
+                <button
+                  onClick={() => {
+                    window.URL.revokeObjectURL(previewPdf.url);
+                    setPreviewPdf(null);
+                  }}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+                  title="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Embedded PDF Viewer */}
+            <div className="flex-1 w-full h-full bg-slate-100 relative">
+              <object
+                data={`${previewPdf.url}#toolbar=0&navpanes=0`}
+                type="application/pdf"
+                className="w-full h-full"
+              >
+                <iframe
+                  src={`${previewPdf.url}#toolbar=0&navpanes=0`}
+                  className="w-full h-full border-0"
+                  title="Job Card PDF"
+                />
+              </object>
+            </div>
+          </div>
         </div>
       )}
     </div>

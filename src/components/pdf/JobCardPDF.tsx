@@ -22,27 +22,36 @@ const styles = StyleSheet.create({
     width: '100%',
     borderWidth: 1,
     borderColor: '#000',
-    marginBottom: 10,
+    marginBottom: 8,
     flexDirection: 'column'
   },
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderColor: '#000',
-    minHeight: 16,
+    minHeight: 18,
   },
   lastRow: {
     flexDirection: 'row',
-    minHeight: 16,
+    minHeight: 18,
   },
   cell: {
-    padding: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 3,
     borderRightWidth: 1,
     borderColor: '#000',
     justifyContent: 'center'
   },
   lastCell: {
-    padding: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 3,
+    justifyContent: 'center'
+  },
+  subCell: {
+    paddingHorizontal: 4,
+    paddingVertical: 3,
+    minHeight: 19,
+    flex: 1,
     justifyContent: 'center'
   },
   headerTitle: {
@@ -79,13 +88,19 @@ interface JobCardData {
   originalJob?: any;
   job?: any;
   client: any;
+  jobEntry?: any;
 }
 
-const formatDate = (dateStr: string | null) => {
+const formatDate = (dateStr: string | null | undefined) => {
   if (!dateStr) return '';
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return '';
   return d.toLocaleDateString('en-GB');
+};
+
+const formatSampleCode = (code: string) => {
+  if (!code) return '';
+  return code.replace(/([/,])/g, '$1\u200B');
 };
 
 export const JobCardPDF = ({ data }: { data: JobCardData }) => {
@@ -105,11 +120,38 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
   }
   sampleCodeNo = sampleCodeNo || primaryJob?.material_details_location || '';
   
-  // Aggregate Test Parameters and Methods
-  const aggregatedParameters = targetJobs.map(j => j?.test_master?.specific_test || j?.test_master?.component_parameter || j?.test_parameters || 'As per Method').filter(Boolean).join(', ');
-  
-  const aggregatedMethods = targetJobs.map(j => j?.test_master?.test_method || j?.test_method || '').filter(Boolean).join(', ');
+  const castingDate = primaryJob?.date_of_casting || 
+    primaryJob?.additional_details_values?.['Casting date'] || 
+    primaryJob?.additional_details_values?.['Date of Casting'] || 
+    primaryJob?.additional_details_values?.['Casting Date'] || 
+    primaryJob?.additional_details_values?.casting_date;
 
+  const receivingDate = primaryJob?.date_of_receiving || data.jobEntry?.inward_on;
+
+  // Aggregate Test Parameters and Methods (deduplicated)
+  const aggregatedParameters = Array.from(
+    new Set(
+      targetJobs
+        .map(j => j?.test_master?.specific_test || j?.test_master?.component_parameter || j?.test_parameters || 'As per Method')
+        .filter(Boolean)
+    )
+  ).join(', ');
+
+  const aggregatedMethods = Array.from(
+    new Set(
+      targetJobs
+        .map(j => j?.test_master?.test_method || j?.test_method || '')
+        .filter(Boolean)
+    )
+  ).join(', ');
+
+  const aggregatedTestingDays = Array.from(
+    new Set(
+      targetJobs
+        .map(j => j?.testing_day || j?.testing_age)
+        .filter(Boolean)
+    )
+  ).join(', ');
 
   return (
     <Document>
@@ -135,8 +177,9 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
 
         {/* CUSTOMER DETAILS SECTION */}
         <View style={styles.table}>
-          <View style={styles.row}>
-            <View style={[styles.cell, { width: '50%', borderRightWidth: 1 }]}>
+          {/* Row 1 */}
+          <View style={[styles.row, { minHeight: 26 }]}>
+            <View style={[styles.cell, { width: '50%' }]}>
               <Text>1. Name of Customer / Agency:</Text>
               <Text style={styles.bold}>
                 {client?.name || ''}
@@ -145,25 +188,29 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
               </Text>
             </View>
             <View style={[styles.lastCell, { width: '50%' }]}>
-              <Text>Date of Sample Received: {formatDate(primaryJob?.date_of_receiving)}</Text>
+              <Text>Date of Sample Received: {formatDate(receivingDate)}</Text>
             </View>
           </View>
-          <View style={styles.row}>
-            <View style={[styles.cell, { width: '50%', borderRightWidth: 1 }]}>
+
+          {/* Row 2 */}
+          <View style={[styles.row, { minHeight: 38 }]}>
+            <View style={[styles.cell, { width: '50%' }]}>
               <Text>2. Address of Customer / Agency:</Text>
               <Text style={styles.bold}>{client?.address || ''}</Text>
             </View>
             <View style={{ width: '50%', flexDirection: 'column' }}>
-              <View style={{ borderBottomWidth: 1, borderColor: '#000', flex: 1, justifyContent: 'center' }}>
-                <Text style={{ padding: 4 }}>Date of Casting: {formatDate(primaryJob?.date_of_casting)}</Text>
+              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000' }]}>
+                <Text>Date of Casting: {formatDate(castingDate)}</Text>
               </View>
-              <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={{ padding: 4 }}>Date of Testing: {formatDate(primaryJob?.date_of_testing)}</Text>
+              <View style={styles.subCell}>
+                <Text>Date of Testing: {formatDate(primaryJob?.date_of_testing)}</Text>
               </View>
             </View>
           </View>
-          <View style={styles.row}>
-            <View style={[styles.cell, { width: '50%', borderRightWidth: 1 }]}>
+
+          {/* Row 3 */}
+          <View style={[styles.row, { minHeight: 38 }]}>
+            <View style={[styles.cell, { width: '50%' }]}>
               <Text>3. Name of site / Project / Division:</Text>
               <Text style={styles.bold}>
                 {client?.site_name || ''}
@@ -172,50 +219,58 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
               </Text>
             </View>
             <View style={{ width: '50%', flexDirection: 'column' }}>
-              <View style={{ borderBottomWidth: 1, borderColor: '#000', flex: 1, justifyContent: 'center' }}>
-                <Text style={{ padding: 4 }}>CONTACT :-</Text>
+              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000' }]}>
+                <Text>CONTACT :-</Text>
               </View>
-              <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={{ padding: 4 }}>Person Name : {client?.contact_person || ''}</Text>
+              <View style={styles.subCell}>
+                <Text>Person Name : {client?.contact_person || ''}</Text>
               </View>
             </View>
           </View>
-          <View style={styles.row}>
-            <View style={[styles.cell, { width: '50%', borderRightWidth: 1 }]}>
+
+          {/* Row 4 */}
+          <View style={[styles.row, { minHeight: 38 }]}>
+            <View style={[styles.cell, { width: '50%' }]}>
               <Text>4. Name of Dispatching the Report:</Text>
-              <Text style={styles.bold}>{client?.dispatch_name || ''}</Text>
+              {client?.dispatch_name ? <Text style={styles.bold}>{client.dispatch_name}</Text> : null}
             </View>
             <View style={{ width: '50%', flexDirection: 'column' }}>
-              <View style={{ borderBottomWidth: 1, borderColor: '#000', flex: 1, justifyContent: 'center' }}>
-                <Text style={{ padding: 4 }}>Phone/ Mobile : {client?.mobile || ''}</Text>
+              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000' }]}>
+                <Text>Phone/ Mobile : {client?.mobile || ''}</Text>
               </View>
-              <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={{ padding: 4 }}>E-mail : {client?.email || ''}</Text>
+              <View style={styles.subCell}>
+                <Text>E-mail : {client?.email || ''}</Text>
               </View>
             </View>
           </View>
-          <View style={styles.row}>
-            <View style={[styles.cell, { width: '50%', borderRightWidth: 1, minHeight: 30 }]}>
+
+          {/* Row 5 */}
+          <View style={[styles.row, { minHeight: 38 }]}>
+            <View style={[styles.cell, { width: '50%' }]}>
               <Text>5. Address of Dispatching the Report:</Text>
-              <Text style={styles.bold}>{client?.dispatch_address || ''}</Text>
+              {client?.dispatch_address ? <Text style={styles.bold}>{client.dispatch_address}</Text> : null}
             </View>
             <View style={{ width: '50%', flexDirection: 'column' }}>
-              <View style={{ borderBottomWidth: 1, borderColor: '#000', flex: 1, justifyContent: 'center' }}>
-                <Text style={{ padding: 4 }}>Collected By : {client?.collected_by || ''}</Text>
+              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000' }]}>
+                <Text>Collected By : {client?.collected_by || ''}</Text>
               </View>
-              <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={{ padding: 4 }}>GST No : {client?.gst_no || ''}</Text>
+              <View style={styles.subCell}>
+                <Text>GST No : {client?.gst_no || ''}</Text>
               </View>
             </View>
           </View>
-          <View style={styles.row}>
+
+          {/* Row 6 */}
+          <View style={[styles.row, { minHeight: 18 }]}>
             <View style={[styles.lastCell, { flex: 1 }]}>
               <Text>TESTING REQUIRED ON :</Text>
             </View>
           </View>
-          <View style={styles.lastRow}>
+
+          {/* Row 7 */}
+          <View style={[styles.lastRow, { minHeight: 18 }]}>
             <View style={[styles.lastCell, { flex: 1 }]}>
-              <Text>CUSTOMER REFERENCE NO :</Text>
+              <Text>CUSTOMER REFERENCE NO : {data.jobEntry?.letter_reference || ''}</Text>
             </View>
           </View>
         </View>
@@ -227,26 +282,40 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           </View>
           
           <View style={styles.row}>
-            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>UID</Text></View>
-            <View style={[styles.cell, { width: '25%', alignItems: 'center' }]}><Text>Material Details</Text></View>
-            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>Testing Day</Text></View>
-            <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text>Sample Code No.</Text></View>
-            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>No. of sample</Text></View>
-            <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text>Test Parameters</Text></View>
-            <View style={[styles.lastCell, { width: '15%', alignItems: 'center' }]}><Text>Test Method</Text></View>
+            <View style={[styles.cell, { width: '7%', alignItems: 'center' }]}><Text style={styles.textCenter}>UID</Text></View>
+            <View style={[styles.cell, { width: '23%', alignItems: 'center' }]}><Text style={styles.textCenter}>Material Details</Text></View>
+            <View style={[styles.cell, { width: '8%', alignItems: 'center' }]}><Text style={styles.textCenter}>Testing Day</Text></View>
+            <View style={[styles.cell, { width: '20%', alignItems: 'center' }]}><Text style={styles.textCenter}>Sample Code No.</Text></View>
+            <View style={[styles.cell, { width: '8%', alignItems: 'center' }]}><Text style={styles.textCenter}>No. of sample</Text></View>
+            <View style={[styles.cell, { width: '17%', alignItems: 'center' }]}><Text style={styles.textCenter}>Test Parameters</Text></View>
+            <View style={[styles.lastCell, { width: '17%', alignItems: 'center' }]}><Text style={styles.textCenter}>Test Method</Text></View>
           </View>
 
           {/* Data Row */}
-          <View style={[styles.row, { minHeight: 30 }]}>
-            <View style={[styles.cell, { width: '10%' }]}>
-              <Text>{primaryJob?.uid_label || "UID missing"}</Text>
+          <View style={[styles.row, { minHeight: 32 }]}>
+            <View style={[styles.cell, { width: '7%', alignItems: 'center', justifyContent: 'center' }]}>
+              <Text style={styles.textCenter}>{primaryJob?.uid_label || "UID missing"}</Text>
             </View>
-            <View style={[styles.cell, { width: '25%' }]}><Text>{primaryJob?.material_description || ''}</Text></View>
-            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>{primaryJob?.testing_day || ''}</Text></View>
-            <View style={[styles.cell, { width: '15%', alignItems: 'center' }]}><Text>{sampleCodeNo}</Text></View>
-            <View style={[styles.cell, { width: '10%', alignItems: 'center' }]}><Text>{primaryJob?.sample_quantity || ''}</Text></View>
-            <View style={[styles.cell, { width: '15%' }]}><Text>{aggregatedParameters}</Text></View>
-            <View style={[styles.lastCell, { width: '15%' }]}><Text>{aggregatedMethods}</Text></View>
+            <View style={[styles.cell, { width: '23%', justifyContent: 'center' }]}>
+              <Text>{primaryJob?.material_description || ''}</Text>
+            </View>
+            <View style={[styles.cell, { width: '8%', alignItems: 'center', justifyContent: 'center' }]}>
+              <Text style={styles.textCenter}>{aggregatedTestingDays || primaryJob?.testing_day || ''}</Text>
+            </View>
+            <View style={[styles.cell, { width: '20%', alignItems: 'center', justifyContent: 'center' }]}>
+              <Text style={[styles.textCenter, { fontSize: 7, lineHeight: 1.2 }]}>
+                {formatSampleCode(sampleCodeNo)}
+              </Text>
+            </View>
+            <View style={[styles.cell, { width: '8%', alignItems: 'center', justifyContent: 'center' }]}>
+              <Text style={styles.textCenter}>{primaryJob?.sample_quantity || ''}</Text>
+            </View>
+            <View style={[styles.cell, { width: '17%', justifyContent: 'center' }]}>
+              <Text>{aggregatedParameters}</Text>
+            </View>
+            <View style={[styles.lastCell, { width: '17%', justifyContent: 'center' }]}>
+              <Text>{aggregatedMethods}</Text>
+            </View>
           </View>
 
           {/* Checkboxes Area */}
