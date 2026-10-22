@@ -105,7 +105,7 @@ const formatSampleCode = (code: string) => {
 
 export const JobCardPDF = ({ data }: { data: JobCardData }) => {
   const { jobs, originalJob, job: fallbackJob, client } = data;
-  
+
   const targetJobs = jobs && jobs.length > 0 ? jobs : (originalJob ? [originalJob] : (fallbackJob ? [fallbackJob] : []));
   const primaryJob = targetJobs[0] || {};
 
@@ -119,11 +119,11 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
     if (codeKey) sampleCodeNo = primaryJob.additional_details_values[codeKey];
   }
   sampleCodeNo = sampleCodeNo || primaryJob?.material_details_location || '';
-  
-  const castingDate = primaryJob?.date_of_casting || 
-    primaryJob?.additional_details_values?.['Casting date'] || 
-    primaryJob?.additional_details_values?.['Date of Casting'] || 
-    primaryJob?.additional_details_values?.['Casting Date'] || 
+
+  const castingDate = primaryJob?.date_of_casting ||
+    primaryJob?.additional_details_values?.['Casting date'] ||
+    primaryJob?.additional_details_values?.['Date of Casting'] ||
+    primaryJob?.additional_details_values?.['Casting Date'] ||
     primaryJob?.additional_details_values?.casting_date;
 
   const receivingDate = primaryJob?.date_of_receiving || data.jobEntry?.inward_on;
@@ -156,7 +156,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
   return (
     <Document>
       <Page size="A4" style={[styles.page, { display: 'flex', flexDirection: 'column' }]}>
-        
+
         {/* HEADER SECTION */}
         <View style={styles.table}>
           <View style={[styles.row, { padding: 5, justifyContent: 'center' }]}>
@@ -280,7 +280,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           <View style={[styles.row, { padding: 4, justifyContent: 'center' }]}>
             <Text style={[styles.bold, styles.textCenter, { width: '100%' }]}>TESTING REQUIRED</Text>
           </View>
-          
+
           <View style={styles.row}>
             <View style={[styles.cell, { width: '7%', alignItems: 'center' }]}><Text style={styles.textCenter}>UID</Text></View>
             <View style={[styles.cell, { width: '23%', alignItems: 'center' }]}><Text style={styles.textCenter}>Material Details</Text></View>
@@ -340,7 +340,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           </View>
         </View>
 
-        {/* FOR OFFICE USE ONLY */}
+
         <View style={[styles.table, { flexGrow: 1, marginBottom: 10 }]}>
           <View style={[styles.row, { padding: 5, justifyContent: 'center' }]}>
             <Text style={[styles.bold, styles.textCenter, { width: '100%', fontSize: 11 }]}>FOR OFFICE USE ONLY</Text>
@@ -350,7 +350,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
               <Text>Review Remarks:</Text>
             </View>
           </View>
-          
+
           <View style={styles.row}>
             <View style={[styles.cell, { width: '40%' }]}>
               <Text>1. Requirements defined and understood :</Text>
@@ -359,7 +359,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>UID No. :</Text></View>
             <View style={[styles.lastCell, { width: '15%' }]}></View>
           </View>
-          
+
           <View style={styles.row}>
             <View style={[styles.cell, { width: '40%' }]}>
               <Text>2. Capability and Resource available :</Text>
@@ -368,7 +368,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>Date :</Text></View>
             <View style={[styles.lastCell, { width: '15%' }]}></View>
           </View>
-          
+
           <View style={[styles.row, { minHeight: 20 }]}>
             <View style={[styles.cell, { width: '40%' }]}>
               <Text>3. Condition of Sample Received :</Text>
