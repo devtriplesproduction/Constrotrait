@@ -106,3 +106,45 @@ export async function canExportExcelAction() {
   const user = await getAuthenticatedUserWithRoles();
   return { success: true, allowed: user ? canExportAccountingExcel(user.roles) : false };
 }
+
+export async function getQuotationsAction(branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getQuotations(branchId);
+}
+
+export async function getInvoicesAction(branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getInvoices(branchId);
+}
+
+export async function createQuotationWithItemsAction(payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.createQuotationWithItems(payload);
+  if (result.success) revalidatePath("/accounting");
+  return result;
+}
+
+export async function createInvoiceWithItemsAction(payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.createInvoiceWithItems(payload);
+  if (result.success) revalidatePath("/accounting");
+  return result;
+}
+
+export async function saveBankReconciliationAction(payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.saveBankReconciliation(payload);
+  if (result.success) revalidatePath("/accounting");
+  return result;
+}
+
+export async function getBankReconciliationsAction(accountId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getBankReconciliations(accountId);
+}

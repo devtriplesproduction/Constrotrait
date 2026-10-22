@@ -243,3 +243,121 @@ export async function getReconciliation(branchId?: string) {
   const filteredPayments = (payments || []).filter((p: any) => !effectiveBranch || p.invoices?.branch_id === effectiveBranch);
   return { success: true, data: { receipts: receipts || [], payments: filteredPayments } };
 }
+
+export async function getQuotations(branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  const effectiveBranch = branchScope(user, branchId);
+  let q = supabase.from("quotations").select("*").order("created_at", { ascending: false });
+  if (effectiveBranch) q = q.eq("branch_id", effectiveBranch);
+  const { data, error } = await q;
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function getInvoices(branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  const effectiveBranch = branchScope(user, branchId);
+  let q = supabase.from("invoices").select("*").order("created_at", { ascending: false });
+  if (effectiveBranch) q = q.eq("branch_id", effectiveBranch);
+  const { data, error } = await q;
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function createQuotationWithItems(payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  const items = payload.items || [];
+  const subtotal = items.reduce((s: number, i: any) => s + Number(i.qty || 0) * Number(i.rate || 0), 0);
+  const discount = Number(payload.discount_amount || 0);
+  const gstRate = Number(payload.gst_rate || 18);
+  const taxable = Math.max(0, subtotal - discount);
+  const gst = (taxable * gstRate) / 100;
+  const total = taxable + gst;
+  const quotation_no = payload.quotation_no || `QTN/${new Date().getFullYear()}/${Date.now().toString().slice(-4)}`;
+  const { data, error } = await supabase.from("quotations").insert({
+    branch_id: user.branch_id,
+    quotation_no,
+    project_id: payload.project_id || null,
+    client_id: payload.client_id || null,
+    amount: total,
+    subtotal,
+    discount_amount: discount,
+    gst_rate: gstRate,
+    gst_amount: gst,
+    total_amount: total,
+    items,
+    valid_until: payload.valid_until || null,
+    terms: payload.terms || null,
+    remarks: payload.remarks || null,
+    status: "draft",
+    created_by: user.id,
+  }).select().single();
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function createInvoiceWithItems(payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  const items = payload.items || [];
+  const subtotal = items.reduce((s: number, i: any) => s + Number(i.qty || 0) * Number(i.rate || 0), 0);
+  const gst = Number(payload.gst_amount || (subtotal * 0.18));
+  const tds = Number(payload.tds_amount || 0);
+  const total = subtotal + gst - tds;
+  const invoice_no = payload.invoice_no || `INV/${new Date().getFullYear()}/${Date.now().toString().slice(-4)}`;
+  const { data, error } = await supabase.from("invoices").insert({
+    branch_id: user.branch_id,
+    invoice_no,
+    project_id: payload.project_id || null,
+    client_id: payload.client_id || null,
+    quotation_id: payload.quotation_id || null,
+    amount: subtotal,
+    gst_amount: gst,
+    tds_amount: tds,
+    items,
+    subtotal,
+    notes: payload.notes || null,
+    invoice_date: payload.invoice_date || new Date().toISOString().slice(0, 10),
+    due_date: payload.due_date || null,
+    status: "unpaid",
+    created_by: user.id,
+  }).select().single();
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function saveBankReconciliation(payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("bank_reconciliations").insert({
+    branch_id: user.branch_id,
+    account_id: payload.account_id,
+    statement_date: payload.statement_date,
+    statement_balance: payload.statement_balance,
+    erp_balance: payload.erp_balance,
+    notes: payload.notes || null,
+    reconciled_by: user.id,
+  }).select().single();
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function getBankReconciliations(accountId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  let q = supabase.from("bank_reconciliations").select("*").order("statement_date", { ascending: false });
+  if (accountId) q = q.eq("account_id", accountId);
+  if (!isSuperAdmin(user.roles)) q = q.eq("branch_id", user.branch_id);
+  const { data, error } = await q;
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
