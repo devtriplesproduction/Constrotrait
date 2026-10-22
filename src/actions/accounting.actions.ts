@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
-import { canManageAccountingTransactions, canViewAccounting } from "@/config/roles";
+import { canManageAccountingTransactions, canViewAccounting, canApproveAccounting, canExportAccountingExcel } from "@/config/roles";
 import * as accounting from "@/services/accounting.service";
 
 export async function getAccountingDashboardAction(branchId?: string) {
@@ -11,7 +11,7 @@ export async function getAccountingDashboardAction(branchId?: string) {
   return accounting.getAccountingDashboard(branchId);
 }
 
-export async function createInwardReceiptAction(payload: Parameters<typeof accounting.createInwardReceipt>[0]) {
+export async function createInwardReceiptAction(payload: any) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
   const result = await accounting.createInwardReceipt(payload);
@@ -19,7 +19,15 @@ export async function createInwardReceiptAction(payload: Parameters<typeof accou
   return result;
 }
 
-export async function createExpenseAction(payload: Parameters<typeof accounting.createExpense>[0]) {
+export async function cancelInwardReceiptAction(receiptId: string, reason: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.cancelInwardReceipt(receiptId, reason);
+  if (result.success) revalidatePath("/accounting");
+  return result;
+}
+
+export async function createExpenseAction(payload: any) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
   const result = await accounting.createExpense(payload);
@@ -27,7 +35,23 @@ export async function createExpenseAction(payload: Parameters<typeof accounting.
   return result;
 }
 
-export async function createInvoiceAction(payload: Parameters<typeof accounting.createInvoice>[0]) {
+export async function approveExpenseAction(expenseId: string, approve: boolean, remarks?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canApproveAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.approveExpense(expenseId, approve, remarks);
+  if (result.success) revalidatePath("/accounting");
+  return result;
+}
+
+export async function createExpenseCategoryAction(name: string, scope?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.createExpenseCategory(name, scope);
+  if (result.success) revalidatePath("/accounting");
+  return result;
+}
+
+export async function createInvoiceAction(payload: any) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
   const result = await accounting.createInvoice(payload);
@@ -59,4 +83,13 @@ export async function getAccountsAction() {
 
 export async function getCategoriesAction() {
   return accounting.getCategories();
+}
+
+export async function getProfitAndLossAction(fromDate?: string, toDate?: string, branchId?: string) {
+  return accounting.getProfitAndLoss(fromDate, toDate, branchId);
+}
+
+export async function canExportExcelAction() {
+  const user = await getAuthenticatedUserWithRoles();
+  return { success: true, allowed: user ? canExportAccountingExcel(user.roles) : false };
 }
