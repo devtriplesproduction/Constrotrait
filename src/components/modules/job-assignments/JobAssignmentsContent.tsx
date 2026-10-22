@@ -13,6 +13,7 @@ interface JobAssignmentsContentProps {
   initialTab: string;
   isManager: boolean;
   userId: string;
+  userRoles?: string[];
   branches: any[];
   assignments: any[];
   employees: any[];
@@ -24,6 +25,7 @@ export function JobAssignmentsContent({
   initialTab,
   isManager,
   userId,
+  userRoles = [],
   branches,
   assignments,
   employees
@@ -61,7 +63,13 @@ export function JobAssignmentsContent({
           <AllJobsTab assignments={assignments} branches={branches} employees={employees} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
         )}
         {activeTab === "my" && (
-          <MyAssignmentsTab assignments={assignments} userId={userId} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
+          <MyAssignmentsTab 
+            assignments={assignments} 
+            userId={userId} 
+            userRoles={userRoles} 
+            filterStatus={filterStatus} 
+            setFilterStatus={setFilterStatus} 
+          />
         )}
         {activeTab === "schedule" && (
           <TestingScheduleTab assignments={assignments} userId={userId} filterStatus={filterStatus} setFilterStatus={setFilterStatus} currentUserProfile={currentUserProfile} />

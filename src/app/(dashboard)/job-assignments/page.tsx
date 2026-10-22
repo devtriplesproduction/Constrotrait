@@ -47,6 +47,7 @@ export default async function JobAssignmentsPage(props: {
         initialTab={tab}
         isManager={isManager}
         userId={user.id}
+        userRoles={roles}
         branches={branches}
         assignments={assignments}
         employees={employees}
