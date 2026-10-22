@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS public.accounting_expenses (
   created_by uuid REFERENCES public.profiles(id)
 );
 
--- Expense payment entries (for multi-payment)
+-- Expense payment entries
 CREATE TABLE IF NOT EXISTS public.expense_payment_entries (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   expense_id uuid REFERENCES public.accounting_expenses(id) ON DELETE CASCADE,
@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   UNIQUE (branch_id, invoice_no)
 );
 
--- Invoice payments (partial payments)
+-- Invoice payments
 CREATE TABLE IF NOT EXISTS public.invoice_payments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   invoice_id uuid REFERENCES public.invoices(id) ON DELETE CASCADE,
@@ -163,7 +163,6 @@ CREATE TABLE IF NOT EXISTS public.accounting_audit_log (
   performed_at timestamptz DEFAULT now()
 );
 
--- Receipt number sequence helper (per branch, financial year)
 CREATE OR REPLACE FUNCTION public.next_receipt_no(p_branch_id uuid)
 RETURNS text
 LANGUAGE plpgsql
@@ -174,33 +173,25 @@ DECLARE
   seq int;
   result text;
 BEGIN
-  -- Financial year e.g. 2026-27
   fy := to_char(CURRENT_DATE, 'YYYY') || '-' || to_char(CURRENT_DATE + interval '1 year', 'YY');
   IF EXTRACT(MONTH FROM CURRENT_DATE) < 4 THEN
     fy := to_char(CURRENT_DATE - interval '1 year', 'YYYY') || '-' || to_char(CURRENT_DATE, 'YY');
   END IF;
-
-  SELECT COALESCE(MAX(CAST(SUBSTRING(receipt_no FROM '[0-9]+$') AS int)), 0) + 1
-  INTO seq
+  SELECT COALESCE(MAX(CAST(SUBSTRING(receipt_no FROM '[0-9]+$') AS int)), 0) + 1 INTO seq
   FROM public.inward_receipts
-  WHERE branch_id = p_branch_id
-    AND receipt_no LIKE 'REC/' || fy || '/%';
-
+  WHERE branch_id = p_branch_id AND receipt_no LIKE 'REC/' || fy || '/%';
   result := 'REC/' || fy || '/' || LPAD(seq::text, 4, '0');
   RETURN result;
 END;
 $$;
 
--- Sync invoice paid / balance / status
 CREATE OR REPLACE FUNCTION public.sync_invoice_payment_totals()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
   UPDATE public.invoices
-  SET paid_amount = COALESCE((
-    SELECT SUM(amount) FROM public.invoice_payments WHERE invoice_id = NEW.invoice_id
-  ), 0),
+  SET paid_amount = COALESCE((SELECT SUM(amount) FROM public.invoice_payments WHERE invoice_id = NEW.invoice_id), 0),
   status = CASE
     WHEN COALESCE((SELECT SUM(amount) FROM public.invoice_payments WHERE invoice_id = NEW.invoice_id), 0) >= (amount + COALESCE(gst_amount,0) - COALESCE(tds_amount,0)) THEN 'paid'
     WHEN COALESCE((SELECT SUM(amount) FROM public.invoice_payments WHERE invoice_id = NEW.invoice_id), 0) > 0 THEN 'partial'
@@ -216,7 +207,6 @@ CREATE TRIGGER trg_sync_invoice_payments
 AFTER INSERT OR UPDATE OR DELETE ON public.invoice_payments
 FOR EACH ROW EXECUTE FUNCTION public.sync_invoice_payment_totals();
 
--- RLS
 ALTER TABLE public.accounting_projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.financial_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.expense_categories ENABLE ROW LEVEL SECURITY;
@@ -228,49 +218,41 @@ ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoice_payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.accounting_audit_log ENABLE ROW LEVEL SECURITY;
 
--- Basic branch isolation policies (accountant / super admin / branch manager can access their branch)
 CREATE POLICY "accounting_branch_isolation" ON public.accounting_projects
   FOR ALL USING (
     branch_id = (SELECT branch_id FROM public.profiles WHERE id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND 'SUPER_ADMIN' = ANY(roles))
   );
-
 CREATE POLICY "financial_accounts_branch" ON public.financial_accounts
   FOR ALL USING (
     branch_id = (SELECT branch_id FROM public.profiles WHERE id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND 'SUPER_ADMIN' = ANY(roles))
   );
-
 CREATE POLICY "expense_categories_branch" ON public.expense_categories
   FOR ALL USING (
     branch_id = (SELECT branch_id FROM public.profiles WHERE id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND 'SUPER_ADMIN' = ANY(roles))
   );
-
 CREATE POLICY "inward_receipts_branch" ON public.inward_receipts
   FOR ALL USING (
     branch_id = (SELECT branch_id FROM public.profiles WHERE id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND 'SUPER_ADMIN' = ANY(roles))
   );
-
 CREATE POLICY "accounting_expenses_branch" ON public.accounting_expenses
   FOR ALL USING (
     branch_id = (SELECT branch_id FROM public.profiles WHERE id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND 'SUPER_ADMIN' = ANY(roles))
   );
-
 CREATE POLICY "quotations_branch" ON public.quotations
   FOR ALL USING (
     branch_id = (SELECT branch_id FROM public.profiles WHERE id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND 'SUPER_ADMIN' = ANY(roles))
   );
-
 CREATE POLICY "invoices_branch" ON public.invoices
   FOR ALL USING (
     branch_id = (SELECT branch_id FROM public.profiles WHERE id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND 'SUPER_ADMIN' = ANY(roles))
   );
-
 CREATE POLICY "invoice_payments_branch" ON public.invoice_payments
   FOR ALL USING (
     EXISTS (
@@ -280,16 +262,42 @@ CREATE POLICY "invoice_payments_branch" ON public.invoice_payments
              OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND 'SUPER_ADMIN' = ANY(roles)))
     )
   );
-
 CREATE POLICY "audit_log_branch" ON public.accounting_audit_log
   FOR ALL USING (
     branch_id = (SELECT branch_id FROM public.profiles WHERE id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND 'SUPER_ADMIN' = ANY(roles))
   );
 
--- Indexes
 CREATE INDEX IF NOT EXISTS idx_accounting_projects_branch ON public.accounting_projects(branch_id);
 CREATE INDEX IF NOT EXISTS idx_inward_receipts_branch ON public.inward_receipts(branch_id);
 CREATE INDEX IF NOT EXISTS idx_accounting_expenses_branch ON public.accounting_expenses(branch_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_branch ON public.invoices(branch_id);
 CREATE INDEX IF NOT EXISTS idx_quotations_branch ON public.quotations(branch_id);
+
+-- Explicit Data API grants (required from Oct 30 2026)
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.accounting_projects TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.financial_accounts TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.expense_categories TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.inward_receipts TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.accounting_expenses TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.expense_payment_entries TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.quotations TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.invoices TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.invoice_payments TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.accounting_audit_log TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.accounting_projects TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.financial_accounts TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.expense_categories TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.inward_receipts TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.accounting_expenses TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.expense_payment_entries TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.quotations TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.invoices TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.invoice_payments TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.accounting_audit_log TO service_role;
+
+GRANT EXECUTE ON FUNCTION public.next_receipt_no(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.sync_invoice_payment_totals() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.next_receipt_no(uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public.sync_invoice_payment_totals() TO service_role;

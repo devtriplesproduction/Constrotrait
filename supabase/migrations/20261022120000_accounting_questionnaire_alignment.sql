@@ -1,7 +1,5 @@
 -- Accounting module questionnaire alignment updates
--- Adds missing fields, corrects approval threshold, seeds categories and bank accounts
 
--- Receipts: party type (client / government), payment modes include NEFT/RTGS, cancel reason, paid-through person
 ALTER TABLE public.inward_receipts
   ADD COLUMN IF NOT EXISTS party_type text CHECK (party_type IN ('client', 'government', 'other')),
   ADD COLUMN IF NOT EXISTS party_name text,
@@ -10,13 +8,11 @@ ALTER TABLE public.inward_receipts
   ADD COLUMN IF NOT EXISTS cancelled_at timestamptz,
   ADD COLUMN IF NOT EXISTS cancelled_by uuid REFERENCES public.profiles(id);
 
--- Expand payment_mode check
 ALTER TABLE public.inward_receipts DROP CONSTRAINT IF EXISTS inward_receipts_payment_mode_check;
 ALTER TABLE public.inward_receipts
   ADD CONSTRAINT inward_receipts_payment_mode_check
   CHECK (payment_mode IN ('cash', 'bank', 'upi', 'cheque', 'neft', 'rtgs'));
 
--- Expenses: site, department, paid-through person, cancel reason, general vs project
 ALTER TABLE public.accounting_expenses
   ADD COLUMN IF NOT EXISTS site_name text,
   ADD COLUMN IF NOT EXISTS department text,
@@ -26,11 +22,9 @@ ALTER TABLE public.accounting_expenses
   ADD COLUMN IF NOT EXISTS cancelled_by uuid REFERENCES public.profiles(id),
   ADD COLUMN IF NOT EXISTS is_general_expense boolean DEFAULT false;
 
--- Expense categories: scope
 ALTER TABLE public.expense_categories
   ADD COLUMN IF NOT EXISTS scope text DEFAULT 'general' CHECK (scope IN ('general', 'site', 'department', 'branch'));
 
--- Seed default expense categories
 INSERT INTO public.expense_categories (branch_id, name, requires_approval, max_amount_without_bill, scope)
 SELECT NULL, name, requires_approval, max_amount_without_bill, scope
 FROM (VALUES
@@ -47,7 +41,6 @@ WHERE NOT EXISTS (
   SELECT 1 FROM public.expense_categories ec WHERE ec.name = v.name AND ec.branch_id IS NULL
 );
 
--- Project financial balance function
 CREATE OR REPLACE FUNCTION public.get_project_financial_balance(p_project_id uuid)
 RETURNS numeric
 LANGUAGE sql
@@ -64,7 +57,6 @@ AS $$
   ), 0);
 $$;
 
--- Weekly pending payments helper
 CREATE OR REPLACE FUNCTION public.get_pending_payments_for_notification(p_branch_id uuid)
 RETURNS TABLE (
   invoice_id uuid,
@@ -83,3 +75,9 @@ AS $$
     AND i.status IN ('unpaid', 'partial')
     AND i.balance_amount > 0;
 $$;
+
+-- Explicit Data API grants for functions added in this migration
+GRANT EXECUTE ON FUNCTION public.get_project_financial_balance(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_pending_payments_for_notification(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_project_financial_balance(uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_pending_payments_for_notification(uuid) TO service_role;
