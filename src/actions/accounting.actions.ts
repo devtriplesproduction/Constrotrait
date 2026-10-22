@@ -51,6 +51,22 @@ export async function createExpenseCategoryAction(name: string, scope?: string) 
   return result;
 }
 
+export async function createBankAccountAction(payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.createBankAccount(payload);
+  if (result.success) revalidatePath("/accounting");
+  return result;
+}
+
+export async function createQuotationAction(payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.createQuotation(payload);
+  if (result.success) revalidatePath("/accounting");
+  return result;
+}
+
 export async function createInvoiceAction(payload: any) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
@@ -67,28 +83,25 @@ export async function recordInvoicePaymentAction(invoiceId: string, amount: numb
   return result;
 }
 
+export async function createProjectAction(name: string, description?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.createProject(name, description);
+  if (result.success) revalidatePath("/accounting");
+  return result;
+}
+
 export async function searchAccountingAction(query: string) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
   return accounting.searchQuotationsAndInvoices(query);
 }
 
-export async function getProjectsAction() {
-  return accounting.getProjects();
-}
-
-export async function getAccountsAction() {
-  return accounting.getAccounts();
-}
-
-export async function getCategoriesAction() {
-  return accounting.getCategories();
-}
-
-export async function getProfitAndLossAction(fromDate?: string, toDate?: string, branchId?: string) {
-  return accounting.getProfitAndLoss(fromDate, toDate, branchId);
-}
-
+export async function getProjectsAction() { return accounting.getProjects(); }
+export async function getAccountsAction() { return accounting.getAccounts(); }
+export async function getCategoriesAction() { return accounting.getCategories(); }
+export async function getProfitAndLossAction(fromDate?: string, toDate?: string, branchId?: string) { return accounting.getProfitAndLoss(fromDate, toDate, branchId); }
+export async function getReconciliationAction(branchId?: string) { return accounting.getReconciliation(branchId); }
 export async function canExportExcelAction() {
   const user = await getAuthenticatedUserWithRoles();
   return { success: true, allowed: user ? canExportAccountingExcel(user.roles) : false };
