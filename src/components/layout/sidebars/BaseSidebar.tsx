@@ -25,8 +25,11 @@ export function BaseSidebar({ links, isOpen, setIsOpen }: BaseSidebarProps) {
   const pathname = usePathname();
   const [openMenus, setOpenMenus] = React.useState<Record<string, boolean>>({});
 
-  const toggleMenu = (title: string) => {
-    setOpenMenus((prev) => ({ ...prev, [title]: !prev[title] }));
+  const toggleMenu = (title: string, defaultOpen: boolean = false) => {
+    setOpenMenus((prev) => {
+      const current = prev[title] ?? defaultOpen;
+      return { ...prev, [title]: !current };
+    });
   };
 
   // Close mobile sidebar on route change
@@ -91,14 +94,16 @@ export function BaseSidebar({ links, isOpen, setIsOpen }: BaseSidebarProps) {
               );
             }
             if (link.subLinks && link.subLinks.length > 0) {
-              const isOpenMenu = openMenus[link.title];
-              const isAnyChildActive = link.subLinks.some(
-                (sub) => pathname === sub.href || pathname.startsWith(sub.href + "/")
+              const isAnyChildActive = link.subLinks.some((sub) =>
+                sub.href === "/accounting"
+                  ? pathname === "/accounting"
+                  : pathname === sub.href || pathname.startsWith(sub.href + "/")
               );
+              const isOpenMenu = openMenus[link.title] ?? isAnyChildActive;
               const Icon = link.icon || (() => null);
               return (
                 <div key={link.title} className="space-y-0.5">
-                  <Button variant="custom" onClick={() => toggleMenu(link.title)}
+                  <Button variant="custom" onClick={() => toggleMenu(link.title, isAnyChildActive)}
                     className={cn(
                       "w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200",
                       isAnyChildActive
@@ -127,7 +132,9 @@ export function BaseSidebar({ links, isOpen, setIsOpen }: BaseSidebarProps) {
                     <div className="pl-9 pr-2 py-1 space-y-1 animate-in slide-in-from-top-1 fade-in duration-200">
                       {link.subLinks.map((sub) => {
                         const isSubActive =
-                          pathname === sub.href || pathname.startsWith(sub.href + "/");
+                          sub.href === "/accounting"
+                            ? pathname === "/accounting"
+                            : pathname === sub.href || pathname.startsWith(sub.href + "/");
                         const SubIcon = sub.icon;
                         return (
                           <Link

@@ -187,42 +187,46 @@ export function MyAssignmentsTab({
   };
 
   const handleDownloadAllotmentPdf = (a: any) => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4"
+    });
     const pageWidth = doc.internal.pageSize.width;
     
     // Header Border
-    doc.rect(14, 15, pageWidth - 28, 15);
+    doc.rect(14, 12, pageWidth - 28, 14);
     
     // Header Texts
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI", pageWidth / 2, 24, { align: "center" });
+    doc.setFontSize(13);
+    doc.setFont("times", "bold");
+    doc.text("CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI", pageWidth / 2, 21, { align: "center" });
     
     // Info Table
     const docNo = a.job_entry_tests?.test_master?.datasheet_qr || "";
     autoTable(doc, {
-      startY: 32,
+      startY: 28,
       theme: "plain",
-      styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 10, fontStyle: 'bold' },
+      styles: { font: "times", lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 9.5, fontStyle: 'bold' },
       body: [
-        [`Doc No. : ${docNo}`, "Record As per ISO/IEC 17025:2017", "Doc Name: Sample Allotment Form"]
+        [`Doc No. : ${docNo}`, "Record As per ISO/IEC17025:2017", "Doc Name: Sample Allotment Form"]
       ],
       columnStyles: {
-        0: { cellWidth: (pageWidth - 28) * 0.3 },
-        1: { cellWidth: (pageWidth - 28) * 0.4, halign: "center" },
-        2: { cellWidth: (pageWidth - 28) * 0.3, halign: "right" }
+        0: { cellWidth: (pageWidth - 28) * 0.22, halign: "center" },
+        1: { cellWidth: (pageWidth - 28) * 0.38, halign: "center" },
+        2: { cellWidth: (pageWidth - 28) * 0.40, halign: "center" }
       }
     });
 
-    const receivedDate = a.job_entry_tests?.job_entries?.created_at ? new Date(a.job_entry_tests.job_entries.created_at).toLocaleDateString() : '';
-    const dueDate = a.due_date ? new Date(a.due_date).toLocaleDateString() : '';
-    const allottedDate = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
+    const receivedDate = a.job_entry_tests?.job_entries?.created_at ? new Date(a.job_entry_tests.job_entries.created_at).toLocaleDateString('en-GB') : '';
+    const dueDate = a.due_date ? new Date(a.due_date).toLocaleDateString('en-GB') : '';
+    const allottedDate = a.created_at ? new Date(a.created_at).toLocaleDateString('en-GB') : '';
     const assignedName = a.team_id ? a.teams?.name : `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`;
     
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 4,
+      startY: (doc as any).lastAutoTable.finalY + 3,
       theme: "plain",
-      styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 10 },
+      styles: { font: "times", lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 9 },
       body: [
         [`Sample Received: ${receivedDate}`, `Date of Sample Allotted: ${allottedDate}`],
         [`Due Date: ${dueDate}`, `Issue To: ${assignedName}`]
@@ -233,9 +237,9 @@ export function MyAssignmentsTab({
     const uidLabel = a.job_entry_tests?.uid_label || '';
     const ulrLabel = a.job_entry_tests?.ulr_number ? ` | ULR - ${a.job_entry_tests.ulr_number}` : '';
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 4,
+      startY: (doc as any).lastAutoTable.finalY + 3,
       theme: "plain",
-      styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 10, fontStyle: 'bold' },
+      styles: { font: "times", lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 9, fontStyle: 'bold' },
       body: [
         [`Product Test Name - ${prodName}`, `UID - ${uidLabel}${ulrLabel}`]
       ]
@@ -270,9 +274,6 @@ export function MyAssignmentsTab({
                        a.job_entry_tests?.additional_details_values?.location || '';
                        
     // Sample Details = additional detail value if present, else blank. Do not put the quantity.
-    const sampleDetails = a.job_entry_tests?.additional_details_values?.location || ''; // Since it's unstructured, location is the main detail usually, or we can just stringify other details excluding quantity?
-    // Wait, the instruction says "additional detail value if present".
-    // I'll extract a simple string from additional_details_values ignoring 'sample_quantity' and 'sample_code_no'.
     const rawDetails = { ...(a.job_entry_tests?.additional_details_values || {}) };
     delete rawDetails.sample_quantity;
     delete rawDetails.sample_code_no;
@@ -291,26 +292,27 @@ export function MyAssignmentsTab({
     }
 
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 4,
+      startY: (doc as any).lastAutoTable.finalY + 3,
       theme: "plain",
-      styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 3, fontSize: 9 },
-      headStyles: { fontStyle: "bold", halign: "center" },
+      styles: { font: "times", lineWidth: 0.1, lineColor: 0, cellPadding: 2.5, fontSize: 8.5 },
+      headStyles: { font: "times", fontStyle: "bold", halign: "center", fontSize: 9 },
       head: [["Sample Code No.", "Sample Name", "Test Parameters", "Method", "Sample Details", "Remark"]],
       body: tableRows
     });
     
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text("Sample Received By-", 14, (doc as any).lastAutoTable.finalY + 20);
+    doc.setFont("times", "bold");
+    doc.setFontSize(9.5);
+    doc.text("Sample Received By-", 14, (doc as any).lastAutoTable.finalY + 12);
 
-    const today = new Date().toLocaleDateString();
+    const issueDateStr = a.job_entry_tests?.job_entries?.created_at ? new Date(a.job_entry_tests.job_entries.created_at).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB');
+
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 25,
+      startY: (doc as any).lastAutoTable.finalY + 16,
       theme: "plain",
-      styles: { lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 9 },
+      styles: { font: "times", lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 8.5 },
       body: [
         ["Issue No. : 01", "Amendment No & Date : ", "Page No: 1-1"],
-        [`Issue Date: ${today}`, "Prepared by : ", "Reviewed & Approved by: "]
+        [`Issue Date: ${issueDateStr}`, "Prepared by : ", "Reviewed & Approved by: "]
       ]
     });
 

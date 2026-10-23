@@ -1,11 +1,27 @@
 "use server";
 
 import React from 'react';
+import fs from 'fs';
+import path from 'path';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
 import { canManageClientsAndJobs, isTestEngineer, isSuperAdmin, isBranchManager } from "@/config/roles";
 import { JobCardPDF } from "@/components/pdf/JobCardPDF";
+
+function getBase64Asset(filename: string): string {
+  try {
+    const fullPath = path.join(process.cwd(), 'public', filename);
+    if (fs.existsSync(fullPath)) {
+      const ext = path.extname(fullPath).toLowerCase();
+      const mime = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
+      return `data:${mime};base64,${fs.readFileSync(fullPath).toString('base64')}`;
+    }
+  } catch (err) {
+    console.error(`Failed to load asset ${filename}:`, err);
+  }
+  return `/${filename}`;
+}
 
 async function generateJobCardPdfBuffer(jobEntryTestId: string) {
   const supabase = await createClient();
@@ -45,13 +61,20 @@ async function generateJobCardPdfBuffer(jobEntryTestId: string) {
   const jobEntries = Array.isArray(testData.job_entries) ? testData.job_entries[0] : testData.job_entries;
   const client = (jobEntries as any)?.clients;
 
+  const logoUrl = getBase64Asset('CMTS LOGO.png');
+  const preparedBySignUrl = getBase64Asset('Sanket_sir-removebg-preview.png');
+  const approvedBySignUrl = getBase64Asset('MUKUND_GAIKWAD_SIGN-removebg-preview.png');
+
   const buffer = await renderToBuffer(
     React.createElement(JobCardPDF, {
       data: {
         jobs: jobsToPass,
         client,
         originalJob: testData,
-        jobEntry: jobEntries
+        jobEntry: jobEntries,
+        logoUrl,
+        preparedBySignUrl,
+        approvedBySignUrl
       }
     }) as any
   );

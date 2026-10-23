@@ -55,8 +55,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   headerTitle: {
-    fontSize: 12,
-    fontWeight: 600,
+    fontFamily: 'Times-Bold',
+    fontSize: 13.5,
+    fontWeight: 'bold',
     textAlign: 'center',
     padding: 5
   },
@@ -89,6 +90,9 @@ interface JobCardData {
   job?: any;
   client: any;
   jobEntry?: any;
+  logoUrl?: string;
+  preparedBySignUrl?: string;
+  approvedBySignUrl?: string;
 }
 
 const formatDate = (dateStr: string | null | undefined) => {
@@ -104,8 +108,8 @@ const formatSampleCode = (code: string) => {
 };
 
 export const JobCardPDF = ({ data }: { data: JobCardData }) => {
-  const { jobs, originalJob, job: fallbackJob, client } = data;
-
+  const { jobs, originalJob, job: fallbackJob, client, logoUrl, preparedBySignUrl, approvedBySignUrl } = data;
+  
   const targetJobs = jobs && jobs.length > 0 ? jobs : (originalJob ? [originalJob] : (fallbackJob ? [fallbackJob] : []));
   const primaryJob = targetJobs[0] || {};
 
@@ -119,11 +123,11 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
     if (codeKey) sampleCodeNo = primaryJob.additional_details_values[codeKey];
   }
   sampleCodeNo = sampleCodeNo || primaryJob?.material_details_location || '';
-
-  const castingDate = primaryJob?.date_of_casting ||
-    primaryJob?.additional_details_values?.['Casting date'] ||
-    primaryJob?.additional_details_values?.['Date of Casting'] ||
-    primaryJob?.additional_details_values?.['Casting Date'] ||
+  
+  const castingDate = primaryJob?.date_of_casting || 
+    primaryJob?.additional_details_values?.['Casting date'] || 
+    primaryJob?.additional_details_values?.['Date of Casting'] || 
+    primaryJob?.additional_details_values?.['Casting Date'] || 
     primaryJob?.additional_details_values?.casting_date;
 
   const receivingDate = primaryJob?.date_of_receiving || data.jobEntry?.inward_on;
@@ -156,11 +160,12 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
   return (
     <Document>
       <Page size="A4" style={[styles.page, { display: 'flex', flexDirection: 'column' }]}>
-
+        
         {/* HEADER SECTION */}
         <View style={styles.table}>
-          <View style={[styles.row, { padding: 5, justifyContent: 'center' }]}>
-            <Text style={styles.headerTitle}>CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI</Text>
+          <View style={[styles.row, { minHeight: 46, paddingVertical: 3, paddingHorizontal: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', position: 'relative' }]}>
+            <Image src={logoUrl || "/CMTS LOGO.png"} style={{ width: 38, height: 38, objectFit: 'contain', position: 'absolute', left: 8 }} />
+            <Text style={[styles.headerTitle, { fontFamily: 'Times-Bold', fontSize: 13.5, fontWeight: 'bold', flex: 1, textAlign: 'center', marginHorizontal: 45 }]}>CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI</Text>
           </View>
           <View style={styles.row}>
             <View style={[styles.cell, { width: '70%' }]}>
@@ -209,7 +214,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           </View>
 
           {/* Row 3 */}
-          <View style={[styles.row, { minHeight: 38 }]}>
+          <View style={[styles.row, { minHeight: 46 }]}>
             <View style={[styles.cell, { width: '50%' }]}>
               <Text>3. Name of site / Project / Division:</Text>
               <Text style={styles.bold}>
@@ -219,68 +224,63 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
               </Text>
             </View>
             <View style={{ width: '50%', flexDirection: 'column' }}>
-              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000' }]}>
+              <View style={styles.subCell}>
                 <Text>CONTACT :-</Text>
               </View>
               <View style={styles.subCell}>
                 <Text>Person Name : {client?.contact_person || ''}</Text>
               </View>
-            </View>
-          </View>
-
-          {/* Row 4 */}
-          <View style={[styles.row, { minHeight: 38 }]}>
-            <View style={[styles.cell, { width: '50%' }]}>
-              <Text>4. Name of Dispatching the Report:</Text>
-              {client?.dispatch_name ? <Text style={styles.bold}>{client.dispatch_name}</Text> : null}
-            </View>
-            <View style={{ width: '50%', flexDirection: 'column' }}>
-              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000' }]}>
+              <View style={styles.subCell}>
                 <Text>Phone/ Mobile : {client?.mobile || ''}</Text>
               </View>
-              <View style={styles.subCell}>
-                <Text>E-mail : {client?.email || ''}</Text>
-              </View>
             </View>
           </View>
 
-          {/* Row 5 */}
-          <View style={[styles.row, { minHeight: 38 }]}>
-            <View style={[styles.cell, { width: '50%' }]}>
-              <Text>5. Address of Dispatching the Report:</Text>
-              {client?.dispatch_address ? <Text style={styles.bold}>{client.dispatch_address}</Text> : null}
+          {/* Row 4 & 5 - Dispatch Details */}
+          <View style={[styles.row, { minHeight: 64 }]}>
+            <View style={{ width: '50%', flexDirection: 'column', borderRightWidth: 1, borderColor: '#000' }}>
+              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 2, borderBottomWidth: 1, borderColor: '#000', justifyContent: 'center' }}>
+                <Text>4. Name of Dispatching the Report:</Text>
+                {(client?.dispatch_name || data.jobEntry?.dispatch_name) ? <Text style={styles.bold}>{client?.dispatch_name || data.jobEntry?.dispatch_name}</Text> : null}
+              </View>
+              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 2, justifyContent: 'center' }}>
+                <Text>5. Address of Dispatching the Report:</Text>
+                {(client?.dispatch_address || data.jobEntry?.dispatch_address) ? <Text style={styles.bold}>{client?.dispatch_address || data.jobEntry?.dispatch_address}</Text> : null}
+              </View>
             </View>
             <View style={{ width: '50%', flexDirection: 'column' }}>
-              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000' }]}>
-                <Text>Collected By : {client?.collected_by || ''}</Text>
+              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000', minHeight: 18, justifyContent: 'center' }]}>
+                <Text>E-mail : {client?.email || ''}</Text>
               </View>
-              <View style={styles.subCell}>
-                <Text>GST No : {client?.gst_no || ''}</Text>
+              <View style={[styles.subCell, { flex: 1, justifyContent: 'flex-start', paddingTop: 3 }]}>
+                <Text>Mode of Dispatch of Report : {client?.dispatch_mode || client?.dispatch_method || client?.collected_by || data.jobEntry?.collected_by || ''}</Text>
               </View>
             </View>
           </View>
 
           {/* Row 6 */}
           <View style={[styles.row, { minHeight: 18 }]}>
-            <View style={[styles.lastCell, { flex: 1 }]}>
-              <Text>TESTING REQUIRED ON :</Text>
+            <View style={[styles.cell, { width: '50%' }]}>
+              <Text>TESTING REQURIED ON :</Text>
             </View>
+            <View style={[styles.lastCell, { width: '50%' }]} />
           </View>
 
           {/* Row 7 */}
           <View style={[styles.lastRow, { minHeight: 18 }]}>
-            <View style={[styles.lastCell, { flex: 1 }]}>
+            <View style={[styles.cell, { width: '50%' }]}>
               <Text>CUSTOMER REFERENCE NO : {data.jobEntry?.letter_reference || ''}</Text>
             </View>
+            <View style={[styles.lastCell, { width: '50%' }]} />
           </View>
         </View>
 
-
+        {/* TESTING REQUIRED TABLE */}
         <View style={styles.table}>
           <View style={[styles.row, { padding: 4, justifyContent: 'center' }]}>
             <Text style={[styles.bold, styles.textCenter, { width: '100%' }]}>TESTING REQUIRED</Text>
           </View>
-
+          
           <View style={styles.row}>
             <View style={[styles.cell, { width: '7%', alignItems: 'center' }]}><Text style={styles.textCenter}>UID</Text></View>
             <View style={[styles.cell, { width: '23%', alignItems: 'center' }]}><Text style={styles.textCenter}>Material Details</Text></View>
@@ -320,16 +320,16 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
 
           {/* Checkboxes Area */}
           <View style={styles.lastRow}>
-            <View style={[styles.cell, { width: '70%', borderRightWidth: 0 }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+            <View style={[styles.cell, { width: '70%', borderRightWidth: 0, paddingHorizontal: 0, paddingVertical: 0 }]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, paddingHorizontal: 4, borderBottomWidth: 1, borderColor: '#000' }}>
                 <Text>1. Method of testing capability and resources acceptable</Text>
                 <View style={[styles.checkbox, { marginRight: 20 }]} />
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, paddingHorizontal: 4, borderBottomWidth: 1, borderColor: '#000' }}>
                 <Text>2. Terms and Condition of testing acceptable as per review remarks</Text>
                 <View style={[styles.checkbox, { marginRight: 20 }]} />
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, paddingHorizontal: 4 }}>
                 <Text>3. Customer request statement of conformity</Text>
                 <View style={[styles.checkbox, { marginRight: 20 }]} />
               </View>
@@ -340,7 +340,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           </View>
         </View>
 
-
+        {/* FOR OFFICE USE ONLY */}
         <View style={[styles.table, { flexGrow: 1, marginBottom: 10 }]}>
           <View style={[styles.row, { padding: 5, justifyContent: 'center' }]}>
             <Text style={[styles.bold, styles.textCenter, { width: '100%', fontSize: 11 }]}>FOR OFFICE USE ONLY</Text>
@@ -350,7 +350,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
               <Text>Review Remarks:</Text>
             </View>
           </View>
-
+          
           <View style={styles.row}>
             <View style={[styles.cell, { width: '40%' }]}>
               <Text>1. Requirements defined and understood :</Text>
@@ -359,7 +359,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>UID No. :</Text></View>
             <View style={[styles.lastCell, { width: '15%' }]}></View>
           </View>
-
+          
           <View style={styles.row}>
             <View style={[styles.cell, { width: '40%' }]}>
               <Text>2. Capability and Resource available :</Text>
@@ -368,7 +368,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             <View style={[styles.cell, { width: '20%' }]}><Text style={styles.textCenter}>Date :</Text></View>
             <View style={[styles.lastCell, { width: '15%' }]}></View>
           </View>
-
+          
           <View style={[styles.row, { minHeight: 20 }]}>
             <View style={[styles.cell, { width: '40%' }]}>
               <Text>3. Condition of Sample Received :</Text>
@@ -418,11 +418,11 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           <View style={[styles.lastRow, { minHeight: 45 }]}>
             <View style={[styles.cell, { width: '25%', justifyContent: 'flex-end', paddingBottom: 5 }]}><Text style={styles.textCenter}>Issue Date: 20.01.2023</Text></View>
             <View style={[styles.cell, { width: '37.5%', justifyContent: 'flex-end', paddingBottom: 5 }]}>
-              <Image src="/Sanket_sir-removebg-preview.png" style={{ width: 60, height: 30, objectFit: 'contain', marginBottom: 2 }} />
+              <Image src={preparedBySignUrl || "/Sanket_sir-removebg-preview.png"} style={{ width: 60, height: 30, objectFit: 'contain', marginBottom: 2 }} />
               <Text>Prepared by:</Text>
             </View>
             <View style={[styles.lastCell, { width: '37.5%', justifyContent: 'flex-end', paddingBottom: 5 }]}>
-              <Image src="/MUKUND_GAIKWAD_SIGN-removebg-preview.png" style={{ width: 60, height: 30, objectFit: 'contain', marginBottom: 2 }} />
+              <Image src={approvedBySignUrl || "/MUKUND_GAIKWAD_SIGN-removebg-preview.png"} style={{ width: 60, height: 30, objectFit: 'contain', marginBottom: 2 }} />
               <Text>Reviewed & Approved by:</Text>
             </View>
           </View>
