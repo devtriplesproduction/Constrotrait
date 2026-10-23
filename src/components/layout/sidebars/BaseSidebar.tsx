@@ -25,8 +25,11 @@ export function BaseSidebar({ links, isOpen, setIsOpen }: BaseSidebarProps) {
   const pathname = usePathname();
   const [openMenus, setOpenMenus] = React.useState<Record<string, boolean>>({});
 
-  const toggleMenu = (title: string) => {
-    setOpenMenus((prev) => ({ ...prev, [title]: !prev[title] }));
+  const toggleMenu = (title: string, defaultOpen: boolean = false) => {
+    setOpenMenus((prev) => {
+      const current = prev[title] ?? defaultOpen;
+      return { ...prev, [title]: !current };
+    });
   };
 
   // Close mobile sidebar on route change
@@ -100,7 +103,7 @@ export function BaseSidebar({ links, isOpen, setIsOpen }: BaseSidebarProps) {
               const Icon = link.icon || (() => null);
               return (
                 <div key={link.title} className="space-y-0.5">
-                  <Button variant="custom" onClick={() => toggleMenu(link.title)}
+                  <Button variant="custom" onClick={() => toggleMenu(link.title, isAnyChildActive)}
                     className={cn(
                       "w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200",
                       isAnyChildActive
