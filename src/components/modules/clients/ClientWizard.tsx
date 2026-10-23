@@ -848,8 +848,8 @@ export function ClientWizard({
                           <Input {...register("jobEntry.agency_name")} placeholder="Agency Name" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Collected By</label>
-                          <Input {...register("jobEntry.collected_by")} placeholder="Collected By" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Method / Mode of Dispatch of Report</label>
+                          <Input {...register("jobEntry.collected_by")} placeholder="e.g. Customer, Courier, By Hand" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
                         </div>
                       </div>
                     </div>

@@ -208,34 +208,30 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             </View>
           </View>
 
-          {/* Row 3 */}
-          <View style={[styles.row, { minHeight: 38 }]}>
-            <View style={[styles.cell, { width: '50%' }]}>
-              <Text>3. Name of site / Project / Division:</Text>
-              <Text style={styles.bold}>
-                {client?.site_name || ''}
-                {client?.project_name ? ` / ${client.project_name}` : ''}
-                {client?.division ? ` / ${client.division}` : ''}
-              </Text>
+          {/* Row 3 & 4 */}
+          <View style={[styles.row, { minHeight: 76 }]}>
+            <View style={{ width: '50%', flexDirection: 'column', borderRightWidth: 1, borderColor: '#000' }}>
+              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 3, borderBottomWidth: 1, borderColor: '#000', justifyContent: 'center', minHeight: 38 }}>
+                <Text>3. Name of site / Project / Division:</Text>
+                <Text style={styles.bold}>
+                  {client?.site_name || ''}
+                  {client?.project_name ? ` / ${client.project_name}` : ''}
+                  {client?.division ? ` / ${client.division}` : ''}
+                </Text>
+              </View>
+              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 3, justifyContent: 'center', minHeight: 38 }}>
+                <Text>4. Name of Dispatching the Report:</Text>
+                {(client?.dispatch_name || data.jobEntry?.dispatch_name) ? <Text style={styles.bold}>{client?.dispatch_name || data.jobEntry?.dispatch_name}</Text> : null}
+              </View>
             </View>
             <View style={{ width: '50%', flexDirection: 'column' }}>
-              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000' }]}>
+              <View style={styles.subCell}>
                 <Text>CONTACT :-</Text>
               </View>
               <View style={styles.subCell}>
                 <Text>Person Name : {client?.contact_person || ''}</Text>
               </View>
-            </View>
-          </View>
-
-          {/* Row 4 */}
-          <View style={[styles.row, { minHeight: 38 }]}>
-            <View style={[styles.cell, { width: '50%' }]}>
-              <Text>4. Name of Dispatching the Report:</Text>
-              {client?.dispatch_name ? <Text style={styles.bold}>{client.dispatch_name}</Text> : null}
-            </View>
-            <View style={{ width: '50%', flexDirection: 'column' }}>
-              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000' }]}>
+              <View style={styles.subCell}>
                 <Text>Phone/ Mobile : {client?.mobile || ''}</Text>
               </View>
               <View style={styles.subCell}>
@@ -248,15 +244,10 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           <View style={[styles.row, { minHeight: 38 }]}>
             <View style={[styles.cell, { width: '50%' }]}>
               <Text>5. Address of Dispatching the Report:</Text>
-              {client?.dispatch_address ? <Text style={styles.bold}>{client.dispatch_address}</Text> : null}
+              {(client?.dispatch_address || data.jobEntry?.dispatch_address) ? <Text style={styles.bold}>{client?.dispatch_address || data.jobEntry?.dispatch_address}</Text> : null}
             </View>
-            <View style={{ width: '50%', flexDirection: 'column' }}>
-              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000' }]}>
-                <Text>Collected By : {client?.collected_by || ''}</Text>
-              </View>
-              <View style={styles.subCell}>
-                <Text>GST No : {client?.gst_no || ''}</Text>
-              </View>
+            <View style={[styles.lastCell, { width: '50%' }]}>
+              <Text>Mode of Dispatch of Report : {client?.dispatch_mode || client?.dispatch_method || client?.collected_by || data.jobEntry?.collected_by || ''}</Text>
             </View>
           </View>
 
@@ -320,16 +311,16 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
 
           {/* Checkboxes Area */}
           <View style={styles.lastRow}>
-            <View style={[styles.cell, { width: '70%', borderRightWidth: 0 }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+            <View style={[styles.cell, { width: '70%', borderRightWidth: 0, paddingHorizontal: 0, paddingVertical: 0 }]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, paddingHorizontal: 4, borderBottomWidth: 1, borderColor: '#000' }}>
                 <Text>1. Method of testing capability and resources acceptable</Text>
                 <View style={[styles.checkbox, { marginRight: 20 }]} />
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, paddingHorizontal: 4, borderBottomWidth: 1, borderColor: '#000' }}>
                 <Text>2. Terms and Condition of testing acceptable as per review remarks</Text>
                 <View style={[styles.checkbox, { marginRight: 20 }]} />
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, paddingHorizontal: 4 }}>
                 <Text>3. Customer request statement of conformity</Text>
                 <View style={[styles.checkbox, { marginRight: 20 }]} />
               </View>

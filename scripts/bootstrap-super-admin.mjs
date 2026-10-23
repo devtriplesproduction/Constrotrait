@@ -38,9 +38,11 @@ async function run() {
   if (existingAuthUser) {
     userId = existingAuthUser.id;
     console.log(`Auth user already exists (ID: ${userId}). Updating attributes...`);
-    // Update app_metadata
+    // Update app_metadata and password
     const { error: updateAuthError } = await supabase.auth.admin.updateUserById(userId, {
-      app_metadata: { role: "SUPER_ADMIN", is_active: true },
+      password,
+      email_confirm: true,
+      app_metadata: { roles: ["SUPER_ADMIN"], is_active: true },
       user_metadata: { first_name: "Mukund", last_name: "Gaikwad" },
     });
     if (updateAuthError) {
@@ -54,7 +56,7 @@ async function run() {
       password,
       email_confirm: true,
       user_metadata: { first_name: "Mukund", last_name: "Gaikwad" },
-      app_metadata: { role: "SUPER_ADMIN", is_active: true },
+      app_metadata: { roles: ["SUPER_ADMIN"], is_active: true },
     });
 
     if (createAuthError) {
@@ -83,7 +85,7 @@ async function run() {
     const { error: updateProfileError } = await supabase
       .from("profiles")
       .update({
-        role: "SUPER_ADMIN",
+        roles: ["SUPER_ADMIN"],
         is_active: true,
         first_name: "Mukund",
         last_name: "Gaikwad",
@@ -101,7 +103,7 @@ async function run() {
       .insert({
         id: userId,
         email,
-        role: "SUPER_ADMIN",
+        roles: ["SUPER_ADMIN"],
         first_name: "Mukund",
         last_name: "Gaikwad",
         is_active: true,
