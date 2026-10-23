@@ -43,7 +43,7 @@ export default async function JobAssignmentsPage(props: {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      <JobAssignmentsContent 
+      <JobAssignmentsContent
         initialTab={tab}
         isManager={isManager}
         userId={user.id}
@@ -55,3 +55,4 @@ export default async function JobAssignmentsPage(props: {
     </div>
   );
 }
+///hello
