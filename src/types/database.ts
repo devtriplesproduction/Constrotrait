@@ -39,6 +39,864 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_audit_log: {
+        Row: {
+          action: string
+          branch_id: string | null
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          performed_at: string
+          performed_by: string | null
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          branch_id?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          performed_at?: string
+          performed_by?: string | null
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          branch_id?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          performed_at?: string
+          performed_by?: string | null
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_audit_log_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_audit_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounting_expenses: {
+        Row: {
+          account_id: string | null
+          amount: number
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
+          bill_attached: boolean | null
+          bill_number: string | null
+          branch_id: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          description: string | null
+          employee_id: string | null
+          expense_date: string | null
+          gst_amount: number | null
+          id: string
+          is_general_expense: boolean | null
+          is_reimbursement: boolean | null
+          paid_through_person: string | null
+          payment_mode: string | null
+          project_id: string | null
+          requires_approval: boolean | null
+          site_name: string | null
+          status: string
+          tds_amount: number | null
+          vendor_name: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          bill_attached?: boolean | null
+          bill_number?: string | null
+          branch_id?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          employee_id?: string | null
+          expense_date?: string | null
+          gst_amount?: number | null
+          id?: string
+          is_general_expense?: boolean | null
+          is_reimbursement?: boolean | null
+          paid_through_person?: string | null
+          payment_mode?: string | null
+          project_id?: string | null
+          requires_approval?: boolean | null
+          site_name?: string | null
+          status?: string
+          tds_amount?: number | null
+          vendor_name?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          bill_attached?: boolean | null
+          bill_number?: string | null
+          branch_id?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          employee_id?: string | null
+          expense_date?: string | null
+          gst_amount?: number | null
+          id?: string
+          is_general_expense?: boolean | null
+          is_reimbursement?: boolean | null
+          paid_through_person?: string | null
+          payment_mode?: string | null
+          project_id?: string | null
+          requires_approval?: boolean | null
+          site_name?: string | null
+          status?: string
+          tds_amount?: number | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_expenses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_expenses_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_expenses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_expenses_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_expenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_expenses_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounting_projects: {
+        Row: {
+          branch_id: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_projects_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_reconciliations: {
+        Row: {
+          account_id: string
+          branch_id: string | null
+          created_at: string
+          difference: number | null
+          erp_balance: number
+          id: string
+          notes: string | null
+          reconciled_by: string | null
+          statement_balance: number
+          statement_date: string
+        }
+        Insert: {
+          account_id: string
+          branch_id?: string | null
+          created_at?: string
+          difference?: number | null
+          erp_balance: number
+          id?: string
+          notes?: string | null
+          reconciled_by?: string | null
+          statement_balance: number
+          statement_date: string
+        }
+        Update: {
+          account_id?: string
+          branch_id?: string | null
+          created_at?: string
+          difference?: number | null
+          erp_balance?: number
+          id?: string
+          notes?: string | null
+          reconciled_by?: string | null
+          statement_balance?: number
+          statement_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliations_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliations_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliations_reconciled_by_fkey"
+            columns: ["reconciled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_categories: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          id: string
+          max_amount_without_bill: number | null
+          name: string
+          requires_approval: boolean
+          scope: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          id?: string
+          max_amount_without_bill?: number | null
+          name: string
+          requires_approval?: boolean
+          scope?: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          id?: string
+          max_amount_without_bill?: number | null
+          name?: string
+          requires_approval?: boolean
+          scope?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_payment_entries: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          expense_id: string | null
+          id: string
+          payment_date: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string
+          expense_id?: string | null
+          id?: string
+          payment_date?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          expense_id?: string | null
+          id?: string
+          payment_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_payment_entries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_payment_entries_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_accounts: {
+        Row: {
+          account_number: string | null
+          account_type: string
+          bank_name: string | null
+          branch_id: string | null
+          created_at: string
+          created_by: string | null
+          current_balance: number
+          id: string
+          ifsc: string | null
+          is_active: boolean
+          name: string
+          opening_balance: number
+        }
+        Insert: {
+          account_number?: string | null
+          account_type?: string
+          bank_name?: string | null
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_balance?: number
+          id?: string
+          ifsc?: string | null
+          is_active?: boolean
+          name?: string
+          opening_balance?: number
+        }
+        Update: {
+          account_number?: string | null
+          account_type?: string
+          bank_name?: string | null
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_balance?: number
+          id?: string
+          ifsc?: string | null
+          is_active?: boolean
+          name?: string
+          opening_balance?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_accounts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_accounts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount: number
+          balance_amount: number | null
+          branch_id: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          discount_amount: number | null
+          due_date: string | null
+          gst_amount: number | null
+          id: string
+          invoice_date: string | null
+          invoice_no: string
+          items: Json | null
+          notes: string | null
+          paid_amount: number | null
+          project_id: string | null
+          quotation_id: string | null
+          remarks: string | null
+          status: string
+          subtotal: number | null
+          tds_amount: number | null
+          total_amount: number | null
+        }
+        Insert: {
+          amount?: number
+          balance_amount?: number | null
+          branch_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          gst_amount?: number | null
+          id?: string
+          invoice_date?: string | null
+          invoice_no?: string
+          items?: Json | null
+          notes?: string | null
+          paid_amount?: number | null
+          project_id?: string | null
+          quotation_id?: string | null
+          remarks?: string | null
+          status?: string
+          subtotal?: number | null
+          tds_amount?: number | null
+          total_amount?: number | null
+        }
+        Update: {
+          amount?: number
+          balance_amount?: number | null
+          branch_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          gst_amount?: number | null
+          id?: string
+          invoice_date?: string | null
+          invoice_no?: string
+          items?: Json | null
+          notes?: string | null
+          paid_amount?: number | null
+          project_id?: string | null
+          quotation_id?: string | null
+          remarks?: string | null
+          status?: string
+          subtotal?: number | null
+          tds_amount?: number | null
+          total_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_payments: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_id: string
+          payment_date: string | null
+          payment_mode: string | null
+          receipt_id: string | null
+          remarks: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id: string
+          payment_date?: string | null
+          payment_mode?: string | null
+          receipt_id?: string | null
+          remarks?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string
+          payment_date?: string | null
+          payment_mode?: string | null
+          receipt_id?: string | null
+          remarks?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_payments_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "inward_receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inward_receipts: {
+        Row: {
+          account_id: string | null
+          amount: number
+          branch_id: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          gst_amount: number | null
+          id: string
+          paid_through_person: string | null
+          party_name: string | null
+          party_type: string | null
+          payment_mode: string | null
+          project_id: string | null
+          receipt_date: string | null
+          receipt_no: string
+          remarks: string | null
+          status: string
+          tds_amount: number | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          branch_id?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          gst_amount?: number | null
+          id?: string
+          paid_through_person?: string | null
+          party_name?: string | null
+          party_type?: string | null
+          payment_mode?: string | null
+          project_id?: string | null
+          receipt_date?: string | null
+          receipt_no?: string
+          remarks?: string | null
+          status?: string
+          tds_amount?: number | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          branch_id?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          gst_amount?: number | null
+          id?: string
+          paid_through_person?: string | null
+          party_name?: string | null
+          party_type?: string | null
+          payment_mode?: string | null
+          project_id?: string | null
+          receipt_date?: string | null
+          receipt_no?: string
+          remarks?: string | null
+          status?: string
+          tds_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inward_receipts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inward_receipts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inward_receipts_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inward_receipts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inward_receipts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inward_receipts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotations: {
+        Row: {
+          amount: number
+          branch_id: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          discount_amount: number | null
+          discount_pct: number | null
+          gst_amount: number | null
+          gst_rate: number | null
+          id: string
+          internal_notes: string | null
+          items: Json | null
+          project_id: string | null
+          quotation_no: string
+          remarks: string | null
+          status: string
+          subtotal: number | null
+          terms: string | null
+          total_amount: number | null
+          valid_until: string | null
+        }
+        Insert: {
+          amount?: number
+          branch_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number | null
+          discount_pct?: number | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          id?: string
+          internal_notes?: string | null
+          items?: Json | null
+          project_id?: string | null
+          quotation_no?: string
+          remarks?: string | null
+          status?: string
+          subtotal?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          valid_until?: string | null
+        }
+        Update: {
+          amount?: number
+          branch_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number | null
+          discount_pct?: number | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          id?: string
+          internal_notes?: string | null
+          items?: Json | null
+          project_id?: string | null
+          quotation_no?: string
+          remarks?: string | null
+          status?: string
+          subtotal?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_logs: {
         Row: {
           action: string
@@ -2029,6 +2887,25 @@ export type Database = {
         Returns: string
       }
       generate_ulr_for_date: { Args: { p_date: string }; Returns: undefined }
+      get_pending_payments_for_notification: {
+        Args: {
+          p_branch_id: string
+        }
+        Returns: {
+          balance_amount: number
+          client_id: string
+          due_date: string
+          invoice_id: string
+          invoice_no: string
+          status: string
+        }[]
+      }
+      get_project_financial_balance: {
+        Args: {
+          p_project_id: string
+        }
+        Returns: number
+      }
       get_comp_off_balance: { Args: { p_employee_id: string }; Returns: number }
       get_today_birthdays: {
         Args: never
@@ -2078,6 +2955,12 @@ export type Database = {
             }
             Returns: undefined
           }
+      next_receipt_no: {
+        Args: {
+          p_branch_id: string | null
+        }
+        Returns: string
+      }
       next_report_seq: { Args: { p_year: number }; Returns: number }
       next_seq: { Args: { p_fy: string; p_kind: string }; Returns: number }
       next_uid_seq: {

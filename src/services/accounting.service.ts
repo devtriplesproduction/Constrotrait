@@ -185,7 +185,7 @@ export async function getProjects() {
   if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
   let q = supabase.from("accounting_projects").select("*").order("created_at", { ascending: false });
-  if (!isSuperAdmin(user.roles)) q = q.eq("branch_id", user.branch_id);
+  if (!isSuperAdmin(user.roles) && user.branch_id) q = q.eq("branch_id", user.branch_id);
   const { data, error } = await q;
   if (error) return { success: false, error: error.message };
   return { success: true, data };
@@ -196,7 +196,7 @@ export async function getAccounts() {
   if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
   let q = supabase.from("financial_accounts").select("*").eq("is_active", true);
-  if (!isSuperAdmin(user.roles)) q = q.eq("branch_id", user.branch_id);
+  if (!isSuperAdmin(user.roles) && user.branch_id) q = q.eq("branch_id", user.branch_id);
   const { data, error } = await q;
   if (error) return { success: false, error: error.message };
   return { success: true, data };
@@ -356,7 +356,7 @@ export async function getBankReconciliations(accountId?: string) {
   const supabase = await createClient();
   let q = supabase.from("bank_reconciliations").select("*").order("statement_date", { ascending: false });
   if (accountId) q = q.eq("account_id", accountId);
-  if (!isSuperAdmin(user.roles)) q = q.eq("branch_id", user.branch_id);
+  if (!isSuperAdmin(user.roles) && user.branch_id) q = q.eq("branch_id", user.branch_id);
   const { data, error } = await q;
   if (error) return { success: false, error: error.message };
   return { success: true, data };
