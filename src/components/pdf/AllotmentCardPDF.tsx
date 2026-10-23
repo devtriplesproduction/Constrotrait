@@ -289,15 +289,19 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
   const testMaster = jobEntryTest?.test_master || {};
 
   // Dynamic Form Values
-  const displayDocNo = docNo || testMaster?.datasheet_qr || primaryJob?.doc_no || '';
+  const displayDocNo = docNo || testMaster?.datasheet_qr || primaryJob?.doc_no || 'QR-234';
   const receivingDate = jobEntry?.date_of_receiving || jobEntry?.inward_on || primaryJob?.date_of_receiving || jobEntry?.created_at;
   const allottedDate = primaryJob?.created_at || primaryJob?.date_of_allotment;
   const dueDate = primaryJob?.due_date || jobEntryTest?.due_date || jobEntryTest?.date_of_testing;
   
+  const profile = Array.isArray(primaryJob?.assigned_to_profile)
+    ? primaryJob.assigned_to_profile[0]
+    : primaryJob?.assigned_to_profile;
+  const profileName = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : '';
+
   const issueTo = primaryJob?.teams?.name ||
-    (primaryJob?.assigned_to_profile ? `${primaryJob.assigned_to_profile.first_name || ''} ${primaryJob.assigned_to_profile.last_name || ''}`.trim() : '') ||
-    primaryJob?.assigned_to ||
-    '';
+    profileName ||
+    (primaryJob?.assigned_to && !primaryJob.assigned_to.includes('-') ? primaryJob.assigned_to : (currentUser?.first_name ? `${currentUser.first_name} ${currentUser.last_name || ''}`.trim() : 'Construction Dept.'));
 
   const productTestName = testGroup || testMaster?.material_product || testMaster?.specific_test || jobEntryTest?.material_description || '';
   const uidLabel = uid || jobEntryTest?.uid_label || '';

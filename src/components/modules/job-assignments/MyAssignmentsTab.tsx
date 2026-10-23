@@ -203,7 +203,7 @@ export function MyAssignmentsTab({
     doc.text("CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI", pageWidth / 2, 21, { align: "center" });
     
     // Info Table
-    const docNo = a.job_entry_tests?.test_master?.datasheet_qr || "";
+    const docNo = a.job_entry_tests?.test_master?.datasheet_qr || "QR-234";
     autoTable(doc, {
       startY: 28,
       theme: "plain",
