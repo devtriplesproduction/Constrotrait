@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useTransition, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { Banknote, Receipt, FileText, BarChart3, Landmark, Scale, Plus, Trash2, Check, X } from "lucide-react";
 import {
@@ -24,13 +25,33 @@ import {
   getBankReconciliationsAction,
 } from "@/actions/accounting.actions";
 
-interface Props { initialData: any; }
+interface Props {
+  initialData: any;
+  activeTab?: string;
+}
+
 const fmt = (n: number) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 const inputCls = "w-full border rounded-lg px-3 py-2 text-sm";
 
-export function AccountingClient({ initialData }: Props) {
+export function AccountingClient({ initialData, activeTab }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState("dashboard");
+  const pathname = usePathname();
+
+  const tabs = [
+    { id: "dashboard", href: "/accounting", label: "Dashboard", icon: BarChart3 },
+    { id: "quotations", href: "/accounting/quotations", label: "Quotations", icon: FileText },
+    { id: "receipts", href: "/accounting/receipts", label: "Receipts", icon: Receipt },
+    { id: "expenses", href: "/accounting/expenses", label: "Expenses", icon: Banknote },
+    { id: "invoices", href: "/accounting/invoices", label: "Invoices", icon: FileText },
+    { id: "banks", href: "/accounting/banks", label: "Banks", icon: Landmark },
+    { id: "recon", href: "/accounting/reconciliation", label: "Reconciliation", icon: Scale },
+    { id: "reports", href: "/accounting/reports", label: "Reports", icon: BarChart3 },
+  ];
+
+  // Resolve current tab from prop, pathname, or default to dashboard
+  const resolvedFromPath = tabs.find((t) => t.href === pathname)?.id;
+  const currentTab = activeTab || resolvedFromPath || "dashboard";
+
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState("");
   const data = initialData || {};
@@ -45,36 +66,39 @@ export function AccountingClient({ initialData }: Props) {
     });
   }
 
-  const tabs = [
-    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    { id: "receipts", label: "Receipts", icon: Receipt },
-    { id: "expenses", label: "Expenses", icon: Banknote },
-    { id: "invoices", label: "Invoices", icon: FileText },
-    { id: "quotations", label: "Quotations", icon: FileText },
-    { id: "banks", label: "Banks", icon: Landmark },
-    { id: "recon", label: "Reconciliation", icon: Scale },
-    { id: "reports", label: "Reports", icon: BarChart3 },
-  ];
+  const currentTabConfig = tabs.find((t) => t.id === currentTab);
+  const pageTitle = currentTabConfig && currentTabConfig.id !== "dashboard"
+    ? `Accounting — ${currentTabConfig.label}`
+    : "Accounting";
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Accounting" subtitle="Quotations, receipts, expenses, invoices, banks, reconciliation and reports." />
+      <PageHeader title={pageTitle} subtitle="Quotations, receipts, expenses, invoices, banks, reconciliation and reports." />
       {msg && <div className="p-3 rounded-lg bg-slate-100 text-sm">{msg}</div>}
       <div className="flex flex-wrap gap-2 border-b pb-2">
-        {tabs.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm ${tab === t.id ? "bg-slate-900 text-white" : "bg-slate-100"}`}>
-            <t.icon className="w-4 h-4" /> {t.label}
-          </button>
-        ))}
+        {tabs.map((t) => {
+          const isActive = currentTab === t.id;
+          return (
+            <Link
+              key={t.id}
+              href={t.href}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                isActive ? "bg-slate-900 text-white font-medium" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              <t.icon className="w-4 h-4" /> {t.label}
+            </Link>
+          );
+        })}
       </div>
-      {tab === "dashboard" && <Dashboard data={data} />}
-      {tab === "receipts" && <ReceiptsTab data={data} run={run} pending={pending} />}
-      {tab === "expenses" && <ExpensesTab data={data} run={run} pending={pending} />}
-      {tab === "invoices" && <InvoicesTab data={data} run={run} pending={pending} />}
-      {tab === "quotations" && <QuotationsTab data={data} run={run} pending={pending} />}
-      {tab === "banks" && <BanksTab data={data} run={run} pending={pending} />}
-      {tab === "recon" && <ReconTab data={data} run={run} pending={pending} />}
-      {tab === "reports" && <ReportsTab />}
+      {currentTab === "dashboard" && <Dashboard data={data} />}
+      {currentTab === "receipts" && <ReceiptsTab data={data} run={run} pending={pending} />}
+      {currentTab === "expenses" && <ExpensesTab data={data} run={run} pending={pending} />}
+      {currentTab === "invoices" && <InvoicesTab data={data} run={run} pending={pending} />}
+      {currentTab === "quotations" && <QuotationsTab data={data} run={run} pending={pending} />}
+      {currentTab === "banks" && <BanksTab data={data} run={run} pending={pending} />}
+      {currentTab === "recon" && <ReconTab data={data} run={run} pending={pending} />}
+      {currentTab === "reports" && <ReportsTab />}
     </div>
   );
 }

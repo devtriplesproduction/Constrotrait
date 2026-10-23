@@ -1,7 +1,21 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, Users, ClipboardList, Building2, Calendar, CalendarDays, Banknote, UserSquare, Receipt } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  ClipboardList,
+  Building2,
+  Calendar,
+  CalendarDays,
+  Banknote,
+  UserSquare,
+  Receipt,
+  FileText,
+  Landmark,
+  Scale,
+  BarChart3,
+} from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
 import { canManageTestMaster, canManageClientsAndJobs, canViewAccounting } from "@/config/roles";
 
@@ -64,7 +78,20 @@ export function AdminSidebar({ isOpen, setIsOpen, role, roles }: AdminSidebarPro
   }
 
   if (canViewAccounting(roleArray)) {
-    adminLinks.push({ title: "Accounting", href: "/accounting", icon: Receipt });
+    adminLinks.push({
+      title: "Accounting",
+      icon: Receipt,
+      subLinks: [
+        { title: "Dashboard", href: "/accounting", icon: LayoutDashboard },
+        { title: "Quotations", href: "/accounting/quotations", icon: FileText },
+        { title: "Receipts", href: "/accounting/receipts", icon: Receipt },
+        { title: "Expenses", href: "/accounting/expenses", icon: Banknote },
+        { title: "Invoices", href: "/accounting/invoices", icon: FileText },
+        { title: "Banks", href: "/accounting/banks", icon: Landmark },
+        { title: "Reconciliation", href: "/accounting/reconciliation", icon: Scale },
+        { title: "Reports", href: "/accounting/reports", icon: BarChart3 },
+      ],
+    });
   }
 
   return <BaseSidebar links={adminLinks} isOpen={isOpen} setIsOpen={setIsOpen} />;

@@ -21,7 +21,7 @@ export default async function AccountingPage() {
 
   return (
     <div className="w-full space-y-6">
-      <AccountingClient initialData={dashboard.success ? dashboard.data : null} />
+      <AccountingClient initialData={dashboard.success ? dashboard.data : null} activeTab="dashboard" />
     </div>
   );
 }
