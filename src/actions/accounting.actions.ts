@@ -15,7 +15,11 @@ export async function createInwardReceiptAction(payload: any) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
   const result = await accounting.createInwardReceipt(payload);
-  if (result.success) revalidatePath("/accounting");
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/billing");
+    revalidatePath("/accounting/receipts");
+  }
   return result;
 }
 
@@ -23,7 +27,11 @@ export async function cancelInwardReceiptAction(receiptId: string, reason: strin
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
   const result = await accounting.cancelInwardReceipt(receiptId, reason);
-  if (result.success) revalidatePath("/accounting");
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/billing");
+    revalidatePath("/accounting/receipts");
+  }
   return result;
 }
 
@@ -31,7 +39,12 @@ export async function createExpenseAction(payload: any) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
   const result = await accounting.createExpense(payload);
-  if (result.success) revalidatePath("/accounting");
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/billing");
+    revalidatePath("/accounting/expenses");
+    revalidatePath("/accounting/ledgers");
+  }
   return result;
 }
 
@@ -39,7 +52,12 @@ export async function approveExpenseAction(expenseId: string, approve: boolean, 
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canApproveAccounting(user.roles)) return { success: false, error: "Unauthorized" };
   const result = await accounting.approveExpense(expenseId, approve, remarks);
-  if (result.success) revalidatePath("/accounting");
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/billing");
+    revalidatePath("/accounting/expenses");
+    revalidatePath("/accounting/ledgers");
+  }
   return result;
 }
 
@@ -55,7 +73,32 @@ export async function createBankAccountAction(payload: any) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
   const result = await accounting.createBankAccount(payload);
-  if (result.success) revalidatePath("/accounting");
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/banks");
+  }
+  return result;
+}
+
+export async function updateBankAccountAction(id: string, payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.updateBankAccount(id, payload);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/banks");
+  }
+  return result;
+}
+
+export async function deleteBankAccountAction(id: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.deleteBankAccount(id);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/banks");
+  }
   return result;
 }
 
@@ -75,11 +118,16 @@ export async function createInvoiceAction(payload: any) {
   return result;
 }
 
-export async function recordInvoicePaymentAction(invoiceId: string, amount: number, accountId?: string, remarks?: string) {
+export async function recordInvoicePaymentAction(invoiceId: string, payloadOrAmount: any, accountId?: string, remarks?: string) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
-  const result = await accounting.recordInvoicePayment(invoiceId, amount, accountId, remarks);
-  if (result.success) revalidatePath("/accounting");
+  const result = await accounting.recordInvoicePayment(invoiceId, payloadOrAmount, accountId, remarks);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/billing");
+    revalidatePath("/accounting/invoices");
+    revalidatePath("/accounting/receipts");
+  }
   return result;
 }
 
@@ -148,3 +196,109 @@ export async function getBankReconciliationsAction(accountId?: string) {
   if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
   return accounting.getBankReconciliations(accountId);
 }
+
+export async function getInwardsForAccountingAction(branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getInwardsForAccounting(branchId);
+}
+
+export async function getClientPreviousInvoiceAction(clientId: string, excludeInvoiceId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getClientPreviousInvoice(clientId, excludeInvoiceId);
+}
+
+export async function convertProformaToTaxInvoiceAction(proformaId: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.convertProformaToTaxInvoice(proformaId);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/billing");
+    revalidatePath("/accounting/invoices");
+  }
+  return result;
+}
+
+export async function getInvoiceWithDetailsAction(invoiceId: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getInvoiceWithDetails(invoiceId);
+}
+
+export async function getQuotationTemplatesAction(branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getQuotationTemplates(branchId);
+}
+
+export async function saveQuotationTemplateAction(payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.saveQuotationTemplate(payload);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/templates");
+    revalidatePath("/accounting/quotations");
+  }
+  return result;
+}
+
+export async function deleteQuotationTemplateAction(id: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.deleteQuotationTemplate(id);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/templates");
+    revalidatePath("/accounting/quotations");
+  }
+  return result;
+}
+
+export async function duplicateQuotationTemplateAction(id: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.duplicateQuotationTemplate(id);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/templates");
+    revalidatePath("/accounting/quotations");
+  }
+  return result;
+}
+
+export async function setDefaultQuotationTemplateAction(id: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.setDefaultQuotationTemplate(id);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/templates");
+    revalidatePath("/accounting/quotations");
+  }
+  return result;
+}
+
+export async function getReceiptDetailsAction(receiptId: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getReceiptDetails(receiptId);
+}
+
+export async function getLedgersDataAction(filters?: {
+  fromDate?: string;
+  toDate?: string;
+  inwardId?: string;
+  clientId?: string;
+  accountId?: string;
+  branchId?: string;
+}) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getLedgersData(filters);
+}
+
+
+

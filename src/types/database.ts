@@ -122,6 +122,8 @@ export type Database = {
           status: string
           tds_amount: number | null
           vendor_name: string | null
+          inward_id?: string | null
+          expense_type?: 'inward' | 'company' | null
         }
         Insert: {
           account_id?: string | null
@@ -154,6 +156,8 @@ export type Database = {
           status?: string
           tds_amount?: number | null
           vendor_name?: string | null
+          inward_id?: string | null
+          expense_type?: 'inward' | 'company' | null
         }
         Update: {
           account_id?: string | null
@@ -186,6 +190,8 @@ export type Database = {
           status?: string
           tds_amount?: number | null
           vendor_name?: string | null
+          inward_id?: string | null
+          expense_type?: 'inward' | 'company' | null
         }
         Relationships: [
           {
@@ -519,8 +525,13 @@ export type Database = {
           id: string
           invoice_date: string | null
           invoice_no: string
+          invoice_type?: string | null
+          inward_id?: string | null
+          previous_invoice_id?: string | null
+          previous_balance_amount?: number | null
           items: Json | null
           notes: string | null
+          clauses?: Json | null
           paid_amount: number | null
           project_id: string | null
           quotation_id: string | null
@@ -543,8 +554,13 @@ export type Database = {
           id?: string
           invoice_date?: string | null
           invoice_no?: string
+          invoice_type?: string | null
+          inward_id?: string | null
+          previous_invoice_id?: string | null
+          previous_balance_amount?: number | null
           items?: Json | null
           notes?: string | null
+          clauses?: Json | null
           paid_amount?: number | null
           project_id?: string | null
           quotation_id?: string | null
@@ -567,8 +583,13 @@ export type Database = {
           id?: string
           invoice_date?: string | null
           invoice_no?: string
+          invoice_type?: string | null
+          inward_id?: string | null
+          previous_invoice_id?: string | null
+          previous_balance_amount?: number | null
           items?: Json | null
           notes?: string | null
+          clauses?: Json | null
           paid_amount?: number | null
           project_id?: string | null
           quotation_id?: string | null
@@ -612,6 +633,13 @@ export type Database = {
             columns: ["quotation_id"]
             isOneToOne: false
             referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_inward_id_fkey"
+            columns: ["inward_id"]
+            isOneToOne: false
+            referencedRelation: "job_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -819,6 +847,7 @@ export type Database = {
           status: string
           subtotal: number | null
           terms: string | null
+          clauses?: Json | null
           total_amount: number | null
           valid_until: string | null
         }
@@ -841,6 +870,7 @@ export type Database = {
           status?: string
           subtotal?: number | null
           terms?: string | null
+          clauses?: Json | null
           total_amount?: number | null
           valid_until?: string | null
         }
@@ -863,6 +893,7 @@ export type Database = {
           status?: string
           subtotal?: number | null
           terms?: string | null
+          clauses?: Json | null
           total_amount?: number | null
           valid_until?: string | null
         }
@@ -893,6 +924,57 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "accounting_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_templates: {
+        Row: {
+          id: string
+          branch_id: string | null
+          name: string
+          category: string
+          is_default: boolean
+          clauses: Json
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          branch_id?: string | null
+          name: string
+          category?: string
+          is_default?: boolean
+          clauses?: Json
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          branch_id?: string | null
+          name?: string
+          category?: string
+          is_default?: boolean
+          clauses?: Json
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_templates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

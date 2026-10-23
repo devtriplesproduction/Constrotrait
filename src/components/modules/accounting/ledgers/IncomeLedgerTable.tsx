@@ -1,0 +1,453 @@
+"use client";
+
+import React, { useState, useMemo } from "react";
+import {
+  Search,
+  Download,
+  Printer,
+  TrendingUp,
+  Landmark,
+  Package,
+  Eye,
+  CheckCircle2,
+  Calendar,
+  CreditCard,
+  Building,
+  User,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+interface IncomeLedgerTableProps {
+  incomeEntries: any[];
+  onViewReceipt?: (receipt: any) => void;
+  onRefresh?: () => void;
+}
+
+const fmt = (n: number) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+
+export function IncomeLedgerTable({
+  incomeEntries = [],
+  onViewReceipt,
+  onRefresh,
+}: IncomeLedgerTableProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "inward" | "direct">("all");
+  const [paymentModeFilter, setPaymentModeFilter] = useState("all");
+  const [accountFilter, setAccountFilter] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  // Extract unique accounts
+  const accounts = useMemo(() => {
+    const set = new Set<string>();
+    incomeEntries.forEach((r) => {
+      if (r.account_name) set.add(r.account_name);
+    });
+    return Array.from(set).sort();
+  }, [incomeEntries]);
+
+  // Filtered income entries
+  const filtered = useMemo(() => {
+    return incomeEntries.filter((r) => {
+      // Type filter
+      const isInward = !!r.inward_id || !!r.inward_uid;
+      if (typeFilter === "inward" && !isInward) return false;
+      if (typeFilter === "direct" && isInward) return false;
+
+      // Mode filter
+      if (paymentModeFilter !== "all" && r.payment_mode !== paymentModeFilter) return false;
+
+      // Account filter
+      if (accountFilter !== "all" && r.account_name !== accountFilter) return false;
+
+      // Date range filter
+      const date = r.date || (r.created_at ? r.created_at.slice(0, 10) : "");
+      if (fromDate && date < fromDate) return false;
+      if (toDate && date > toDate) return false;
+
+      // Search term
+      if (!searchTerm.trim()) return true;
+      const q = searchTerm.toLowerCase();
+      const voucherMatch = (r.voucher_no || "").toLowerCase().includes(q);
+      const partyMatch = (r.party_name || "").toLowerCase().includes(q);
+      const uidMatch = (r.inward_uid || "").toLowerCase().includes(q);
+      const particularsMatch = (r.particulars || "").toLowerCase().includes(q);
+
+      return voucherMatch || partyMatch || uidMatch || particularsMatch;
+    });
+  }, [incomeEntries, typeFilter, paymentModeFilter, accountFilter, fromDate, toDate, searchTerm]);
+
+  // Summary Metrics
+  const summary = useMemo(() => {
+    let total = 0;
+    let inwardIncome = 0;
+    let directIncome = 0;
+    let cashIncome = 0;
+    let bankIncome = 0;
+
+    filtered.forEach((r) => {
+      const amt = Number(r.amount || 0);
+      total += amt;
+      if (r.inward_id || r.inward_uid) inwardIncome += amt;
+      else directIncome += amt;
+
+      if (r.payment_mode === "cash") cashIncome += amt;
+      else bankIncome += amt;
+    });
+
+    return { total, inwardIncome, directIncome, cashIncome, bankIncome };
+  }, [filtered]);
+
+  // Export CSV
+  const handleExportCSV = () => {
+    if (filtered.length === 0) return;
+    const headers = [
+      "Date",
+      "Voucher / Receipt No",
+      "Type",
+      "Inward UID",
+      "Party / Client",
+      "Account / Bank",
+      "Payment Mode",
+      "Particulars",
+      "Credit Amount (INR)",
+      "GST",
+      "TDS",
+      "Status",
+    ];
+
+    const rows = filtered.map((r) => {
+      return [
+        `"${r.date || ""}"`,
+        `"${r.voucher_no || ""}"`,
+        `"${r.type_label || (r.inward_id ? "Inward Receipt" : "Direct Receipt")}"`,
+        `"${r.inward_uid || ""}"`,
+        `"${r.party_name || ""}"`,
+        `"${r.account_name || ""}"`,
+        `"${r.payment_mode || ""}"`,
+        `"${(r.particulars || "").replace(/"/g, '""')}"`,
+        Number(r.amount || 0),
+        Number(r.gst_amount || 0),
+        Number(r.tds_amount || 0),
+        `"${r.status || "received"}"`,
+      ].join(",");
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Income_Ledger_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-4.5 bg-white rounded-2xl border border-slate-200 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Total Recorded Inflows
+            </span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl font-black text-slate-900 mt-2">{fmt(summary.total)}</div>
+          <span className="text-[11px] text-slate-500">All cleared credit transactions</span>
+        </div>
+
+        <div className="p-4.5 bg-white rounded-2xl border border-blue-200 bg-blue-50/20 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+              Inward Testing Revenue
+            </span>
+            <div className="p-2 rounded-xl bg-blue-100 text-blue-700">
+              <Package className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl font-black text-blue-900 mt-2">{fmt(summary.inwardIncome)}</div>
+          <span className="text-[11px] text-blue-600 font-medium">Job advances & invoiced collections</span>
+        </div>
+
+        <div className="p-4.5 bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+              Bank & Digital Inflows
+            </span>
+            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+              <Landmark className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl font-black text-emerald-900 mt-2">{fmt(summary.bankIncome)}</div>
+          <span className="text-[11px] text-emerald-600 font-medium">NEFT, RTGS, UPI & Cheques</span>
+        </div>
+
+        <div className="p-4.5 bg-white rounded-2xl border border-amber-200 bg-amber-50/20 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">
+              Cash Counter Inflows
+            </span>
+            <div className="p-2 rounded-xl bg-amber-100 text-amber-700">
+              <CreditCard className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl font-black text-amber-900 mt-2">{fmt(summary.cashIncome)}</div>
+          <span className="text-[11px] text-amber-600 font-medium">Physical cash receipts</span>
+        </div>
+      </div>
+
+      {/* Filter and Control Bar */}
+      <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4">
+        {/* Type Toggle & Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
+            <button
+              onClick={() => setTypeFilter("all")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                typeFilter === "all"
+                  ? "bg-white text-slate-900 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              All Inflows ({incomeEntries.length})
+            </button>
+            <button
+              onClick={() => setTypeFilter("inward")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                typeFilter === "inward"
+                  ? "bg-white text-blue-700 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Inward Linked</span>
+            </button>
+            <button
+              onClick={() => setTypeFilter("direct")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                typeFilter === "direct"
+                  ? "bg-white text-emerald-700 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Landmark className="w-3.5 h-3.5" />
+              <span>Direct Receipts</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+              className="h-8.5 px-3 text-xs font-semibold gap-1.5 text-slate-700"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export CSV</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="h-8.5 px-3 text-xs font-semibold gap-1.5 text-slate-700"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Secondary Filter Bar */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-1 border-t border-slate-100">
+          <div className="relative md:col-span-2">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              placeholder="Search by receipt no, party, UID, particulars..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-8.5 text-xs bg-slate-50/50"
+            />
+          </div>
+
+          <div>
+            <select
+              value={paymentModeFilter}
+              onChange={(e) => setPaymentModeFilter(e.target.value)}
+              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none"
+            >
+              <option value="all">All Payment Modes</option>
+              <option value="cash">Cash</option>
+              <option value="bank">Bank Transfer / NEFT</option>
+              <option value="upi">UPI</option>
+              <option value="cheque">Cheque</option>
+              <option value="rtgs">RTGS</option>
+            </select>
+          </div>
+
+          <div>
+            <select
+              value={accountFilter}
+              onChange={(e) => setAccountFilter(e.target.value)}
+              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none"
+            >
+              <option value="all">All Accounts / Banks</option>
+              {accounts.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Input
+              type="date"
+              placeholder="From"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="h-8.5 text-[11px] px-2 bg-slate-50/50"
+            />
+            <span className="text-slate-400 text-xs">-</span>
+            <Input
+              type="date"
+              placeholder="To"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="h-8.5 text-[11px] px-2 bg-slate-50/50"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Ledger Table */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200">
+                <th className="py-3 px-3.5">Date</th>
+                <th className="py-3 px-3.5">Voucher / Receipt No</th>
+                <th className="py-3 px-3.5">Type & Inward Ref</th>
+                <th className="py-3 px-3.5">Client / Party</th>
+                <th className="py-3 px-3.5">Deposited Account</th>
+                <th className="py-3 px-3.5">Payment Mode</th>
+                <th className="py-3 px-3.5">Particulars</th>
+                <th className="py-3 px-3.5 text-right">Credit Amount (₹)</th>
+                <th className="py-3 px-3.5 text-center">Status</th>
+                <th className="py-3 px-3.5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-700">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-slate-400 font-medium">
+                    No income ledger entries match the selected filters.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((r) => {
+                  const isInward = !!r.inward_id || !!r.inward_uid;
+
+                  return (
+                    <tr key={r.id} className="hover:bg-slate-50/80 transition-colors group">
+                      {/* Date */}
+                      <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-900">
+                        {r.date || (r.created_at ? r.created_at.slice(0, 10) : "N/A")}
+                      </td>
+
+                      {/* Voucher No */}
+                      <td className="py-3 px-3.5 whitespace-nowrap font-mono text-[11px] text-blue-700 font-bold">
+                        {r.voucher_no || `REC-${r.id.slice(0, 6).toUpperCase()}`}
+                      </td>
+
+                      {/* Type & Inward Ref */}
+                      <td className="py-3 px-3.5">
+                        {isInward ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                              <Package className="w-3 h-3 text-blue-600" />
+                              <span>{r.inward_uid || "INWARD"}</span>
+                            </span>
+                            {r.project_name && (
+                              <div className="text-[10px] text-slate-500 truncate max-w-[130px]">
+                                {r.project_name}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <Landmark className="w-3 h-3 text-emerald-600" />
+                            <span>DIRECT RECEIPT</span>
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Client / Party */}
+                      <td className="py-3 px-3.5 font-semibold text-slate-800">
+                        {r.party_name || "—"}
+                      </td>
+
+                      {/* Deposited Account */}
+                      <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-700">
+                        {r.account_name || "Cash Drawer"}
+                      </td>
+
+                      {/* Mode */}
+                      <td className="py-3 px-3.5 whitespace-nowrap">
+                        <span className="inline-block uppercase text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                          {r.payment_mode || "CASH"}
+                        </span>
+                      </td>
+
+                      {/* Particulars */}
+                      <td className="py-3 px-3.5 max-w-[200px] truncate text-slate-600">
+                        {r.particulars || "—"}
+                      </td>
+
+                      {/* Credit Amount */}
+                      <td className="py-3 px-3.5 whitespace-nowrap text-right font-black text-emerald-700 text-sm">
+                        {fmt(r.amount)}
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3 px-3.5 whitespace-nowrap text-center">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Received</span>
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3 px-3.5 whitespace-nowrap text-right">
+                        {onViewReceipt && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onViewReceipt(r.receipt_id ? { id: r.receipt_id } : r)}
+                            className="h-7 px-2 text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1" />
+                            View
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

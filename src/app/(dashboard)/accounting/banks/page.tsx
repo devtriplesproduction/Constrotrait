@@ -5,7 +5,7 @@ import { AccountingClient } from "@/components/modules/accounting/AccountingClie
 import { getAccountingDashboard } from "@/services/accounting.service";
 
 export const metadata = {
-  title: "Bank & Cash Accounts | Accounting | ConstroTrait",
+  title: "Bank & Cash Accounts | ConstroTrait",
   description: "Track bank accounts, cash accounts, and ledger balances.",
 };
 

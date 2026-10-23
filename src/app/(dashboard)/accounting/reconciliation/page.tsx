@@ -5,7 +5,7 @@ import { AccountingClient } from "@/components/modules/accounting/AccountingClie
 import { getAccountingDashboard } from "@/services/accounting.service";
 
 export const metadata = {
-  title: "Bank Reconciliation | Accounting | ConstroTrait",
+  title: "Bank Reconciliation | ConstroTrait",
   description: "Reconcile bank statements against ERP balances.",
 };
 

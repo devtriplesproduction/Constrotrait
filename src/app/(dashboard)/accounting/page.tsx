@@ -5,7 +5,7 @@ import { AccountingClient } from "@/components/modules/accounting/AccountingClie
 import { getAccountingDashboard } from "@/services/accounting.service";
 
 export const metadata = {
-  title: "Accounting | ConstroTrait",
+  title: "Dashboard | ConstroTrait",
   description: "Project finance, receipts, expenses, invoices and reports.",
 };
 

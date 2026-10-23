@@ -15,6 +15,9 @@ import {
   Landmark,
   Scale,
   BarChart3,
+  Scroll,
+  CreditCard,
+  BookOpen,
 } from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
 import { canManageTestMaster, canManageClientsAndJobs, canViewAccounting } from "@/config/roles";
@@ -84,9 +87,9 @@ export function AdminSidebar({ isOpen, setIsOpen, role, roles }: AdminSidebarPro
       subLinks: [
         { title: "Dashboard", href: "/accounting", icon: LayoutDashboard },
         { title: "Quotations", href: "/accounting/quotations", icon: FileText },
-        { title: "Receipts", href: "/accounting/receipts", icon: Receipt },
-        { title: "Expenses", href: "/accounting/expenses", icon: Banknote },
-        { title: "Invoices", href: "/accounting/invoices", icon: FileText },
+        { title: "T&C Templates", href: "/accounting/templates", icon: Scroll },
+        { title: "Billings & Collection", href: "/accounting/billing", icon: CreditCard },
+        { title: "Ledgers", href: "/accounting/ledgers", icon: BookOpen },
         { title: "Banks", href: "/accounting/banks", icon: Landmark },
         { title: "Reconciliation", href: "/accounting/reconciliation", icon: Scale },
         { title: "Reports", href: "/accounting/reports", icon: BarChart3 },
