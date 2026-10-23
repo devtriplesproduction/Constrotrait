@@ -275,7 +275,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           </View>
         </View>
 
-        {/* TESTING REQUIRED TABLE */}
+
         <View style={styles.table}>
           <View style={[styles.row, { padding: 4, justifyContent: 'center' }]}>
             <Text style={[styles.bold, styles.textCenter, { width: '100%' }]}>TESTING REQUIRED</Text>
