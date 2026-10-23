@@ -55,8 +55,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   headerTitle: {
-    fontSize: 12,
-    fontWeight: 600,
+    fontFamily: 'Times-Bold',
+    fontSize: 13.5,
+    fontWeight: 'bold',
     textAlign: 'center',
     padding: 5
   },
@@ -89,6 +90,9 @@ interface JobCardData {
   job?: any;
   client: any;
   jobEntry?: any;
+  logoUrl?: string;
+  preparedBySignUrl?: string;
+  approvedBySignUrl?: string;
 }
 
 const formatDate = (dateStr: string | null | undefined) => {
@@ -104,7 +108,7 @@ const formatSampleCode = (code: string) => {
 };
 
 export const JobCardPDF = ({ data }: { data: JobCardData }) => {
-  const { jobs, originalJob, job: fallbackJob, client } = data;
+  const { jobs, originalJob, job: fallbackJob, client, logoUrl, preparedBySignUrl, approvedBySignUrl } = data;
   
   const targetJobs = jobs && jobs.length > 0 ? jobs : (originalJob ? [originalJob] : (fallbackJob ? [fallbackJob] : []));
   const primaryJob = targetJobs[0] || {};
@@ -159,8 +163,9 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
         
         {/* HEADER SECTION */}
         <View style={styles.table}>
-          <View style={[styles.row, { padding: 5, justifyContent: 'center' }]}>
-            <Text style={styles.headerTitle}>CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI</Text>
+          <View style={[styles.row, { minHeight: 46, paddingVertical: 3, paddingHorizontal: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', position: 'relative' }]}>
+            <Image src={logoUrl || "/CMTS LOGO.png"} style={{ width: 38, height: 38, objectFit: 'contain', position: 'absolute', left: 8 }} />
+            <Text style={[styles.headerTitle, { fontFamily: 'Times-Bold', fontSize: 13.5, fontWeight: 'bold', flex: 1, textAlign: 'center', marginHorizontal: 45 }]}>CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI</Text>
           </View>
           <View style={styles.row}>
             <View style={[styles.cell, { width: '70%' }]}>
@@ -208,21 +213,15 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             </View>
           </View>
 
-          {/* Row 3 & 4 */}
-          <View style={[styles.row, { minHeight: 76 }]}>
-            <View style={{ width: '50%', flexDirection: 'column', borderRightWidth: 1, borderColor: '#000' }}>
-              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 3, borderBottomWidth: 1, borderColor: '#000', justifyContent: 'center', minHeight: 38 }}>
-                <Text>3. Name of site / Project / Division:</Text>
-                <Text style={styles.bold}>
-                  {client?.site_name || ''}
-                  {client?.project_name ? ` / ${client.project_name}` : ''}
-                  {client?.division ? ` / ${client.division}` : ''}
-                </Text>
-              </View>
-              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 3, justifyContent: 'center', minHeight: 38 }}>
-                <Text>4. Name of Dispatching the Report:</Text>
-                {(client?.dispatch_name || data.jobEntry?.dispatch_name) ? <Text style={styles.bold}>{client?.dispatch_name || data.jobEntry?.dispatch_name}</Text> : null}
-              </View>
+          {/* Row 3 */}
+          <View style={[styles.row, { minHeight: 46 }]}>
+            <View style={[styles.cell, { width: '50%' }]}>
+              <Text>3. Name of site / Project / Division:</Text>
+              <Text style={styles.bold}>
+                {client?.site_name || ''}
+                {client?.project_name ? ` / ${client.project_name}` : ''}
+                {client?.division ? ` / ${client.division}` : ''}
+              </Text>
             </View>
             <View style={{ width: '50%', flexDirection: 'column' }}>
               <View style={styles.subCell}>
@@ -234,35 +233,45 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
               <View style={styles.subCell}>
                 <Text>Phone/ Mobile : {client?.mobile || ''}</Text>
               </View>
-              <View style={styles.subCell}>
-                <Text>E-mail : {client?.email || ''}</Text>
-              </View>
             </View>
           </View>
 
-          {/* Row 5 */}
-          <View style={[styles.row, { minHeight: 38 }]}>
-            <View style={[styles.cell, { width: '50%' }]}>
-              <Text>5. Address of Dispatching the Report:</Text>
-              {(client?.dispatch_address || data.jobEntry?.dispatch_address) ? <Text style={styles.bold}>{client?.dispatch_address || data.jobEntry?.dispatch_address}</Text> : null}
+          {/* Row 4 & 5 - Dispatch Details */}
+          <View style={[styles.row, { minHeight: 64 }]}>
+            <View style={{ width: '50%', flexDirection: 'column', borderRightWidth: 1, borderColor: '#000' }}>
+              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 2, borderBottomWidth: 1, borderColor: '#000', justifyContent: 'center' }}>
+                <Text>4. Name of Dispatching the Report:</Text>
+                {(client?.dispatch_name || data.jobEntry?.dispatch_name) ? <Text style={styles.bold}>{client?.dispatch_name || data.jobEntry?.dispatch_name}</Text> : null}
+              </View>
+              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 2, justifyContent: 'center' }}>
+                <Text>5. Address of Dispatching the Report:</Text>
+                {(client?.dispatch_address || data.jobEntry?.dispatch_address) ? <Text style={styles.bold}>{client?.dispatch_address || data.jobEntry?.dispatch_address}</Text> : null}
+              </View>
             </View>
-            <View style={[styles.lastCell, { width: '50%' }]}>
-              <Text>Mode of Dispatch of Report : {client?.dispatch_mode || client?.dispatch_method || client?.collected_by || data.jobEntry?.collected_by || ''}</Text>
+            <View style={{ width: '50%', flexDirection: 'column' }}>
+              <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000', minHeight: 18, justifyContent: 'center' }]}>
+                <Text>E-mail : {client?.email || ''}</Text>
+              </View>
+              <View style={[styles.subCell, { flex: 1, justifyContent: 'flex-start', paddingTop: 3 }]}>
+                <Text>Mode of Dispatch of Report : {client?.dispatch_mode || client?.dispatch_method || client?.collected_by || data.jobEntry?.collected_by || ''}</Text>
+              </View>
             </View>
           </View>
 
           {/* Row 6 */}
           <View style={[styles.row, { minHeight: 18 }]}>
-            <View style={[styles.lastCell, { flex: 1 }]}>
-              <Text>TESTING REQUIRED ON :</Text>
+            <View style={[styles.cell, { width: '50%' }]}>
+              <Text>TESTING REQURIED ON :</Text>
             </View>
+            <View style={[styles.lastCell, { width: '50%' }]} />
           </View>
 
           {/* Row 7 */}
           <View style={[styles.lastRow, { minHeight: 18 }]}>
-            <View style={[styles.lastCell, { flex: 1 }]}>
+            <View style={[styles.cell, { width: '50%' }]}>
               <Text>CUSTOMER REFERENCE NO : {data.jobEntry?.letter_reference || ''}</Text>
             </View>
+            <View style={[styles.lastCell, { width: '50%' }]} />
           </View>
         </View>
 
@@ -409,11 +418,11 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           <View style={[styles.lastRow, { minHeight: 45 }]}>
             <View style={[styles.cell, { width: '25%', justifyContent: 'flex-end', paddingBottom: 5 }]}><Text style={styles.textCenter}>Issue Date: 20.01.2023</Text></View>
             <View style={[styles.cell, { width: '37.5%', justifyContent: 'flex-end', paddingBottom: 5 }]}>
-              <Image src="/Sanket_sir-removebg-preview.png" style={{ width: 60, height: 30, objectFit: 'contain', marginBottom: 2 }} />
+              <Image src={preparedBySignUrl || "/Sanket_sir-removebg-preview.png"} style={{ width: 60, height: 30, objectFit: 'contain', marginBottom: 2 }} />
               <Text>Prepared by:</Text>
             </View>
             <View style={[styles.lastCell, { width: '37.5%', justifyContent: 'flex-end', paddingBottom: 5 }]}>
-              <Image src="/MUKUND_GAIKWAD_SIGN-removebg-preview.png" style={{ width: 60, height: 30, objectFit: 'contain', marginBottom: 2 }} />
+              <Image src={approvedBySignUrl || "/MUKUND_GAIKWAD_SIGN-removebg-preview.png"} style={{ width: 60, height: 30, objectFit: 'contain', marginBottom: 2 }} />
               <Text>Reviewed & Approved by:</Text>
             </View>
           </View>

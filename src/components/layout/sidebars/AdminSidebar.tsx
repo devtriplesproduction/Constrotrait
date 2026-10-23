@@ -10,6 +10,7 @@ import {
   CalendarDays,
   Banknote,
   UserSquare,
+  /*
   Receipt,
   FileText,
   Landmark,
@@ -18,9 +19,10 @@ import {
   Scroll,
   CreditCard,
   BookOpen,
+  */
 } from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
-import { canManageTestMaster, canManageClientsAndJobs, canViewAccounting } from "@/config/roles";
+import { canManageTestMaster, canManageClientsAndJobs /*, canViewAccounting */ } from "@/config/roles";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -80,6 +82,8 @@ export function AdminSidebar({ isOpen, setIsOpen, role, roles }: AdminSidebarPro
     adminLinks.push({ title: "Payroll", href: "/hr/payroll", icon: Banknote });
   }
 
+  /*
+  // Hidden from sidebar as requested
   if (canViewAccounting(roleArray)) {
     adminLinks.push({
       title: "Accounting",
@@ -96,6 +100,7 @@ export function AdminSidebar({ isOpen, setIsOpen, role, roles }: AdminSidebarPro
       ],
     });
   }
+  */
 
   return <BaseSidebar links={adminLinks} isOpen={isOpen} setIsOpen={setIsOpen} />;
 }

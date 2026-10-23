@@ -34,6 +34,7 @@ export function DownloadAllotmentButton({ testGroup, uid, assignments, currentUs
     uid,
     assignments,
     currentUser: currentUserProfile,
+    logoUrl: "/CMTS LOGO.png",
   };
 
   const handleDownload = async () => {
