@@ -1,3 +1,5 @@
+"use client";
+
 import React, { forwardRef } from "react";
 import { cn } from "@/lib/utils/cn";
 import { Select, SelectItem } from "./select";
@@ -23,6 +25,8 @@ export interface DropdownProps {
   iconClassName?: string;
   align?: "left" | "right";
   isClearable?: boolean;
+  isSearchable?: boolean;
+  searchPlaceholder?: string;
 }
 
 export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
@@ -43,6 +47,8 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
       iconClassName,
       align,
       isClearable,
+      isSearchable,
+      searchPlaceholder,
     },
     ref
   ) => {
@@ -70,6 +76,8 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
           iconClassName={iconClassName}
           align={align}
           isClearable={isClearable}
+          isSearchable={isSearchable}
+          searchPlaceholder={searchPlaceholder}
         >
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>

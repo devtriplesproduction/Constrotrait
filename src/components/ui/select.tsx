@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, Check, X } from "lucide-react";
+import { ChevronDown, Check, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -40,6 +40,8 @@ export interface SelectProps {
   isSearchable?: boolean;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
+  searchInMenu?: boolean;
 }
 
 const SelectContext = React.createContext<{
@@ -49,11 +51,30 @@ const SelectContext = React.createContext<{
   setOpen: (open: boolean) => void;
 } | null>(null);
 
-export function Select({ value, onValueChange, placeholder, children, className, buttonClassName, disabled, id, iconClassName, align = "left", isClearable = false, isSearchable = false, searchValue, onSearchChange }: SelectProps) {
+export function Select({
+  value,
+  onValueChange,
+  placeholder,
+  children,
+  className,
+  buttonClassName,
+  disabled,
+  id,
+  iconClassName,
+  align = "left",
+  isClearable = false,
+  isSearchable = false,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder = "Search...",
+  searchInMenu = true,
+}: SelectProps) {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
   const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0, right: 0 });
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const [menuSearchQuery, setMenuSearchQuery] = React.useState("");
 
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -96,17 +117,36 @@ export function Select({ value, onValueChange, placeholder, children, className,
   }, []);
 
   React.useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setMenuSearchQuery("");
+      return;
+    }
+    updateCoords();
+    const timer = setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 50);
+
     const handleScrollOrResize = () => {
       updateCoords();
     };
     window.addEventListener("scroll", handleScrollOrResize, { capture: true });
     window.addEventListener("resize", handleScrollOrResize);
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("scroll", handleScrollOrResize, { capture: true });
       window.removeEventListener("resize", handleScrollOrResize);
     };
   }, [open]);
+
+  const isSelectItem = (child: React.ReactNode): boolean => {
+    if (!React.isValidElement(child)) return false;
+    const props = child.props as any;
+    if (props && props.value !== undefined) return true;
+    if (child.type === SelectItem) return true;
+    if ((child.type as any)?.displayName === "SelectItem") return true;
+    if ((child.type as any)?.name === "SelectItem") return true;
+    return false;
+  };
 
   const findSelectedChild = (nodes: React.ReactNode, val: string | undefined): React.ReactElement<{ children: React.ReactNode }> | undefined => {
     let found: React.ReactElement | undefined;
@@ -116,7 +156,7 @@ export function Select({ value, onValueChange, placeholder, children, className,
         const props = child.props as { value?: unknown; children?: React.ReactNode };
         if (props.value !== undefined && props.value === val) {
           found = child as React.ReactElement;
-        } else if (props.children) {
+        } else if (props.children && !isSelectItem(child)) {
           found = findSelectedChild(props.children, val);
         }
       }
@@ -125,6 +165,65 @@ export function Select({ value, onValueChange, placeholder, children, className,
   };
 
   const selectedChild = findSelectedChild(children, value);
+
+  const countVisibleItems = (nodes: React.ReactNode): number => {
+    let count = 0;
+    React.Children.forEach(nodes, (child) => {
+      if (!child) return;
+      if (React.isValidElement(child)) {
+        if (isSelectItem(child)) {
+          count++;
+        } else if ((child.props as any)?.children) {
+          count += countVisibleItems((child.props as any).children);
+        } else {
+          count++;
+        }
+      }
+    });
+    return count;
+  };
+
+  // Filter children based on search query inside menu
+  const filterChildren = (nodes: React.ReactNode, query: string): React.ReactNode => {
+    if (!query.trim()) return nodes;
+    const lower = query.toLowerCase().trim();
+
+    return React.Children.map(nodes, (child) => {
+      if (!React.isValidElement(child)) return child;
+
+      const props = child.props as any;
+      if (isSelectItem(child)) {
+        const label = typeof props.children === "string" 
+          ? props.children 
+          : (props.value !== undefined ? String(props.value) : "");
+        
+        const valueStr = props.value !== undefined ? String(props.value) : "";
+
+        if (label.toLowerCase().includes(lower) || valueStr.toLowerCase().includes(lower)) {
+          return child;
+        }
+        return null;
+      }
+
+      if (child.type === SelectGroup || props.children) {
+        const filteredGroupChildren = filterChildren(props.children, query);
+        if (countVisibleItems(filteredGroupChildren) === 0) return null;
+        return React.cloneElement(child, {}, filteredGroupChildren);
+      }
+
+      return null;
+    });
+  };
+
+  const isMenuSearchActive = isSearchable && (searchInMenu || (searchValue === undefined && onSearchChange === undefined));
+  const isFiltering = isMenuSearchActive && Boolean(menuSearchQuery.trim());
+  const renderedChildren = isFiltering
+    ? filterChildren(children, menuSearchQuery)
+    : children;
+
+  const visibleCount = isFiltering
+    ? countVisibleItems(renderedChildren)
+    : (countVisibleItems(children) || React.Children.count(children));
 
   const dropdown = (
     <AnimatePresence>
@@ -139,22 +238,78 @@ export function Select({ value, onValueChange, placeholder, children, className,
             position: "absolute",
             top: coords.top,
             ...(align === "right" ? { right: coords.right } : { left: coords.left }),
-            minWidth: Math.max(coords.width, 140),
+            minWidth: Math.max(coords.width, 200),
             zIndex: 99999
           }}
           id="select-portal-container"
           className={cn(
             "z-[99999] rounded-xl overflow-hidden",
-            "bg-white border border-slate-200/60",
-            "shadow-[0_10px_38px_-10px_rgba(22,23,36,0.1),0_10px_20px_-15px_rgba(22,23,36,0.1)] flex flex-col"
+            "bg-white border border-slate-200/80",
+            "shadow-[0_12px_40px_-10px_rgba(22,23,36,0.12),0_4px_16px_-4px_rgba(22,23,36,0.08)] flex flex-col"
           )}
         >
+          {isMenuSearchActive && (
+            <div className="p-2 border-b border-slate-100 bg-white sticky top-0 z-10">
+              <div className="relative flex items-center">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder={searchPlaceholder}
+                  value={menuSearchQuery}
+                  onChange={(e) => setMenuSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 text-slate-800 placeholder:text-slate-400 transition-all"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === "Escape") {
+                      setOpen(false);
+                    } else if (e.key === "Enter") {
+                      e.preventDefault();
+                      const findFirstItem = (nodes: React.ReactNode): string | null => {
+                        let result: string | null = null;
+                        React.Children.forEach(nodes, (c) => {
+                          if (result !== null || !React.isValidElement(c)) return;
+                          if (isSelectItem(c)) {
+                            result = (c.props as any).value;
+                          } else if ((c.props as any)?.children) {
+                            result = findFirstItem((c.props as any).children);
+                          }
+                        });
+                        return result;
+                      };
+                      const firstVal = findFirstItem(renderedChildren);
+                      if (firstVal !== null) {
+                        onValueChange(firstVal);
+                        setOpen(false);
+                      }
+                    }
+                  }}
+                />
+                {menuSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuSearchQuery("");
+                      searchInputRef.current?.focus();
+                    }}
+                    className="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="p-1.5 flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent" style={{ maxHeight: "16rem" }}>
-            {React.Children.count(children) > 0 ? (
-              children
+            {visibleCount > 0 ? (
+              renderedChildren
             ) : (
-              <div className="px-3 py-4 text-center text-sm text-slate-500 ">
-                No options available
+              <div className="px-3 py-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center gap-1.5">
+                <Search className="w-4 h-4 text-slate-300" />
+                <span>{menuSearchQuery ? `No options matching "${menuSearchQuery}"` : "No options available"}</span>
               </div>
             )}
           </div>
@@ -162,6 +317,8 @@ export function Select({ value, onValueChange, placeholder, children, className,
       )}
     </AnimatePresence>
   );
+
+  const isLegacySearchInput = isSearchable && !isMenuSearchActive;
 
   return (
     <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
@@ -179,7 +336,7 @@ export function Select({ value, onValueChange, placeholder, children, className,
             buttonClassName
           )}
         >
-          {isSearchable ? (
+          {isLegacySearchInput ? (
             <input
               type="text"
               className={cn("w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-sm truncate", (!value && !open && !searchValue) ? "text-slate-400 font-normal" : "text-slate-700")}
@@ -201,7 +358,7 @@ export function Select({ value, onValueChange, placeholder, children, className,
               }}
             />
           ) : (
-            <span className={cn("truncate", !value && "text-slate-400  font-normal")}>
+            <span className={cn("truncate", !value && "text-slate-400 font-normal")}>
               {selectedChild ? selectedChild.props.children : placeholder}
             </span>
           )}
@@ -264,3 +421,5 @@ export function SelectItem({
   );
 }
 
+SelectItem.displayName = "SelectItem";
+SelectGroup.displayName = "SelectGroup";

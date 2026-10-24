@@ -29,7 +29,44 @@ const steps = [
   { id: "step5", title: "Test Details", icon: FileText },
 ];
 
+export function calculateTestingDate(castingDateStr?: string | null, testingDayStr?: string | null | number): string {
+  if (!castingDateStr || testingDayStr === undefined || testingDayStr === null || testingDayStr === "") return "";
 
+  const str = String(testingDayStr).trim();
+  const match = str.match(/(\d+)/);
+  if (!match) return "";
+
+  const daysToAdd = parseInt(match[1], 10);
+  if (isNaN(daysToAdd)) return "";
+
+  // Parse YYYY-MM-DD cleanly to avoid timezone shift
+  const cleanDate = castingDateStr.split("T")[0];
+  const parts = cleanDate.split("-");
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+      const date = new Date(year, month, day);
+      date.setDate(date.getDate() + daysToAdd);
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+  }
+
+  const date = new Date(cleanDate);
+  if (isNaN(date.getTime())) return "";
+  date.setDate(date.getDate() + daysToAdd);
+  return date.toISOString().split("T")[0];
+}
+
+export function parseTestingDaysList(testingDayStr?: string | null): string[] {
+  if (!testingDayStr) return [];
+  const matches = testingDayStr.match(/\d+/g);
+  return matches || [];
+}
 
 type TestMaster = Database["public"]["Tables"]["test_master"]["Row"];
 
@@ -55,7 +92,7 @@ export function ClientWizard({
   onSuccess,
   onClose,
 }: ClientWizardProps) {
-  const initialBranchId = 
+  const initialBranchId =
     (initialData?.jobEntryTest as any)?.job_entries?.branch_id ||
     initialData?.client?.branch_id ||
     (isSuperAdmin ? (branches[0]?.id || "") : (userBranchId || ""));
@@ -151,6 +188,7 @@ export function ClientWizard({
         testing_day: initialData.jobEntryTest.testing_day || "",
         grade: initialData.jobEntryTest.grade || "",
         date_of_casting: initialData.jobEntryTest.date_of_casting || "",
+        date_of_testing: initialData.jobEntryTest.date_of_testing || calculateTestingDate(initialData.jobEntryTest.date_of_casting, initialData.jobEntryTest.testing_day) || "",
         date_of_receiving: initialData.jobEntryTest.date_of_receiving || "",
       },
       selectedTestIds: initialData && initialData.jobEntryTest.test_master_id ? [initialData.jobEntryTest.test_master_id] : [],
@@ -160,7 +198,7 @@ export function ClientWizard({
         test_method: initialData.jobEntryTest.test_method || "",
         date_of_receiving: initialData.jobEntryTest.date_of_receiving || "",
         testing_age: initialData.jobEntryTest.testing_age || "",
-        date_of_testing: initialData.jobEntryTest.date_of_testing || "",
+        date_of_testing: initialData.jobEntryTest.date_of_testing || calculateTestingDate(initialData.jobEntryTest.date_of_casting, initialData.jobEntryTest.testing_day) || "",
         material_description: initialData.jobEntryTest.material_description || "",
         material_id: initialData.jobEntryTest.material_id || "",
         material_details_location: initialData.jobEntryTest.material_details_location || "",
@@ -176,7 +214,11 @@ export function ClientWizard({
       jobEntry: {
         branch_id: initialBranchId,
       },
-      materialDetails: {},
+      materialDetails: {
+        testing_day: "",
+        date_of_casting: "",
+        date_of_testing: "",
+      },
       client: {
         name: "",
         company_name: "",
@@ -310,14 +352,62 @@ export function ClientWizard({
     }
   }, [currentStep, availableTests.length, mode, initialData, setValue, selectedBranchId]);
 
+  const watchedCastingDate = watch("materialDetails.date_of_casting");
+  const watchedTestingDay = watch("materialDetails.testing_day");
+
+  const updateAllTestsFromMaterialDetails = React.useCallback((castingDate: string, testingDay: string) => {
+    if (!castingDate || !testingDay) return;
+    const daysList = parseTestingDaysList(testingDay);
+    const firstDay = daysList[0] || testingDay;
+    const commonTestingDate = calculateTestingDate(castingDate, firstDay);
+
+    if (commonTestingDate) {
+      setValue("materialDetails.date_of_testing", commonTestingDate, { shouldValidate: true, shouldDirty: true });
+    }
+
+    const currentTests = getValues("jobEntryTests") || [];
+    currentTests.forEach((test, idx) => {
+      const testDay = daysList[idx] || daysList[0] || testingDay;
+      const calcTestingDate = calculateTestingDate(castingDate, testDay);
+
+      if (calcTestingDate) {
+        setValue(`jobEntryTests.${idx}.date_of_testing`, calcTestingDate, { shouldValidate: true, shouldDirty: true });
+      }
+      setValue(`jobEntryTests.${idx}.date_of_casting`, castingDate, { shouldValidate: true, shouldDirty: true });
+      setValue(`jobEntryTests.${idx}.testing_day`, testDay, { shouldValidate: true, shouldDirty: true });
+
+      // If test has additional details, sync them as well
+      const testMaster = availableTests.find(t => t.id === test.test_master_id);
+      if (testMaster?.additional_details) {
+        testMaster.additional_details.forEach(detail => {
+          const lower = detail.toLowerCase();
+          if (lower.includes('casting')) {
+            setValue(`jobEntryTests.${idx}.additional_details_values.${detail}` as any, castingDate, { shouldValidate: true });
+          } else if (lower.includes('day') || lower.includes('age')) {
+            setValue(`jobEntryTests.${idx}.additional_details_values.${detail}` as any, testDay, { shouldValidate: true });
+          }
+        });
+      }
+    });
+  }, [availableTests, getValues, setValue]);
+
+  // Reactive effect: automatically generate testing date whenever casting date or testing day changes
+  useEffect(() => {
+    if (watchedCastingDate && watchedTestingDay) {
+      updateAllTestsFromMaterialDetails(watchedCastingDate, watchedTestingDay);
+    }
+  }, [watchedCastingDate, watchedTestingDay, updateAllTestsFromMaterialDetails]);
+
   const handleApplyToAll = (sourceIndex: number) => {
     const sourceTest = getValues(`jobEntryTests.${sourceIndex}`);
-    
+
     fields.forEach((field, targetIndex) => {
       if (targetIndex !== sourceIndex) {
         setValue(`jobEntryTests.${targetIndex}.material_description`, sourceTest.material_description, { shouldValidate: true });
         setValue(`jobEntryTests.${targetIndex}.date_of_testing`, sourceTest.date_of_testing, { shouldValidate: true });
-        
+        setValue(`jobEntryTests.${targetIndex}.testing_day`, sourceTest.testing_day, { shouldValidate: true });
+        setValue(`jobEntryTests.${targetIndex}.date_of_casting`, sourceTest.date_of_casting, { shouldValidate: true });
+
         if (sourceTest.additional_details_values) {
           Object.entries(sourceTest.additional_details_values).forEach(([key, value]) => {
             setValue(`jobEntryTests.${targetIndex}.additional_details_values.${key}` as any, value as string, { shouldValidate: true });
@@ -394,6 +484,10 @@ export function ClientWizard({
       const test = availableTests.find(t => t.id === id);
       if (!test) return;
 
+      if (!selectedMaterial && test.material_product) {
+        setSelectedMaterial(test.material_product);
+      }
+
       setValue("selectedTestIds", [...currentIds, id], { shouldValidate: true });
 
       const initialAdditionalDetails: Record<string, string> = {};
@@ -403,19 +497,25 @@ export function ClientWizard({
         });
       }
 
+      const globalCasting = getValues("materialDetails.date_of_casting") || "";
+      const globalTestingDay = getValues("materialDetails.testing_day") || "";
+      const daysList = parseTestingDaysList(globalTestingDay);
+      const testDay = daysList[fields.length] || daysList[0] || globalTestingDay;
+      const initialTestingDate = calculateTestingDate(globalCasting, testDay) || getValues("materialDetails.date_of_testing") || "";
+
       const newTestData = {
         test_master_id: test.id,
         test_name: test.component_parameter || test.specific_test || "",
         test_method: test.test_method || "",
         testing_age: "",
-        date_of_testing: "",
-        material_description: "",
-        material_id: "",
-        material_details_location: "",
-        sample_quantity: "",
-        testing_day: "",
-        grade: "",
-        date_of_casting: "",
+        date_of_testing: initialTestingDate,
+        material_description: test.material_product || "",
+        material_id: getValues("materialDetails.material_id") || "",
+        material_details_location: getValues("materialDetails.material_details_location") || "",
+        sample_quantity: getValues("materialDetails.sample_quantity") || "",
+        testing_day: testDay || "",
+        grade: getValues("materialDetails.grade") || "",
+        date_of_casting: globalCasting || "",
         additional_details_values: initialAdditionalDetails,
       };
 
@@ -433,8 +533,35 @@ export function ClientWizard({
 
     if (currentStep === 0 || currentStep === 1) {
       isValid = await trigger("client");
-    } else if (currentStep === 2 || currentStep === 3) {
+    } else if (currentStep === 2) {
       isValid = true;
+    } else if (currentStep === 3) {
+      isValid = true;
+      const mat = getValues("materialDetails");
+      const casting = mat?.date_of_casting || "";
+      const day = mat?.testing_day || "";
+      if (casting && day) {
+        updateAllTestsFromMaterialDetails(casting, day);
+      } else {
+        const currentTests = getValues("jobEntryTests") || [];
+        const daysList = parseTestingDaysList(day);
+        currentTests.forEach((test, idx) => {
+          const testDay = test.testing_day || daysList[idx] || daysList[0] || day || "";
+          const testCasting = test.date_of_casting || casting || "";
+          if (testDay) {
+            setValue(`jobEntryTests.${idx}.testing_day`, testDay, { shouldValidate: true });
+          }
+          if (testCasting) {
+            setValue(`jobEntryTests.${idx}.date_of_casting`, testCasting, { shouldValidate: true });
+          }
+          if (testCasting && testDay) {
+            const calcDate = calculateTestingDate(testCasting, testDay);
+            if (calcDate) {
+              setValue(`jobEntryTests.${idx}.date_of_testing`, calcDate, { shouldValidate: true });
+            }
+          }
+        });
+      }
     }
 
     if (isValid) {
@@ -953,6 +1080,9 @@ export function ClientWizard({
                           ]}
                           value={selectedMaterial}
                           onChange={(val) => setSelectedMaterial(val as string)}
+                          isSearchable={true}
+                          isClearable={true}
+                          searchPlaceholder="Search material..."
                           buttonClassName="h-11 rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 focus:bg-white transition-all cursor-pointer"
                           className="flex-1"
                         />
@@ -981,80 +1111,78 @@ export function ClientWizard({
                       </div>
 
                       <div className="flex flex-col gap-4 relative z-50 mt-2">
-                        {selectedMaterial ? (
-                          <>
-                            <div className="relative group">
-                              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors pointer-events-none" />
-                              <Input
-                                id="test-search-input"
-                                placeholder="Search and select tests by name, material, or method..."
-                                value={testSearchQuery}
-                                onChange={(e) => {
-                                  setTestSearchQuery(e.target.value);
-                                  setShowTestResults(true);
-                                }}
-                                onFocus={() => setShowTestResults(true)}
-                                onClick={() => setShowTestResults(true)}
-                                onBlur={() => setTimeout(() => setShowTestResults(false), 200)}
-                                className="pl-12 pr-10 h-11 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base cursor-text"
-                              />
-                              <div
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 cursor-pointer rounded-md hover:bg-slate-100 transition-colors"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  if (showTestResults) {
-                                    setShowTestResults(false);
-                                  } else {
-                                    setShowTestResults(true);
-                                    document.getElementById("test-search-input")?.focus();
-                                  }
-                                }}
-                              >
-                                <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform duration-200 ${showTestResults ? "rotate-180" : ""}`} />
-                              </div>
-                            </div>
+                        <div className="relative group">
+                          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors pointer-events-none" />
+                          <Input
+                            id="test-search-input"
+                            placeholder={selectedMaterial ? `Search tests for ${selectedMaterial} by name or method...` : "Search tests by name, material, or method..."}
+                            value={testSearchQuery}
+                            onChange={(e) => {
+                              setTestSearchQuery(e.target.value);
+                              setShowTestResults(true);
+                            }}
+                            onFocus={() => setShowTestResults(true)}
+                            onClick={() => setShowTestResults(true)}
+                            onBlur={() => setTimeout(() => setShowTestResults(false), 200)}
+                            className="pl-12 pr-10 h-11 rounded-xl bg-slate-50/50 border-slate-200 shadow-sm transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 text-base cursor-text"
+                          />
+                          <div
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 cursor-pointer rounded-md hover:bg-slate-100 transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (showTestResults) {
+                                setShowTestResults(false);
+                              } else {
+                                setShowTestResults(true);
+                                document.getElementById("test-search-input")?.focus();
+                              }
+                            }}
+                          >
+                            <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform duration-200 ${showTestResults ? "rotate-180" : ""}`} />
+                          </div>
+                        </div>
 
-                            {showTestResults && filteredTests.length > 0 && (
-                              <div
-                                className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl z-50 max-h-[350px] overflow-y-auto animate-in fade-in slide-in-from-top-2 ring-1 ring-slate-900/5"
-                              >
-                                <div className="p-1.5 flex flex-col gap-1">
-                                  {filteredTests.slice(0, 50).map((test) => (
-                                    <div
-                                      key={test.id}
-                                      onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        handleToggleTest(test.id);
-                                        setShowTestResults(false);
-                                        setTestSearchQuery("");
-                                      }}
-                                      className="group p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-all duration-200 flex flex-col gap-1.5"
-                                    >
-                                      <div className="font-semibold text-[14px] text-slate-700 group-hover:text-slate-900 transition-colors pl-1">{test.component_parameter || test.specific_test}</div>
-                                      <div className="flex gap-4 text-[11px] text-slate-500 font-medium pl-1">
-                                        <span className="flex items-center gap-1">
-                                          <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MAT</span>
-                                          <span className="text-slate-600 truncate max-w-[150px]" title={test.material_product}>{test.material_product}</span>
-                                        </span>
-                                        {test.test_method && (
-                                          <span className="flex items-center gap-1">
-                                            <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MTH</span>
-                                            <span className="text-slate-600 truncate max-w-[150px]" title={test.test_method}>{test.test_method}</span>
-                                          </span>
-                                        )}
-                                        {test.is_nabl && <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold ml-auto border border-emerald-100 uppercase tracking-wider text-[9px]">NABL</span>}
-                                      </div>
-                                    </div>
-                                  ))}
+                        {showTestResults && filteredTests.length > 0 && (
+                          <div
+                            className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl z-50 max-h-[350px] overflow-y-auto animate-in fade-in slide-in-from-top-2 ring-1 ring-slate-900/5"
+                          >
+                            <div className="p-1.5 flex flex-col gap-1">
+                              {filteredTests.slice(0, 50).map((test) => (
+                                <div
+                                  key={test.id}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    handleToggleTest(test.id);
+                                    setShowTestResults(false);
+                                    setTestSearchQuery("");
+                                  }}
+                                  className="group p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-all duration-200 flex flex-col gap-1.5"
+                                >
+                                  <div className="font-semibold text-[14px] text-slate-700 group-hover:text-slate-900 transition-colors pl-1">{test.component_parameter || test.specific_test}</div>
+                                  <div className="flex gap-4 text-[11px] text-slate-500 font-medium pl-1">
+                                    <span className="flex items-center gap-1">
+                                      <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MAT</span>
+                                      <span className="text-slate-600 truncate max-w-[150px]" title={test.material_product}>{test.material_product}</span>
+                                    </span>
+                                    {test.test_method && (
+                                      <span className="flex items-center gap-1">
+                                        <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MTH</span>
+                                        <span className="text-slate-600 truncate max-w-[150px]" title={test.test_method}>{test.test_method}</span>
+                                      </span>
+                                    )}
+                                    {test.is_nabl && <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold ml-auto border border-emerald-100 uppercase tracking-wider text-[9px]">NABL</span>}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </>
-                        ) : (
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {!selectedMaterial && selectedTestIds.length === 0 && !testSearchQuery && (
                           <div className="py-6 text-center flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
-                            <h3 className="text-slate-800 font-bold text-base mb-1">Select a Material</h3>
-                            <p className="text-slate-500 text-sm max-w-xs mx-auto">Please select a material first to see and search available tests.</p>
+                            <h3 className="text-slate-800 font-bold text-base mb-1">Select or Search a Material</h3>
+                            <p className="text-slate-500 text-sm max-w-xs mx-auto">Select a material from the dropdown above to filter tests, or type directly in the search bar.</p>
                           </div>
                         )}
                       </div>
@@ -1188,7 +1316,19 @@ export function ClientWizard({
                           </div>
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Day</label>
-                            <Input {...register(`materialDetails.testing_day`)} placeholder="e.g. 7, 28" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                            <Input
+                              {...register(`materialDetails.testing_day`)}
+                              placeholder="e.g. 7, 28"
+                              className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setValue(`materialDetails.testing_day`, val, { shouldValidate: true });
+                                const casting = getValues(`materialDetails.date_of_casting`);
+                                if (casting) {
+                                  updateAllTestsFromMaterialDetails(casting, val);
+                                }
+                              }}
+                            />
                           </div>
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Grade</label>
@@ -1200,11 +1340,33 @@ export function ClientWizard({
                               value={watch(`materialDetails.date_of_casting`)}
                               onChange={(val) => {
                                 setValue(`materialDetails.date_of_casting`, val, { shouldValidate: true });
+                                const day = getValues(`materialDetails.testing_day`);
+                                if (day) {
+                                  updateAllTestsFromMaterialDetails(val, day);
+                                }
                               }}
                               side="left"
                               triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
                             />
                           </div>
+                          {/* <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5 flex items-center justify-between">
+                              <span>Testing Date</span>
+                              <span className="text-[11px] font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100">Auto-generated & Editable</span>
+                            </label>
+                            <PremiumDatePicker
+                              value={watch(`materialDetails.date_of_testing`)}
+                              onChange={(val) => {
+                                setValue(`materialDetails.date_of_testing`, val, { shouldValidate: true });
+                                const currentTests = getValues("jobEntryTests") || [];
+                                currentTests.forEach((_, idx) => {
+                                  setValue(`jobEntryTests.${idx}.date_of_testing`, val, { shouldValidate: true });
+                                });
+                              }}
+                              side="left"
+                              triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
+                            />
+                          </div> */}
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Receiving</label>
                             <PremiumDatePicker
@@ -1292,16 +1454,16 @@ export function ClientWizard({
 
                             {mode !== "edit" && (
                               <div className="absolute right-4 top-4 flex gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                                    onClick={() => handleApplyToAll(index)}
-                                  >
-                                    <Copy className="w-4 h-4 mr-2" />
-                                    Apply to All
-                                  </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                  onClick={() => handleApplyToAll(index)}
+                                >
+                                  <Copy className="w-4 h-4 mr-2" />
+                                  Apply to All
+                                </Button>
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -1347,14 +1509,61 @@ export function ClientWizard({
                                 <Input {...register(`jobEntryTests.${index}.material_description`)} placeholder="Material Description" />
                               </div>
 
+                              {!testMaster?.additional_details?.some(d => d.toLowerCase().includes('testing day') || d.toLowerCase().includes('testing age')) && (
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Day</label>
+                                  <Input
+                                    value={watch(`jobEntryTests.${index}.testing_day`) || ""}
+                                    placeholder="e.g. 7 or 28"
+                                    className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white"
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setValue(`jobEntryTests.${index}.testing_day`, val, { shouldValidate: true });
+                                      const casting = watch(`jobEntryTests.${index}.date_of_casting`) || watch(`materialDetails.date_of_casting`);
+                                      if (casting) {
+                                        const newDate = calculateTestingDate(casting, val);
+                                        if (newDate) {
+                                          setValue(`jobEntryTests.${index}.date_of_testing`, newDate, { shouldValidate: true });
+                                        }
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              )}
+
+                              {!testMaster?.additional_details?.some(d => d.toLowerCase().includes('casting')) && (
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Casting Date</label>
+                                  <PremiumDatePicker
+                                    value={watch(`jobEntryTests.${index}.date_of_casting`) || watch(`materialDetails.date_of_casting`) || ""}
+                                    onChange={(val) => {
+                                      setValue(`jobEntryTests.${index}.date_of_casting`, val, { shouldValidate: true });
+                                      const day = watch(`jobEntryTests.${index}.testing_day`) || watch(`materialDetails.testing_day`);
+                                      if (day) {
+                                        const newDate = calculateTestingDate(val, day);
+                                        if (newDate) {
+                                          setValue(`jobEntryTests.${index}.date_of_testing`, newDate, { shouldValidate: true });
+                                        }
+                                      }
+                                    }}
+                                    side="left"
+                                    triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
+                                  />
+                                </div>
+                              )}
+
                               <div className="flex flex-col gap-1.5">
-                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Date of Testing</label>
+                                <label className="text-[13px] font-semibold text-slate-700 mb-0.5 flex items-center justify-between">
+                                  <span>Date of Testing</span>
+                                  <span className="text-[11px] font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100">Auto-generated & Editable</span>
+                                </label>
                                 <PremiumDatePicker
-                                  value={watch(`jobEntryTests.${index}.date_of_testing`)}
+                                  value={watch(`jobEntryTests.${index}.date_of_testing`) || watch(`materialDetails.date_of_testing`) || ""}
                                   onChange={(val) => {
-                                    setValue(`jobEntryTests.${index}.date_of_testing`, val, { shouldValidate: true });
+                                    setValue(`jobEntryTests.${index}.date_of_testing`, val, { shouldValidate: true, shouldDirty: true });
                                   }}
                                   side="left"
+                                  triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
                                 />
                               </div>
 
@@ -1387,7 +1596,19 @@ export function ClientWizard({
                                               value={watch(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any) || ""}
                                               onChange={(val) => {
                                                 setValue(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any, val, { shouldValidate: true });
-                                                // No testing date auto-calculation needed anymore
+                                                if (detailLabel.toLowerCase().includes('casting')) {
+                                                  setValue(`jobEntryTests.${index}.date_of_casting`, val, { shouldValidate: true });
+                                                  const day = watch(`jobEntryTests.${index}.testing_day`) ||
+                                                    watch(`jobEntryTests.${index}.additional_details_values.Testing day` as any) ||
+                                                    watch(`jobEntryTests.${index}.additional_details_values.Testing Day` as any) ||
+                                                    watch(`materialDetails.testing_day`);
+                                                  if (day) {
+                                                    const newTestingDate = calculateTestingDate(val, day);
+                                                    if (newTestingDate) {
+                                                      setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
+                                                    }
+                                                  }
+                                                }
                                               }}
                                               side="left"
                                             />
@@ -1395,6 +1616,24 @@ export function ClientWizard({
                                             <Input
                                               {...register(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any)}
                                               placeholder={`Enter ${detailLabel}`}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                setValue(`jobEntryTests.${index}.additional_details_values.${detailLabel}` as any, val, { shouldValidate: true });
+                                                if (detailLabel.toLowerCase().includes('testing day') || detailLabel.toLowerCase().includes('day') || detailLabel.toLowerCase().includes('age')) {
+                                                  setValue(`jobEntryTests.${index}.testing_day`, val, { shouldValidate: true });
+                                                  const casting = watch(`jobEntryTests.${index}.date_of_casting`) ||
+                                                    watch(`jobEntryTests.${index}.additional_details_values.Casting date` as any) ||
+                                                    watch(`jobEntryTests.${index}.additional_details_values.Casting Date` as any) ||
+                                                    watch(`jobEntryTests.${index}.additional_details_values.Date of Casting` as any) ||
+                                                    watch(`materialDetails.date_of_casting`);
+                                                  if (casting) {
+                                                    const newTestingDate = calculateTestingDate(casting, val);
+                                                    if (newTestingDate) {
+                                                      setValue(`jobEntryTests.${index}.date_of_testing`, newTestingDate, { shouldValidate: true });
+                                                    }
+                                                  }
+                                                }
+                                              }}
                                             />
                                           )}
                                         </div>

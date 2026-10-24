@@ -84,7 +84,7 @@ export class JobEntryService {
     if (testsData && testsData.length > 0) {
       const testMasterIds = testsData.map((t) => t.test_master_id).filter(Boolean);
       if (testMasterIds.length > 0) {
-        const { data: tmData } = await supabase.from("test_master").select("id, is_nabl, category").in("id", testMasterIds as string[]);
+        const { data: tmData } = await supabase.from("test_master").select("id, is_nabl, category, material_product").in("id", testMasterIds as string[]);
         testMasters = tmData || [];
       }
 
@@ -150,7 +150,14 @@ export class JobEntryService {
         }
       }
 
-      const testsToInsert = testsData.map((test) => ({ ...test, job_entry_id: jobEntry.id }));
+      const testsToInsert = testsData.map((test) => {
+        const tm = testMasters.find((x: any) => x.id === test.test_master_id);
+        return {
+          ...test,
+          material_description: test.material_description || tm?.material_product || null,
+          job_entry_id: jobEntry.id,
+        };
+      });
       const { data: insertedTests, error: testsError } = await supabase
         .from("job_entry_tests")
         .insert(testsToInsert)
@@ -323,7 +330,7 @@ export class JobEntryService {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("job_entries")
-      .select("*, job_entry_tests!job_entry_tests_job_entry_id_fkey(*)")
+      .select("*, job_entry_tests!job_entry_tests_job_entry_id_fkey(*, test_master(*))")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);

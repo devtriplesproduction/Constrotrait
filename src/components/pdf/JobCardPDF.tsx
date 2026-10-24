@@ -133,6 +133,16 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
 
   const receivingDate = primaryJob?.date_of_receiving || data.jobEntry?.inward_on;
 
+  const materialGrade = primaryJob?.grade ||
+    (primaryJob?.additional_details_values as any)?.Grade ||
+    (primaryJob?.additional_details_values as any)?.grade ||
+    targetJobs.find(j => j?.grade)?.grade ||
+    targetJobs.find(j => (j?.additional_details_values as any)?.Grade || (j?.additional_details_values as any)?.grade)?.additional_details_values?.Grade ||
+    targetJobs.find(j => (j?.additional_details_values as any)?.grade)?.additional_details_values?.grade ||
+    data.jobEntry?.grade ||
+    primaryJob?.material_description ||
+    '';
+
   // Aggregate Test Parameters and Methods (deduplicated)
   const aggregatedParameters = Array.from(
     new Set(
@@ -157,6 +167,43 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
         .filter(Boolean)
     )
   ).join(', ');
+
+  // Customer & Agency details
+  const customerName = (client?.company_name || client?.name || '').trim();
+  const cleanCustomer = customerName
+    .replace(/\.?\s*\/?\s*Agency\s*:.*$/i, '')
+    .trim()
+    .replace(/\.+$/, '');
+
+  const agencyName = (data.jobEntry?.agency || data.jobEntry?.agency_name || client?.agency_name || client?.agency || '').trim();
+  const agencyText = agencyName || 'NA';
+
+  // Customer Address
+  const rawCustomerAddress = (client?.address || data.jobEntry?.address || '').trim();
+  const cleanCustomerAddress = rawCustomerAddress
+    .replace(/\.?\s*\/?\s*Agency\s*:.*$/i, '')
+    .trim()
+    .replace(/\.+$/, '');
+
+  // Site / Project details
+  const siteParts = [
+    data.jobEntry?.site_name || client?.site_name,
+    data.jobEntry?.project_name || client?.project_name,
+    data.jobEntry?.division || client?.division
+  ].filter(Boolean) as string[];
+  const uniqueSiteParts = Array.from(new Set(siteParts.map(s => s.trim()))).filter(Boolean);
+  const siteText = uniqueSiteParts.join(' / ') || 'NA';
+
+  // Dispatch Name
+  const rawDispatchName = (data.jobEntry?.dispatch_name || client?.dispatch_name || '').trim();
+  const dispatchNameText = rawDispatchName || 'NA';
+
+  // Dispatch Address
+  const rawDispatchAddress = (data.jobEntry?.dispatch_address || client?.dispatch_address || rawCustomerAddress || siteText || '').trim();
+  const cleanDispatchAddress = rawDispatchAddress
+    .replace(/\.?\s*\/?\s*Agency\s*:.*$/i, '')
+    .trim()
+    .replace(/\.+$/, '');
 
   return (
     <Document>
@@ -187,15 +234,13 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
         <View style={styles.table}>
           {/* Row 1 */}
           <View style={[styles.row, { minHeight: 24 }]}>
-            <View style={[styles.cell, { width: '57%' }]}>
-              <Text>1. Name of Customer / Agency:</Text>
-              {client?.name ? (
-                <Text style={styles.bold}>
-                  {client?.name || ''}
-                  {client?.company_name ? ` - ${client.company_name}` : ''}
-                  {client?.agency_name ? ` (${client.agency_name})` : ''}
-                </Text>
-              ) : null}
+            <View style={[styles.cell, { width: '57%', justifyContent: 'center' }]}>
+              <Text>
+                {'1. Name of Customer : '}
+                <Text style={styles.bold}>{cleanCustomer ? `${cleanCustomer}.` : 'NA.'}</Text>
+                {'/ Agency : '}
+                <Text style={styles.bold}>{agencyText}</Text>
+              </Text>
             </View>
             <View style={[styles.lastCell, { width: '43%' }]}>
               <Text>Date of Sample Received: {receivingDate ? formatDate(receivingDate) : ''}</Text>
@@ -204,9 +249,13 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
 
           {/* Row 2 */}
           <View style={[styles.row, { minHeight: 38 }]}>
-            <View style={[styles.cell, { width: '57%' }]}>
-              <Text>2. Address of Customer / Agency:</Text>
-              {client?.address ? <Text style={styles.bold}>{client?.address}</Text> : null}
+            <View style={[styles.cell, { width: '57%', justifyContent: 'center' }]}>
+              <Text>
+                {'2. Address of Customer : '}
+                <Text style={styles.bold}>{cleanCustomerAddress ? `${cleanCustomerAddress}.` : 'NA.'}</Text>
+                {'/ Agency : '}
+                <Text style={styles.bold}>{agencyText}</Text>
+              </Text>
             </View>
             <View style={{ width: '43%', flexDirection: 'column' }}>
               <View style={[styles.subCell, { borderBottomWidth: 1, borderColor: '#000', minHeight: 19 }]}>
@@ -221,33 +270,31 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
           {/* Row 3, 4 & 5 */}
           <View style={[styles.row, { minHeight: 110 }]}>
             <View style={{ width: '57%', flexDirection: 'column', borderRightWidth: 1, borderColor: '#000' }}>
-              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 2, borderBottomWidth: 1, borderColor: '#000', justifyContent: 'center', minHeight: 32 }}>
-                <Text>3. Name of site</Text>
-                {(client?.site_name || client?.project_name || client?.division) ? (
-                  <Text style={styles.bold}>
-                    {client?.site_name || ''}
-                    {client?.project_name ? ` / ${client.project_name}` : ''}
-                    {client?.division ? ` / ${client.division}` : ''}
-                  </Text>
-                ) : null}
+              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 2.5, borderBottomWidth: 1, borderColor: '#000', justifyContent: 'center', minHeight: 32 }}>
+                <Text>
+                  {'3. Name of site : '}
+                  <Text style={styles.bold}>{siteText}</Text>
+                </Text>
               </View>
-              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 2, borderBottomWidth: 1, borderColor: '#000', justifyContent: 'center', minHeight: 32 }}>
-                <Text>4. Name of Dispatching the Report:</Text>
-                {(client?.dispatch_name || data.jobEntry?.dispatch_name) ? (
-                  <Text style={styles.bold}>{client?.dispatch_name || data.jobEntry?.dispatch_name}</Text>
-                ) : null}
+              <View style={{ flex: 1, paddingHorizontal: 4, paddingVertical: 2.5, borderBottomWidth: 1, borderColor: '#000', justifyContent: 'center', minHeight: 32 }}>
+                <Text>
+                  {'4. Name of Dispatching the Report : '}
+                  <Text style={styles.bold}>{dispatchNameText}</Text>
+                </Text>
               </View>
-              <View style={{ flex: 1.4, paddingHorizontal: 4, paddingVertical: 2, justifyContent: 'flex-start', minHeight: 46 }}>
-                <Text>5. Address of Dispatching the Report:</Text>
-                {(client?.dispatch_address || data.jobEntry?.dispatch_address) ? (
-                  <Text style={styles.bold}>{client?.dispatch_address || data.jobEntry?.dispatch_address}</Text>
-                ) : null}
+              <View style={{ flex: 1.4, paddingHorizontal: 4, paddingVertical: 2.5, justifyContent: 'center', minHeight: 46 }}>
+                <Text>
+                  {'5. Address of Dispatching the Report : '}
+                  <Text style={styles.bold}>{cleanDispatchAddress ? `${cleanDispatchAddress}.` : 'NA.'}</Text>
+                  {'/ Agency : '}
+                  <Text style={styles.bold}>{agencyText}</Text>
+                </Text>
               </View>
             </View>
             <View style={{ width: '43%', flexDirection: 'column' }}>
               <View style={{ paddingHorizontal: 4, paddingVertical: 3, borderBottomWidth: 1, borderColor: '#000', minHeight: 64, justifyContent: 'center' }}>
                 <Text style={{ marginBottom: 3 }}>CONTACT :-</Text>
-                <Text style={{ marginBottom: 5 }}>Person Name : {client?.contact_person || ''}</Text>
+                <Text style={{ marginBottom: 5 }}>Person Name : {client?.contact_person || client?.name || ''}</Text>
                 <Text style={{ marginBottom: 5 }}>Phone/ Mobile : {client?.mobile || ''}</Text>
                 <Text>E-mail : {client?.email || ''}</Text>
               </View>
@@ -257,14 +304,24 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             </View>
           </View>
 
-          {/* Row 6: Full Width */}
-          <View style={[styles.row, { minHeight: 18, paddingHorizontal: 4, paddingVertical: 2, justifyContent: 'flex-start', alignItems: 'center' }]}>
-            <Text>TESTING REQURIED ON : {primaryJob?.material_description ? <Text style={styles.bold}>{primaryJob.material_description}</Text> : ''}</Text>
+          {/* Row 6 */}
+          <View style={[styles.row, { minHeight: 18 }]}>
+            <View style={[styles.cell, { width: '57%', justifyContent: 'center' }]}>
+              <Text>TESTING REQURIED ON :</Text>
+            </View>
+            <View style={[styles.lastCell, { width: '43%', justifyContent: 'center' }]}>
+              <Text style={styles.bold}>{primaryJob?.material_description || data.jobEntry?.material_description || ''}</Text>
+            </View>
           </View>
 
-          {/* Row 7: Full Width */}
-          <View style={[styles.lastRow, { minHeight: 18, paddingHorizontal: 4, paddingVertical: 2, justifyContent: 'flex-start', alignItems: 'center' }]}>
-            <Text>CUSTOMER REFERENCE NO : {data.jobEntry?.letter_reference ? <Text style={styles.bold}>{data.jobEntry.letter_reference}</Text> : ''}</Text>
+          {/* Row 7 */}
+          <View style={[styles.lastRow, { minHeight: 18 }]}>
+            <View style={[styles.cell, { width: '57%', justifyContent: 'center' }]}>
+              <Text>CUSTOMER REFERENCE NO :</Text>
+            </View>
+            <View style={[styles.lastCell, { width: '43%', justifyContent: 'center' }]}>
+              <Text style={styles.bold}>{data.jobEntry?.letter_reference || 'NA'}</Text>
+            </View>
           </View>
         </View>
 
@@ -289,8 +346,8 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
             <View style={[styles.cell, { width: '8%', alignItems: 'center', justifyContent: 'center' }]}>
               <Text style={styles.textCenter}>{primaryJob?.uid_label || ''}</Text>
             </View>
-            <View style={[styles.cell, { width: '21%', justifyContent: 'center' }]}>
-              <Text>{primaryJob?.material_description || ''}</Text>
+            <View style={[styles.cell, { width: '21%', alignItems: 'center', justifyContent: 'center' }]}>
+              <Text>{materialGrade}</Text>
             </View>
             <View style={[styles.cell, { width: '8%', alignItems: 'center', justifyContent: 'center' }]}>
               <Text style={styles.textCenter}>{aggregatedTestingDays || primaryJob?.testing_day || ''}</Text>

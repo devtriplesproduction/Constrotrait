@@ -13,7 +13,9 @@ import { ClientWizard } from "@/components/modules/clients/ClientWizard";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntry = Database["public"]["Tables"]["job_entries"]["Row"];
-type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
+type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"] & {
+  test_master?: Database["public"]["Tables"]["test_master"]["Row"] | null;
+};
 
 interface JobEntryWithTests extends JobEntry {
   job_entry_tests: JobEntryTest[];
@@ -199,7 +201,9 @@ function ProjectJobsList({
                     <div className="bg-slate-50/80 rounded-2xl p-4 flex gap-4 border border-slate-100/50">
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Material</p>
-                        <p className="text-[14px] font-semibold text-slate-700 truncate" title={test.material_description || "-"}>{test.material_description || "-"}</p>
+                        <p className="text-[14px] font-semibold text-slate-700 truncate" title={(test.material_description && test.material_description.trim() !== "-") ? test.material_description : (test.test_master?.material_product || test.material_id || "-")}>
+                          {(test.material_description && test.material_description.trim() !== "-") ? test.material_description : (test.test_master?.material_product || test.material_id || "-")}
+                        </p>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Method</p>
