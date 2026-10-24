@@ -203,7 +203,7 @@ export function MyAssignmentsTab({
     doc.text("CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI", pageWidth / 2, 21, { align: "center" });
     
     // Info Table
-    const docNo = a.job_entry_tests?.test_master?.datasheet_qr || "QR-234";
+    const docNo = a.job_entry_tests?.test_master?.datasheet_qr || "-";
     autoTable(doc, {
       startY: 28,
       theme: "plain",
@@ -434,7 +434,6 @@ return (
                 <th className="px-6 py-4 whitespace-nowrap">Material</th>
                 <th className="px-6 py-4 whitespace-nowrap">Received Date</th>
                 <th className="px-6 py-4 whitespace-nowrap">Assigned To</th>
-                <th className="px-6 py-4 whitespace-nowrap">Due Date</th>
                 <th className="px-6 py-4 whitespace-nowrap">Status</th>
                 <th className="px-6 py-4 rounded-tr-2xl text-right whitespace-nowrap">Actions</th>
               </tr>
@@ -442,9 +441,6 @@ return (
             <tbody className="divide-y divide-slate-100">
               {groupedMyAssignments.map((a: any) => {
                 const uid = uidOf(a);
-                const dueDate = a.due_date ? new Date(a.due_date) : null;
-                const dueStr = dueDate ? dueDate.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }) : '-';
-                
                 const receivedRawDate = a.grouped_tests[0]?.job_entries?.created_at;
                 const receivedDateObj = receivedRawDate ? new Date(receivedRawDate) : null;
                 const receivedStr = receivedDateObj ? receivedDateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }) : '-';
@@ -502,15 +498,6 @@ return (
                             )}
                           </div>
                         </div>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        <span className="font-semibold text-[13px]">
-                          {dueStr}
-                        </span>
                       </div>
                     </td>
 

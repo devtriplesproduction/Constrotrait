@@ -308,9 +308,14 @@ export function TestMasterClient({
                           NABL
                         </span>
                       )}
-                      {test.branches?.name && (
-                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/50 text-[10px] font-extrabold tracking-wider shadow-sm uppercase">
-                          {test.branches.name}
+                      {test.datasheet_qr && (
+                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-extrabold tracking-wider shadow-sm uppercase">
+                          DS: {test.datasheet_qr}
+                        </span>
+                      )}
+                      {test.report_qr && (
+                        <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200/50 text-[10px] font-extrabold tracking-wider shadow-sm uppercase">
+                          RP: {test.report_qr}
                         </span>
                       )}
                     </div>

@@ -280,7 +280,6 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
               <th className="px-6 py-4">Material</th>
               <th className="px-6 py-4">Received Date</th>
               <th className="px-6 py-4">Assigned To</th>
-              <th className="px-6 py-4">Due Date</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4 rounded-tr-2xl text-right">Actions</th>
             </tr>
@@ -353,14 +352,6 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
                           )}
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <Calendar className="w-4 h-4 text-slate-400" />
-                      <span className="font-semibold text-[13px]">
-                        {assignment.due_date ? format(new Date(assignment.due_date), "dd MMM, yyyy") : "-"}
-                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4">

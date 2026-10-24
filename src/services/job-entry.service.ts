@@ -357,7 +357,7 @@ export class JobEntryService {
     const supabase = await createClient();
     let query = supabase
       .from("job_entry_tests")
-      .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!job_entry_tests_job_entry_id_fkey!inner ( id, created_at, client_id, branch_id, uid, uid_label, inward_on, clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person ), branches ( id, name, code ) ), test_master ( id, component_parameter, specific_test )`)
+      .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!job_entry_tests_job_entry_id_fkey!inner ( *, clients ( * ), branches ( id, name, code ) ), test_master ( * )`)
       .order("created_at", { ascending: false });
 
     const isSuper = isSuperAdmin(user.roles);
@@ -387,7 +387,7 @@ export class JobEntryService {
     const supabase = await createClient();
     let query = supabase
       .from("job_entries")
-      .select(`*, branches ( id, name, code ), job_entry_tests!job_entry_tests_job_entry_id_fkey (*, job_assignments(id, status, report_url, reviewer_remark), test_master(id, component_parameter, specific_test)), clients ( id, name, email, mobile, address, site_name, dispatch_name, dispatch_address, contact_person )`)
+      .select(`*, branches ( id, name, code ), job_entry_tests!job_entry_tests_job_entry_id_fkey (*, job_assignments(id, status, report_url, reviewer_remark), test_master(*)), clients ( * )`)
       .order("created_at", { ascending: false });
 
     const isSuper = isSuperAdmin(user.roles);
@@ -407,4 +407,89 @@ export class JobEntryService {
     if (error) throw new Error(error.message);
     return data;
   }
+
+  static async getJobEntryByUidOrId(identifier: string) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+    if (!canManageClientsAndJobs(user.roles)) {
+      throw new Error("Unauthorized: You do not have permission to view job entries");
+    }
+    const supabase = await createClient();
+
+    let query = supabase
+      .from("job_entries")
+      .select(`
+        *,
+        branches ( id, name, code ),
+        clients ( * ),
+        job_entry_tests!job_entry_tests_job_entry_id_fkey (
+          *,
+          test_master ( * ),
+          job_assignments (
+            id,
+            status,
+            report_url,
+            reviewer_remark,
+            assigned_to,
+            team_id,
+            assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),
+            teams ( id, name )
+          )
+        )
+      `);
+
+    const isNum = !isNaN(Number(identifier));
+    if (isNum) {
+      query = query.or(`uid_label.eq.${identifier},uid.eq.${Number(identifier)},id.eq.${identifier}`);
+    } else {
+      query = query.or(`uid_label.eq.${identifier},id.eq.${identifier}`);
+    }
+
+    const isSuper = isSuperAdmin(user.roles);
+    if (!isSuper && user.branch_id) {
+      query = query.eq("branch_id", user.branch_id);
+    }
+
+    const { data, error } = await query.maybeSingle();
+    if (data) return data;
+
+    // Fallback: Check if identifier is a job_entry_test id or test uid_label
+    let testQuery = supabase
+      .from("job_entry_tests")
+      .select(`
+        job_entry_id,
+        job_entries!job_entry_tests_job_entry_id_fkey (
+          *,
+          branches ( id, name, code ),
+          clients ( * ),
+          job_entry_tests!job_entry_tests_job_entry_id_fkey (
+            *,
+            test_master ( * ),
+            job_assignments (
+              id,
+              status,
+              report_url,
+              reviewer_remark,
+              assigned_to,
+              team_id,
+              assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),
+              teams ( id, name )
+            )
+          )
+        )
+      `)
+      .or(`id.eq.${identifier},uid_label.eq.${identifier}`);
+
+    if (!isSuper && user.branch_id) {
+      testQuery = testQuery.eq("job_entries.branch_id", user.branch_id);
+    }
+
+    const { data: testData } = await testQuery.maybeSingle();
+    if (testData?.job_entries) {
+      return Array.isArray(testData.job_entries) ? testData.job_entries[0] : testData.job_entries;
+    }
+
+    return null;
+  }
 }
+

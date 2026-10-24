@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAssignmentByIdAction, getAssignmentsAction } from "@/actions/job-assignment.actions";
 import { PageHeader } from "@/components/modules/PageHeader";
-import { ClipboardList, ArrowLeft, FileText, User, Calendar, Beaker, GitMerge } from "lucide-react";
+import { ClipboardList, ArrowLeft, FileText, User, Calendar, Beaker, GitMerge, Clock, Layers, Award, Tag } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { JobStageStepper } from "@/components/ui/JobStageStepper";
 import { JobStage } from "@/config/jobTransitions";
 import { JobAssignmentActions } from "@/components/modules/job-assignments/JobAssignmentActions";
 import { ScrollArea } from "@/components/ui/ScrollArea";
+import { JobCardInwardTrigger } from "@/components/modules/job-assignments/JobCardInwardTrigger";
 
 function assignmentUid(assignment: any) {
   const t = assignment.job_entry_tests;
@@ -60,20 +61,40 @@ export default async function JobAssignmentDetailsPage(props: {
   const assignment = res.data;
   const jobEntryId = assignment.job_entry_tests?.job_entry_id;
   let allAssignments: any[] = [];
+  let allJobEntryTests: any[] = [];
   if (jobEntryId) {
-    // We fetch all assignments for the user? Actually we can just query the DB for this job_entry_id
-    const { data: assignments } = await supabase
-      .from("job_assignments")
-      .select(`
-        *,
-        job_entry_tests!inner (
-          id, job_entry_id, test_master ( component_parameter, specific_test, test_method )
-        )
-      `)
-      .eq("job_entry_tests.job_entry_id", jobEntryId);
-    if (assignments) {
-      allAssignments = assignments;
-    }
+    const [{ data: assignments }, { data: tests }] = await Promise.all([
+      supabase
+        .from("job_assignments")
+        .select(`
+          *,
+          job_entry_tests!inner (
+            id, job_entry_id, test_master ( component_parameter, specific_test, test_method )
+          )
+        `)
+        .eq("job_entry_tests.job_entry_id", jobEntryId),
+      supabase
+        .from("job_entry_tests")
+        .select(`
+          *,
+          test_master ( * ),
+          job_assignments (
+            id,
+            status,
+            report_url,
+            reviewer_remark,
+            assigned_to,
+            team_id,
+            assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),
+            teams ( id, name )
+          )
+        `)
+        .eq("job_entry_id", jobEntryId)
+        .order("created_at", { ascending: true })
+    ]);
+
+    if (assignments) allAssignments = assignments;
+    if (tests) allJobEntryTests = tests;
   }
 
   return (
@@ -82,7 +103,15 @@ export default async function JobAssignmentDetailsPage(props: {
         <div className="flex items-center gap-4">
           <PageHeader title="Job Card Details" subtitle="View complete details and progress flow for this assignment." icon={ClipboardList} className="mb-0" />
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-3">
+          <JobCardInwardTrigger
+            assignment={assignment}
+            jobEntry={assignment.job_entry_tests?.job_entries}
+            client={assignment.job_entry_tests?.job_entries?.clients}
+            branch={assignment.branches || assignment.job_entry_tests?.job_entries?.branches}
+            allJobEntryTests={allJobEntryTests}
+            variant="button"
+          />
           <Link href="/job-assignments" className="group flex-shrink-0 flex items-center gap-3 p-1.5 pr-5 rounded-2xl bg-white border border-slate-200/80 hover:border-orange-300/70 hover:bg-orange-50/50 hover:shadow-md transition-all shadow-sm">
             <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 text-slate-500 group-hover:bg-orange-100 group-hover:text-orange-500 transition-colors">
               <ArrowLeft className="w-4 h-4" />
@@ -173,66 +202,241 @@ export default async function JobAssignmentDetailsPage(props: {
                   <h4 className="font-bold text-slate-800 text-lg">Test Details</h4>
                 </div>
 
-                <ScrollArea orientation="horizontal" className="relative bg-white p-4 rounded-2xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] flex items-start justify-between gap-4 md:gap-6 min-w-max md:min-w-0 w-full">
+                {(() => {
+                  const t = assignment.job_entry_tests;
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5 text-orange-400" /> Job Card</p>
-                    <p className="font-bold text-slate-800 text-sm">{assignmentUid(assignment)}</p>
-                    {assignment.job_entry_tests?.ulr_number ? (
-                      <p className="font-bold text-emerald-600 text-xs mt-1 bg-emerald-50 inline-block px-1.5 py-0.5 rounded border border-emerald-100">
-                        ULR: {assignment.job_entry_tests.ulr_number}
-                      </p>
-                    ) : assignment.job_entry_tests?.qc_number ? (
-                      <p className="font-bold text-blue-600 text-xs mt-1 bg-blue-50 inline-block px-1.5 py-0.5 rounded border border-blue-100">
-                        QC: {assignment.job_entry_tests.qc_number}
-                      </p>
-                    ) : (
-                      <p className="font-medium text-slate-400 text-xs mt-1 italic">
-                        Doc No: Pending
-                      </p>
-                    )}
-                  </div>
+                  const formatDateSafe = (dateStr?: string | null, formatStr: string = "dd MMM, yyyy") => {
+                    if (!dateStr) return null;
+                    try {
+                      const d = new Date(dateStr);
+                      return !isNaN(d.getTime()) ? format(d, formatStr) : null;
+                    } catch {
+                      return null;
+                    }
+                  };
 
-                  <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+                  const addVals = (t?.additional_details_values as Record<string, any> | null) || {};
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-blue-400" /> Parameter</p>
-                    <p className="font-bold text-slate-800 text-sm truncate" title={assignment.job_entry_tests?.test_master?.component_parameter}>{assignment.job_entry_tests?.test_master?.component_parameter || "N/A"}</p>
-                    <p className="text-[11px] text-slate-500 font-medium truncate" title={assignment.job_entry_tests?.test_master?.specific_test}>{assignment.job_entry_tests?.test_master?.specific_test || "N/A"}</p>
-                  </div>
+                  // Casting date
+                  const castingDate = t?.date_of_casting ||
+                    addVals['Casting date'] ||
+                    addVals['Date of Casting'] ||
+                    addVals['Casting Date'] ||
+                    addVals['casting_date'];
 
-                  <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+                  const formattedCastingDate = formatDateSafe(castingDate);
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-purple-400" /> Due Date</p>
-                    <p className="font-semibold text-slate-700 text-[13px]">
-                      {assignment.due_date ? format(new Date(assignment.due_date), "dd MMM, yyyy") : "-"}
-                    </p>
-                  </div>
+                  // Testing Day / Age
+                  let dayText = t?.testing_day || t?.testing_age || addVals['Testing Age'] || addVals['Age in Days'] || addVals['Age'] || '';
+                  if (dayText && !dayText.toString().toLowerCase().includes('day')) {
+                    dayText = `${dayText} Day${Number(dayText) > 1 ? 's' : ''}`;
+                  }
+                  if (!dayText && castingDate && t?.date_of_testing) {
+                    try {
+                      const diffTime = Math.abs(new Date(t.date_of_testing).getTime() - new Date(castingDate).getTime());
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      if (!isNaN(diffDays) && diffDays > 0) {
+                        dayText = `${diffDays} Day${diffDays > 1 ? 's' : ''}`;
+                      }
+                    } catch {}
+                  }
 
-                  <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+                  // Sample Quantity & Code
+                  const sampleQty = t?.sample_quantity ||
+                    t?.test_master?.sample_size ||
+                    addVals['Sample Quantity'] ||
+                    addVals['Quantity'] ||
+                    addVals['quantity'] || '';
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-emerald-400" /> Assigned To</p>
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                        <User className="w-3 h-3 text-slate-400" />
-                      </div>
-                      <p className="font-semibold text-slate-700 text-[13px] leading-tight truncate">
-                        {assignment.team_id
-                          ? assignment.teams?.name
-                          : `${assignment.assigned_to_profile?.first_name || ""} ${assignment.assigned_to_profile?.last_name || ""}`}
-                      </p>
+                  const sampleCode = t?.sample_code_no ||
+                    addVals['sample_code_no'] ||
+                    t?.material_details_location || '';
+
+                  // Grade & Material
+                  const grade = t?.grade ||
+                    addVals['Grade'] ||
+                    addVals['grade'] || '';
+
+                  const material = t?.material_description ||
+                    t?.test_master?.material_product || '';
+
+                  const testMethod = t?.test_method || t?.test_master?.test_method || '';
+
+                  // Dates
+                  const formattedTestingDate = formatDateSafe(t?.date_of_testing);
+                  const formattedReceivingDate = formatDateSafe(t?.date_of_receiving);
+                  const formattedDueDate = formatDateSafe(assignment.due_date);
+
+                  // ULR & QC
+                  const hasUlr = Boolean(t?.ulr_number);
+                  const hasQc = Boolean(t?.qc_number);
+
+                  const assigneeName = assignment.team_id
+                    ? assignment.teams?.name
+                    : `${assignment.assigned_to_profile?.first_name || ""} ${assignment.assigned_to_profile?.last_name || ""}`.trim() || "-";
+
+                  return (
+                    <div className="relative bg-white p-5 rounded-2xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] w-full">
+                      <ScrollArea orientation="horizontal" className="w-full">
+                        <div className="min-w-[700px] flex flex-col space-y-4">
+                          {/* Row 1: Identification & Material Details */}
+                          <div className="flex items-start justify-between gap-4 md:gap-6">
+                            {/* 1. Job Card */}
+                            <JobCardInwardTrigger
+                              assignment={assignment}
+                              jobEntry={assignment.job_entry_tests?.job_entries}
+                              client={assignment.job_entry_tests?.job_entries?.clients}
+                              branch={assignment.branches || assignment.job_entry_tests?.job_entries?.branches}
+                              allJobEntryTests={allJobEntryTests}
+                              variant="card"
+                            />
+
+                            <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+
+                            {/* 2. ULR No. */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                                <Award className="w-3.5 h-3.5 text-emerald-500" /> ULR No.
+                              </p>
+                              {hasUlr ? (
+                                <>
+                                  <p className="font-bold text-emerald-600 text-sm truncate tracking-tight">{t.ulr_number}</p>
+                                  <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 inline-block mt-0.5">
+                                    Generated
+                                  </span>
+                                </>
+                              ) : hasQc ? (
+                                <>
+                                  <p className="font-bold text-blue-600 text-sm truncate">QC: {t.qc_number}</p>
+                                  <span className="text-[11px] font-medium text-blue-600">Non-NABL</span>
+                                </>
+                              ) : (
+                                <p className="font-medium text-amber-600 text-sm truncate" title="Awaiting Generation">
+                                  Awaiting Generation
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+
+                            {/* 3. Parameter */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5 text-blue-400" /> Parameter
+                              </p>
+                              <p className="font-bold text-slate-800 text-sm truncate" title={t?.test_master?.component_parameter}>
+                                {t?.test_master?.component_parameter || "N/A"}
+                              </p>
+                              <p className="text-[11px] text-slate-500 font-medium truncate" title={t?.test_master?.specific_test || testMethod}>
+                                {t?.test_master?.specific_test || testMethod || "N/A"}
+                              </p>
+                            </div>
+
+                            <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+
+                            {/* 4. Sample Quantity */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                                <Layers className="w-3.5 h-3.5 text-cyan-500" /> Sample Qty
+                              </p>
+                              <p className="font-bold text-slate-800 text-sm truncate">{sampleQty || "-"}</p>
+                              <p className="text-[11px] text-slate-500 font-medium truncate" title={sampleCode || "Standard"}>
+                                {sampleCode ? `Code: ${sampleCode}` : "Standard Sample"}
+                              </p>
+                            </div>
+
+                            <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+
+                            {/* 5. Grade / Material */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                                <Tag className="w-3.5 h-3.5 text-indigo-400" /> Grade / Material
+                              </p>
+                              <p className="font-bold text-slate-800 text-sm truncate" title={grade || material}>
+                                {grade || material || "-"}
+                              </p>
+                              <p className="text-[11px] text-slate-500 font-medium truncate" title={material}>
+                                {grade && material ? material : (testMethod || "-")}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Horizontal Divider */}
+                          <div className="h-px bg-slate-100/90 w-full" />
+
+                          {/* Row 2: Dates, Assignee & Status */}
+                          <div className="flex items-start justify-between gap-4 md:gap-6">
+                            {/* 6. Casting Date */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-amber-500" /> Casting Date
+                              </p>
+                              <p className="font-semibold text-slate-700 text-[13px]">{formattedCastingDate || "-"}</p>
+                              <p className="text-[11px] text-slate-500 font-medium truncate">
+                                {dayText ? `Age: ${dayText}` : (formattedCastingDate ? "Cast recorded" : "Not specified")}
+                              </p>
+                            </div>
+
+                            <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+
+                            {/* 7. Testing Date */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-purple-400" /> Testing Date
+                              </p>
+                              <p className="font-semibold text-slate-700 text-[13px]">{formattedTestingDate || "-"}</p>
+                              <p className="text-[11px] text-slate-500 font-medium truncate">
+                                {formattedReceivingDate ? `Recv: ${formattedReceivingDate}` : "Date of testing"}
+                              </p>
+                            </div>
+
+                            <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+
+                            {/* 8. Due Date */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-rose-400" /> Due Date
+                              </p>
+                              <p className="font-semibold text-slate-700 text-[13px]">{formattedDueDate || "-"}</p>
+                              <p className="text-[11px] text-slate-500 font-medium truncate">Assignment deadline</p>
+                            </div>
+
+                            <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+
+                            {/* 9. Assigned To */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                                <User className="w-3.5 h-3.5 text-emerald-400" /> Assigned To
+                              </p>
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-5 h-5 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                  <User className="w-3 h-3 text-slate-400" />
+                                </div>
+                                <p className="font-semibold text-slate-700 text-[13px] leading-tight truncate">
+                                  {assigneeName}
+                                </p>
+                              </div>
+                              <p className="text-[11px] text-slate-500 font-medium truncate pl-6.5">
+                                {assignment.team_id ? "Assigned Team" : "Test Analyst"}
+                              </p>
+                            </div>
+
+                            <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
+
+                            {/* 10. Status */}
+                            <div className="flex-1 min-w-0 pr-1">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Status</p>
+                              <div className="inline-block scale-90 origin-left">{getStatusBadge(assignment.status)}</div>
+                              <p className="text-[11px] text-slate-500 font-medium mt-0.5 capitalize">
+                                {assignment.status.replace('_', ' ')}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </ScrollArea>
                     </div>
-                  </div>
-
-                  <div className="w-px h-8 bg-slate-100 flex-shrink-0" />
-
-                  <div className="flex-1 min-w-0 pr-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Status</p>
-                    <div className="inline-block scale-90 origin-left">{getStatusBadge(assignment.status)}</div>
-                  </div>
-                </ScrollArea>
+                  );
+                })()}
 
                 {assignment.notes && (
                   <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 p-5 rounded-2xl border border-amber-100 shadow-sm relative overflow-hidden">

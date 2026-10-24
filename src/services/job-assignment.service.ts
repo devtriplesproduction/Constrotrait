@@ -6,17 +6,30 @@ const TEST_SELECT = `
   job_entry_id,
   uid_label,
   ulr_number,
+  ulr_status,
+  ulr_generated_at,
   qc_number,
   report_class,
+  date_of_casting,
+  date_of_receiving,
   date_of_testing,
-  additional_details_values,
-  sample_code_no:additional_details_values->>sample_code_no,
+  testing_age,
+  testing_day,
+  grade,
+  sample_quantity,
   material_description,
   material_details_location,
-  sample_quantity,
-  date_of_receiving,
+  test_method,
+  additional_details_values,
+  sample_code_no:additional_details_values->>sample_code_no,
   test_master ( component_parameter, specific_test, test_method, category, is_nabl, datasheet_qr, material_product, sample_size ),
-  job_entries!job_entry_tests_job_entry_id_fkey ( id, uid, uid_label, created_at )
+  job_entries!job_entry_tests_job_entry_id_fkey ( 
+    id, uid, uid_label, created_at, inward_on, branch_id, client_id,
+    division, agency, project_name, dispatch_name, dispatch_address,
+    collected_by, invoice_no, invoice_date, letter_reference, payment_status, is_nabl,
+    clients ( id, name, company_name, email, mobile, address, gst_no, branch_id, site_name, contact_person ),
+    branches ( id, name, code )
+  )
 `;
 
 export class JobAssignmentService {

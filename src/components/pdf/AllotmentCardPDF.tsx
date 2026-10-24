@@ -33,25 +33,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
     marginBottom: 6,
     paddingVertical: 4,
     paddingHorizontal: 8,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerLogo: {
     width: 36,
     height: 36,
     objectFit: 'contain',
-    position: 'absolute',
-    left: 14,
+    marginRight: 10,
   },
   headerTitle: {
     fontFamily: 'Times-Bold',
     fontSize: 13.5,
     fontWeight: 'bold',
-    textAlign: 'center',
-    width: '100%',
-    paddingHorizontal: 55,
   },
 
   // Box 2: Document identification bar
@@ -124,12 +124,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000',
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 3,
-    paddingHorizontal: 6,
     marginBottom: 6,
     minHeight: 19,
+  },
+  productCellLeft: {
+    width: '50%',
+    borderRightWidth: 1,
+    borderColor: '#000',
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+    height: '100%',
+  },
+  productCellRight: {
+    width: '50%',
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+    height: '100%',
   },
 
   // Box 5: Items Table
@@ -289,11 +302,15 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
   const testMaster = jobEntryTest?.test_master || {};
 
   // Dynamic Form Values
-  const displayDocNo = docNo || testMaster?.datasheet_qr || primaryJob?.doc_no || 'QR-234';
+  const foundDatasheetQr = targetAssignments
+    .map((a: any) => (a.job_entry_tests || a)?.test_master?.datasheet_qr)
+    .find(Boolean);
+
+  const displayDocNo = docNo || testMaster?.datasheet_qr || foundDatasheetQr || primaryJob?.doc_no || '-';
   const receivingDate = jobEntry?.date_of_receiving || jobEntry?.inward_on || primaryJob?.date_of_receiving || jobEntry?.created_at;
   const allottedDate = primaryJob?.created_at || primaryJob?.date_of_allotment;
   const dueDate = primaryJob?.due_date || jobEntryTest?.due_date || jobEntryTest?.date_of_testing;
-  
+
   const profile = Array.isArray(primaryJob?.assigned_to_profile)
     ? primaryJob.assigned_to_profile[0]
     : primaryJob?.assigned_to_profile;
@@ -368,11 +385,13 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
-        
+
         {/* BOX 1: COMPANY HEADER */}
         <View style={styles.headerBox}>
-          <Image src={logoUrl || "/CMTS LOGO.png"} style={styles.headerLogo} />
-          <Text style={styles.headerTitle}>CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI</Text>
+          <View style={styles.headerContent}>
+            <Image src={logoUrl || "/CMTS LOGO.png"} style={styles.headerLogo} />
+            <Text style={styles.headerTitle}>CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI</Text>
+          </View>
         </View>
 
         {/* BOX 2: DOCUMENT IDENTIFICATION BAR */}
@@ -424,12 +443,16 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
 
         {/* BOX 4: PRODUCT TEST NAME & UID */}
         <View style={styles.productBox}>
-          <Text style={styles.bold}>
-            Product Test Name - <Text style={styles.regular}>{productTestName}</Text>
-          </Text>
-          <Text style={styles.bold}>
-            UID - <Text style={styles.regular}>{uidLabel}</Text>
-          </Text>
+          <View style={styles.productCellLeft}>
+            <Text style={styles.bold}>
+              Product Test Name - <Text style={styles.regular}>{productTestName}</Text>
+            </Text>
+          </View>
+          <View style={styles.productCellRight}>
+            <Text style={styles.bold}>
+              UID - <Text style={styles.regular}>{uidLabel}</Text>
+            </Text>
+          </View>
         </View>
 
         {/* BOX 5: ITEMS TABLE */}

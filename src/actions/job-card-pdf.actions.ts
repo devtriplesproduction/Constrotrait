@@ -32,9 +32,7 @@ async function generateJobCardPdfBuffer(jobEntryTestId: string) {
       *,
       test_master (*),
       job_entries!job_entry_tests_job_entry_id_fkey (
-        id,
-        letter_reference,
-        inward_on,
+        *,
         clients (*)
       )
     `)

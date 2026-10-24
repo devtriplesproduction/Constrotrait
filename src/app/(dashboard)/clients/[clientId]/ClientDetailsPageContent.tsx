@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, User, Briefcase, CheckCircle, Mail, Phone, Building, ChevronDown, ChevronUp, ChevronRight, ArrowLeft, FlaskConical, Edit } from "lucide-react";
+import { X, User, Briefcase, CheckCircle, Mail, Phone, Building, ChevronDown, ChevronUp, ChevronRight, ArrowLeft, FlaskConical, Edit, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/types/database";
 import { getJobEntriesByClientIdAction } from "@/actions/job-entry.actions";
@@ -30,6 +30,7 @@ function ProjectJobsList({
   onEditClick: (test: JobEntryTest & { job_entries?: any }, client: Client) => void;
   client: Client;
 }) {
+  const router = useRouter();
   const [view, setView] = useState<"projects" | "jobs" | "tests">("projects");
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<(JobEntryWithTests & { matchingTests: JobEntryTest[] }) | null>(null);
@@ -222,15 +223,26 @@ function ProjectJobsList({
                     </div>
                   </div>
 
-                  <div className="sm:w-[140px] shrink-0 sm:border-l sm:border-slate-100 sm:pl-5 flex flex-row sm:flex-col justify-center gap-3 relative z-10 pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                  <div className="sm:w-[140px] shrink-0 sm:border-l sm:border-slate-100 sm:pl-5 flex flex-row sm:flex-col justify-center gap-2 relative z-10 pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                     <Button
-                      className="flex-1 sm:flex-none w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-md shadow-orange-500/20 font-bold h-11"
+                      className="flex-1 sm:flex-none w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-md shadow-orange-500/20 font-bold h-10 text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         onEditClick({ ...test, job_entries: selectedJob }, client);
                       }}
                     >
-                      <Edit className="h-4 w-4 mr-2" /> Edit Details
+                      <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit Details
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 sm:flex-none w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10 rounded-xl text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const gid = test.uid_label || selectedJob.uid_label || String(selectedJob.uid || "") || test.id;
+                        router.push(`/job-cards/${encodeURIComponent(gid)}`);
+                      }}
+                    >
+                      <Receipt className="h-3.5 w-3.5 mr-1.5" /> View Inward
                     </Button>
                   </div>
                 </div>
