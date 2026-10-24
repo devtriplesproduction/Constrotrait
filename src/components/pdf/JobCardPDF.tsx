@@ -483,13 +483,8 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
                 <View style={[styles.lastCell, { width: '42%' }]}></View>
               </View>
 
-              <View style={[styles.lastRow, { minHeight: 90, flexDirection: 'column', justifyContent: 'flex-end' }]}>
-                <View style={{ flexDirection: 'row', width: '100%', paddingBottom: 6 }}>
-                  <View style={{ width: '58%' }} />
-                  <View style={{ width: '42%', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={styles.bold}>Signature</Text>
-                  </View>
-                </View>
+              <View style={[styles.lastRow, { flex: 1, minHeight: 90, flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 6 }]}>
+                <Text style={[styles.bold, styles.textCenter]}>Signature</Text>
               </View>
             </View>
           </View>
