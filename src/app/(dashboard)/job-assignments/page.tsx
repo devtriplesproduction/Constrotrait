@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { canManageJobAssignments } from "@/config/roles";
 import { JobAssignmentsContent } from "@/components/modules/job-assignments/JobAssignmentsContent";
@@ -21,8 +22,15 @@ export default async function JobAssignmentsPage(props: {
     .eq("id", user.id)
     .single();
 
-  const roles = profile?.roles || [];
-  const isManager = canManageJobAssignments(roles);
+  const rawRoles = profile?.roles || [];
+  const roles = Array.from(new Set(rawRoles.filter(Boolean))) as string[];
+  const cookieStore = await cookies();
+  const activeRoleCookie = cookieStore.get("active_role")?.value;
+  const activeRole = (activeRoleCookie && roles.includes(activeRoleCookie))
+    ? activeRoleCookie
+    : (roles[0] || "UNKNOWN");
+
+  const isManager = canManageJobAssignments([activeRole]);
 
   const defaultTab = isManager ? "list" : "my";
   const tab = typeof searchParams.tab === "string" ? searchParams.tab : defaultTab;
@@ -47,7 +55,7 @@ export default async function JobAssignmentsPage(props: {
         initialTab={tab}
         isManager={isManager}
         userId={user.id}
-        userRoles={roles}
+        userRoles={[activeRole]}
         branches={branches}
         assignments={assignments}
         employees={employees}

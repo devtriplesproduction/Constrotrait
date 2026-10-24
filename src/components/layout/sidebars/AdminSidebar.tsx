@@ -22,7 +22,7 @@ import {
   */
 } from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
-import { canManageTestMaster, canManageClientsAndJobs /*, canViewAccounting */ } from "@/config/roles";
+import { canManageTestMaster, canManageClientsAndJobs, canManageEmployees /*, canViewAccounting */ } from "@/config/roles";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -33,15 +33,15 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, setIsOpen, role, roles }: AdminSidebarProps) {
   const roleArray = roles && roles.length > 0 ? roles : (role ? [role] : []);
-  const isEmployeeManagementAllowed = roleArray.some(r => r.includes('ADMIN') || r === 'HR');
-  const isPayrollAllowed = roleArray.some(r => r === 'HR' || r.includes('SUPER_ADMIN') || r.includes('BRANCH_MANAGER_ADMINISTRATIVE'));
+  const isEmployeeManagementAllowed = canManageEmployees(roleArray);
+  const isPayrollAllowed = roleArray.some(r => r === 'HR' || r === 'SUPER_ADMIN' || r === 'BRANCH_MANAGER_ADMINISTRATIVE');
 
   const adminLinks: SidebarLink[] = [
     { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { title: "EOD Reports", href: "/eod", icon: ClipboardList },
   ];
 
-  if (roleArray.some(r => r.includes('SUPER_ADMIN'))) {
+  if (roleArray.includes('SUPER_ADMIN')) {
     adminLinks.push({ title: "Branch Management", href: "/branches", icon: Building2 });
   }
 

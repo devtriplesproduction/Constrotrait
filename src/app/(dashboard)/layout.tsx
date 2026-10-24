@@ -1,5 +1,6 @@
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getCurrentUserProfileAction, getTodayBirthdaysAction } from "@/actions/employee.actions";
 import { getMyAssignmentsAction } from "@/actions/job-assignment.actions";
 import { ClientLayout } from "@/components/layout/ClientLayout";
@@ -21,12 +22,18 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const roles = currentUserProfile?.roles || user.app_metadata?.roles || [];
-  const role = roles[0] || "UNKNOWN";
+  const rawRoles = currentUserProfile?.roles || user.app_metadata?.roles || [];
+  const roles = Array.from(new Set(rawRoles.filter(Boolean))) as string[];
 
-  // Only fetch birthdays if the user has permission
+  const cookieStore = await cookies();
+  const activeRoleCookie = cookieStore.get("active_role")?.value;
+  const activeRole = (activeRoleCookie && roles.includes(activeRoleCookie))
+    ? activeRoleCookie
+    : (roles[0] || "UNKNOWN");
+
+  // Only fetch birthdays if the active role has permission
   let todayBirthdays: Array<{ id: string; first_name: string; last_name: string }> = [];
-  if (canViewAllBirthdays(roles)) {
+  if (canViewAllBirthdays([activeRole])) {
     const birthdaysRes = await getTodayBirthdaysAction();
     todayBirthdays = ('data' in birthdaysRes && birthdaysRes.data) ? birthdaysRes.data : [];
   }
@@ -49,7 +56,7 @@ export default async function DashboardLayout({
   const branchName = currentUserProfile?.branches?.name || "";
 
   return (
-    <ClientLayout user={user} role={role} roles={roles} branchName={branchName}>
+    <ClientLayout user={user} role={activeRole} roles={roles} branchName={branchName}>
       <BirthdayNotifier currentUserProfile={currentUserProfile} todayBirthdays={todayBirthdays} />
       <TestAssignmentNotifier currentUserProfile={currentUserProfile} todayTests={todayTests} />
       {children}

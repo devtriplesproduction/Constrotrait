@@ -64,9 +64,27 @@ export const getAuthenticatedUserWithRoles = cache(async () => {
     .eq('id', user.id)
     .single();
 
+  const rawRoles = (profile?.roles || []) as string[];
+  const allRoles = Array.from(new Set(rawRoles.filter(Boolean)));
+
+  let activeRoleCookie: string | undefined;
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    activeRoleCookie = cookieStore.get("active_role")?.value;
+  } catch {
+    // Ignore error if invoked in non-request context
+  }
+
+  const activeRole = (activeRoleCookie && allRoles.includes(activeRoleCookie))
+    ? activeRoleCookie
+    : (allRoles[0] || "UNKNOWN");
+
   return {
     ...user,
-    roles: profile?.roles || [],
+    allRoles,
+    roles: [activeRole],
+    activeRole,
     branch_id: profile?.branch_id || null,
   };
 });

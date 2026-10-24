@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { AdminSidebar } from "@/components/layout/sidebars/AdminSidebar";
 import { ScrollArea } from "@/components/ui/ScrollArea";
@@ -15,17 +15,34 @@ interface ClientLayoutProps {
   branchName?: string;
 }
 
-export function ClientLayout({ children, user, role, roles, branchName }: ClientLayoutProps) {
+export function ClientLayout({ children, user, role, roles = [], branchName }: ClientLayoutProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [activeRole, setActiveRole] = useState(role);
+
+  useEffect(() => {
+    setActiveRole(role);
+  }, [role]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      {/* Sidebar - we can dynamically select the sidebar based on role later, 
-          for now we use AdminSidebar if role is SUPER_ADMIN or HR */}
-      <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} role={role} roles={roles} />
+      <AdminSidebar
+        isOpen={isSidebarOpen}
+        setIsOpen={setSidebarOpen}
+        role={activeRole}
+        roles={[activeRole]}
+      />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar user={user} role={role} branchName={branchName} onMenuClick={() => setSidebarOpen(true)} />
+        <Topbar
+          user={user}
+          role={activeRole}
+          roles={roles}
+          branchName={branchName}
+          onMenuClick={() => setSidebarOpen(true)}
+          onRoleChange={(newRole) => {
+            setActiveRole(newRole);
+          }}
+        />
         <ScrollArea className="flex-1" orientation="vertical">
           <main className="p-4 md:p-6 lg:px-8 lg:py-6">
             {children}

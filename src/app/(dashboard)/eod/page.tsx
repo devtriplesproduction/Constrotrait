@@ -15,6 +15,8 @@ import { EodTabsClient } from "@/components/modules/eod/EodTabsClient";
 import { RecentEODLogItem } from "@/components/modules/eod/RecentEODLogItem";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 
+import { cookies } from "next/headers";
+
 interface PageProps {
   searchParams: { tab?: string, branch?: string };
 }
@@ -30,9 +32,17 @@ export default async function EODPage({ searchParams }: PageProps) {
     .eq('id', user.id)
     .single();
 
-  const canReview = canReviewEOD(profile?.roles);
-  const canManage = canManageEOD(profile?.roles);
-  const isSuperAdmin = profile?.roles?.includes('SUPER_ADMIN');
+  const rawRoles = (profile?.roles || []) as string[];
+  const roles = Array.from(new Set(rawRoles.filter(Boolean)));
+  const cookieStore = await cookies();
+  const activeRoleCookie = cookieStore.get("active_role")?.value;
+  const activeRole = (activeRoleCookie && roles.includes(activeRoleCookie))
+    ? activeRoleCookie
+    : (roles[0] || "UNKNOWN");
+
+  const canReview = canReviewEOD([activeRole]);
+  const canManage = canManageEOD([activeRole]);
+  const isSuperAdmin = activeRole === 'SUPER_ADMIN';
 
   // Determine active tab
   const params = await searchParams;

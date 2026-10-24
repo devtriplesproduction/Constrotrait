@@ -138,3 +138,36 @@ export function canViewAccounting(roles?: string[] | null): boolean {
 export function canExportAccountingExcel(roles?: string[] | null): boolean {
   return isSuperAdmin(roles);
 }
+
+export function getRoleDisplayName(role?: string | null): string {
+  if (!role) return "User";
+  return (APP_ROLES as Record<string, string>)[role] || role.replace(/_/g, " ");
+}
+
+export function getRoleColorBadge(role?: string | null): { bg: string; text: string; border: string } {
+  switch (role) {
+    case 'SUPER_ADMIN':
+      return { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' };
+    case 'BRANCH_MANAGER_ADMINISTRATIVE':
+      return { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' };
+    case 'HR':
+      return { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' };
+    case 'QUALITY_MANAGER':
+    case 'TECHNICAL_MANAGER':
+      return { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200' };
+    case 'ADMIN_INWARD_CRE':
+      return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
+    case 'ACCOUNTANT':
+      return { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
+    case 'TEST_ENGINEER':
+    case 'LAB_ANALYST':
+    case 'LAB_ASSISTANT':
+    case 'SAMPLER':
+      return { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' };
+    case 'MARKETING_EXECUTIVE':
+    case 'DIGITAL_MARKETING':
+      return { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' };
+    default:
+      return { bg: 'bg-zinc-50', text: 'text-zinc-700', border: 'border-zinc-200' };
+  }
+}
