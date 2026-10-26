@@ -36,7 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { downloadJobCardAction, getJobCardPdfAction } from "@/actions/job-card-pdf.actions";
 import { useToast } from "@/hooks/use-toast";
 import { BackToJobCardButton } from "./BackToJobCardButton";
-import { extractTestInitials, deriveTestInitials } from "@/components/modules/clients/ClientWizard";
+import { extractMaterialInitials, deriveMaterialInitials } from "@/components/modules/clients/ClientWizard";
 
 export interface InwardDetailsViewProps {
   jobEntry: any;
@@ -88,15 +88,17 @@ export function InwardDetailsView({
     "Not Specified";
 
   const materialId = primaryTest?.material_id || jobEntry?.material_id || "-";
-  const testInitials =
-    addVals?.test_initials ||
+  const materialInitials =
     addVals?.material_initials ||
-    extractTestInitials(primaryTest, primaryTest?.test_master) ||
-    deriveTestInitials(
+    addVals?.test_initials ||
+    extractMaterialInitials(primaryTest, primaryTest?.test_master) ||
+    deriveMaterialInitials(
+      primaryTest?.material_description ||
+      primaryTest?.test_master?.material_product ||
+      jobEntry?.material_description ||
       primaryTest?.test_master?.component_parameter ||
       primaryTest?.test_master?.specific_test ||
-      primaryTest?.test_name ||
-      primaryTest?.test_parameters
+      primaryTest?.test_name
     ) ||
     "-";
   const materialLocation =
@@ -704,8 +706,8 @@ export function InwardDetailsView({
                     <span className="font-extrabold text-slate-900 text-right truncate max-w-[170px]">{materialDesc}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500 font-medium">Test Initials:</span>
-                    <span className="font-extrabold text-orange-600">{testInitials}</span>
+                    <span className="text-slate-500 font-medium">Material Initials:</span>
+                    <span className="font-extrabold text-orange-600">{materialInitials}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-medium">Grade / Quantity:</span>
@@ -747,8 +749,8 @@ export function InwardDetailsView({
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Test Initials</p>
-            <p className="text-sm font-extrabold text-orange-600 truncate">{testInitials}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Material Initials</p>
+            <p className="text-sm font-extrabold text-orange-600 truncate">{materialInitials}</p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">

@@ -44,11 +44,13 @@ export default function ClientsTab({
       if (clientBranch !== branchFilter) return false;
     }
 
-    const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
     return (
       client.name?.toLowerCase().includes(query) ||
+      client.company_name?.toLowerCase().includes(query) ||
       client.email?.toLowerCase().includes(query) ||
       client.mobile?.toLowerCase().includes(query) ||
+      client.gst_no?.toLowerCase().includes(query) ||
       (client.branches?.name && client.branches.name.toLowerCase().includes(query))
     );
   });
@@ -96,7 +98,7 @@ export default function ClientsTab({
             )}
 
             <Input
-              placeholder="Search by name, email, or contact..."
+              placeholder="Search by company, customer name, email, contact..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-10 bg-slate-50/50 border-slate-200 focus-visible:ring-orange-500/20 focus-visible:border-orange-400 hover:border-orange-300 transition-all shadow-sm rounded-xl flex-1"

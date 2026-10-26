@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { MultiSelect } from "@/components/ui/MultiSelect";
-import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText, ChevronDown, MapPin, Users, Receipt, Truck, Package, Copy } from "lucide-react";
+import { SearchIcon, Check, Plus, Trash2, ChevronRight, CheckCircle2, ChevronLeft, User, Building2, FlaskConical, FileText, ChevronDown, MapPin, Users, Receipt, Truck, Package, Copy, X } from "lucide-react";
 import { Database } from "@/types/database";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -68,9 +68,9 @@ export function parseTestingDaysList(testingDayStr?: string | null): string[] {
   return matches || [];
 }
 
-export function deriveTestInitials(testName?: string | null): string {
-  if (!testName || typeof testName !== "string") return "";
-  const clean = testName.replace(/\([^)]*\)/g, "").replace(/\[[^\]]*\]/g, "").trim();
+export function deriveMaterialInitials(materialName?: string | null): string {
+  if (!materialName || typeof materialName !== "string") return "";
+  const clean = materialName.replace(/\([^)]*\)/g, "").replace(/\[[^\]]*\]/g, "").trim();
   const words = clean.split(/[^a-zA-Z0-9]+/).filter(Boolean).filter(w => {
     const l = w.toLowerCase();
     return !["of", "the", "in", "for", "by", "to", "and", "as", "per", "a", "an", "on", "at", "with"].includes(l);
@@ -78,20 +78,23 @@ export function deriveTestInitials(testName?: string | null): string {
   if (words.length === 0) return "";
   if (words.length === 1) {
     const w = words[0];
+    if (w.toLowerCase() === "cube") return "CC";
     if (w.length <= 3) return w.toUpperCase();
     return w.slice(0, 2).toUpperCase();
   }
   return words.slice(0, 4).map(w => w[0]).join("").toUpperCase();
 }
 
-export function extractTestInitials(test?: any, testMaster?: any): string {
+export const deriveTestInitials = deriveMaterialInitials;
+
+export function extractMaterialInitials(test?: any, testMaster?: any): string {
   if (!test) return "";
   const addVals = (test.additional_details_values as Record<string, any>) || {};
-  if (addVals.test_initials && typeof addVals.test_initials === "string" && addVals.test_initials.trim()) {
-    return addVals.test_initials.trim();
-  }
   if (addVals.material_initials && typeof addVals.material_initials === "string" && addVals.material_initials.trim()) {
     return addVals.material_initials.trim();
+  }
+  if (addVals.test_initials && typeof addVals.test_initials === "string" && addVals.test_initials.trim()) {
+    return addVals.test_initials.trim();
   }
   const sampleCode = addVals.sample_code_no;
   if (sampleCode && typeof sampleCode === "string") {
@@ -111,8 +114,11 @@ export function extractTestInitials(test?: any, testMaster?: any): string {
     }
   }
 
-  // Fallback: derive initials from test name
-  const testName =
+  // Fallback: derive initials from material product or test name
+  const materialName =
+    testMaster?.material_product ||
+    test?.test_master?.material_product ||
+    test?.material_description ||
     testMaster?.component_parameter ||
     testMaster?.specific_test ||
     test?.test_master?.component_parameter ||
@@ -120,13 +126,13 @@ export function extractTestInitials(test?: any, testMaster?: any): string {
     test?.test_name ||
     test?.test_parameters ||
     "";
-  if (testName) {
-    return deriveTestInitials(testName);
+  if (materialName) {
+    return deriveMaterialInitials(materialName);
   }
   return "";
 }
 
-export const extractMaterialInitials = extractTestInitials;
+export const extractTestInitials = extractMaterialInitials;
 
 type TestMaster = Database["public"]["Tables"]["test_master"]["Row"];
 
@@ -243,9 +249,9 @@ export function ClientWizard({
       },
       materialDetails: {
         material_id: initialData.jobEntryTest.material_id || "",
-        material_initials: (initialData.jobEntryTest.additional_details_values as any)?.test_initials ||
-          (initialData.jobEntryTest.additional_details_values as any)?.material_initials ||
-          extractTestInitials(initialData.jobEntryTest, (initialData.jobEntryTest as any)?.test_master) || "",
+        material_initials: (initialData.jobEntryTest.additional_details_values as any)?.material_initials ||
+          (initialData.jobEntryTest.additional_details_values as any)?.test_initials ||
+          extractMaterialInitials(initialData.jobEntryTest, (initialData.jobEntryTest as any)?.test_master) || "",
         material_details_location: initialData.jobEntryTest.material_details_location || "",
         sample_quantity: initialData.jobEntryTest.sample_quantity || "",
         testing_day: initialData.jobEntryTest.testing_day || "",
@@ -375,14 +381,18 @@ export function ClientWizard({
     return () => clearTimeout(timer);
   }, [currentStep, nextUidPreview, mode]);
 
-  // Debounced search for clients
+  // Debounced search for clients across all branches
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
-      if (searchQuery.length >= 2) {
+      const trimmed = searchQuery.trim();
+      if (trimmed.length >= 1) {
         setIsSearching(true);
-        const result = await searchClientsAction(searchQuery, selectedBranchId || undefined);
+        const result = await searchClientsAction(trimmed);
         if (result.success && result.data) {
           setSearchResults(result.data);
+          setShowResults(true);
+        } else {
+          setSearchResults([]);
           setShowResults(true);
         }
         setIsSearching(false);
@@ -390,9 +400,9 @@ export function ClientWizard({
         setSearchResults([]);
         setShowResults(false);
       }
-    }, 300);
+    }, 250);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, selectedBranchId]);
+  }, [searchQuery]);
 
   // Fetch tests when reaching step 2
   useEffect(() => {
@@ -410,7 +420,7 @@ export function ClientWizard({
               setValue("jobEntryTests.0.test_name", testName);
               const currentInitials = getValues("materialDetails.material_initials");
               if (!currentInitials) {
-                const derived = deriveTestInitials(testName);
+                const derived = deriveMaterialInitials(test.material_product || testName);
                 if (derived) {
                   setValue("materialDetails.material_initials", derived, { shouldDirty: true });
                   setValue("jobEntryTests.0.additional_details_values.material_initials" as any, derived);
@@ -428,15 +438,19 @@ export function ClientWizard({
 
   useEffect(() => {
     if (mode === "edit" && initialData?.jobEntryTest) {
-      const initials = (initialData.jobEntryTest.additional_details_values as any)?.test_initials ||
-        (initialData.jobEntryTest.additional_details_values as any)?.material_initials ||
-        extractTestInitials(initialData.jobEntryTest, (initialData.jobEntryTest as any)?.test_master) ||
+      const matProd = (initialData.jobEntryTest as any)?.test_master?.material_product || initialData.jobEntryTest.material_description || "";
+      if (matProd && !selectedMaterial) {
+        setSelectedMaterial(matProd);
+      }
+      const initials = (initialData.jobEntryTest.additional_details_values as any)?.material_initials ||
+        (initialData.jobEntryTest.additional_details_values as any)?.test_initials ||
+        extractMaterialInitials(initialData.jobEntryTest, (initialData.jobEntryTest as any)?.test_master) ||
         "";
       if (initials) {
         setValue("materialDetails.material_initials", initials);
       }
     }
-  }, [initialData, mode, setValue]);
+  }, [initialData, mode, setValue, selectedMaterial]);
 
   const watchedCastingDate = watch("materialDetails.date_of_casting");
   const watchedTestingDay = watch("materialDetails.testing_day");
@@ -509,13 +523,13 @@ export function ClientWizard({
   };
 
   const handleSelectClient = async (client: Database["public"]["Tables"]["clients"]["Row"]) => {
-    setValue("client.id", client.id);
-    setValue("client.name", client.name || "");
-    setValue("client.company_name", client.company_name || "");
-    setValue("client.address", client.address || "");
-    setValue("client.mobile", client.mobile || "");
-    setValue("client.email", client.email || "");
-    setValue("client.gst_no", client.gst_no || "");
+    setValue("client.id", client.id, { shouldDirty: true });
+    setValue("client.name", client.name || "", { shouldValidate: true, shouldDirty: true });
+    setValue("client.company_name", client.company_name || "", { shouldValidate: true, shouldDirty: true });
+    setValue("client.address", client.address || "", { shouldValidate: true, shouldDirty: true });
+    setValue("client.mobile", client.mobile || "", { shouldValidate: true, shouldDirty: true });
+    setValue("client.email", client.email || "", { shouldValidate: true, shouldDirty: true });
+    setValue("client.gst_no", client.gst_no || "", { shouldValidate: true, shouldDirty: true });
 
     // Clear project/site details by default, user can select from previous projects in step 2
     setValue("jobEntry.division", "");
@@ -576,10 +590,10 @@ export function ClientWizard({
 
       setValue("selectedTestIds", [...currentIds, id], { shouldValidate: true });
 
-      const testName = test.component_parameter || test.specific_test || test.material_product || "";
+      const matName = selectedMaterial || test.material_product || test.component_parameter || test.specific_test || "";
       const currentInitials = getValues("materialDetails.material_initials");
       if (!currentInitials) {
-        const derived = deriveTestInitials(testName);
+        const derived = deriveMaterialInitials(matName);
         if (derived) {
           setValue("materialDetails.material_initials", derived, { shouldValidate: true, shouldDirty: true });
         }
@@ -635,10 +649,16 @@ export function ClientWizard({
       const mat = getValues("materialDetails");
       let initials = mat?.material_initials?.trim() || "";
       const currentTests = getValues("jobEntryTests") || [];
-      if (!initials && currentTests[0]?.test_name) {
-        initials = deriveTestInitials(currentTests[0].test_name);
-        if (initials) {
-          setValue("materialDetails.material_initials", initials);
+      if (!initials) {
+        const matName = selectedMaterial ||
+          currentTests[0]?.material_description ||
+          availableTests.find(t => t.id === currentTests[0]?.test_master_id)?.material_product ||
+          currentTests[0]?.test_name;
+        if (matName) {
+          initials = deriveMaterialInitials(matName);
+          if (initials) {
+            setValue("materialDetails.material_initials", initials);
+          }
         }
       }
       if (initials) {
@@ -855,16 +875,31 @@ export function ClientWizard({
                       <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors duration-300" />
                       <Input
                         placeholder="Search company or customer name..."
-                        className="pl-12 pr-4 h-14 rounded-xl border-slate-200/80 bg-slate-50/50 text-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-orange-500/10 focus-visible:border-orange-500 transition-all duration-300"
+                        className="pl-12 pr-12 h-14 rounded-xl border-slate-200/80 bg-slate-50/50 text-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-orange-500/10 focus-visible:border-orange-500 transition-all duration-300"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        onFocus={() => { if (searchResults.length > 0) setShowResults(true); }}
-                        onBlur={() => setTimeout(() => setShowResults(false), 200)}
+                        onFocus={() => { if (searchQuery.trim().length >= 1) setShowResults(true); }}
+                        onBlur={() => setTimeout(() => setShowResults(false), 250)}
                       />
                       {isSearching && (
                         <div className="absolute right-5 top-1/2 -translate-y-1/2">
                           <Spinner className="h-5 w-5 text-orange-500" />
                         </div>
+                      )}
+                      {!isSearching && searchQuery && (
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setSearchQuery("");
+                            setSearchResults([]);
+                            setShowResults(false);
+                          }}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+                          title="Clear search"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
                       )}
                     </div>
 
@@ -891,10 +926,17 @@ export function ClientWizard({
                                 }}
                                 className={`p-4 hover:bg-orange-50 cursor-pointer border-b border-slate-100 last:border-0 transition-colors duration-150 ${(gIdx === 0 && idx === 0) ? 'rounded-t-xl' : ''}`}
                               >
-                                <div className="font-semibold text-slate-900 text-base">
-                                  {client.name} {company === 'Individual Customers' && client.company_name ? ` - ${client.company_name}` : ''}
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="font-semibold text-slate-900 text-base">
+                                    {client.name} {company === 'Individual Customers' && client.company_name ? ` - ${client.company_name}` : ''}
+                                  </div>
+                                  {(client as any).branches?.name && (
+                                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                                      {(client as any).branches.name}
+                                    </span>
+                                  )}
                                 </div>
-                                <div className="text-xs font-medium text-slate-500 mt-1.5 flex gap-4">
+                                <div className="text-xs font-medium text-slate-500 mt-1.5 flex flex-wrap gap-4">
                                   {client.mobile && <span className="flex items-center gap-1"><span className="text-slate-400">📱</span> {client.mobile}</span>}
                                   {client.email && <span className="flex items-center gap-1"><span className="text-slate-400">✉️</span> {client.email}</span>}
                                   {client.gst_no && <span className="flex items-center gap-1"><span className="text-slate-400">📄</span> {client.gst_no}</span>}
@@ -903,6 +945,31 @@ export function ClientWizard({
                             ))}
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {showResults && !isSearching && searchQuery.trim().length >= 1 && searchResults.length === 0 && (
+                      <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white border border-slate-200 shadow-2xl rounded-xl p-4 text-center text-sm text-slate-500 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                        No clients found matching &ldquo;<span className="font-semibold text-slate-700">{searchQuery}</span>&rdquo;. You can enter the details manually below.
+                      </div>
+                    )}
+
+                    {watch("client.id") && (
+                      <div className="mt-2.5 p-2.5 px-3.5 bg-orange-50/80 border border-orange-200/80 rounded-xl flex items-center justify-between text-xs text-orange-950 animate-in fade-in">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Check className="h-4 w-4 text-orange-600 shrink-0" />
+                          <span>Existing client linked: <strong className="font-semibold text-slate-900">{watch("client.name")}</strong>{watch("client.company_name") ? ` (${watch("client.company_name")})` : ''}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setValue("client.id", undefined as any);
+                            toast({ title: "Unlinked", description: "This client will be saved as a new customer record." });
+                          }}
+                          className="text-[11px] font-semibold text-orange-700 hover:text-orange-900 hover:underline shrink-0 ml-2"
+                        >
+                          Unlink (create new)
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1187,7 +1254,21 @@ export function ClientWizard({
                             ...uniqueMaterials.map(m => ({ label: m, value: m }))
                           ]}
                           value={selectedMaterial}
-                          onChange={(val) => setSelectedMaterial(val as string)}
+                          onChange={(val) => {
+                            const newMat = (val as string) || "";
+                            setSelectedMaterial(newMat);
+                            if (newMat) {
+                              const derived = deriveMaterialInitials(newMat);
+                              if (derived) {
+                                setValue("materialDetails.material_initials", derived, { shouldValidate: true, shouldDirty: true });
+                                const currentTests = getValues("jobEntryTests") || [];
+                                currentTests.forEach((_, idx) => {
+                                  setValue(`jobEntryTests.${idx}.additional_details_values.material_initials` as any, derived);
+                                  setValue(`jobEntryTests.${idx}.additional_details_values.test_initials` as any, derived);
+                                });
+                              }
+                            }
+                          }}
                           isSearchable={true}
                           isClearable={true}
                           searchPlaceholder="Search material..."
@@ -1416,12 +1497,12 @@ export function ClientWizard({
                           </div>
                           <div className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Test Initials</label>
-                              <span className="text-[10px] text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 uppercase tracking-wider">From Test</span>
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material Initials</label>
+                              <span className="text-[10px] text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 uppercase tracking-wider">From Material</span>
                             </div>
                             <Input
                               {...register(`materialDetails.material_initials`)}
-                              placeholder="e.g. CS, CC, SG"
+                              placeholder="e.g. CC, CS, CA"
                               className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white uppercase tracking-wider font-bold"
                               onChange={(e) => {
                                 const val = e.target.value.toUpperCase();
@@ -1433,7 +1514,7 @@ export function ClientWizard({
                                 });
                               }}
                             />
-                            <span className="text-[11px] text-slate-400 font-medium">Auto-derived from test name, or customize as needed</span>
+                            <span className="text-[11px] text-slate-400 font-medium">Auto-derived from material, or customize as needed</span>
                           </div>
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Sample Quantity</label>

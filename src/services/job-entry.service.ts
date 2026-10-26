@@ -28,6 +28,7 @@ export class JobEntryService {
     if (words.length === 0) return "";
     if (words.length === 1) {
       const w = words[0];
+      if (w.toLowerCase() === "cube") return "CC";
       if (w.length <= 3) return w.toUpperCase();
       return w.slice(0, 2).toUpperCase();
     }
@@ -48,8 +49,8 @@ export class JobEntryService {
     const firstTestMaster = testMasters.find((x: any) => x.id === testsData[0].test_master_id);
     let initials = materialInitials?.trim();
     if (!initials) {
-      const testName = firstTestMaster?.component_parameter || firstTestMaster?.specific_test || firstTestMaster?.material_product;
-      initials = JobEntryService.deriveTestInitials(testName);
+      const matOrTestName = firstTestMaster?.material_product || testsData[0]?.material_description || firstTestMaster?.component_parameter || firstTestMaster?.specific_test;
+      initials = JobEntryService.deriveTestInitials(matOrTestName);
     }
     if (!initials) {
       throw new Error("test_initials is required for code generation.");

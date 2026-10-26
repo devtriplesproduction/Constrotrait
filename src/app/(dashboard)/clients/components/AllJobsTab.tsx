@@ -101,9 +101,11 @@ export default function AllJobsTab({
         job.uid?.toString().includes(searchUidLower) ||
         (job.job_entry_tests && job.job_entry_tests.some(t => t.ulr_number?.toLowerCase().includes(searchUidLower)));
 
-      // Client Name Filter
-      const clientName = job.clients?.name?.toLowerCase() || "";
-      const clientMatch = searchClient.trim() === "" || clientName.includes(searchClient.toLowerCase().trim());
+      // Client / Company Name Filter
+      const clientName = (job.clients?.name || "").toLowerCase();
+      const companyName = ((job.clients as any)?.company_name || "").toLowerCase();
+      const searchClientLower = searchClient.toLowerCase().trim();
+      const clientMatch = searchClientLower === "" || clientName.includes(searchClientLower) || companyName.includes(searchClientLower);
 
       // Date Filter (using inward created_at date)
       const inwardDateStr = job.created_at ? new Date(job.created_at).toISOString().split('T')[0] : "";
@@ -154,8 +156,8 @@ export default function AllJobsTab({
           </div>
           <div className="flex-1 w-full">
             <Input
-              label="Client Name"
-              placeholder="Search by Client..."
+              label="Company / Client"
+              placeholder="Search by company or client..."
               value={searchClient}
               onChange={(e) => setSearchClient(e.target.value)}
               className="h-10 bg-slate-50/50 border-slate-200 focus-visible:ring-orange-500/20 focus-visible:border-orange-400 hover:border-orange-300 transition-all shadow-sm rounded-xl"

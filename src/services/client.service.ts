@@ -13,26 +13,22 @@ export class ClientService {
 
     const supabase = await createClient();
     
-    // Sanitize the query to escape commas and percent signs
-    const sanitizedQuery = query.replace(/,/g, '\\,').replace(/%/g, '\\%');
+    // Sanitize the query to avoid PostgREST syntax errors with commas, parentheses, etc.
+    const sanitized = query.replace(/[,()\\%]/g, ' ').trim();
+    const words = sanitized.split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) return [];
+
+    const phrase = words.join(' ');
     
     let dbQuery = supabase
       .from("clients")
       .select("*, branches ( id, name, code )")
-      .or(`name.ilike.%${sanitizedQuery}%,company_name.ilike.%${sanitizedQuery}%,email.ilike.%${sanitizedQuery}%,mobile.ilike.%${sanitizedQuery}%,gst_no.ilike.%${sanitizedQuery}%`)
+      .or(`name.ilike.%${phrase}%,company_name.ilike.%${phrase}%,email.ilike.%${phrase}%,mobile.ilike.%${phrase}%,gst_no.ilike.%${phrase}%`)
       .limit(50);
 
     const isSuper = isSuperAdmin(user.roles);
-    if (isSuper) {
-      if (branchId && branchId !== "all") {
-        dbQuery = dbQuery.eq("branch_id", branchId);
-      }
-    } else {
-      if (user.branch_id) {
-        dbQuery = dbQuery.eq("branch_id", user.branch_id);
-      } else {
-        return [];
-      }
+    if (branchId && branchId !== "all") {
+      dbQuery = dbQuery.eq("branch_id", branchId);
     }
 
     const { data, error } = await dbQuery;
@@ -42,7 +38,35 @@ export class ClientService {
       throw new Error(error.message);
     }
 
-    return data;
+    if (data && data.length > 0) {
+      return data;
+    }
+
+    // Fallback for multi-word or reordered queries (e.g. "Ketan Ankita" or "Khandagale Ketan")
+    if (words.length > 1) {
+      const firstWord = words[0];
+      let fallbackQuery = supabase
+        .from("clients")
+        .select("*, branches ( id, name, code )")
+        .or(`name.ilike.%${firstWord}%,company_name.ilike.%${firstWord}%,email.ilike.%${firstWord}%,mobile.ilike.%${firstWord}%,gst_no.ilike.%${firstWord}%`)
+        .limit(50);
+
+      if (branchId && branchId !== "all") {
+        fallbackQuery = fallbackQuery.eq("branch_id", branchId);
+      }
+
+      const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+      if (!fallbackError && fallbackData) {
+        const remaining = words.slice(1).map(w => w.toLowerCase());
+        const filtered = fallbackData.filter(client => {
+          const text = `${client.name || ''} ${client.company_name || ''} ${client.email || ''} ${client.mobile || ''} ${client.gst_no || ''}`.toLowerCase();
+          return remaining.every(w => text.includes(w));
+        });
+        if (filtered.length > 0) return filtered;
+      }
+    }
+
+    return data || [];
   }
 
   /**
@@ -116,13 +140,6 @@ export class ClientService {
 
     const supabase = await createClient();
     const isSuper = isSuperAdmin(user.roles);
-
-    if (!isSuper) {
-      const { data: existing } = await supabase.from("clients").select("branch_id").eq("id", id).single();
-      if (existing && existing.branch_id !== user.branch_id) {
-        throw new Error("Unauthorized: Cross-branch client editing is not permitted");
-      }
-    }
 
     const updatePayload: any = {
       ...clientData,
