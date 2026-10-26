@@ -19,6 +19,8 @@ import { RecordExpenseModal } from "./expenses/RecordExpenseModal";
 import { LedgersHub } from "./ledgers/LedgersHub";
 import { ExpenseLedgerTable } from "./ledgers/ExpenseLedgerTable";
 import { TemplateManager } from "./templates/TemplateManager";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 import {
   createInwardReceiptAction,
   cancelInwardReceiptAction,
@@ -953,6 +955,11 @@ function QuotationsTab({ data, run, pending }: any) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(defaultTemplate?.id || "");
   const [selectedQuotationForView, setSelectedQuotationForView] = useState<any | null>(null);
 
+  const pagination = usePagination({
+    data: data.quotations || [],
+    initialPageSize: 5,
+  });
+
   // Financial calculations
   const subtotal = items.reduce((s, i) => s + Number(i.qty || 0) * Number(i.rate || 0), 0);
   const discount = Number(form.discount_amount || 0);
@@ -1398,7 +1405,7 @@ function QuotationsTab({ data, run, pending }: any) {
             </div>
           ) : (
             <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
-              {(data.quotations || []).map((q: any) => (
+              {pagination.paginatedData.map((q: any) => (
                 <div
                   key={q.id}
                   className="p-4 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-50 transition-all space-y-2"
@@ -1442,6 +1449,19 @@ function QuotationsTab({ data, run, pending }: any) {
                 </div>
               ))}
             </div>
+          )}
+
+          {(data.quotations || []).length > 0 && (
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              pageSize={pagination.pageSize}
+              pageSizeOptions={[5, 10, 20]}
+              onPageChange={pagination.setPage}
+              onPageSizeChange={pagination.setPageSize}
+              itemLabel="quotations"
+            />
           )}
         </div>
       </div>

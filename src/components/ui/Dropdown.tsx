@@ -27,6 +27,9 @@ export interface DropdownProps {
   isClearable?: boolean;
   isSearchable?: boolean;
   searchPlaceholder?: string;
+  menuWidth?: number | string;
+  itemClassName?: string;
+  placement?: "top" | "bottom" | "auto";
 }
 
 export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
@@ -49,6 +52,9 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
       isClearable,
       isSearchable,
       searchPlaceholder,
+      menuWidth,
+      itemClassName,
+      placement,
     },
     ref
   ) => {
@@ -78,9 +84,11 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
           isClearable={isClearable}
           isSearchable={isSearchable}
           searchPlaceholder={searchPlaceholder}
+          menuWidth={menuWidth}
+          placement={placement}
         >
           {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
+            <SelectItem key={opt.value} value={opt.value} className={itemClassName}>
               {opt.label}
             </SelectItem>
           ))}

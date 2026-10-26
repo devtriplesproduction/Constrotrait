@@ -10,6 +10,8 @@ import { getAllJobEntriesAction } from "@/actions/job-entry.actions";
 import { Database } from "@/types/database";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
@@ -119,6 +121,19 @@ export default function AllJobsTab({
     });
   }, [allJobs, searchUid, searchClient, filterDate, filterJobType, filterBranch]);
 
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedJobs,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination({
+    data: filteredJobs,
+    initialPageSize: 9,
+  });
+
   return (
     <div className="space-y-4">
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
@@ -213,7 +228,7 @@ export default function AllJobsTab({
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
-            {filteredJobs.map((job) => {
+            {paginatedJobs.map((job) => {
               const client = job.clients;
               const testCount = job.job_entry_tests?.length || 0;
               // Pass the UID string exactly as job-cards/[id] expects
@@ -296,6 +311,19 @@ export default function AllJobsTab({
           </div>
         )}
       </div>
+
+      {!isLoading && filteredJobs.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[9, 18, 36, 90]}
+          itemLabel="jobs"
+        />
+      )}
     </div>
   );
 }

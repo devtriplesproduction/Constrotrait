@@ -24,6 +24,8 @@ import { Dropdown } from "../../ui/Dropdown";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Json } from "@/types/database";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const generateRandomPassword = () => {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
@@ -105,6 +107,19 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
       return matchesSearch && matchesDept && matchesBranch;
     });
   }, [employees, searchQuery, departmentFilter, branchFilter]);
+
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedEmployees,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination({
+    data: filteredEmployees,
+    initialPageSize: 10,
+  });
 
   // Extract unique departments for filter
   const departments = useMemo(() => {
@@ -250,7 +265,7 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 ">
-                  {filteredEmployees.map((emp) => (
+                  {paginatedEmployees.map((emp) => (
                     <tr key={emp.id} className="hover:bg-zinc-50/50 transition-colors cursor-pointer" onClick={() => setSelectedEmployee(emp)}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -297,6 +312,19 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
               </table>
             </div>
           </div>
+
+          {filteredEmployees.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[10, 20, 50, 100]}
+              itemLabel="employees"
+            />
+          )}
         </div>
       )}
 
@@ -314,7 +342,7 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredEmployees.map((emp) => {
+                  {paginatedEmployees.map((emp) => {
                     const inputState = securityInputs[emp.id] || { value: '', show: false };
                     return (
                       <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
@@ -390,6 +418,19 @@ export function EmployeeTable({ employees, branches = [], isSuperAdmin = false }
               </table>
             </div>
           </div>
+
+          {filteredEmployees.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[10, 20, 50, 100]}
+              itemLabel="employees"
+            />
+          )}
         </div>
       )}
 

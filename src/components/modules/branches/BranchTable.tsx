@@ -10,6 +10,8 @@ import { BranchFormModal } from "./BranchFormModal";
 import { Database } from "@/types/database";
 import { BranchFormData } from "@/lib/validations/branch";
 import { Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 type BranchRow = Database["public"]["Tables"]["branches"]["Row"];
 
@@ -23,6 +25,19 @@ export function BranchTable({ branches }: BranchTableProps) {
   const [isPending, startTransition] = useTransition();
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedBranches,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination({
+    data: branches,
+    initialPageSize: 10,
+  });
 
   const handleToggleStatus = (id: string, currentStatus: boolean | null) => {
     startTransition(async () => {
@@ -64,7 +79,7 @@ export function BranchTable({ branches }: BranchTableProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {branches.map((branch) => (
+              {paginatedBranches.map((branch) => (
                 <tr key={branch.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -142,6 +157,19 @@ export function BranchTable({ branches }: BranchTableProps) {
           </table>
         </div>
       </div>
+
+      {branches.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[10, 20, 50]}
+          itemLabel="branches"
+        />
+      )}
 
       {selectedBranch && (
         <BranchFormModal

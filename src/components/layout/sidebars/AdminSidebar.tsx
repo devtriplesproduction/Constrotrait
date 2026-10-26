@@ -10,19 +10,10 @@ import {
   CalendarDays,
   Banknote,
   UserSquare,
-  /*
-  Receipt,
-  FileText,
-  Landmark,
-  Scale,
-  BarChart3,
-  Scroll,
-  CreditCard,
-  BookOpen,
-  */
+  Database,
 } from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
-import { canManageTestMaster, canManageClientsAndJobs, canManageEmployees /*, canViewAccounting */ } from "@/config/roles";
+import { canManageTestMaster, canManageClientsAndJobs, canManageEmployees, canAccessSystemConsole } from "@/config/roles";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -80,6 +71,14 @@ export function AdminSidebar({ isOpen, setIsOpen, role, roles }: AdminSidebarPro
 
   if (isPayrollAllowed) {
     adminLinks.push({ title: "Payroll", href: "/hr/payroll", icon: Banknote });
+  }
+
+  if (canAccessSystemConsole(roleArray)) {
+    adminLinks.push({
+      title: "System & Backups",
+      href: "/system",
+      icon: Database,
+    });
   }
 
   /*

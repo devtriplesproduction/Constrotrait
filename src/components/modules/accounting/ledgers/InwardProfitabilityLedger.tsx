@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 interface InwardProfitabilityLedgerProps {
   inwards: any[];
@@ -125,6 +127,11 @@ export function InwardProfitabilityLedger({
       );
     });
   }, [inwardRows, profitFilter, searchTerm]);
+
+  const pagination = usePagination({
+    data: filtered,
+    initialPageSize: 10,
+  });
 
   // Summary Metrics
   const summary = useMemo(() => {
@@ -283,7 +290,7 @@ export function InwardProfitabilityLedger({
                   </td>
                 </tr>
               ) : (
-                filtered.map((r) => {
+                pagination.paginatedData.map((r) => {
                   const isPositive = r.netProfit >= 0;
 
                   return (
@@ -379,6 +386,17 @@ export function InwardProfitabilityLedger({
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          pageSizeOptions={[10, 25, 50]}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="inwards"
+        />
       </div>
     </div>
   );

@@ -16,6 +16,7 @@ export const APP_ROLES: Record<AppRole, string> = {
   SAMPLER: 'Sampler',
   MARKETING_EXECUTIVE: 'Marketing Executive',
   DIGITAL_MARKETING: 'Digital Marketing',
+  DEVELOPER: 'Developer',
 } as const;
 
 export const ONBOARDING_ROLES = Object.entries(APP_ROLES)
@@ -28,6 +29,15 @@ export const ONBOARDING_ROLE_KEYS = APP_ROLE_KEYS.filter(role => role !== 'SUPER
 export function isSuperAdmin(roles?: string[] | null): boolean {
   if (!roles) return false;
   return roles.includes("SUPER_ADMIN");
+}
+
+export function isDeveloper(roles?: string[] | null): boolean {
+  if (!roles) return false;
+  return roles.includes("DEVELOPER");
+}
+
+export function canAccessSystemConsole(roles?: string[] | null): boolean {
+  return isSuperAdmin(roles) || isDeveloper(roles);
 }
 
 export function isBranchManager(roles?: string[] | null): boolean {
@@ -167,6 +177,8 @@ export function getRoleColorBadge(role?: string | null): { bg: string; text: str
     case 'MARKETING_EXECUTIVE':
     case 'DIGITAL_MARKETING':
       return { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' };
+    case 'DEVELOPER':
+      return { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
     default:
       return { bg: 'bg-zinc-50', text: 'text-zinc-700', border: 'border-zinc-200' };
   }

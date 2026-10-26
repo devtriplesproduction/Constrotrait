@@ -39,6 +39,132 @@ export type Database = {
   }
   public: {
     Tables: {
+      login_audit_logs: {
+        Row: {
+          id: string
+          user_id: string | null
+          email: string
+          full_name: string | null
+          role: string | null
+          ip_address: string | null
+          user_agent: string | null
+          device_type: string | null
+          browser: string | null
+          os: string | null
+          status: string
+          failure_reason: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          email: string
+          full_name?: string | null
+          role?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          device_type?: string | null
+          browser?: string | null
+          os?: string | null
+          status?: string
+          failure_reason?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          email?: string
+          full_name?: string | null
+          role?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          device_type?: string | null
+          browser?: string | null
+          os?: string | null
+          status?: string
+          failure_reason?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      database_backups: {
+        Row: {
+          id: string
+          file_name: string
+          file_size_bytes: number
+          total_tables: number
+          total_records: number
+          created_by: string | null
+          creator_email: string | null
+          status: string
+          summary: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          file_name: string
+          file_size_bytes?: number
+          total_tables?: number
+          total_records?: number
+          created_by?: string | null
+          creator_email?: string | null
+          status?: string
+          summary?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          file_name?: string
+          file_size_bytes?: number
+          total_tables?: number
+          total_records?: number
+          created_by?: string | null
+          creator_email?: string | null
+          status?: string
+          summary?: Json | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      database_restore_logs: {
+        Row: {
+          id: string
+          file_name: string
+          restored_by: string | null
+          restorer_email: string | null
+          restore_mode: string
+          tables_restored: Json | null
+          total_records_processed: number
+          status: string
+          error_message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          file_name: string
+          restored_by?: string | null
+          restorer_email?: string | null
+          restore_mode?: string
+          tables_restored?: Json | null
+          total_records_processed?: number
+          status?: string
+          error_message?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          file_name?: string
+          restored_by?: string | null
+          restorer_email?: string | null
+          restore_mode?: string
+          tables_restored?: Json | null
+          total_records_processed?: number
+          status?: string
+          error_message?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       accounting_audit_log: {
         Row: {
           action: string
@@ -3134,6 +3260,7 @@ export type Database = {
         | "SAMPLER"
         | "MARKETING_EXECUTIVE"
         | "DIGITAL_MARKETING"
+        | "DEVELOPER"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3278,6 +3405,7 @@ export const Constants = {
         "SAMPLER",
         "MARKETING_EXECUTIVE",
         "DIGITAL_MARKETING",
+        "DEVELOPER",
       ],
     },
   },

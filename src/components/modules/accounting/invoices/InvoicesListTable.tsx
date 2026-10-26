@@ -4,6 +4,8 @@ import React, { useState, useMemo } from "react";
 import { Search, Eye, CreditCard, ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, AlertCircle, ArrowUpRight, Check, Hash, IndianRupee, FilePlus2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 interface InvoicesListTableProps {
   invoices: any[];
@@ -51,6 +53,11 @@ export function InvoicesListTable({
       return noMatch || clientMatch || uidMatch || notesMatch;
     });
   }, [invoices, searchTerm, typeFilter, statusFilter]);
+
+  const pagination = usePagination({
+    data: filteredInvoices,
+    initialPageSize: 10,
+  });
 
   // Aggregate stats
   const totalBilled = filteredInvoices.reduce((s, i) => s + Number(i.total_amount || 0), 0);
@@ -199,7 +206,7 @@ export function InvoicesListTable({
                   </td>
                 </tr>
               ) : (
-                filteredInvoices.map((inv) => {
+                pagination.paginatedData.map((inv) => {
                   const isProforma = inv.invoice_type === "proforma";
                   const total = Number(inv.total_amount || 0);
                   const paid = Number(inv.paid_amount || 0);
@@ -458,6 +465,17 @@ export function InvoicesListTable({
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          pageSizeOptions={[10, 25, 50, 100]}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="invoices"
+        />
       </div>
     </div>
   );

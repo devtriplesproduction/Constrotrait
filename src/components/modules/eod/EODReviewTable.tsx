@@ -6,11 +6,18 @@ import { useRouter } from 'next/navigation';
 import { EODReport } from '@/services/eod.service';
 import { usePrompt } from "@/hooks/use-prompt";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 export function EODReviewTable({ eods }: { eods: (EODReport & { profiles: { first_name: string, last_name: string, employee_id: string } | null })[] }) {
   const [loading, setLoading] = useState<string | null>(null);
   const router = useRouter();
   const { prompt, PromptComponent } = usePrompt();
+
+  const pagination = usePagination({
+    data: eods || [],
+    initialPageSize: 10,
+  });
 
   async function handleReview(eodId: string, action: 'Approve' | 'Reject') {
     const reason = action === 'Reject' ? await prompt("Enter rejection reason:") : undefined;
@@ -55,7 +62,7 @@ export function EODReviewTable({ eods }: { eods: (EODReport & { profiles: { firs
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {eods.map((eod) => (
+          {pagination.paginatedData.map((eod) => (
             <tr key={eod.id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 {eod.profiles?.first_name} {eod.profiles?.last_name}
@@ -89,6 +96,16 @@ export function EODReviewTable({ eods }: { eods: (EODReport & { profiles: { firs
           ))}
         </tbody>
       </table>
+      <Pagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        pageSizeOptions={[10, 20, 50]}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+        itemLabel="reports"
+      />
       {PromptComponent}
     </div>
   );

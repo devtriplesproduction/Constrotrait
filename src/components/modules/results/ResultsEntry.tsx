@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getResultRowsAction, saveResultRowsAction } from "@/actions/test-result.actions";
 import { TestResultRow } from "@/types/lims";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const emptyRow = (testId: string, n: number): TestResultRow => ({
   job_entry_test_id: testId,
@@ -24,6 +26,11 @@ export function ResultsEntry({ initialTests, loadError }: { initialTests: any[];
   const [selected, setSelected] = useState<string | null>(null);
   const [rows, setRows] = useState<TestResultRow[]>([]);
   const [busy, setBusy] = useState(false);
+
+  const pagination = usePagination({
+    data: initialTests,
+    initialPageSize: 10,
+  });
 
   const open = async (id: string) => {
     setSelected(id);
@@ -71,7 +78,7 @@ export function ResultsEntry({ initialTests, loadError }: { initialTests: any[];
               </tr>
             </thead>
             <tbody>
-              {initialTests.map((t) => (
+              {pagination.paginatedData.map((t) => (
                 <tr key={t.id} className={`cursor-pointer hover:bg-orange-50 ${selected === t.id ? "bg-orange-50" : ""}`} onClick={() => open(t.id)}>
                   <td className="px-3 py-2">{t.uid_label || "UID missing"}</td>
                   <td className="px-3 py-2">{t.test_master?.specific_test || t.test_master?.component_parameter}</td>
@@ -80,6 +87,16 @@ export function ResultsEntry({ initialTests, loadError }: { initialTests: any[];
               ))}
             </tbody>
           </table>
+          <Pagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            pageSizeOptions={[10, 20, 50]}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="tests"
+          />
         </div>
         <div className="border rounded-xl bg-white p-4">
           {!selected ? <p className="text-slate-500 text-sm">Select a test.</p> : (

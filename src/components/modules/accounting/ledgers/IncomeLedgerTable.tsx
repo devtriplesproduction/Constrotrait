@@ -14,9 +14,14 @@ import {
   CreditCard,
   Building,
   User,
+  FileSpreadsheet,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
+import { useToast } from "@/hooks/use-toast";
 
 interface IncomeLedgerTableProps {
   incomeEntries: any[];
@@ -31,6 +36,7 @@ export function IncomeLedgerTable({
   onViewReceipt,
   onRefresh,
 }: IncomeLedgerTableProps) {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "inward" | "direct">("all");
   const [paymentModeFilter, setPaymentModeFilter] = useState("all");
@@ -78,6 +84,11 @@ export function IncomeLedgerTable({
     });
   }, [incomeEntries, typeFilter, paymentModeFilter, accountFilter, fromDate, toDate, searchTerm]);
 
+  const pagination = usePagination({
+    data: filtered,
+    initialPageSize: 10,
+  });
+
   // Summary Metrics
   const summary = useMemo(() => {
     let total = 0;
@@ -99,49 +110,47 @@ export function IncomeLedgerTable({
     return { total, inwardIncome, directIncome, cashIncome, bankIncome };
   }, [filtered]);
 
-  // Export CSV
-  const handleExportCSV = () => {
-    if (filtered.length === 0) return;
-    const headers = [
-      "Date",
-      "Voucher / Receipt No",
-      "Type",
-      "Inward UID",
-      "Party / Client",
-      "Account / Bank",
-      "Payment Mode",
-      "Particulars",
-      "Credit Amount (INR)",
-      "GST",
-      "TDS",
-      "Status",
+  // Export Excel
+  const handleExportExcel = () => {
+    if (filtered.length === 0) {
+      toast({ title: "No Data", description: "No income records to export.", variant: "warning" });
+      return;
+    }
+
+    const exportData = filtered.map((r) => ({
+      "Date": r.date || "",
+      "Voucher / Receipt No": r.voucher_no || "",
+      "Type": r.type_label || (r.inward_id ? "Inward Receipt" : "Direct Receipt"),
+      "Inward UID": r.inward_uid || "",
+      "Party / Client": r.party_name || "",
+      "Account / Bank": r.account_name || "",
+      "Payment Mode": r.payment_mode || "",
+      "Particulars": r.particulars || "",
+      "Credit Amount (INR)": Number(r.amount || 0),
+      "GST Amount": Number(r.gst_amount || 0),
+      "TDS Amount": Number(r.tds_amount || 0),
+      "Status": r.status || "received",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    worksheet["!cols"] = [
+      { wch: 14 }, // Date
+      { wch: 22 }, // Voucher / Receipt No
+      { wch: 18 }, // Type
+      { wch: 16 }, // Inward UID
+      { wch: 24 }, // Party / Client
+      { wch: 20 }, // Account / Bank
+      { wch: 15 }, // Payment Mode
+      { wch: 32 }, // Particulars
+      { wch: 18 }, // Credit Amount (INR)
+      { wch: 12 }, // GST Amount
+      { wch: 12 }, // TDS Amount
+      { wch: 14 }, // Status
     ];
-
-    const rows = filtered.map((r) => {
-      return [
-        `"${r.date || ""}"`,
-        `"${r.voucher_no || ""}"`,
-        `"${r.type_label || (r.inward_id ? "Inward Receipt" : "Direct Receipt")}"`,
-        `"${r.inward_uid || ""}"`,
-        `"${r.party_name || ""}"`,
-        `"${r.account_name || ""}"`,
-        `"${r.payment_mode || ""}"`,
-        `"${(r.particulars || "").replace(/"/g, '""')}"`,
-        Number(r.amount || 0),
-        Number(r.gst_amount || 0),
-        Number(r.tds_amount || 0),
-        `"${r.status || "received"}"`,
-      ].join(",");
-    });
-
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Income_Ledger_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Income");
+    XLSX.writeFile(workbook, `Income_Ledger_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast({ title: "Success", description: "Excel file exported successfully.", variant: "success" });
   };
 
   const handlePrint = () => {
@@ -248,11 +257,11 @@ export function IncomeLedgerTable({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleExportCSV}
+              onClick={handleExportExcel}
               className="h-8.5 px-3 text-xs font-semibold gap-1.5 text-slate-700"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Export Excel</span>
             </Button>
             <Button
               variant="outline"
@@ -354,7 +363,7 @@ export function IncomeLedgerTable({
                   </td>
                 </tr>
               ) : (
-                filtered.map((r) => {
+                pagination.paginatedData.map((r) => {
                   const isInward = !!r.inward_id || !!r.inward_uid;
 
                   return (
@@ -447,6 +456,17 @@ export function IncomeLedgerTable({
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          pageSizeOptions={[10, 25, 50, 100]}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="income entries"
+        />
       </div>
     </div>
   );

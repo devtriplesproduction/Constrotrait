@@ -42,6 +42,8 @@ export interface SelectProps {
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
   searchInMenu?: boolean;
+  menuWidth?: number | string;
+  placement?: "top" | "bottom" | "auto";
 }
 
 const SelectContext = React.createContext<{
@@ -68,9 +70,12 @@ export function Select({
   onSearchChange,
   searchPlaceholder = "Search...",
   searchInMenu = true,
+  menuWidth,
+  placement = "auto",
 }: SelectProps) {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
+  const [isTop, setIsTop] = React.useState(false);
   const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0, right: 0 });
   const containerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
@@ -86,8 +91,24 @@ export function Select({
   const updateCoords = () => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      let shouldBeTop = false;
+      if (placement === "top") {
+        shouldBeTop = true;
+      } else if (placement === "bottom") {
+        shouldBeTop = false;
+      } else {
+        // "auto": flip up if space below is limited (< 220px) and there's more space above
+        shouldBeTop = spaceBelow < 220 && spaceAbove > spaceBelow;
+      }
+
+      setIsTop(shouldBeTop);
       setCoords({
-        top: rect.bottom + window.scrollY + 8,
+        top: shouldBeTop
+          ? rect.top + window.scrollY - 8
+          : rect.bottom + window.scrollY + 8,
         left: rect.left + window.scrollX,
         width: rect.width,
         right: window.innerWidth - (rect.right + window.scrollX),
@@ -228,92 +249,104 @@ export function Select({
   const dropdown = (
     <AnimatePresence>
       {open && (
-        <motion.div 
-          key="select-dropdown"
-          initial={{ opacity: 0, y: -8, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -4, scale: 0.98 }}
-          transition={{ duration: 0.15, ease: "easeOut" }}
+        <div
           style={{
             position: "absolute",
             top: coords.top,
             ...(align === "right" ? { right: coords.right } : { left: coords.left }),
-            minWidth: Math.max(coords.width, 200),
-            zIndex: 99999
+            width: menuWidth,
+            minWidth: menuWidth ?? Math.max(coords.width, 200),
+            zIndex: 99999,
           }}
-          id="select-portal-container"
-          className={cn(
-            "z-[99999] rounded-xl overflow-hidden",
-            "bg-white border border-slate-200/80",
-            "shadow-[0_12px_40px_-10px_rgba(22,23,36,0.12),0_4px_16px_-4px_rgba(22,23,36,0.08)] flex flex-col"
-          )}
         >
-          {isMenuSearchActive && (
-            <div className="p-2 border-b border-slate-100 bg-white sticky top-0 z-10">
-              <div className="relative flex items-center">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder={searchPlaceholder}
-                  value={menuSearchQuery}
-                  onChange={(e) => setMenuSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 text-slate-800 placeholder:text-slate-400 transition-all"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    e.stopPropagation();
-                    if (e.key === "Escape") {
-                      setOpen(false);
-                    } else if (e.key === "Enter") {
-                      e.preventDefault();
-                      const findFirstItem = (nodes: React.ReactNode): string | null => {
-                        let result: string | null = null;
-                        React.Children.forEach(nodes, (c) => {
-                          if (result !== null || !React.isValidElement(c)) return;
-                          if (isSelectItem(c)) {
-                            result = (c.props as any).value;
-                          } else if ((c.props as any)?.children) {
-                            result = findFirstItem((c.props as any).children);
+          <div
+            style={
+              isTop
+                ? { transform: "translateY(-100%)", transformOrigin: "bottom center" }
+                : { transformOrigin: "top center" }
+            }
+          >
+            <motion.div 
+              key="select-dropdown"
+              initial={{ opacity: 0, y: isTop ? 8 : -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: isTop ? 8 : -4, scale: 0.98 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              id="select-portal-container"
+              className={cn(
+                "z-[99999] rounded-xl overflow-hidden",
+                "bg-white border border-slate-200/80",
+                "shadow-[0_12px_40px_-10px_rgba(22,23,36,0.12),0_4px_16px_-4px_rgba(22,23,36,0.08)] flex flex-col"
+              )}
+            >
+              {isMenuSearchActive && (
+                <div className="p-2 border-b border-slate-100 bg-white sticky top-0 z-10">
+                  <div className="relative flex items-center">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder={searchPlaceholder}
+                      value={menuSearchQuery}
+                      onChange={(e) => setMenuSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 text-slate-800 placeholder:text-slate-400 transition-all"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === "Escape") {
+                          setOpen(false);
+                        } else if (e.key === "Enter") {
+                          e.preventDefault();
+                          const findFirstItem = (nodes: React.ReactNode): string | null => {
+                            let result: string | null = null;
+                            React.Children.forEach(nodes, (c) => {
+                              if (result !== null || !React.isValidElement(c)) return;
+                              if (isSelectItem(c)) {
+                                result = (c.props as any).value;
+                              } else if ((c.props as any)?.children) {
+                                result = findFirstItem((c.props as any).children);
+                              }
+                            });
+                            return result;
+                          };
+                          const firstVal = findFirstItem(renderedChildren);
+                          if (firstVal !== null) {
+                            onValueChange(firstVal);
+                            setOpen(false);
                           }
-                        });
-                        return result;
-                      };
-                      const firstVal = findFirstItem(renderedChildren);
-                      if (firstVal !== null) {
-                        onValueChange(firstVal);
-                        setOpen(false);
-                      }
-                    }
-                  }}
-                />
-                {menuSearchQuery && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuSearchQuery("");
-                      searchInputRef.current?.focus();
-                    }}
-                    className="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                        }
+                      }}
+                    />
+                    {menuSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuSearchQuery("");
+                          searchInputRef.current?.focus();
+                        }}
+                        className="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="p-1.5 flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent" style={{ maxHeight: "16rem" }}>
+                {visibleCount > 0 ? (
+                  renderedChildren
+                ) : (
+                  <div className="px-3 py-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center gap-1.5">
+                    <Search className="w-4 h-4 text-slate-300" />
+                    <span>{menuSearchQuery ? `No options matching "${menuSearchQuery}"` : "No options available"}</span>
+                  </div>
                 )}
               </div>
-            </div>
-          )}
-
-          <div className="p-1.5 flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent" style={{ maxHeight: "16rem" }}>
-            {visibleCount > 0 ? (
-              renderedChildren
-            ) : (
-              <div className="px-3 py-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center gap-1.5">
-                <Search className="w-4 h-4 text-slate-300" />
-                <span>{menuSearchQuery ? `No options matching "${menuSearchQuery}"` : "No options available"}</span>
-              </div>
-            )}
+            </motion.div>
           </div>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );

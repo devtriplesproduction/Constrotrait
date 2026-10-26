@@ -12,6 +12,8 @@ import { PageHeader } from "@/components/modules/PageHeader";
 import { Modal } from "@/components/common/Modal";
 import { UploadCloud } from "lucide-react";
 import { usePrompt } from "@/hooks/use-prompt";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 export interface LeaveRecord {
   id: string;
@@ -62,6 +64,16 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
     if (statusFilter === "All") return true;
     if (statusFilter === "Pending") return (leave.status as string)?.includes("Pending");
     return leave.status === statusFilter;
+  });
+
+  const myLeavesPagination = usePagination({
+    data: filteredMyLeaves,
+    initialPageSize: 9,
+  });
+
+  const approveLeavesPagination = usePagination({
+    data: filteredLeavesToApprove,
+    initialPageSize: 8,
   });
   const { toast } = useToast();
 
@@ -185,7 +197,7 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
 
           {!isSuperAdmin && (
             <div className="bg-orange-50 text-orange-700 px-4 py-2.5 rounded-xl font-medium shrink-0">
-              Comp-Off Balance: <span className="font-bold">{compOffBalance}</span> hours
+              Credits: <span className="font-bold">{compOffBalance}</span> hours
             </div>
           )}
 
@@ -224,72 +236,85 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredMyLeaves.map((leave: LeaveRecord & { is_paid?: boolean }, idx) => {
-                const statusConfig = getStatusConfig(leave.status);
-                const StatusIcon = statusConfig.icon;
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {myLeavesPagination.paginatedData.map((leave: LeaveRecord & { is_paid?: boolean }, idx) => {
+                  const statusConfig = getStatusConfig(leave.status);
+                  const StatusIcon = statusConfig.icon;
 
-                return (
-                  <div
-                    key={leave.id as string}
-                    className="group relative bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(249,115,22,0.12)] rounded-3xl p-6 transition-all duration-500 hover:-translate-y-1 overflow-hidden"
-                    style={{ animationDelay: `${idx * 50}ms` }}
-                  >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-400/20 to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110" />
+                  return (
+                    <div
+                      key={leave.id as string}
+                      className="group relative bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(249,115,22,0.12)] rounded-3xl p-6 transition-all duration-500 hover:-translate-y-1 overflow-hidden"
+                      style={{ animationDelay: `${idx * 50}ms` }}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-400/20 to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110" />
 
-                    <div className="relative z-10 flex justify-between items-start mb-6">
-                      <div className="flex items-center gap-4">
-                        <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/40 transition-shadow">
-                          <span className="text-[10px] font-bold uppercase tracking-widest opacity-90">{leave.start_date ? format(new Date(leave.start_date), "MMM") : ""}</span>
-                          <span className="text-xl font-black leading-none mt-0.5">{leave.start_date ? format(new Date(leave.start_date), "dd") : ""}</span>
+                      <div className="relative z-10 flex justify-between items-start mb-6">
+                        <div className="flex items-center gap-4">
+                          <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/40 transition-shadow">
+                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-90">{leave.start_date ? format(new Date(leave.start_date), "MMM") : ""}</span>
+                            <span className="text-xl font-black leading-none mt-0.5">{leave.start_date ? format(new Date(leave.start_date), "dd") : ""}</span>
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-slate-900">{leave.leave_type}</h3>
+                            <p className="text-sm font-medium text-slate-500">
+                              {leave.start_date ? format(new Date(leave.start_date), "MMM dd, yyyy") : ""}
+                              {!leave.is_half_day && leave.end_date && ` - ${format(new Date(leave.end_date), "MMM dd, yyyy")}`}
+                              {leave.is_half_day && " (Half Day)"}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-900">{leave.leave_type}</h3>
-                          <p className="text-sm font-medium text-slate-500">
-                            {leave.start_date ? format(new Date(leave.start_date), "MMM dd, yyyy") : ""}
-                            {!leave.is_half_day && leave.end_date && ` - ${format(new Date(leave.end_date), "MMM dd, yyyy")}`}
-                            {leave.is_half_day && " (Half Day)"}
-                          </p>
-                        </div>
-                      </div>
 
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border ${statusConfig.color} whitespace-nowrap`}>
-                        <StatusIcon className="w-3.5 h-3.5" />
-                        {leave.status}
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-slate-600 mb-6 line-clamp-2 relative z-10">
-                      {leave.reason}
-                    </p>
-
-                    {leave.rejection_reason && (
-                      <div className="mb-6 relative z-10 p-3 rounded-2xl bg-red-50/80 border border-red-100/50 flex gap-2 text-sm text-red-700">
-                        <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                        <div>
-                          <span className="font-bold block mb-0.5">Rejection Reason</span>
-                          {leave.rejection_reason}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between relative z-10">
-                      <div className="flex flex-wrap gap-2">
-                        <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[11px] font-bold border ${leave.is_paid ? 'bg-green-50/80 text-green-700 border-green-100/50' : 'bg-slate-100/80 text-slate-600 border-slate-200/50'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${leave.is_paid ? 'bg-green-500' : 'bg-slate-400'}`}></span>
-                          {leave.is_paid ? "Paid" : "Unpaid"}
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border ${statusConfig.color} whitespace-nowrap`}>
+                          <StatusIcon className="w-3.5 h-3.5" />
+                          {leave.status}
                         </span>
                       </div>
 
-                      {leave.status === 'Approved' && isHR && (
-                        <Button variant="outline" size="sm" className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 h-8" onClick={() => handleAction(cancelApprovedLeaveAction, leave.id as string)}>
-                          Cancel
-                        </Button>
+                      <p className="text-sm text-slate-600 mb-6 line-clamp-2 relative z-10">
+                        {leave.reason}
+                      </p>
+
+                      {leave.rejection_reason && (
+                        <div className="mb-6 relative z-10 p-3 rounded-2xl bg-red-50/80 border border-red-100/50 flex gap-2 text-sm text-red-700">
+                          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                          <div>
+                            <span className="font-bold block mb-0.5">Rejection Reason</span>
+                            {leave.rejection_reason}
+                          </div>
+                        </div>
                       )}
+
+                      <div className="flex items-center justify-between relative z-10">
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[11px] font-bold border ${leave.is_paid ? 'bg-green-50/80 text-green-700 border-green-100/50' : 'bg-slate-100/80 text-slate-600 border-slate-200/50'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${leave.is_paid ? 'bg-green-500' : 'bg-slate-400'}`}></span>
+                            {leave.is_paid ? "Paid" : "Unpaid"}
+                          </span>
+                        </div>
+
+                        {leave.status === 'Approved' && isHR && (
+                          <Button variant="outline" size="sm" className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 h-8" onClick={() => handleAction(cancelApprovedLeaveAction, leave.id as string)}>
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
+              <Pagination
+                currentPage={myLeavesPagination.currentPage}
+                totalPages={myLeavesPagination.totalPages}
+                totalItems={myLeavesPagination.totalItems}
+                pageSize={myLeavesPagination.pageSize}
+                onPageChange={myLeavesPagination.setCurrentPage}
+                onPageSizeChange={myLeavesPagination.setPageSize}
+                pageSizeOptions={[6, 9, 18]}
+                itemLabel="leaves"
+              />
             </div>
           )}
         </div>
@@ -308,121 +333,134 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {filteredLeavesToApprove.map((leave: LeaveRecord & { is_paid?: boolean; certificate_verified_by?: string | null }, idx) => {
-                const statusConfig = getStatusConfig(leave.status);
-                const StatusIcon = statusConfig.icon;
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {approveLeavesPagination.paginatedData.map((leave: LeaveRecord & { is_paid?: boolean; certificate_verified_by?: string | null }, idx) => {
+                  const statusConfig = getStatusConfig(leave.status);
+                  const StatusIcon = statusConfig.icon;
 
-                return (
-                  <div
-                    key={leave.id as string}
-                    className="group relative bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(249,115,22,0.12)] rounded-3xl p-6 transition-all duration-500 hover:-translate-y-1 overflow-hidden"
-                    style={{ animationDelay: `${idx * 50}ms` }}
-                  >
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-400/10 to-transparent rounded-bl-full -mr-8 -mt-8 pointer-events-none" />
+                  return (
+                    <div
+                      key={leave.id as string}
+                      className="group relative bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(249,115,22,0.12)] rounded-3xl p-6 transition-all duration-500 hover:-translate-y-1 overflow-hidden"
+                      style={{ animationDelay: `${idx * 50}ms` }}
+                    >
+                      <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-400/10 to-transparent rounded-bl-full -mr-8 -mt-8 pointer-events-none" />
 
-                    <div className="flex flex-col md:flex-row gap-6 relative z-10">
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-6">
-                          <div className="flex items-center gap-4">
-                            <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30">
-                              <UserCircle2 className="w-7 h-7" />
+                      <div className="flex flex-col md:flex-row gap-6 relative z-10">
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-6">
+                            <div className="flex items-center gap-4">
+                              <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30">
+                                <UserCircle2 className="w-7 h-7" />
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-bold text-slate-900">
+                                  {leave.profiles?.first_name || 'Unknown'} {leave.profiles?.last_name || 'User'}
+                                </h3>
+                                <p className="text-sm font-bold text-orange-600">{leave.leave_type}</p>
+                              </div>
                             </div>
-                            <div>
-                              <h3 className="text-lg font-bold text-slate-900">
-                                {leave.profiles?.first_name || 'Unknown'} {leave.profiles?.last_name || 'User'}
-                              </h3>
-                              <p className="text-sm font-bold text-orange-600">{leave.leave_type}</p>
-                            </div>
-                          </div>
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border ${statusConfig.color} whitespace-nowrap`}>
-                            <StatusIcon className="w-3.5 h-3.5" />
-                            {leave.status}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 mb-4 bg-white/50 p-4 rounded-2xl border border-white">
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Date</span>
-                            <div className="font-medium text-slate-700 text-sm">
-                              {leave.start_date ? format(new Date(leave.start_date), "MMM dd, yyyy") : ""}
-                              {!leave.is_half_day && leave.end_date && ` - ${format(new Date(leave.end_date), "MMM dd, yyyy")}`}
-                              {leave.is_half_day && <span className="text-xs text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded ml-2">Half Day</span>}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Type</span>
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${leave.is_paid ? 'bg-green-50/80 text-green-700 border-green-100/50' : 'bg-slate-100/80 text-slate-600 border-slate-200/50'}`}>
-                              {leave.is_paid ? "Paid Leave" : "Unpaid Leave"}
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border ${statusConfig.color} whitespace-nowrap`}>
+                              <StatusIcon className="w-3.5 h-3.5" />
+                              {leave.status}
                             </span>
                           </div>
+
+                          <div className="grid grid-cols-2 gap-4 mb-4 bg-white/50 p-4 rounded-2xl border border-white">
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Date</span>
+                              <div className="font-medium text-slate-700 text-sm">
+                                {leave.start_date ? format(new Date(leave.start_date), "MMM dd, yyyy") : ""}
+                                {!leave.is_half_day && leave.end_date && ` - ${format(new Date(leave.end_date), "MMM dd, yyyy")}`}
+                                {leave.is_half_day && <span className="text-xs text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded ml-2">Half Day</span>}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Type</span>
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${leave.is_paid ? 'bg-green-50/80 text-green-700 border-green-100/50' : 'bg-slate-100/80 text-slate-600 border-slate-200/50'}`}>
+                                {leave.is_paid ? "Paid Leave" : "Unpaid Leave"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Reason</span>
+                            <p className="text-sm text-slate-600 line-clamp-2">{leave.reason}</p>
+                          </div>
                         </div>
 
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Reason</span>
-                          <p className="text-sm text-slate-600 line-clamp-2">{leave.reason}</p>
+                        <div className="flex flex-row md:flex-col gap-2 md:min-w-[140px] justify-center md:border-l border-slate-200/60 md:pl-6">
+                          {leave.status === 'Pending Level' && (
+                            <>
+                              <Button className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 shadow-sm" onClick={() => handleAction(approveLeaveAction, leave.id as string)}>
+                                Approve
+                              </Button>
+                              <Button variant="outline" className="w-full rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={async () => {
+                                const reason = await prompt("Rejection reason:");
+                                if (reason) handleAction(rejectLeaveAction, leave.id as string, reason);
+                              }}>
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          {leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && !leave.medical_certificate_url && (isHR || isSuperAdmin) && (
+                            <Button variant="secondary" className="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm" onClick={() => setUploadingCertFor(leave.id as string)}>
+                              Upload Cert
+                            </Button>
+                          )}
+                          {leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && leave.medical_certificate_url && (isHR || isSuperAdmin) && (
+                            <div className="w-full relative">
+                              <Select
+                                value=""
+                                onValueChange={(val) => {
+                                  if (val === 'view') handleViewMedicalCertificate(leave.id as string);
+                                  else if (val === 'delete') handleAction(deleteMedicalCertificateAction, leave.id as string);
+                                  else if (val === 'valid') handleAction(verifyMedicalCertificateAction, leave.id as string);
+                                  else if (val === 'invalid') handleAction(rejectMedicalCertificateAction, leave.id as string);
+                                }}
+                                placeholder="Cert Actions"
+                                buttonClassName="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm flex justify-center items-center font-bold"
+                              >
+                                <SelectItem value="view" className="text-orange-700 hover:bg-orange-50 font-semibold">View</SelectItem>
+                                <SelectItem value="delete" className="text-orange-700 hover:bg-orange-50 font-semibold">Delete</SelectItem>
+                                {!leave.certificate_verified_by && (
+                                  <>
+                                    <SelectItem value="valid" className="text-orange-700 hover:bg-orange-50 font-semibold">Valid</SelectItem>
+                                    <SelectItem value="invalid" className="text-orange-700 hover:bg-orange-50 font-semibold">Invalid</SelectItem>
+                                  </>
+                                )}
+                              </Select>
+                            </div>
+                          )}
+                          {leave.status === 'Approved' && isHR && (
+                            <Button variant="outline" className="w-full rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={() => handleAction(cancelApprovedLeaveAction, leave.id as string)}>
+                              Cancel Leave
+                            </Button>
+                          )}
+
+                          {!((leave.status === 'Pending Level') || (leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && (isHR || isSuperAdmin)) || (leave.status === 'Approved' && isHR)) && (
+                            <div className="text-center text-xs text-slate-400 font-bold uppercase tracking-wider py-4">
+                              No Actions
+                            </div>
+                          )}
                         </div>
-                      </div>
-
-                      <div className="flex flex-row md:flex-col gap-2 md:min-w-[140px] justify-center md:border-l border-slate-200/60 md:pl-6">
-                        {leave.status === 'Pending Level' && (
-                          <>
-                            <Button className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 shadow-sm" onClick={() => handleAction(approveLeaveAction, leave.id as string)}>
-                              Approve
-                            </Button>
-                            <Button variant="outline" className="w-full rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={async () => {
-                              const reason = await prompt("Rejection reason:");
-                              if (reason) handleAction(rejectLeaveAction, leave.id as string, reason);
-                            }}>
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && !leave.medical_certificate_url && (isHR || isSuperAdmin) && (
-                          <Button variant="secondary" className="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm" onClick={() => setUploadingCertFor(leave.id as string)}>
-                            Upload Cert
-                          </Button>
-                        )}
-                        {leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && leave.medical_certificate_url && (isHR || isSuperAdmin) && (
-                          <div className="w-full relative">
-                            <Select
-                              value=""
-                              onValueChange={(val) => {
-                                if (val === 'view') handleViewMedicalCertificate(leave.id as string);
-                                else if (val === 'delete') handleAction(deleteMedicalCertificateAction, leave.id as string);
-                                else if (val === 'valid') handleAction(verifyMedicalCertificateAction, leave.id as string);
-                                else if (val === 'invalid') handleAction(rejectMedicalCertificateAction, leave.id as string);
-                              }}
-                              placeholder="Cert Actions"
-                              buttonClassName="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm flex justify-center items-center font-bold"
-                            >
-                              <SelectItem value="view" className="text-orange-700 hover:bg-orange-50 font-semibold">View</SelectItem>
-                              <SelectItem value="delete" className="text-orange-700 hover:bg-orange-50 font-semibold">Delete</SelectItem>
-                              {!leave.certificate_verified_by && (
-                                <>
-                                  <SelectItem value="valid" className="text-orange-700 hover:bg-orange-50 font-semibold">Valid</SelectItem>
-                                  <SelectItem value="invalid" className="text-orange-700 hover:bg-orange-50 font-semibold">Invalid</SelectItem>
-                                </>
-                              )}
-                            </Select>
-                          </div>
-                        )}
-                        {leave.status === 'Approved' && isHR && (
-                          <Button variant="outline" className="w-full rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={() => handleAction(cancelApprovedLeaveAction, leave.id as string)}>
-                            Cancel Leave
-                          </Button>
-                        )}
-
-                        {!((leave.status === 'Pending Level') || (leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && (isHR || isSuperAdmin)) || (leave.status === 'Approved' && isHR)) && (
-                          <div className="text-center text-xs text-slate-400 font-bold uppercase tracking-wider py-4">
-                            No Actions
-                          </div>
-                        )}
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
+              <Pagination
+                currentPage={approveLeavesPagination.currentPage}
+                totalPages={approveLeavesPagination.totalPages}
+                totalItems={approveLeavesPagination.totalItems}
+                pageSize={approveLeavesPagination.pageSize}
+                onPageChange={approveLeavesPagination.setCurrentPage}
+                onPageSizeChange={approveLeavesPagination.setPageSize}
+                pageSizeOptions={[6, 8, 16]}
+                itemLabel="requests"
+              />
             </div>
           )}
         </div>

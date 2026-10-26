@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 interface ReceiptsListTableProps {
   receipts: any[];
@@ -89,6 +91,11 @@ export function ReceiptsListTable({
       );
     });
   }, [receipts, searchTerm, modeFilter, statusFilter]);
+
+  const pagination = usePagination({
+    data: filteredReceipts,
+    initialPageSize: 10,
+  });
 
   // Aggregate stats
   const totalAmount = filteredReceipts
@@ -341,7 +348,7 @@ export function ReceiptsListTable({
                   </td>
                 </tr>
               ) : (
-                filteredReceipts.map((r) => {
+                pagination.paginatedData.map((r) => {
                   const payments = Array.isArray(r.invoice_payments) ? r.invoice_payments : [];
                   const firstPayment = payments.length > 0 ? payments[0] : null;
                   const inv = firstPayment?.invoices;
@@ -494,6 +501,17 @@ export function ReceiptsListTable({
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          pageSizeOptions={[10, 25, 50]}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="receipts"
+        />
       </div>
     </div>
   );

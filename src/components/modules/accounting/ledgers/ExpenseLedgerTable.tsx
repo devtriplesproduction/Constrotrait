@@ -20,11 +20,15 @@ import {
   CreditCard,
   FileText,
   AlertCircle,
+  FileSpreadsheet,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { approveExpenseAction } from "@/actions/accounting.actions";
 import { useToast } from "@/hooks/use-toast";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 interface ExpenseLedgerTableProps {
   expenses: any[];
@@ -108,6 +112,11 @@ export function ExpenseLedgerTable({
     });
   }, [expenses, scopeFilter, categoryFilter, approvalFilter, fromDate, toDate, searchTerm]);
 
+  const pagination = usePagination({
+    data: filtered,
+    initialPageSize: 10,
+  });
+
   // Summary Metrics
   const summary = useMemo(() => {
     let total = 0;
@@ -161,27 +170,14 @@ export function ExpenseLedgerTable({
     }
   };
 
-  // Export CSV
-  const handleExportCSV = () => {
-    if (filtered.length === 0) return;
-    const headers = [
-      "Date",
-      "Voucher / Bill No",
-      "Type",
-      "Inward UID",
-      "Client",
-      "Category",
-      "Vendor / Payee",
-      "Account",
-      "Mode",
-      "GST",
-      "TDS",
-      "Debit Amount (INR)",
-      "Approval Status",
-      "Description",
-    ];
+  // Export Excel
+  const handleExportExcel = () => {
+    if (filtered.length === 0) {
+      toast({ title: "No Data", description: "No expense records to export.", variant: "warning" });
+      return;
+    }
 
-    const rows = filtered.map((e) => {
+    const exportData = filtered.map((e) => {
       const isUnderInward = !!(e.inward_id || e.job_entries);
       const type = e.expense_type || (isUnderInward ? "inward" : "company");
       const inward = e.job_entries;
@@ -190,32 +186,45 @@ export function ExpenseLedgerTable({
       const cat = e.expense_categories?.name || e.category_name || "";
       const acc = e.financial_accounts?.name || e.account_name || "";
 
-      return [
-        `"${e.expense_date || e.date || ""}"`,
-        `"${e.bill_number || e.voucher_no || ""}"`,
-        `"${type.toUpperCase()}"`,
-        `"${uid}"`,
-        `"${client}"`,
-        `"${cat}"`,
-        `"${e.vendor_name || ""}"`,
-        `"${acc}"`,
-        `"${e.payment_mode || ""}"`,
-        Number(e.gst_amount || 0),
-        Number(e.tds_amount || 0),
-        Number(e.amount || 0),
-        `"${e.approval_status || "approved"}"`,
-        `"${(e.description || "").replace(/"/g, '""')}"`,
-      ].join(",");
+      return {
+        "Date": e.expense_date || e.date || "",
+        "Voucher / Bill No": e.bill_number || e.voucher_no || "",
+        "Type": type.toUpperCase(),
+        "Inward UID": uid,
+        "Client": client,
+        "Category": cat,
+        "Vendor / Payee": e.vendor_name || "",
+        "Account": acc,
+        "Payment Mode": e.payment_mode || "",
+        "GST Amount": Number(e.gst_amount || 0),
+        "TDS Amount": Number(e.tds_amount || 0),
+        "Debit Amount (INR)": Number(e.amount || 0),
+        "Approval Status": e.approval_status || "approved",
+        "Description": e.description || "",
+      };
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Expense_Ledger_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    worksheet["!cols"] = [
+      { wch: 14 }, // Date
+      { wch: 20 }, // Voucher / Bill No
+      { wch: 12 }, // Type
+      { wch: 16 }, // Inward UID
+      { wch: 24 }, // Client
+      { wch: 20 }, // Category
+      { wch: 22 }, // Vendor / Payee
+      { wch: 20 }, // Account
+      { wch: 15 }, // Payment Mode
+      { wch: 12 }, // GST Amount
+      { wch: 12 }, // TDS Amount
+      { wch: 18 }, // Debit Amount (INR)
+      { wch: 16 }, // Approval Status
+      { wch: 32 }, // Description
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
+    XLSX.writeFile(workbook, `Expense_Ledger_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast({ title: "Success", description: "Excel file exported successfully.", variant: "success" });
   };
 
   const handlePrint = () => {
@@ -324,11 +333,11 @@ export function ExpenseLedgerTable({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleExportCSV}
+              onClick={handleExportExcel}
               className="h-8.5 px-3 text-xs font-semibold gap-1.5 text-slate-700"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Export Excel</span>
             </Button>
             <Button
               variant="outline"
@@ -440,7 +449,7 @@ export function ExpenseLedgerTable({
                   </td>
                 </tr>
               ) : (
-                filtered.map((e) => {
+                pagination.paginatedData.map((e) => {
                   const isUnderInward = !!(e.inward_id || e.job_entries);
                   const type = e.expense_type || (isUnderInward ? "inward" : "company");
                   const inward = e.job_entries;
@@ -586,6 +595,17 @@ export function ExpenseLedgerTable({
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          pageSizeOptions={[10, 25, 50, 100]}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="expenses"
+        />
       </div>
     </div>
   );

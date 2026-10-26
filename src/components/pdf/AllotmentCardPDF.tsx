@@ -354,7 +354,7 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
     delete rawDetails.sample_quantity;
     delete rawDetails.sample_code_no;
     const sampleDetails = Object.values(rawDetails).filter(Boolean).join(', ') || t?.sample_quantity || '';
-    const remark = assignment.status === 'approved' ? 'ok' : (assignment.status || '');
+    const remark = 'ok';
 
     codes.forEach((code) => {
       rows.push({

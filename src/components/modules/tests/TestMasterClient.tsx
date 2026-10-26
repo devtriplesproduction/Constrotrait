@@ -14,6 +14,8 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/ScrollArea";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 interface TestMasterClientProps {
   initialTests: TestMaster[];
@@ -35,16 +37,10 @@ export function TestMasterClient({
   const [nablFilter, setNablFilter] = useState<"all" | "nabl" | "non-nabl">("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "Construction" | "Environmental">("all");
   const [branchFilter, setBranchFilter] = useState<string>("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 9;
 
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
-
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, nablFilter, categoryFilter, branchFilter]);
 
   const handleEdit = (test: TestMaster) => {
     setEditingTest(test);
@@ -122,8 +118,10 @@ export function TestMasterClient({
     );
   });
 
-  const totalPages = Math.ceil(filteredTests.length / pageSize);
-  const paginatedTests = filteredTests.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pagination = usePagination({
+    data: filteredTests,
+    initialPageSize: 9,
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -292,7 +290,7 @@ export function TestMasterClient({
       {filteredTests.length > 0 ? (
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {paginatedTests.map((test, index) => (
+            {pagination.paginatedData.map((test, index) => (
               <Card key={test.id} className="group relative flex flex-col h-full bg-white rounded-xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-orange-300/60 transition-all duration-300 overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 
@@ -301,7 +299,7 @@ export function TestMasterClient({
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200/50 text-[10px] font-extrabold tracking-wider shadow-sm uppercase">
-                        TEST {String((currentPage - 1) * pageSize + index + 1).padStart(2, '0')}
+                        TEST {String((pagination.currentPage - 1) * pagination.pageSize + index + 1).padStart(2, '0')}
                       </span>
                       {test.is_nabl && (
                         <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[10px] font-extrabold tracking-wider shadow-sm uppercase">
@@ -406,36 +404,16 @@ export function TestMasterClient({
               </Card>
             ))}
           </div>
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-              <span className="text-sm text-slate-500">
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredTests.length)} of {filteredTests.length} entries
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="custom"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="flex items-center gap-1.5 px-4 h-9 rounded-full bg-white border border-slate-200 text-slate-600 font-medium hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-all shadow-sm disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  <ChevronLeft className="w-4 h-4" /> Prev
-                </Button>
-                <div className="flex items-center px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100 text-sm font-semibold text-slate-700 shadow-sm">
-                  Page {currentPage} of {totalPages}
-                </div>
-                <Button
-                  variant="custom"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="flex items-center gap-1.5 px-4 h-9 rounded-full bg-white border border-slate-200 text-slate-600 font-medium hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-all shadow-sm disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  Next <ChevronRightIcon className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            pageSizeOptions={[9, 18, 36, 90]}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="tests"
+          />
         </div>
       ) : (
         <Card className="border-slate-200/60 shadow-sm border-dashed">

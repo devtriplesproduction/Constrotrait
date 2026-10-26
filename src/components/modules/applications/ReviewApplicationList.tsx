@@ -18,10 +18,12 @@ import {
   Send,
   Eye,
   RotateCcw,
-  UserCheck
+  UserCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { printElement } from "@/lib/print";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 interface ReviewApplicationListProps {
   applications: EmployeeApplication[];
@@ -39,6 +41,19 @@ export function ReviewApplicationList({
   const [loading, setLoading] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedApplications,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination({
+    data: applications,
+    initialPageSize: 10,
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -152,7 +167,7 @@ export function ReviewApplicationList({
                   </td>
                 </tr>
               ) : (
-                applications.map((app) => {
+                paginatedApplications.map((app) => {
                   const firstName = app.profiles?.first_name || "Employee";
                   const lastName = app.profiles?.last_name || "";
                   const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase() || "E";
@@ -239,6 +254,21 @@ export function ReviewApplicationList({
           </table>
         </div>
       </div>
+
+      {applications.length > 0 && (
+        <div className="mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[10, 20, 50]}
+            itemLabel="review requests"
+          />
+        </div>
+      )}
 
       {/* Review Modal Dialog */}
       {!!selectedApp && (

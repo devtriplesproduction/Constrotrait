@@ -13,6 +13,8 @@ import { JobStageStepper } from "@/components/ui/JobStageStepper";
 import { Dropdown } from "@/components/ui/Dropdown";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 function uidOf(a: any) {
   const t = a.job_entry_tests;
@@ -123,6 +125,11 @@ export function MyAssignmentsTab({
     });
     return Array.from(groups.values());
   }, [myAssignments]);
+
+  const pagination = usePagination({
+    data: groupedMyAssignments,
+    initialPageSize: 10,
+  });
 
   const handleDownloadPdf = async (testId: string, uid: string) => {
     try {
@@ -284,7 +291,7 @@ export function MyAssignmentsTab({
         if (count > 1) {
             scode += `-${romanMap[i] || (i+1)}`;
         }
-        tableRows.push([scode, sampleName, testParams, method, sampleDetailsStr, ""]);
+        tableRows.push([scode, sampleName, testParams, method, sampleDetailsStr, "ok"]);
     }
     
     for (let i = tableRows.length; i < 5; i++) {
@@ -439,7 +446,7 @@ return (
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {groupedMyAssignments.map((a: any) => {
+              {pagination.paginatedData.map((a: any) => {
                 const uid = uidOf(a);
                 const receivedRawDate = a.grouped_tests[0]?.job_entries?.created_at;
                 const receivedDateObj = receivedRawDate ? new Date(receivedRawDate) : null;
@@ -610,6 +617,19 @@ return (
             </tbody>
           </table>
         </div>
+      )}
+
+      {groupedMyAssignments.length > 0 && (
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          pageSizeOptions={[10, 20, 50, 100]}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="assignments"
+        />
       )}
 
       {/* View Job Card Modal */}

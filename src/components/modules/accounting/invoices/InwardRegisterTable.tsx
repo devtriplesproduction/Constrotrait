@@ -4,6 +4,8 @@ import React, { useState, useMemo } from "react";
 import { Search, FilePlus2, Eye, Calendar, Building, CheckCircle2, AlertCircle, Hash, FlaskConical, ArrowRight, Plus, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 interface InwardRegisterTableProps {
   inwards: any[];
@@ -53,6 +55,11 @@ export function InwardRegisterTable({
       return uidMatch || clientMatch || projectMatch || testMatch;
     });
   }, [inwards, searchTerm, statusFilter]);
+
+  const pagination = usePagination({
+    data: filteredInwards,
+    initialPageSize: 10,
+  });
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden space-y-0">
@@ -132,7 +139,7 @@ export function InwardRegisterTable({
                 </td>
               </tr>
             ) : (
-              filteredInwards.map((job) => {
+              pagination.paginatedData.map((job) => {
                 const linkedInvoices = (Array.isArray(job.invoices) ? [...job.invoices] : []).sort((a: any, b: any) => {
                   const dateA = new Date(a.created_at || a.invoice_date || 0).getTime();
                   const dateB = new Date(b.created_at || b.invoice_date || 0).getTime();
@@ -347,6 +354,17 @@ export function InwardRegisterTable({
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        pageSizeOptions={[10, 25, 50]}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+        itemLabel="inward jobs"
+      />
     </div>
   );
 }

@@ -236,7 +236,7 @@ export function InwardDetailsView({
 
   return (
     <div className="w-full space-y-7 animate-in fade-in duration-300 pb-16">
-      
+
       {/* 1. Top Navigation & Action Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs sticky top-2 z-30">
         <div className="flex items-center gap-3 flex-wrap">
@@ -333,7 +333,7 @@ export function InwardDetailsView({
                 </div>
 
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">UID:</span>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-700 tracking-tight">UID:</span>
                   <span className="text-3xl sm:text-4xl font-black text-orange-500 font-mono tracking-tight">{uidLabel}</span>
                 </div>
 
@@ -375,11 +375,10 @@ export function InwardDetailsView({
             <div className="flex flex-row md:flex-col items-center md:items-end justify-between gap-1.5 shrink-0 bg-slate-50/80 p-3 rounded-2xl border border-slate-100">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payment Status</span>
               <span
-                className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-2xs border ${
-                  jobEntry?.payment_status?.toLowerCase() === "paid"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-amber-50 text-amber-700 border-amber-200"
-                }`}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-2xs border ${jobEntry?.payment_status?.toLowerCase() === "paid"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+                  }`}
               >
                 {jobEntry?.payment_status || "Pending"}
               </span>
@@ -460,7 +459,7 @@ export function InwardDetailsView({
 
         {/* Card 1: Customer Information */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
-          
+
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">

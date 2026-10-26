@@ -14,6 +14,8 @@ import {
 import type { Database } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
@@ -35,6 +37,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/modules/PageHeader";
+import * as XLSX from "xlsx";
 
 export type PayrollSnapshot = Database["public"]["Tables"]["payroll_snapshots"]["Row"] & {
   status?: string;
@@ -79,6 +82,11 @@ export function PayrollClient({
   const netPayroll = data.reduce((acc, curr) => acc + (curr.net_salary || 0), 0);
 
   const [activeTab, setActiveTab] = useState<"attendance" | "adjustments" | "history">("attendance");
+
+  const pagination = usePagination({
+    data,
+    initialPageSize: 10,
+  });
 
   const [lockModalOpen, setLockModalOpen] = useState(false);
   const [employeeDetailsOpen, setEmployeeDetailsOpen] = useState(false);
@@ -178,33 +186,47 @@ export function PayrollClient({
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     if (!data || data.length === 0) {
       toast({ title: "Error", description: "No data to export.", variant: "error" });
       return;
     }
-    const headers = ["Employee ID", "Name", "Department", "Days Present", "Days Paid Leave", "Days Absent", "Gross Salary", "Total Deductions", "Net Salary"];
-    const rows = data.map(emp => [
-      emp.employee_id,
-      emp.employee_name,
-      emp.department,
-      emp.days_present || 0,
-      emp.days_paid_leave || 0,
-      emp.days_absent || 0,
-      emp.gross_salary || 0,
-      emp.total_deductions || 0,
-      emp.net_salary || 0
-    ]);
-    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Payroll_${months[month - 1]}_${year}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast({ title: "Success", description: "CSV Exported successfully.", variant: "success" });
+    const exportData = data.map(emp => ({
+      "Employee ID": emp.employee_id_external || emp.employee_id,
+      "Name": emp.employee_name || "N/A",
+      "Department": emp.department || "N/A",
+      "Designation": emp.designation || "N/A",
+      "Base Salary": emp.base_salary || 0,
+      "Days Present": emp.days_present || 0,
+      "Paid Leaves": emp.days_paid_leave || 0,
+      "Unpaid Leaves": emp.days_unpaid_leave || 0,
+      "Days Absent": emp.days_absent || 0,
+      "Gross Salary": emp.gross_salary || 0,
+      "Bonus": emp.bonus || 0,
+      "Total Deductions": emp.total_deductions || 0,
+      "Net Payable": emp.net_payable ?? emp.net_salary ?? 0,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    worksheet["!cols"] = [
+      { wch: 18 },
+      { wch: 22 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 16 },
+      { wch: 14 },
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Payroll");
+    XLSX.writeFile(workbook, `Payroll_${months[month - 1]}_${year}.xlsx`);
+    toast({ title: "Success", description: "Excel file exported successfully.", variant: "success" });
   };
 
   const handleAddAdjustment = async (e: React.FormEvent) => {
@@ -374,7 +396,7 @@ export function PayrollClient({
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Status</p>
-                  <h3 className="text-2xl font-black text-slate-900 mt-2">
+                  <h3 className="text-2xl font-black text-slate-700 mt-2">
                     {isLocked ? "Locked" : "Draft"}
                   </h3>
                 </div>
@@ -388,7 +410,7 @@ export function PayrollClient({
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Employees</p>
-                  <h3 className="text-2xl font-black text-slate-900 mt-2">{totalEmployees}</h3>
+                  <h3 className="text-2xl font-black text-slate-700 mt-2">{totalEmployees}</h3>
                 </div>
                 <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
                   <FileText className="w-6 h-6" />
@@ -400,7 +422,7 @@ export function PayrollClient({
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Gross Payroll</p>
-                  <h3 className="text-2xl font-black text-slate-900 mt-2">₹{grossPayroll.toLocaleString()}</h3>
+                  <h3 className="text-2xl font-black text-slate-700 mt-2">₹{grossPayroll.toLocaleString()}</h3>
                 </div>
                 <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
                   <DollarSign className="w-6 h-6" />
@@ -412,7 +434,7 @@ export function PayrollClient({
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Net Payable</p>
-                  <h3 className="text-2xl font-black text-slate-900 mt-2">₹{netPayroll.toLocaleString()}</h3>
+                  <h3 className="text-2xl font-black text-slate-700 mt-2">₹{netPayroll.toLocaleString()}</h3>
                 </div>
                 <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
                   <DollarSign className="w-6 h-6" />
@@ -427,9 +449,9 @@ export function PayrollClient({
               <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-700">{cycle?.id || "draft-cycle"}</span>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={loading || data.length === 0} className="rounded-xl font-bold h-[40px]">
+              <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={loading || data.length === 0} className="rounded-xl font-bold h-[40px]">
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Export CSV
+                Export Excel
               </Button>
               {!isLocked && (
                 <Button size="sm" onClick={() => setLockModalOpen(true)} disabled={loading || data.length === 0 || actionLoading} className="bg-orange-600 hover:bg-orange-700 rounded-xl font-bold text-white shadow-md shadow-orange-500/20 h-[40px]">
@@ -474,68 +496,81 @@ export function PayrollClient({
                       <p className="text-sm font-medium text-slate-500">Loading attendance data...</p>
                     </div>
                   ) : (
-                    <table className="w-full text-sm text-left">
-                      <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
-                        <tr>
-                          <th className="px-6 py-4">Employee</th>
-                          <th className="px-6 py-4">Department</th>
-                          <th className="px-6 py-4 text-right">Base Salary</th>
-                          <th className="px-6 py-4 text-center">Present</th>
-                          <th className="px-6 py-4 text-center">Leaves</th>
-                          <th className="px-6 py-4 text-center">Absent</th>
-                          <th className="px-6 py-4 text-right">Net Payable</th>
-                          <th className="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {data.length === 0 ? (
+                    <>
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
                           <tr>
-                            <td colSpan={8} className="text-center py-16 text-slate-500 font-medium">
-                              No employees found for this branch/period.
-                            </td>
+                            <th className="px-6 py-4">Employee</th>
+                            <th className="px-6 py-4">Department</th>
+                            <th className="px-6 py-4 text-right">Base Salary</th>
+                            <th className="px-6 py-4 text-center">Present</th>
+                            <th className="px-6 py-4 text-center">Leaves</th>
+                            <th className="px-6 py-4 text-center">Absent</th>
+                            <th className="px-6 py-4 text-right">Net Payable</th>
+                            <th className="px-6 py-4 text-right">Actions</th>
                           </tr>
-                        ) : (
-                          data.map((emp) => (
-                            <tr key={emp.employee_id} className="hover:bg-orange-50/30 transition-colors">
-                              <td className="px-6 py-4">
-                                <div className="font-bold text-slate-900">{emp.employee_name}</div>
-                                <div className="text-xs text-slate-500 font-mono mt-0.5 w-32 truncate" title={emp.employee_id}>{emp.employee_id}</div>
-                              </td>
-                              <td className="px-6 py-4 text-slate-600 font-medium">{emp.department || 'N/A'}</td>
-                              <td className="px-6 py-4 text-right font-bold text-slate-700">₹{(emp.base_salary || 0).toLocaleString()}</td>
-                              <td className="px-6 py-4 text-center">
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                  {emp.days_present || 0} / 26
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 text-center">
-                                <div className="flex items-center justify-center gap-2">
-                                  <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100" title="Paid Leaves">
-                                    {emp.days_paid_leave || 0}P
-                                  </span>
-                                  <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100" title="Unpaid Leaves">
-                                    {emp.days_unpaid_leave || 0}U
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-center">
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${(emp.days_absent || 0) > 0 ? "bg-red-50 text-red-700 border-red-100" : "bg-slate-50 text-slate-600 border-slate-100"}`}>
-                                  {emp.days_absent || 0}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 text-right font-black text-slate-900 text-base">
-                                ₹{(emp.net_payable || 0).toLocaleString()}
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <Button variant="outline" size="sm" onClick={() => { setSelectedEmployee(emp); setEmployeeDetailsOpen(true); }} className="rounded-xl text-xs font-bold">
-                                  Details
-                                </Button>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {data.length === 0 ? (
+                            <tr>
+                              <td colSpan={8} className="text-center py-16 text-slate-500 font-medium">
+                                No employees found for this branch/period.
                               </td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                          ) : (
+                            pagination.paginatedData.map((emp) => (
+                              <tr key={emp.employee_id} className="hover:bg-orange-50/30 transition-colors">
+                                <td className="px-6 py-4">
+                                  <div className="font-bold text-slate-900">{emp.employee_name}</div>
+                                  <div className="text-xs text-slate-500 font-mono mt-0.5 w-32 truncate" title={emp.employee_id}>{emp.employee_id}</div>
+                                </td>
+                                <td className="px-6 py-4 text-slate-600 font-medium">{emp.department || 'N/A'}</td>
+                                <td className="px-6 py-4 text-right font-bold text-slate-700">₹{(emp.base_salary || 0).toLocaleString()}</td>
+                                <td className="px-6 py-4 text-center">
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                    {emp.days_present || 0} / 26
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100" title="Paid Leaves">
+                                      {emp.days_paid_leave || 0}P
+                                    </span>
+                                    <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100" title="Unpaid Leaves">
+                                      {emp.days_unpaid_leave || 0}U
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                  <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${(emp.days_absent || 0) > 0 ? "bg-red-50 text-red-700 border-red-100" : "bg-slate-50 text-slate-600 border-slate-100"}`}>
+                                    {emp.days_absent || 0}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-right font-black text-slate-900 text-base">
+                                  ₹{(emp.net_payable || 0).toLocaleString()}
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <Button variant="outline" size="sm" onClick={() => { setSelectedEmployee(emp); setEmployeeDetailsOpen(true); }} className="rounded-xl text-xs font-bold">
+                                    Details
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+
+                      <Pagination
+                        currentPage={pagination.currentPage}
+                        totalPages={pagination.totalPages}
+                        totalItems={pagination.totalItems}
+                        pageSize={pagination.pageSize}
+                        pageSizeOptions={[10, 25, 50]}
+                        onPageChange={pagination.setPage}
+                        onPageSizeChange={pagination.setPageSize}
+                        itemLabel="employees"
+                      />
+                    </>
                   )}
                 </div>
               )}
@@ -579,7 +614,7 @@ export function PayrollClient({
                               </td>
                             </tr>
                           ) : (
-                            data.map((emp) => (
+                            pagination.paginatedData.map((emp) => (
                               <tr key={emp.employee_id} className="hover:bg-orange-50/30 transition-colors">
                                 <td className="px-6 py-4">
                                   <div className="font-bold text-slate-900">{emp.employee_name}</div>
@@ -599,6 +634,17 @@ export function PayrollClient({
                           )}
                         </tbody>
                       </table>
+
+                      <Pagination
+                        currentPage={pagination.currentPage}
+                        totalPages={pagination.totalPages}
+                        totalItems={pagination.totalItems}
+                        pageSize={pagination.pageSize}
+                        pageSizeOptions={[10, 25, 50]}
+                        onPageChange={pagination.setPage}
+                        onPageSizeChange={pagination.setPageSize}
+                        itemLabel="employees"
+                      />
                     </>
                   )}
                 </div>
@@ -857,7 +903,7 @@ export function PayrollClient({
             </div>
 
             <div className="px-6 py-6 overflow-y-auto flex-1 custom-scrollbar space-y-6 bg-slate-50/50">
-              
+
               {/* Attendance Section */}
               <Card className="border-border shadow-sm">
                 <CardHeader className="pb-3">

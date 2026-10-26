@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { getJobEntriesByClientIdAction } from "@/actions/job-entry.actions";
 import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
 import { Database } from "@/types/database";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntry = Database["public"]["Tables"]["job_entries"]["Row"];
@@ -51,6 +53,19 @@ export default function ClientsTab({
     );
   });
 
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedClients,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination({
+    data: filteredClients,
+    initialPageSize: 9,
+  });
+
   return (
     <div className="space-y-6">
       {/* Search / Filter Card */}
@@ -91,7 +106,7 @@ export default function ClientsTab({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filteredClients.map((client) => {
+        {paginatedClients.map((client) => {
           return (
             <Card
               key={client.id}
@@ -154,10 +169,21 @@ export default function ClientsTab({
         })}
       </div>
 
-      {filteredClients.length === 0 && (
+      {filteredClients.length === 0 ? (
         <div className="text-center py-12 text-slate-500 bg-white rounded-2xl border border-dashed border-slate-200">
           No clients match your search criteria.
         </div>
+      ) : (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[9, 18, 36, 90]}
+          itemLabel="clients"
+        />
       )}
 
 

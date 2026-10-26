@@ -13,6 +13,8 @@ import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
 import { JobStageStepper } from "@/components/ui/JobStageStepper";
 import { toast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 function assignmentUid(assignment: any) {
   const t = assignment.job_entry_tests;
@@ -148,6 +150,11 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
     });
     return Array.from(groups.values());
   }, [filteredAssignments]);
+
+  const pagination = usePagination({
+    data: groupedAssignments,
+    initialPageSize: 10,
+  });
 
   const getStatusBadge = (status: string) => {
     const s = (status || '').toLowerCase();
@@ -285,7 +292,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {groupedAssignments.map((assignment) => {
+            {pagination.paginatedData.map((assignment) => {
               const assignedName = assignment.team_id 
                 ? assignment.teams?.name 
                 : `${assignment.assigned_to_profile?.first_name || ""} ${assignment.assigned_to_profile?.last_name || ""}`;
@@ -466,6 +473,17 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        pageSizeOptions={[10, 20, 50, 100]}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+        itemLabel="assignments"
+      />
 
       {/* Assignment Modal */}
       {isAssignModalOpen && (

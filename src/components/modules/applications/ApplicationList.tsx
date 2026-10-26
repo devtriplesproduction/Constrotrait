@@ -19,6 +19,8 @@ import {
   RotateCcw
 } from "lucide-react";
 import { printElement } from "@/lib/print";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 interface ApplicationListProps {
   applications: EmployeeApplication[];
@@ -42,6 +44,19 @@ export function ApplicationList({
 }: ApplicationListProps) {
   const [selectedApp, setSelectedApp] = useState<EmployeeApplication | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
+
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedApplications,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination({
+    data: applications,
+    initialPageSize: 10,
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -140,7 +155,7 @@ export function ApplicationList({
                   </td>
                 </tr>
               ) : (
-                applications.map((app) => (
+                paginatedApplications.map((app) => (
                   <tr key={app.id} className="hover:bg-orange-50/20 transition-colors group">
                     {/* Date */}
                     <td className="px-6 py-4.5 whitespace-nowrap align-top">
@@ -213,6 +228,21 @@ export function ApplicationList({
           </table>
         </div>
       </div>
+
+      {applications.length > 0 && (
+        <div className="mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[10, 20, 50]}
+            itemLabel="applications"
+          />
+        </div>
+      )}
 
       {/* Modal Dialog */}
       {!!selectedApp && (

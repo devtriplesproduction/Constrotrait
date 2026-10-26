@@ -5,6 +5,8 @@ import { Calendar, ClipboardList, Beaker, Clock, SlidersHorizontal, RefreshCcw, 
 import { DownloadAllotmentButton } from "@/components/modules/job-assignments/DownloadAllotmentButton";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 function uidOf(a: any) {
   const t = a.job_entry_tests;
@@ -115,6 +117,11 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
       return new Date(b).getTime() - new Date(a).getTime();
     });
   }, [groupedByDate]);
+
+  const pagination = usePagination({
+    data: sortedDateKeys,
+    initialPageSize: 5,
+  });
 
   const specificDateOptions = useMemo(() => {
     const dates = new Set<string>();
@@ -296,7 +303,7 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
          </div>
       ) : (
         <div className="space-y-8">
-          {sortedDateKeys.map(dateKey => {
+          {pagination.paginatedData.map(dateKey => {
             const items = groupedByDate[dateKey];
             const isToday = dateKey === new Date().toDateString();
             const formattedTitle = dateKey === "No Date Assigned" 
@@ -313,6 +320,17 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
               </div>
             );
           })}
+
+          <Pagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            pageSizeOptions={[5, 10, 20]}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="date groups"
+          />
         </div>
       )}
     </div>
