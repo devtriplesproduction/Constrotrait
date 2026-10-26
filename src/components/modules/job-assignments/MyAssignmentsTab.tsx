@@ -284,6 +284,9 @@ export function MyAssignmentsTab({
     const rawDetails = { ...(a.job_entry_tests?.additional_details_values || {}) };
     delete rawDetails.sample_quantity;
     delete rawDetails.sample_code_no;
+    delete rawDetails.test_initials;
+    delete rawDetails.material_initials;
+    delete rawDetails.material_id;
     const sampleDetailsStr = Object.values(rawDetails).filter(Boolean).join(', ') || '';
     
     for (let i = 0; i < count; i++) {

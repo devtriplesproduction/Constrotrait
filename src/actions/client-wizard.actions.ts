@@ -134,12 +134,39 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
         rawAddVals.test_initials = materialInitials;
         rawAddVals.material_initials = materialInitials;
 
-        if (materialInitials) {
           if (rawAddVals.sample_code_no) {
-            const codes = String(rawAddVals.sample_code_no).split(/,\s*(?=CMTS\/)/);
-            rawAddVals.sample_code_no = codes.map((code: string) =>
+            let codes = String(rawAddVals.sample_code_no).split(/,\s*(?=CMTS\/)|,\s*/);
+            codes = codes.map((code: string) =>
               code.replace(/^(CMTS\/(?:CON|ENV)\/)[^\/]+(\/\d{2}-\d{2}\/.*)$/, (m, p1, p2) => `${p1}${materialInitials}${p2}`)
-            ).join(', ');
+            );
+
+            const sampleQuantityStr = data.materialDetails?.sample_quantity || jobEntryTest.sample_quantity || "1";
+            const sampleQuantityMatch = sampleQuantityStr.match(/\d+/);
+            let qty = sampleQuantityMatch ? parseInt(sampleQuantityMatch[0], 10) : 1;
+            if (isNaN(qty) || qty <= 0) qty = 1;
+
+            if (codes.length === 1 && qty > 1) {
+              const baseMatch = codes[0].match(/^(.*\/[^\/]+)-(?:[IVXLCDM\d]+)$/i);
+              if (baseMatch) {
+                const prefix = baseMatch[1];
+                codes = [];
+                for (let i = 1; i <= qty; i++) {
+                  codes.push(`${prefix}-${JobEntryService.toRoman(i)}`);
+                }
+              }
+            } else if (codes.length > 1 && qty < codes.length) {
+              codes = codes.slice(0, qty);
+            } else if (codes.length > 1 && qty > codes.length) {
+              const baseMatch = codes[0].match(/^(.*\/[^\/]+)-(?:[IVXLCDM\d]+)$/i);
+              if (baseMatch) {
+                const prefix = baseMatch[1];
+                for (let i = codes.length + 1; i <= qty; i++) {
+                  codes.push(`${prefix}-${JobEntryService.toRoman(i)}`);
+                }
+              }
+            }
+
+            rawAddVals.sample_code_no = codes.join(', ');
           } else {
             const supabase = await createClient() as any;
             const { data: currentTest } = await supabase
@@ -204,7 +231,6 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
             }
           }
         }
-      }
 
       await JobEntryService.updateJobEntryTest(testId, {
         test_master_id: toNull(jobEntryTest.test_master_id),

@@ -340,8 +340,24 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
     const codeNo = t?.additional_details_values?.sample_code_no || t?.sample_code_no || '';
     let codes: string[] = [];
     if (codeNo) {
-      codes = codeNo.split(',').map((c: string) => c.trim()).filter(Boolean);
+      codes = codeNo.split(/,\s*(?=CMTS\/)|,\s*/).map((c: string) => c.trim()).filter(Boolean);
     }
+
+    const qtyStr = t?.sample_quantity || assignment?.sample_quantity || '';
+    const qtyMatch = qtyStr ? String(qtyStr).match(/\d+/) : null;
+    let qty = qtyMatch ? parseInt(qtyMatch[0], 10) : 1;
+    if (isNaN(qty) || qty <= 0) qty = 1;
+
+    // If only one code was stored but sample quantity is greater than 1, expand into individual sample items
+    if (codes.length === 1 && codes[0] && qty > 1) {
+      const romanMap = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI", "XXII", "XXIII", "XXIV", "XXV", "XXVI", "XXVII", "XXVIII", "XXIX", "XXX"];
+      const baseCode = codes[0].replace(/-[IVXLCDM\d]+$/i, '');
+      codes = [];
+      for (let i = 0; i < qty; i++) {
+        codes.push(`${baseCode}-${romanMap[i] || (i + 1)}`);
+      }
+    }
+
     if (codes.length === 0) {
       codes = [''];
     }
@@ -353,7 +369,10 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
     const rawDetails = { ...(t?.additional_details_values || {}) };
     delete rawDetails.sample_quantity;
     delete rawDetails.sample_code_no;
-    const sampleDetails = Object.values(rawDetails).filter(Boolean).join(', ') || t?.sample_quantity || '';
+    delete rawDetails.test_initials;
+    delete rawDetails.material_initials;
+    delete rawDetails.material_id;
+    const sampleDetails = Object.values(rawDetails).filter(Boolean).join(', ') || t?.material_id || '';
     const remark = 'ok';
 
     codes.forEach((code) => {

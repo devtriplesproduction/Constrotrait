@@ -1787,7 +1787,7 @@ export function ClientWizard({
             disabled={isSubmitting || (currentStep === 0 && !onClose)}
             className="text-slate-600 hover:text-slate-900 font-semibold tracking-wide px-8 h-12 rounded-xl bg-white border-slate-200 shadow-sm transition-all"
           >
-            &larr; {currentStep === 0 && onClose ? "CLOSE" : "CANCEL"}
+            &larr; BACK
           </Button>
 
           {currentStep < steps.length - 1 ? (

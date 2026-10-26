@@ -105,7 +105,10 @@ const formatDate = (dateStr: string | null | undefined) => {
 
 const formatSampleCode = (code: string) => {
   if (!code) return '';
-  return code.replace(/([/,])/g, '$1\u200B');
+  // On the Job Card, only show the base batch code (e.g. CMTS/CON/CC/26-27/11) without individual sample suffixes (-I, -II, etc.)
+  const first = code.split(',')[0].trim();
+  const base = first.replace(/-[IVXLCDM\d]+$/i, '');
+  return base.replace(/([/])/g, '$1\u200B');
 };
 
 export const JobCardPDF = ({ data }: { data: JobCardData }) => {
@@ -353,7 +356,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
               <Text style={styles.textCenter}>{aggregatedTestingDays || primaryJob?.testing_day || ''}</Text>
             </View>
             <View style={[styles.cell, { width: '18%', alignItems: 'center', justifyContent: 'center' }]}>
-              <Text style={[styles.textCenter, { fontSize: 7, lineHeight: 1.2 }]}>
+              <Text style={[styles.textCenter, { fontSize: 7.5, lineHeight: 1.2 }]}>
                 {formatSampleCode(sampleCodeNo)}
               </Text>
             </View>
