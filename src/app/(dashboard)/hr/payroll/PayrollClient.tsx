@@ -374,6 +374,7 @@ export function PayrollClient({
                 }}
                 disabled={loading || actionLoading}
                 placeholder="Year"
+                align="right"
                 buttonClassName="h-[42px] rounded-xl bg-white border border-orange-500 hover:border-orange-600 font-medium"
               />
             </div>

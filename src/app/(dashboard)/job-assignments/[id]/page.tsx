@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { getAssignmentByIdAction, getAssignmentsAction } from "@/actions/job-assignment.actions";
+import { getAuthenticatedUser } from "@/services/auth.service";
+import { getAssignmentByIdAction, getRelatedAssignmentsAndTestsAction } from "@/actions/job-assignment.actions";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { ClipboardList, ArrowLeft, FileText, User, Calendar, Beaker, GitMerge, Clock, Layers, Award, Tag } from "lucide-react";
 import Link from "next/link";
@@ -38,8 +38,7 @@ export default async function JobAssignmentDetailsPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const params = await props.params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) redirect("/login");
 
@@ -63,38 +62,11 @@ export default async function JobAssignmentDetailsPage(props: {
   let allAssignments: any[] = [];
   let allJobEntryTests: any[] = [];
   if (jobEntryId) {
-    const [{ data: assignments }, { data: tests }] = await Promise.all([
-      supabase
-        .from("job_assignments")
-        .select(`
-          *,
-          job_entry_tests!inner (
-            id, job_entry_id, test_master ( component_parameter, specific_test, test_method )
-          )
-        `)
-        .eq("job_entry_tests.job_entry_id", jobEntryId),
-      supabase
-        .from("job_entry_tests")
-        .select(`
-          *,
-          test_master ( * ),
-          job_assignments (
-            id,
-            status,
-            report_url,
-            reviewer_remark,
-            assigned_to,
-            team_id,
-            assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),
-            teams ( id, name )
-          )
-        `)
-        .eq("job_entry_id", jobEntryId)
-        .order("created_at", { ascending: true })
-    ]);
-
-    if (assignments) allAssignments = assignments;
-    if (tests) allJobEntryTests = tests;
+    const relatedRes = await getRelatedAssignmentsAndTestsAction(jobEntryId);
+    if (relatedRes.success && relatedRes.data) {
+      allAssignments = relatedRes.data.assignments;
+      allJobEntryTests = relatedRes.data.tests;
+    }
   }
 
   return (

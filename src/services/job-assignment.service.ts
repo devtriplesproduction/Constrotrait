@@ -167,6 +167,99 @@ export class JobAssignmentService {
     return data;
   }
 
+  static async getRelatedAssignmentsAndTests(jobEntryId: string) {
+    const supabase = await createClient();
+    await this.checkViewPermission(supabase);
+
+    const [{ data: assignments, error: asgnError }, { data: tests, error: testsError }] = await Promise.all([
+      supabase
+        .from("job_assignments")
+        .select(`
+          *,
+          job_entry_tests!inner (
+            id, job_entry_id, test_master ( component_parameter, specific_test, test_method )
+          )
+        `)
+        .eq("job_entry_tests.job_entry_id", jobEntryId),
+      supabase
+        .from("job_entry_tests")
+        .select(`
+          *,
+          test_master ( * ),
+          job_assignments (
+            id,
+            status,
+            report_url,
+            reviewer_remark,
+            assigned_to,
+            team_id,
+            assigned_to_profile:profiles!job_assignments_assigned_to_fkey ( id, first_name, last_name ),
+            teams ( id, name )
+          )
+        `)
+        .eq("job_entry_id", jobEntryId)
+        .order("created_at", { ascending: true })
+    ]);
+
+    if (asgnError) {
+      console.error("Error fetching related assignments:", asgnError);
+    }
+    if (testsError) {
+      console.error("Error fetching related tests:", testsError);
+    }
+
+    return {
+      assignments: assignments || [],
+      tests: tests || []
+    };
+  }
+
+  static async getTestsDueToday(userId: string) {
+    const supabase = await createClient();
+    const { data: userTeams } = await supabase.from("team_members").select("team_id").eq("employee_id", userId);
+    const teamIds = (userTeams || []).map((t: { team_id: string }) => t.team_id).filter(Boolean);
+
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    let query = supabase
+      .from("job_assignments")
+      .select(`
+        id,
+        status,
+        due_date,
+        job_entry_tests!inner (
+          id,
+          uid_label,
+          date_of_testing,
+          material_description,
+          test_master ( component_parameter, specific_test ),
+          job_entries!job_entry_tests_job_entry_id_fkey (
+            id,
+            project_name,
+            clients ( name )
+          )
+        )
+      `)
+      .not("status", "in", '("approved","completed")');
+
+    if (teamIds.length > 0) {
+      query = query.or(`assigned_to.eq.${userId},team_id.in.(${teamIds.join(",")})`);
+    } else {
+      query = query.eq("assigned_to", userId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error("getTestsDueToday error:", error);
+      return [];
+    }
+
+    return (data || []).filter((a: any) => {
+      const testDate = a.job_entry_tests?.date_of_testing || a.due_date;
+      return testDate && testDate <= todayStr;
+    });
+  }
+
   static async getMyAssignments(_userId?: string) {
     const supabase = await createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();

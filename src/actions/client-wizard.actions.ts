@@ -4,6 +4,7 @@ import { ClientService } from "@/services/client.service";
 import { JobEntryService } from "@/services/job-entry.service";
 import { ClientWizardValues } from "@/lib/validations/client-wizard";
 import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
 
 const toNull = (v: string | null | undefined) => (v && v.trim() !== "" ? v : null);
 
@@ -87,7 +88,8 @@ export async function submitClientWizard(data: ClientWizardValues) {
       payment_status: data.jobEntry.payment_status,
     };
 
-    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData, data.dummy_is_nabl, data.dummy_scheduled_days, data.non_nabl_month, data.materialDetails?.material_initials);
+    const testInitials = (data.materialDetails as any)?.test_initials || data.materialDetails?.material_initials;
+    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData, data.dummy_is_nabl, data.dummy_scheduled_days, data.non_nabl_month, testInitials);
 
     revalidatePath("/dashboard");
     revalidatePath("/clients");
@@ -125,6 +127,85 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
 
     const jobEntryTest = data.jobEntryTests[0];
     if (jobEntryTest) {
+      const rawAddVals: Record<string, any> = { ...(jobEntryTest.additional_details_values || {}) };
+      const materialInitials = ((data.materialDetails as any)?.test_initials || data.materialDetails?.material_initials)?.trim();
+
+      if (materialInitials !== undefined && materialInitials !== null) {
+        rawAddVals.test_initials = materialInitials;
+        rawAddVals.material_initials = materialInitials;
+
+        if (materialInitials) {
+          if (rawAddVals.sample_code_no) {
+            const codes = String(rawAddVals.sample_code_no).split(/,\s*(?=CMTS\/)/);
+            rawAddVals.sample_code_no = codes.map((code: string) =>
+              code.replace(/^(CMTS\/(?:CON|ENV)\/)[^\/]+(\/\d{2}-\d{2}\/.*)$/, (m, p1, p2) => `${p1}${materialInitials}${p2}`)
+            ).join(', ');
+          } else {
+            const supabase = await createClient() as any;
+            const { data: currentTest } = await supabase
+              .from("job_entry_tests")
+              .select("job_entry_id, test_master_id, job_entries (created_at)")
+              .eq("id", testId)
+              .single();
+
+            if (currentTest?.job_entry_id) {
+              const { data: siblings } = await supabase
+                .from("job_entry_tests")
+                .select("additional_details_values")
+                .eq("job_entry_id", currentTest.job_entry_id);
+
+              let siblingCode: string | null = null;
+              if (siblings) {
+                for (const s of siblings) {
+                  const sc = (s.additional_details_values as any)?.sample_code_no;
+                  if (sc) {
+                    siblingCode = sc;
+                    break;
+                  }
+                }
+              }
+
+              if (siblingCode) {
+                const codes = String(siblingCode).split(/,\s*(?=CMTS\/)/);
+                rawAddVals.sample_code_no = codes.map((c: string) =>
+                  c.replace(/^(CMTS\/(?:CON|ENV)\/)[^\/]+(\/\d{2}-\d{2}\/.*)$/, (m, p1, p2) => `${p1}${materialInitials}${p2}`)
+                ).join(', ');
+              } else {
+                const jobYear = currentTest.job_entries?.created_at
+                  ? new Date(currentTest.job_entries.created_at).getFullYear()
+                  : new Date().getFullYear();
+
+                let category = 'CON';
+                const tmId = jobEntryTest.test_master_id || currentTest.test_master_id;
+                if (tmId) {
+                  const { data: tm } = await supabase.from("test_master").select("category").eq("id", tmId).single();
+                  if (tm?.category === 'Environmental') category = 'ENV';
+                }
+
+                const yy = jobYear.toString().slice(-2);
+                const nextYy = (jobYear + 1).toString().slice(-2);
+                const yearSegment = `${yy}-${nextYy}`;
+                const seqName = category === 'ENV' ? 'SAMPLE_ENV' : 'SAMPLE_CON';
+                const { data: sampleData, error: sampleError } = await supabase.rpc("next_uid_seq", { p_name: seqName, p_year: jobYear });
+                if (!sampleError && sampleData) {
+                  const sampleNo = sampleData.toString();
+                  const sampleQuantityStr = data.materialDetails?.sample_quantity || jobEntryTest.sample_quantity || "1";
+                  const sampleQuantityMatch = sampleQuantityStr.match(/\d+/);
+                  let qty = sampleQuantityMatch ? parseInt(sampleQuantityMatch[0], 10) : 1;
+                  if (isNaN(qty) || qty <= 0) qty = 1;
+
+                  const sampleCodes: string[] = [];
+                  for (let i = 1; i <= qty; i++) {
+                    sampleCodes.push(`CMTS/${category}/${materialInitials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
+                  }
+                  rawAddVals.sample_code_no = sampleCodes.join(', ');
+                }
+              }
+            }
+          }
+        }
+      }
+
       await JobEntryService.updateJobEntryTest(testId, {
         test_master_id: toNull(jobEntryTest.test_master_id),
         date_of_receiving: toNull(data.materialDetails?.date_of_receiving ?? jobEntryTest.date_of_receiving),
@@ -136,10 +217,42 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
         sample_quantity: data.materialDetails?.sample_quantity ?? jobEntryTest.sample_quantity,
         testing_day: jobEntryTest.testing_day ?? data.materialDetails?.testing_day ?? null,
         date_of_casting: toNull(jobEntryTest.date_of_casting ?? data.materialDetails?.date_of_casting),
-        additional_details_values: jobEntryTest.additional_details_values || {},
+        additional_details_values: rawAddVals,
         test_method: jobEntryTest.test_method,
         grade: data.materialDetails?.grade ?? jobEntryTest.grade ?? jobEntryTest.additional_details_values?.Grade ?? jobEntryTest.additional_details_values?.grade ?? null,
       });
+
+      if (materialInitials) {
+        const supabase = await createClient() as any;
+        const { data: updatedTest } = await supabase
+          .from("job_entry_tests")
+          .select("job_entry_id")
+          .eq("id", testId)
+          .single();
+
+        if (updatedTest?.job_entry_id) {
+          const { data: siblings } = await supabase
+            .from("job_entry_tests")
+            .select("id, additional_details_values")
+            .eq("job_entry_id", updatedTest.job_entry_id)
+            .neq("id", testId);
+
+          if (siblings && siblings.length > 0) {
+            for (const sib of siblings) {
+              const sibVals = { ...(sib.additional_details_values || {}) };
+              sibVals.test_initials = materialInitials;
+              sibVals.material_initials = materialInitials;
+              if (rawAddVals.sample_code_no) {
+                sibVals.sample_code_no = rawAddVals.sample_code_no;
+              }
+              await supabase
+                .from("job_entry_tests")
+                .update({ additional_details_values: sibVals })
+                .eq("id", sib.id);
+            }
+          }
+        }
+      }
     }
     revalidatePath("/dashboard");
     revalidatePath("/clients");
@@ -162,61 +275,21 @@ export async function searchClientsAction(query: string, branchId?: string) {
 
 export async function getClientProjectsAction(clientId: string) {
   try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    
-    const { data, error } = await supabase
-      .from("job_entries")
-      .select("project_name, division, agency, dispatch_name, dispatch_address, collected_by")
-      .eq("client_id", clientId)
-      .not("project_name", "is", null)
-      .order("created_at", { ascending: false });
-      
-    if (error) throw error;
-    
-    // Deduplicate by project_name
-    const uniqueProjects = Array.from(new Map(data.filter(d => d.project_name).map(item => [item.project_name, item])).values());
-    
-    return { success: true, data: uniqueProjects };
+    const data = await ClientService.getClientProjects(clientId);
+    return { success: true, data };
   } catch (error) {
-    return { success: false, error: (error as Error).message };
+    console.error("getClientProjectsAction error:", error);
+    return { success: false, error: "Failed to retrieve client projects" };
   }
 }
 
 export async function getNextUidAction() {
   try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    
-    // Try lab_uid_counters first
-    const { data: counterData, error: counterError } = await supabase
-      .from("lab_uid_counters" as any)
-      .select("counter_value")
-      .eq("counter_name", "UID_NABL")
-      .maybeSingle();
-      
-    if (!counterError && counterData) {
-      return { success: true, nextUid: ((counterData as any).counter_value || 0) + 1 };
-    }
-
-    // Fallback to max numeric uid_label
-    const { data: testsData } = await supabase
-      .from("job_entry_tests")
-      .select("uid_label")
-      .not("uid_label", "is", null);
-
-    let maxVal = 0;
-    if (testsData) {
-      for (const t of testsData) {
-        if (t.uid_label && /^\d+$/.test(t.uid_label)) {
-          const val = parseInt(t.uid_label, 10);
-          if (val > maxVal) maxVal = val;
-        }
-      }
-    }
-    return { success: true, nextUid: maxVal + 1 };
+    const nextUid = await JobEntryService.getNextUid();
+    return { success: true, nextUid };
   } catch (error) {
-    return { success: false, error: (error as Error).message };
+    console.error("getNextUidAction error:", error);
+    return { success: false, error: "Failed to retrieve next UID" };
   }
 }
 

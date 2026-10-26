@@ -68,6 +68,66 @@ export function parseTestingDaysList(testingDayStr?: string | null): string[] {
   return matches || [];
 }
 
+export function deriveTestInitials(testName?: string | null): string {
+  if (!testName || typeof testName !== "string") return "";
+  const clean = testName.replace(/\([^)]*\)/g, "").replace(/\[[^\]]*\]/g, "").trim();
+  const words = clean.split(/[^a-zA-Z0-9]+/).filter(Boolean).filter(w => {
+    const l = w.toLowerCase();
+    return !["of", "the", "in", "for", "by", "to", "and", "as", "per", "a", "an", "on", "at", "with"].includes(l);
+  });
+  if (words.length === 0) return "";
+  if (words.length === 1) {
+    const w = words[0];
+    if (w.length <= 3) return w.toUpperCase();
+    return w.slice(0, 2).toUpperCase();
+  }
+  return words.slice(0, 4).map(w => w[0]).join("").toUpperCase();
+}
+
+export function extractTestInitials(test?: any, testMaster?: any): string {
+  if (!test) return "";
+  const addVals = (test.additional_details_values as Record<string, any>) || {};
+  if (addVals.test_initials && typeof addVals.test_initials === "string" && addVals.test_initials.trim()) {
+    return addVals.test_initials.trim();
+  }
+  if (addVals.material_initials && typeof addVals.material_initials === "string" && addVals.material_initials.trim()) {
+    return addVals.material_initials.trim();
+  }
+  const sampleCode = addVals.sample_code_no;
+  if (sampleCode && typeof sampleCode === "string") {
+    const match = sampleCode.match(/^CMTS\/(?:CON|ENV)\/([^\/]+)\/\d{2}-\d{2}\//);
+    if (match) {
+      const candidate = match[1].trim();
+      if (!candidate.includes(",") && !/^\d+/.test(candidate)) {
+        return candidate;
+      }
+    }
+    const parts = sampleCode.split('/');
+    if (parts.length >= 5 && parts[0].includes('CMTS')) {
+      const candidate = parts[2].trim();
+      if (!candidate.includes(",") && !/^\d+/.test(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  // Fallback: derive initials from test name
+  const testName =
+    testMaster?.component_parameter ||
+    testMaster?.specific_test ||
+    test?.test_master?.component_parameter ||
+    test?.test_master?.specific_test ||
+    test?.test_name ||
+    test?.test_parameters ||
+    "";
+  if (testName) {
+    return deriveTestInitials(testName);
+  }
+  return "";
+}
+
+export const extractMaterialInitials = extractTestInitials;
+
 type TestMaster = Database["public"]["Tables"]["test_master"]["Row"];
 
 export interface ClientWizardProps {
@@ -183,6 +243,9 @@ export function ClientWizard({
       },
       materialDetails: {
         material_id: initialData.jobEntryTest.material_id || "",
+        material_initials: (initialData.jobEntryTest.additional_details_values as any)?.test_initials ||
+          (initialData.jobEntryTest.additional_details_values as any)?.material_initials ||
+          extractTestInitials(initialData.jobEntryTest, (initialData.jobEntryTest as any)?.test_master) || "",
         material_details_location: initialData.jobEntryTest.material_details_location || "",
         sample_quantity: initialData.jobEntryTest.sample_quantity || "",
         testing_day: initialData.jobEntryTest.testing_day || "",
@@ -215,6 +278,7 @@ export function ClientWizard({
         branch_id: initialBranchId,
       },
       materialDetails: {
+        material_initials: "",
         testing_day: "",
         date_of_casting: "",
         date_of_testing: "",
@@ -342,7 +406,17 @@ export function ClientWizard({
           if (mode === "edit" && initialData?.jobEntryTest?.test_master_id) {
             const test = (result.data as TestMaster[]).find(t => t.id === initialData.jobEntryTest.test_master_id);
             if (test) {
-              setValue("jobEntryTests.0.test_name", test.component_parameter || test.specific_test || "");
+              const testName = test.component_parameter || test.specific_test || "";
+              setValue("jobEntryTests.0.test_name", testName);
+              const currentInitials = getValues("materialDetails.material_initials");
+              if (!currentInitials) {
+                const derived = deriveTestInitials(testName);
+                if (derived) {
+                  setValue("materialDetails.material_initials", derived, { shouldDirty: true });
+                  setValue("jobEntryTests.0.additional_details_values.material_initials" as any, derived);
+                  setValue("jobEntryTests.0.additional_details_values.test_initials" as any, derived);
+                }
+              }
             }
           }
         }
@@ -351,6 +425,18 @@ export function ClientWizard({
       fetchTests();
     }
   }, [currentStep, availableTests.length, mode, initialData, setValue, selectedBranchId]);
+
+  useEffect(() => {
+    if (mode === "edit" && initialData?.jobEntryTest) {
+      const initials = (initialData.jobEntryTest.additional_details_values as any)?.test_initials ||
+        (initialData.jobEntryTest.additional_details_values as any)?.material_initials ||
+        extractTestInitials(initialData.jobEntryTest, (initialData.jobEntryTest as any)?.test_master) ||
+        "";
+      if (initials) {
+        setValue("materialDetails.material_initials", initials);
+      }
+    }
+  }, [initialData, mode, setValue]);
 
   const watchedCastingDate = watch("materialDetails.date_of_casting");
   const watchedTestingDay = watch("materialDetails.testing_day");
@@ -490,6 +576,15 @@ export function ClientWizard({
 
       setValue("selectedTestIds", [...currentIds, id], { shouldValidate: true });
 
+      const testName = test.component_parameter || test.specific_test || test.material_product || "";
+      const currentInitials = getValues("materialDetails.material_initials");
+      if (!currentInitials) {
+        const derived = deriveTestInitials(testName);
+        if (derived) {
+          setValue("materialDetails.material_initials", derived, { shouldValidate: true, shouldDirty: true });
+        }
+      }
+
       const initialAdditionalDetails: Record<string, string> = {};
       if (test.additional_details) {
         test.additional_details.forEach(detail => {
@@ -538,12 +633,25 @@ export function ClientWizard({
     } else if (currentStep === 3) {
       isValid = true;
       const mat = getValues("materialDetails");
+      let initials = mat?.material_initials?.trim() || "";
+      const currentTests = getValues("jobEntryTests") || [];
+      if (!initials && currentTests[0]?.test_name) {
+        initials = deriveTestInitials(currentTests[0].test_name);
+        if (initials) {
+          setValue("materialDetails.material_initials", initials);
+        }
+      }
+      if (initials) {
+        currentTests.forEach((test, idx) => {
+          setValue(`jobEntryTests.${idx}.additional_details_values.material_initials` as any, initials);
+          setValue(`jobEntryTests.${idx}.additional_details_values.test_initials` as any, initials);
+        });
+      }
       const casting = mat?.date_of_casting || "";
       const day = mat?.testing_day || "";
       if (casting && day) {
         updateAllTestsFromMaterialDetails(casting, day);
       } else {
-        const currentTests = getValues("jobEntryTests") || [];
         const daysList = parseTestingDaysList(day);
         currentTests.forEach((test, idx) => {
           const testDay = test.testing_day || daysList[idx] || daysList[0] || day || "";
@@ -1307,8 +1415,25 @@ export function ClientWizard({
                             <Input {...register(`materialDetails.material_details_location`)} placeholder="e.g. Block A" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
                           </div>
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Material Initials</label>
-                            <Input {...register(`materialDetails.material_initials`)} placeholder="e.g. CC" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                            <div className="flex items-center justify-between">
+                              <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Test Initials</label>
+                              <span className="text-[10px] text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 uppercase tracking-wider">From Test</span>
+                            </div>
+                            <Input
+                              {...register(`materialDetails.material_initials`)}
+                              placeholder="e.g. CS, CC, SG"
+                              className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white uppercase tracking-wider font-bold"
+                              onChange={(e) => {
+                                const val = e.target.value.toUpperCase();
+                                setValue("materialDetails.material_initials", val, { shouldValidate: true, shouldDirty: true });
+                                const currentTests = getValues("jobEntryTests") || [];
+                                currentTests.forEach((_, idx) => {
+                                  setValue(`jobEntryTests.${idx}.additional_details_values.material_initials` as any, val);
+                                  setValue(`jobEntryTests.${idx}.additional_details_values.test_initials` as any, val);
+                                });
+                              }}
+                            />
+                            <span className="text-[11px] text-slate-400 font-medium">Auto-derived from test name, or customize as needed</span>
                           </div>
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Sample Quantity</label>

@@ -121,6 +121,18 @@ export function canIssueLabReport(roles?: string[] | null): boolean {
     || roles.includes("BRANCH_MANAGER_ADMINISTRATIVE");
 }
 
+export function canManageTestResults(roles?: string[] | null): boolean {
+  if (!roles) return false;
+  return (
+    roles.includes("SUPER_ADMIN") ||
+    roles.includes("BRANCH_MANAGER_ADMINISTRATIVE") ||
+    roles.includes("QUALITY_MANAGER") ||
+    roles.includes("TECHNICAL_MANAGER") ||
+    roles.includes("TEST_ENGINEER") ||
+    roles.includes("LAB_ANALYST")
+  );
+}
+
 export function isAccountant(roles?: string[] | null): boolean {
   if (!roles) return false;
   return roles.includes("ACCOUNTANT");

@@ -177,28 +177,28 @@ function ProjectJobsList({
                 >
                   <div className="absolute top-0 right-0 w-[140px] h-[130px] bg-[#FFF8F3] rounded-bl-[120px] pointer-events-none -z-10 hidden sm:block" />
 
-                  <div className="flex-1 flex flex-col gap-5 relative z-10">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-4">
+                  <div className="flex-1 min-w-0 flex flex-col gap-5 relative z-10">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-4 min-w-0">
                         <div className="w-14 h-14 shrink-0 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
                           <FlaskConical className="w-7 h-7" />
                         </div>
-                        <div>
-                          <h3 className="font-bold text-slate-800 text-lg leading-tight">
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-slate-800 text-lg leading-tight truncate">
                             UID: {test.uid_label || selectedJob.uid_label || String(selectedJob.uid || "") || "Missing"}
                           </h3>
-                          <p className="font-bold text-orange-500 text-sm mt-1">
+                          <p className="font-bold text-orange-500 text-sm mt-1 truncate">
                             {test.ulr_status === 'generated' ? `ULR: ${test.ulr_number}` : `ULR Pending`}
                           </p>
                         </div>
                       </div>
 
-                      <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-orange-100/50">
+                      <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-orange-100/50 shrink-0">
                         <FlaskConical className="w-3.5 h-3.5 shrink-0" /> Test
                       </div>
                     </div>
 
-                    <div className="bg-slate-50/80 rounded-2xl p-4 flex gap-4 border border-slate-100/50">
+                    <div className="bg-slate-50/80 rounded-2xl p-4 flex gap-4 border border-slate-100/50 w-full min-w-0">
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Material</p>
                         <p className="text-[14px] font-semibold text-slate-700 truncate" title={(test.material_description && test.material_description.trim() !== "-") ? test.material_description : (test.test_master?.material_product || test.material_id || "-")}>
@@ -219,10 +219,10 @@ function ProjectJobsList({
 
                     <div>
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Key Dates</p>
-                      <div className="flex items-center gap-3 sm:gap-5 flex-nowrap whitespace-nowrap">
-                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0"><span className="font-bold text-slate-800">Cast:</span> {test.date_of_casting ? new Date(test.date_of_casting).toLocaleDateString() : "-"}</div>
-                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0"><span className="font-bold text-slate-800">Recv:</span> {test.date_of_receiving ? new Date(test.date_of_receiving).toLocaleDateString() : "-"}</div>
-                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0"><span className="font-bold text-slate-800">Test:</span> {test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : "-"}</div>
+                      <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap">
+                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0 whitespace-nowrap"><span className="font-bold text-slate-800">Cast:</span> {test.date_of_casting ? new Date(test.date_of_casting).toLocaleDateString() : "-"}</div>
+                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0 whitespace-nowrap"><span className="font-bold text-slate-800">Recv:</span> {test.date_of_receiving ? new Date(test.date_of_receiving).toLocaleDateString() : "-"}</div>
+                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0 whitespace-nowrap"><span className="font-bold text-slate-800">Test:</span> {test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : "-"}</div>
                       </div>
                     </div>
                   </div>

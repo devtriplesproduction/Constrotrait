@@ -1,7 +1,6 @@
-import { getAuthenticatedUser } from "@/services/auth.service";
+import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
 import { getEODHistory, getEODStreak, EODReport, getAllEODs } from "@/services/eod.service";
 import { getAllEmployees } from "@/services/employee.service";
-import { createClient } from "@/lib/supabase/server";
 import { canManageEOD, canReviewEOD } from "@/config/roles";
 import { EODSubmissionForm } from "@/components/modules/eod/EODSubmissionForm";
 import { ReviewDashboard } from "@/components/modules/eod/ReviewDashboard";
@@ -15,30 +14,15 @@ import { EodTabsClient } from "@/components/modules/eod/EodTabsClient";
 import { RecentEODLogItem } from "@/components/modules/eod/RecentEODLogItem";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 
-import { cookies } from "next/headers";
-
 interface PageProps {
   searchParams: { tab?: string, branch?: string };
 }
 
 export default async function EODPage({ searchParams }: PageProps) {
-  const user = await getAuthenticatedUser();
+  const user = await getAuthenticatedUserWithRoles();
   if (!user) return <div>Unauthorized</div>;
 
-  const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('roles, id')
-    .eq('id', user.id)
-    .single();
-
-  const rawRoles = (profile?.roles || []) as string[];
-  const roles = Array.from(new Set(rawRoles.filter(Boolean)));
-  const cookieStore = await cookies();
-  const activeRoleCookie = cookieStore.get("active_role")?.value;
-  const activeRole = (activeRoleCookie && roles.includes(activeRoleCookie))
-    ? activeRoleCookie
-    : (roles[0] || "UNKNOWN");
+  const activeRole = user.activeRole;
 
   const canReview = canReviewEOD([activeRole]);
   const canManage = canManageEOD([activeRole]);

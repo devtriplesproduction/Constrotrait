@@ -39,6 +39,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      test_results: {
+        Row: {
+          id: string
+          job_entry_test_id: string
+          sr_no: number
+          id_mark: string | null
+          length_mm: number | null
+          width_mm: number | null
+          area_mm2: number | null
+          load_kn: number | null
+          strength_nmm2: number | null
+          particulars: string | null
+          result_value: string | null
+          specified_value: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          job_entry_test_id: string
+          sr_no: number
+          id_mark?: string | null
+          length_mm?: number | null
+          width_mm?: number | null
+          area_mm2?: number | null
+          load_kn?: number | null
+          strength_nmm2?: number | null
+          particulars?: string | null
+          result_value?: string | null
+          specified_value?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          job_entry_test_id?: string
+          sr_no?: number
+          id_mark?: string | null
+          length_mm?: number | null
+          width_mm?: number | null
+          area_mm2?: number | null
+          load_kn?: number | null
+          strength_nmm2?: number | null
+          particulars?: string | null
+          result_value?: string | null
+          specified_value?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_results_job_entry_test_id_fkey"
+            columns: ["job_entry_test_id"]
+            isOneToOne: false
+            referencedRelation: "job_entry_tests"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       login_audit_logs: {
         Row: {
           id: string

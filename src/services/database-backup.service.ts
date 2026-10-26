@@ -72,6 +72,7 @@ export async function generateFullDatabaseBackup(user: {
 }): Promise<{
   payload: BackupPayload;
   fileName: string;
+  jsonFileName: string;
   fileSizeBytes: number;
   totalTables: number;
   totalRecords: number;
@@ -98,7 +99,8 @@ export async function generateFullDatabaseBackup(user: {
 
     const now = new Date();
     const timestampStr = now.toISOString().replace(/[:.]/g, "-");
-    const fileName = `constrotrait_db_backup_${timestampStr}.json`;
+    const fileName = `constrotrait_db_backup_${timestampStr}.zip`;
+    const jsonFileName = `constrotrait_db_backup_${timestampStr}.json`;
 
     const payload: BackupPayload = {
       version: "1.0",
@@ -134,6 +136,7 @@ export async function generateFullDatabaseBackup(user: {
     return {
       payload,
       fileName,
+      jsonFileName,
       fileSizeBytes,
       totalTables: payload.total_tables,
       totalRecords,

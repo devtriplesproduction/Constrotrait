@@ -1,4 +1,5 @@
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
+import { getCurrentUserProfile } from "@/services/employee.service";
 import { getMyApplications, getApplicationsToReview } from "@/services/employee-application.service";
 import { redirect } from "next/navigation";
 import { ApplicationsClientPage } from "@/components/modules/applications/ApplicationsClientPage";
@@ -17,20 +18,15 @@ export default async function ApplicationsPage() {
     redirect("/login");
   }
   
-  const { createClient } = await import("@/lib/supabase/server");
-  const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("first_name, last_name, designation, department")
-    .eq("id", user.id)
-    .single();
-
   const canApprove = isBranchManager(user.roles) || isHR(user.roles) || isSuperAdmin(user.roles);
 
-  const [myRes, toApproveRes] = await Promise.all([
+  const [profileRes, myRes, toApproveRes] = await Promise.all([
+    getCurrentUserProfile(),
     getMyApplications(),
     canApprove ? getApplicationsToReview() : Promise.resolve({ success: true, data: [] })
   ]);
+
+  const profile = profileRes.success && profileRes.data ? (profileRes.data as unknown as { first_name?: string; last_name?: string; designation?: string; department?: string }) : null;
 
   const myApplications = myRes.success && myRes.data ? myRes.data : [];
   const applicationsToReview = toApproveRes.success && toApproveRes.data ? toApproveRes.data : [];

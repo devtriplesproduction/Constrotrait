@@ -63,7 +63,7 @@ export function Select({
   disabled,
   id,
   iconClassName,
-  align = "left",
+  align,
   isClearable = false,
   isSearchable = false,
   searchValue,
@@ -75,9 +75,24 @@ export function Select({
 }: SelectProps) {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
-  const [isTop, setIsTop] = React.useState(false);
-  const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0, right: 0 });
+  const isMenuSearchActive = isSearchable && (searchInMenu || (searchValue === undefined && onSearchChange === undefined));
+
+  const [coords, setCoords] = React.useState<{
+    top: number;
+    left?: number;
+    right?: number;
+    width: number;
+    maxHeight: number;
+    isTop: boolean;
+  }>({
+    top: 0,
+    width: 0,
+    maxHeight: 256,
+    isTop: false,
+  });
+
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const [menuSearchQuery, setMenuSearchQuery] = React.useState("");
 
@@ -89,31 +104,63 @@ export function Select({
   }, []);
 
   const updateCoords = () => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
 
-      let shouldBeTop = false;
-      if (placement === "top") {
-        shouldBeTop = true;
-      } else if (placement === "bottom") {
-        shouldBeTop = false;
-      } else {
-        // "auto": flip up if space below is limited (< 220px) and there's more space above
-        shouldBeTop = spaceBelow < 220 && spaceAbove > spaceBelow;
-      }
-
-      setIsTop(shouldBeTop);
-      setCoords({
-        top: shouldBeTop
-          ? rect.top + window.scrollY - 8
-          : rect.bottom + window.scrollY + 8,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-        right: window.innerWidth - (rect.right + window.scrollX),
-      });
+    // If trigger has scrolled completely off-screen, close the dropdown
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      setOpen(false);
+      return;
     }
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    let shouldBeTop = false;
+    if (placement === "top") {
+      shouldBeTop = true;
+    } else if (placement === "bottom") {
+      shouldBeTop = false;
+    } else {
+      // "auto": flip up if space below is limited (< 220px) and there's more space above
+      shouldBeTop = spaceBelow < 220 && spaceAbove > spaceBelow;
+    }
+
+    const availableHeight = shouldBeTop
+      ? Math.max(100, spaceAbove - 16)
+      : Math.max(100, spaceBelow - 16);
+    const maxHeight = Math.min(256, availableHeight);
+
+    const minW = menuWidth
+      ? (typeof menuWidth === "number" ? menuWidth : parseInt(String(menuWidth), 10) || rect.width)
+      : (isMenuSearchActive ? Math.max(rect.width, 180) : Math.max(rect.width, 100));
+
+    // Determine alignment:
+    // If align prop is explicitly provided, respect it.
+    // Otherwise, auto-align: align right if opening left would overflow viewport and right alignment has room.
+    let shouldAlignRight = false;
+    if (align === "right") {
+      shouldAlignRight = true;
+    } else if (align === "left") {
+      shouldAlignRight = false;
+    } else {
+      const overflowsRight = rect.left + minW > window.innerWidth - 12;
+      const fitsLeft = rect.right - minW >= 12;
+      shouldAlignRight = overflowsRight && fitsLeft;
+    }
+
+    const top = shouldBeTop ? rect.top - 8 : rect.bottom + 8;
+    const right = Math.max(8, window.innerWidth - rect.right);
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - minW - 8));
+
+    setCoords({
+      top,
+      left: shouldAlignRight ? undefined : left,
+      right: shouldAlignRight ? right : undefined,
+      width: rect.width,
+      maxHeight,
+      isTop: shouldBeTop,
+    });
   };
 
   const handleToggle = () => {
@@ -124,14 +171,14 @@ export function Select({
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        // Also check if clicked inside the portal
-        const portalEl = document.getElementById("select-portal-container");
-        if (portalEl && portalEl.contains(event.target as Node)) {
-          return;
-        }
-        setOpen(false);
+      const target = event.target as Node;
+      if (containerRef.current && containerRef.current.contains(target)) {
+        return;
       }
+      if (dropdownRef.current && dropdownRef.current.contains(target)) {
+        return;
+      }
+      setOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -236,7 +283,6 @@ export function Select({
     });
   };
 
-  const isMenuSearchActive = isSearchable && (searchInMenu || (searchValue === undefined && onSearchChange === undefined));
   const isFiltering = isMenuSearchActive && Boolean(menuSearchQuery.trim());
   const renderedChildren = isFiltering
     ? filterChildren(children, menuSearchQuery)
@@ -250,27 +296,29 @@ export function Select({
     <AnimatePresence>
       {open && (
         <div
+          ref={dropdownRef}
           style={{
-            position: "absolute",
+            position: "fixed",
             top: coords.top,
-            ...(align === "right" ? { right: coords.right } : { left: coords.left }),
+            ...(coords.right !== undefined ? { right: coords.right } : { left: coords.left }),
             width: menuWidth,
-            minWidth: menuWidth ?? Math.max(coords.width, 200),
+            minWidth: menuWidth ?? (isMenuSearchActive ? Math.max(coords.width, 180) : Math.max(coords.width, 100)),
+            maxWidth: "calc(100vw - 16px)",
             zIndex: 99999,
           }}
         >
           <div
             style={
-              isTop
+              coords.isTop
                 ? { transform: "translateY(-100%)", transformOrigin: "bottom center" }
                 : { transformOrigin: "top center" }
             }
           >
             <motion.div 
               key="select-dropdown"
-              initial={{ opacity: 0, y: isTop ? 8 : -8, scale: 0.98 }}
+              initial={{ opacity: 0, y: coords.isTop ? 8 : -8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: isTop ? 8 : -4, scale: 0.98 }}
+              exit={{ opacity: 0, y: coords.isTop ? 8 : -4, scale: 0.98 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
               id="select-portal-container"
               className={cn(
@@ -334,7 +382,7 @@ export function Select({
                 </div>
               )}
 
-              <div className="p-1.5 flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent" style={{ maxHeight: "16rem" }}>
+              <div className="p-1.5 flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent" style={{ maxHeight: coords.maxHeight || "16rem" }}>
                 {visibleCount > 0 ? (
                   renderedChildren
                 ) : (

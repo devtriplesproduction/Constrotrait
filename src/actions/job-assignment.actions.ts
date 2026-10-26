@@ -71,7 +71,28 @@ export async function deleteAssignmentAction(id: string) {
     await JobAssignmentService.deleteAssignment(id);
     revalidatePath("/job-assignments");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    console.error("deleteAssignmentAction error:", error);
+    return { success: false, error: "Failed to delete assignment" };
+  }
+}
+
+export async function getRelatedAssignmentsAndTestsAction(jobEntryId: string) {
+  try {
+    const data = await JobAssignmentService.getRelatedAssignmentsAndTests(jobEntryId);
+    return { success: true, data };
+  } catch (error) {
+    console.error("getRelatedAssignmentsAndTestsAction error:", error);
+    return { success: false, error: "Failed to retrieve related tests and assignments" };
+  }
+}
+
+export async function getTestsDueTodayAction(userId: string) {
+  try {
+    const data = await JobAssignmentService.getTestsDueToday(userId);
+    return { success: true, data };
+  } catch (error) {
+    console.error("getTestsDueTodayAction error:", error);
+    return { success: false, error: "Failed to check tests due today" };
   }
 }

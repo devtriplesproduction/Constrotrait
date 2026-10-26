@@ -18,6 +18,22 @@ export class JobEntryService {
     return str;
   }
 
+  static deriveTestInitials(testName?: string | null): string {
+    if (!testName || typeof testName !== "string") return "";
+    const clean = testName.replace(/\([^)]*\)/g, "").replace(/\[[^\]]*\]/g, "").trim();
+    const words = clean.split(/[^a-zA-Z0-9]+/).filter(Boolean).filter(w => {
+      const l = w.toLowerCase();
+      return !["of", "the", "in", "for", "by", "to", "and", "as", "per", "a", "an", "on", "at", "with"].includes(l);
+    });
+    if (words.length === 0) return "";
+    if (words.length === 1) {
+      const w = words[0];
+      if (w.length <= 3) return w.toUpperCase();
+      return w.slice(0, 2).toUpperCase();
+    }
+    return words.slice(0, 4).map(w => w[0]).join("").toUpperCase();
+  }
+
   private static async buildSampleCodes(
     supabase: any,
     jobYear: number,
@@ -28,11 +44,17 @@ export class JobEntryService {
     if (!testsData || testsData.length === 0 || !testMasters || testMasters.length === 0) {
       return [];
     }
-    if (!materialInitials) {
-      throw new Error("material_initials is required for code generation.");
-    }
 
     const firstTestMaster = testMasters.find((x: any) => x.id === testsData[0].test_master_id);
+    let initials = materialInitials?.trim();
+    if (!initials) {
+      const testName = firstTestMaster?.component_parameter || firstTestMaster?.specific_test || firstTestMaster?.material_product;
+      initials = JobEntryService.deriveTestInitials(testName);
+    }
+    if (!initials) {
+      throw new Error("test_initials is required for code generation.");
+    }
+
     const category = firstTestMaster?.category === 'Environmental' ? 'ENV' : 'CON';
     const yy = jobYear.toString().slice(-2);
     const nextYy = (jobYear + 1).toString().slice(-2);
@@ -52,7 +74,7 @@ export class JobEntryService {
 
     const sampleCodes: string[] = [];
     for (let i = 1; i <= qty; i++) {
-      sampleCodes.push(`CMTS/${category}/${materialInitials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
+      sampleCodes.push(`CMTS/${category}/${initials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
     }
     return sampleCodes;
   }
@@ -144,9 +166,14 @@ export class JobEntryService {
     if (testsData && testsData.length > 0) {
       for (const t of testsData) {
         (t as any).uid_label = firstUidLabel;
+        if (!t.additional_details_values) t.additional_details_values = {};
         if (sampleCodes.length > 0) {
-          if (!t.additional_details_values) t.additional_details_values = {};
           (t.additional_details_values as any).sample_code_no = sampleCodes.join(', ');
+        }
+        const effectiveInitials = materialInitials || (t.additional_details_values as any)?.test_initials || (t.additional_details_values as any)?.material_initials;
+        if (effectiveInitials) {
+          (t.additional_details_values as any).material_initials = effectiveInitials;
+          (t.additional_details_values as any).test_initials = effectiveInitials;
         }
       }
 
@@ -305,9 +332,14 @@ export class JobEntryService {
         throw new Error(`Test NABL status (${isTestNabl ? 'NABL' : 'Non-NABL'}) does not match the Job Card (${isNablCard ? 'NABL' : 'Non-NABL'}).`);
       }
       (test as any).uid_label = jobEntry.uid_label;
+      if (!test.additional_details_values) test.additional_details_values = {};
       if (sampleCodesStr) {
-        if (!test.additional_details_values) test.additional_details_values = {};
         (test.additional_details_values as any).sample_code_no = sampleCodesStr;
+      }
+      const effectiveInitials = materialInitials || (test.additional_details_values as any)?.test_initials || (test.additional_details_values as any)?.material_initials;
+      if (effectiveInitials) {
+        (test.additional_details_values as any).material_initials = effectiveInitials;
+        (test.additional_details_values as any).test_initials = effectiveInitials;
       }
     }
 
@@ -498,5 +530,81 @@ export class JobEntryService {
 
     return null;
   }
+
+  static async getNextUid(): Promise<number> {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+
+    const supabase = await createClient();
+    const currentYear = new Date().getFullYear();
+
+    const { data: counterData, error: counterError } = await supabase
+      .from("lab_uid_counters")
+      .select("counter_value")
+      .eq("counter_name", "UID_NABL")
+      .eq("counter_year", currentYear)
+      .maybeSingle();
+
+    if (!counterError && counterData) {
+      return (counterData.counter_value || 0) + 1;
+    }
+
+    const { data: testsData } = await supabase
+      .from("job_entry_tests")
+      .select("uid_label")
+      .not("uid_label", "is", null);
+
+    let maxVal = 0;
+    if (testsData) {
+      for (const t of testsData) {
+        if (t.uid_label && /^\d+$/.test(t.uid_label)) {
+          const val = parseInt(t.uid_label, 10);
+          if (val > maxVal) maxVal = val;
+        }
+      }
+    }
+    return maxVal + 1;
+  }
+
+  static async getJobCardDetailsForPdf(jobEntryTestId: string) {
+    const supabase = await createClient();
+    const { data: testData, error: testError } = await supabase
+      .from("job_entry_tests")
+      .select(`
+        *,
+        test_master (*),
+        job_entries!job_entry_tests_job_entry_id_fkey (
+          *,
+          clients (*)
+        )
+      `)
+      .eq("id", jobEntryTestId)
+      .single();
+
+    if (testError || !testData) {
+      throw new Error("Job card not found");
+    }
+
+    const { data: allTests, error: allTestsError } = await supabase
+      .from("job_entry_tests")
+      .select(`
+        *,
+        test_master (*)
+      `)
+      .eq("job_entry_id", testData.job_entry_id)
+      .eq("uid_label", testData.uid_label || '');
+
+    const jobsToPass = allTests && !allTestsError ? allTests : [testData];
+    const jobEntries = Array.isArray(testData.job_entries) ? testData.job_entries[0] : testData.job_entries;
+    const client = (jobEntries as unknown as { clients?: Record<string, unknown> | null })?.clients;
+
+    return {
+      testData,
+      jobsToPass,
+      jobEntries,
+      client,
+    };
+  }
 }
+
 

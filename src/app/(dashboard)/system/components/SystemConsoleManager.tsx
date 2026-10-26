@@ -21,6 +21,12 @@ import {
   Layers,
   ArrowUpRight,
   Filter,
+  FolderArchive,
+  Folder,
+  FileSpreadsheet,
+  FileArchive,
+  FileCode,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +43,10 @@ import {
 } from "@/actions/system.actions";
 import { getRoleColorBadge, getRoleDisplayName } from "@/config/roles";
 import { cn } from "@/lib/utils/cn";
+import {
+  buildBackupZipArchive,
+  extractBackupPayloadFromFile,
+} from "@/lib/backup/backup-archive";
 
 interface SystemConsoleManagerProps {
   currentUser: {
@@ -67,6 +77,10 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
   const [isGeneratingBackup, setIsGeneratingBackup] = useState(false);
   const [backups, setBackups] = useState<any[]>([]);
   const [isLoadingBackups, setIsLoadingBackups] = useState(false);
+  const [backupProgress, setBackupProgress] = useState<{
+    percent: number;
+    status: string;
+  } | null>(null);
 
   // ==================== RESTORE / REPOPULATE STATE ====================
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -145,67 +159,99 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
   };
 
   // Handle Full Database Backup Generation & Instant Download
-  const handleGenerateBackup = async () => {
+  const handleGenerateBackup = async (format: "zip" | "json" = "zip") => {
     try {
       setIsGeneratingBackup(true);
-      toast({
-        title: "Starting Database Snapshot",
-        description: "Exporting all public database tables into structured JSON...",
+      setBackupProgress({
+        percent: 25,
+        status: "Contacting database snapshot engine...",
       });
 
-      const res = await generateDatabaseBackupAction();
-      setIsGeneratingBackup(false);
+      toast({
+        title: "Starting Database Backup",
+        description:
+          format === "zip"
+            ? "Packaging all tables into categorized module folders (ZIP)..."
+            : "Exporting database tables into structured JSON...",
+      });
 
-      if (!res.success || !res.data) {
-        toast({
-          variant: "error",
-          title: "Backup Failed",
-          description: res.error || "Unable to dump database tables.",
-        });
-        return;
+      // Stream the backup file directly from server
+      const res = await fetch(`/api/system/backup/download?format=${format}&t=${Date.now()}`);
+      if (!res.ok) {
+        const errorJson = await res.json().catch(() => ({}));
+        throw new Error(errorJson.error || "Failed to generate backup.");
       }
 
-      const { payload, fileName } = res.data;
+      setBackupProgress({
+        percent: 70,
+        status: "Receiving compressed backup archive...",
+      });
 
-      // Trigger client-side file download
-      const jsonStr = JSON.stringify(payload, null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json" });
+      const blob = await res.blob();
+      const contentDisposition = res.headers.get("content-disposition");
+      let downloadFileName = format === "zip" ? "constrotrait_db_backup.zip" : "constrotrait_db_backup.json";
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          downloadFileName = match[1];
+        }
+      }
+
+      setBackupProgress({
+        percent: 95,
+        status: "Saving archive file to disk...",
+      });
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = fileName;
+      link.download = downloadFileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+      setBackupProgress({
+        percent: 100,
+        status: "Download completed successfully!",
+      });
 
       toast({
         variant: "success",
-        title: "Database Backup Downloaded!",
-        description: `Successfully exported ${res.data.totalTables} tables (${res.data.totalRecords} records) to ${fileName}.`,
+        title: "Backup Downloaded!",
+        description: `Successfully downloaded ${downloadFileName} (${(blob.size / (1024 * 1024)).toFixed(2)} MB).`,
       });
 
-      fetchBackupHistory();
+      setTimeout(() => {
+        setIsGeneratingBackup(false);
+        setBackupProgress(null);
+        fetchBackupHistory();
+      }, 1500);
     } catch (err: any) {
       setIsGeneratingBackup(false);
+      setBackupProgress(null);
       toast({
         variant: "error",
-        title: "Backup Error",
-        description: err.message,
+        title: "Backup Failed",
+        description: err.message || "An error occurred while generating backup.",
       });
     }
   };
 
-  // Handle Uploaded File Selection & Inspection
+  // Handle Uploaded File Selection & Inspection (.zip or .json)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith(".json")) {
+    const lowerName = file.name.toLowerCase();
+    const isZip = lowerName.endsWith(".zip");
+    const isJson = lowerName.endsWith(".json");
+
+    if (!isZip && !isJson) {
       toast({
         variant: "error",
         title: "Invalid file format",
-        description: "Please upload a valid .json database backup file.",
+        description: "Please upload a valid .zip or .json database backup file.",
       });
       return;
     }
@@ -214,9 +260,8 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
     setIsInspecting(true);
     setRestoreResult(null);
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result as string;
+    try {
+      const content = await extractBackupPayloadFromFile(file, file.name);
       setFileContent(content);
 
       const inspectionRes = await inspectUploadedBackupAction(content);
@@ -243,7 +288,7 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
         toast({
           variant: "success",
           title: "Backup Verified & Loaded",
-          description: `Found ${inspectionRes.data.totalTables} tables and ${inspectionRes.data.totalRecords} records ready for repopulation.`,
+          description: `Found ${inspectionRes.data.totalTables} tables and ${inspectionRes.data.totalRecords.toLocaleString()} records ready for repopulation.`,
         });
       } else {
         toast({
@@ -253,8 +298,15 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
         });
         setInspection(null);
       }
-    };
-    reader.readAsText(file);
+    } catch (err: any) {
+      setIsInspecting(false);
+      toast({
+        variant: "error",
+        title: "Failed to read backup file",
+        description: err.message || "Could not unpack backup contents.",
+      });
+      setInspection(null);
+    }
   };
 
   // Handle Repopulate Execution
@@ -741,10 +793,10 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
               <Database className="w-80 h-80 text-white" />
             </div>
 
-            <div className="max-w-2xl relative z-10 space-y-4">
+            <div className="max-w-3xl relative z-10 space-y-5">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Full Relational Snapshot Engine</span>
+                <span>Modular Folder Archive & Relational Snapshot</span>
               </div>
 
               <h2 className="text-3xl font-extrabold tracking-tight text-white">
@@ -752,12 +804,32 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
               </h2>
 
               <p className="text-slate-300 text-sm leading-relaxed">
-                Take an immediate, complete snapshot of all 50 database tables (branches, profiles, test master, clients, jobs, lab reports, accounting, and sequence states). The backup is downloaded as a standardized, human-readable <code className="text-amber-300">.json</code> file that can be inspected, archived, or used directly in the Repopulate engine.
+                Take an immediate, complete snapshot of all database tables. All tables are automatically sorted and organized into <strong className="text-white">ERP module folders</strong>. Each table includes both structured <code className="text-emerald-300">.json</code> data and <code className="text-amber-300">.csv</code> spreadsheet format (ready for Excel/Sheets), plus the full restore snapshot.
               </p>
 
-              <div className="pt-2">
+              {/* Progress Indicator */}
+              {isGeneratingBackup && backupProgress && (
+                <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="flex items-center gap-2 text-emerald-300">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      {backupProgress.status}
+                    </span>
+                    <span className="font-mono text-white">{backupProgress.percent}%</span>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-emerald-400 h-2 rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${backupProgress.percent}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Button
-                  onClick={handleGenerateBackup}
+                  onClick={() => handleGenerateBackup("zip")}
                   disabled={isGeneratingBackup}
                   size="lg"
                   className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-6 rounded-xl shadow-lg shadow-emerald-500/25 flex items-center gap-3 cursor-pointer text-base transition-all transform active:scale-95"
@@ -765,15 +837,96 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
                   {isGeneratingBackup ? (
                     <>
                       <RefreshCw className="w-5 h-5 animate-spin" />
-                      <span>Dumping Database Tables...</span>
+                      <span>Packaging Database Tables...</span>
                     </>
                   ) : (
                     <>
-                      <Download className="w-5 h-5" />
-                      <span>Take Backup & Download JSON File</span>
+                      <FolderArchive className="w-5 h-5" />
+                      <span>Take Backup & Download ZIP (All Tables in Folders)</span>
                     </>
                   )}
                 </Button>
+
+                <Button
+                  onClick={() => handleGenerateBackup("json")}
+                  disabled={isGeneratingBackup}
+                  variant="outline"
+                  size="lg"
+                  className="border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white font-medium px-5 py-6 rounded-xl cursor-pointer text-sm gap-2"
+                >
+                  <FileJson className="w-4 h-4 text-indigo-400" />
+                  <span>Download Raw .json Only</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Folder Breakdown Preview Cards */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Folder className="w-4 h-4 text-indigo-600" />
+                  <span>Folder Structure Included in Backup Archive</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Tables are categorized into functional folders. Every folder contains individual <code className="text-indigo-600 font-mono text-[11px]">.json</code> and <code className="text-emerald-600 font-mono text-[11px]">.csv</code> files for each table.
+                </p>
+              </div>
+              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
+                JSON + CSV (Excel Ready)
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs">
+                  <Folder className="w-4 h-4 shrink-0 fill-indigo-100" />
+                  <span className="truncate">HR & Payroll</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                  Attendance, Leaves, Salary Slips, Holidays, Payroll Cycles, Loans
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs">
+                  <Folder className="w-4 h-4 shrink-0 fill-emerald-100" />
+                  <span className="truncate">Accounting & Finance</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                  Invoices, Expenses, Inward Receipts, Quotations, Bank Ledgers
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-2 text-amber-600 font-bold text-xs">
+                  <Folder className="w-4 h-4 shrink-0 fill-amber-100" />
+                  <span className="truncate">Lab & Testing</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                  Job Entries, Lab Reports, Test Master, Test Results, ULR Queue
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-2 text-sky-600 font-bold text-xs">
+                  <Folder className="w-4 h-4 shrink-0 fill-sky-100" />
+                  <span className="truncate">Clients & Branches</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                  Clients Registry, Branches, Technician Teams, Team Members
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-2 text-purple-600 font-bold text-xs">
+                  <Folder className="w-4 h-4 shrink-0 fill-purple-100" />
+                  <span className="truncate">System & Security</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                  Profiles, Activity Logs, Login Audits, Sequence Numbers
+                </p>
               </div>
             </div>
           </div>
@@ -802,6 +955,7 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
                     <th className="py-3 px-4">Backup File Name</th>
+                    <th className="py-3 px-4">Type</th>
                     <th className="py-3 px-4">Size</th>
                     <th className="py-3 px-4">Tables</th>
                     <th className="py-3 px-4">Total Records</th>
@@ -813,51 +967,70 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {isLoadingBackups && backups.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                      <td colSpan={8} className="py-8 text-center text-slate-400">
                         <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-indigo-500" />
                         Loading backup records...
                       </td>
                     </tr>
                   ) : backups.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                      <td colSpan={8} className="py-8 text-center text-slate-400">
                         No previous backups recorded. Click the button above to generate the first backup.
                       </td>
                     </tr>
                   ) : (
-                    backups.map((b) => (
-                      <tr key={b.id} className="hover:bg-slate-50/50">
-                        <td className="py-3 px-4 font-mono text-xs text-slate-900 font-semibold flex items-center gap-2">
-                          <FileJson className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>{b.file_name}</span>
-                        </td>
-                        <td className="py-3 px-4 text-xs text-slate-600 font-mono">
-                          {b.file_size_bytes > 1048576
-                            ? `${(b.file_size_bytes / 1048576).toFixed(2)} MB`
-                            : `${(b.file_size_bytes / 1024).toFixed(1)} KB`}
-                        </td>
-                        <td className="py-3 px-4 text-xs font-semibold text-slate-800">
-                          {b.total_tables} tables
-                        </td>
-                        <td className="py-3 px-4 text-xs font-semibold text-slate-800">
-                          {b.total_records.toLocaleString()} rows
-                        </td>
-                        <td className="py-3 px-4 text-xs text-slate-600">
-                          {b.creator_email || "System"}
-                        </td>
-                        <td className="py-3 px-4 text-xs text-slate-600">
-                          {new Date(b.created_at).toLocaleString("en-IN", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
-                            {b.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))
+                    backups.map((b) => {
+                      const isZipArchive = b.file_name?.toLowerCase().endsWith(".zip");
+                      return (
+                        <tr key={b.id} className="hover:bg-slate-50/50">
+                          <td className="py-3 px-4 font-mono text-xs text-slate-900 font-semibold flex items-center gap-2">
+                            {isZipArchive ? (
+                              <FolderArchive className="w-4 h-4 text-emerald-600 shrink-0" />
+                            ) : (
+                              <FileJson className="w-4 h-4 text-indigo-600 shrink-0" />
+                            )}
+                            <span>{b.file_name}</span>
+                          </td>
+                          <td className="py-3 px-4 text-xs">
+                            {isZipArchive ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <Folder className="w-3 h-3" />
+                                <span>ZIP Folders</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
+                                <span>Single JSON</span>
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-xs text-slate-600 font-mono">
+                            {b.file_size_bytes > 1048576
+                              ? `${(b.file_size_bytes / 1048576).toFixed(2)} MB`
+                              : `${(b.file_size_bytes / 1024).toFixed(1)} KB`}
+                          </td>
+                          <td className="py-3 px-4 text-xs font-semibold text-slate-800">
+                            {b.total_tables} tables
+                          </td>
+                          <td className="py-3 px-4 text-xs font-semibold text-slate-800">
+                            {b.total_records.toLocaleString()} rows
+                          </td>
+                          <td className="py-3 px-4 text-xs text-slate-600">
+                            {b.creator_email || "System"}
+                          </td>
+                          <td className="py-3 px-4 text-xs text-slate-600">
+                            {new Date(b.created_at).toLocaleString("en-IN", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })}
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
+                              {b.status}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -873,17 +1046,17 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
             <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                Upload Data File to Repopulate Database
+                Upload Backup Archive or JSON File to Repopulate Database
               </h2>
               <p className="text-sm text-slate-500">
-                Developers can upload a previously exported <code className="text-indigo-600 font-mono">.json</code> data file to restore or synchronize tables in the live database.
+                Developers can upload a previously exported <code className="text-emerald-600 font-mono">.zip</code> archive or <code className="text-indigo-600 font-mono">.json</code> data file to restore or synchronize tables in the live database.
               </p>
             </div>
 
             <div className="border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50/50 hover:bg-indigo-50/20 rounded-2xl p-8 text-center transition-all cursor-pointer relative">
               <input
                 type="file"
-                accept=".json"
+                accept=".json,.zip"
                 onChange={handleFileUpload}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
@@ -893,16 +1066,16 @@ export function SystemConsoleManager({ currentUser }: SystemConsoleManagerProps)
                 </div>
                 <div>
                   <p className="text-base font-bold text-slate-800">
-                    {uploadedFile ? uploadedFile.name : "Click to select or drag and drop your JSON backup file"}
+                    {uploadedFile ? uploadedFile.name : "Click to select or drag and drop your .zip backup archive or .json file"}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
-                    Accepts Constrotrait database JSON dumps (Max 100MB)
+                    Accepts Constrotrait database backup archives (.zip) or JSON dumps (Max 200MB)
                   </p>
                 </div>
                 {isInspecting && (
                   <div className="flex items-center gap-2 text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full">
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Analyzing file tables and schema compatibility...</span>
+                    <span>Unpacking archive and analyzing tables and schema compatibility...</span>
                   </div>
                 )}
               </div>

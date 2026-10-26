@@ -1,59 +1,77 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
+import { canManageTestResults, isSuperAdmin } from "@/config/roles";
+import { TestResultService, TestResultInsert } from "@/services/test-result.service";
 
 export async function listTestsForResultsAction() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("job_entry_tests")
-    .select(`
-      id,
-      job_entries!job_entry_tests_job_entry_id_fkey(uid, uid_label),
-      test_master(id, component_parameter, specific_test, is_nabl)
-    `)
-    .order("created_at", { ascending: false });
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) {
+      return { success: false, error: "Unauthorized access" };
+    }
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data };
+    if (!canManageTestResults(user.roles)) {
+      return { success: false, error: "Insufficient permissions to view tests" };
+    }
+
+    const branchFilter = isSuperAdmin(user.roles) ? null : user.branch_id;
+    const data = await TestResultService.listTestsForResults(branchFilter);
+    return { success: true, data };
+  } catch (error) {
+    console.error("listTestsForResultsAction error:", error);
+    return { success: false, error: "Failed to retrieve tests for results" };
+  }
 }
 
 export async function getResultRowsAction(jobEntryTestId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("test_results" as any)
-    .select("*")
-    .eq("job_entry_test_id", jobEntryTestId)
-    .order("sr_no", { ascending: true });
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) {
+      return { success: false, error: "Unauthorized access" };
+    }
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data };
+    if (!canManageTestResults(user.roles)) {
+      return { success: false, error: "Insufficient permissions to view test results" };
+    }
+
+    if (!jobEntryTestId || typeof jobEntryTestId !== "string") {
+      return { success: false, error: "Invalid test ID provided" };
+    }
+
+    const data = await TestResultService.getResultRows(jobEntryTestId);
+    return { success: true, data };
+  } catch (error) {
+    console.error("getResultRowsAction error:", error);
+    return { success: false, error: "Failed to retrieve test result rows" };
+  }
 }
 
-export async function saveResultRowsAction(jobEntryTestId: string, rows: any[]) {
-  const supabase = await createClient();
+export async function saveResultRowsAction(
+  jobEntryTestId: string,
+  rows: Omit<TestResultInsert, "job_entry_test_id">[]
+) {
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) {
+      return { success: false, error: "Unauthorized access" };
+    }
 
-  // First delete existing rows for this test
-  const { error: delError } = await supabase
-    .from("test_results" as any)
-    .delete()
-    .eq("job_entry_test_id", jobEntryTestId);
+    if (!canManageTestResults(user.roles)) {
+      return { success: false, error: "Insufficient permissions to save test results" };
+    }
 
-  if (delError) return { success: false, error: delError.message };
+    if (!jobEntryTestId || typeof jobEntryTestId !== "string") {
+      return { success: false, error: "Invalid test ID provided" };
+    }
 
-  // Insert new rows
-  if (rows && rows.length > 0) {
-    const { error: insError } = await supabase
-      .from("test_results" as any)
-      .insert(rows.map(r => {
-        // Remove 'id' if it's there so we don't conflict with UUID autogeneration on re-inserts
-        const { id, ...rest } = r; 
-        return { ...rest, job_entry_test_id: jobEntryTestId };
-      }));
-
-    if (insError) return { success: false, error: insError.message };
+    await TestResultService.saveResultRows(jobEntryTestId, rows);
+    revalidatePath("/results");
+    revalidatePath("/job-assignments");
+    return { success: true };
+  } catch (error) {
+    console.error("saveResultRowsAction error:", error);
+    return { success: false, error: "Failed to save test results" };
   }
-  
-  revalidatePath("/results");
-  return { success: true };
 }

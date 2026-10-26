@@ -20,6 +20,7 @@ interface JobAssignmentsContentProps {
 }
 
 import { PageHeader } from "@/components/modules/PageHeader";
+import { TestsDueTodayModal } from "@/components/modules/job-assignments/TestsDueTodayModal";
 
 export function JobAssignmentsContent({
   initialTab,
@@ -43,6 +44,7 @@ export function JobAssignmentsContent({
 
   return (
     <>
+      <TestsDueTodayModal userId={userId} />
       <PageHeader
         title="Job Assignments"
         className="mb-6"

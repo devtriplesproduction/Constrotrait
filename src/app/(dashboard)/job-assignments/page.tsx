@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
 import { canManageJobAssignments } from "@/config/roles";
 import { JobAssignmentsContent } from "@/components/modules/job-assignments/JobAssignmentsContent";
 import { getActiveBranchesAction } from "@/actions/branch.actions";
@@ -11,24 +10,12 @@ export default async function JobAssignmentsPage(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const searchParams = await props.searchParams;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUserWithRoles();
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("roles")
-    .eq("id", user.id)
-    .single();
-
-  const rawRoles = profile?.roles || [];
-  const roles = Array.from(new Set(rawRoles.filter(Boolean))) as string[];
-  const cookieStore = await cookies();
-  const activeRoleCookie = cookieStore.get("active_role")?.value;
-  const activeRole = (activeRoleCookie && roles.includes(activeRoleCookie))
-    ? activeRoleCookie
-    : (roles[0] || "UNKNOWN");
+  const roles = user.allRoles;
+  const activeRole = user.activeRole;
 
   const isManager = canManageJobAssignments([activeRole]);
 

@@ -184,4 +184,31 @@ export class ClientService {
 
     return data;
   }
+
+  /**
+   * Fetch unique projects for a given client
+   */
+  static async getClientProjects(clientId: string) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("job_entries")
+      .select("project_name, division, agency, dispatch_name, dispatch_address, collected_by")
+      .eq("client_id", clientId)
+      .not("project_name", "is", null)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching client projects:", error);
+      throw new Error("Failed to fetch client projects");
+    }
+
+    const uniqueProjects = Array.from(
+      new Map((data || []).filter((d) => d.project_name).map((item) => [item.project_name, item])).values()
+    );
+
+    return uniqueProjects;
+  }
 }

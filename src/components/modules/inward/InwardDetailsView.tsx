@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { downloadJobCardAction, getJobCardPdfAction } from "@/actions/job-card-pdf.actions";
 import { useToast } from "@/hooks/use-toast";
 import { BackToJobCardButton } from "./BackToJobCardButton";
+import { extractTestInitials, deriveTestInitials } from "@/components/modules/clients/ClientWizard";
 
 export interface InwardDetailsViewProps {
   jobEntry: any;
@@ -87,6 +88,17 @@ export function InwardDetailsView({
     "Not Specified";
 
   const materialId = primaryTest?.material_id || jobEntry?.material_id || "-";
+  const testInitials =
+    addVals?.test_initials ||
+    addVals?.material_initials ||
+    extractTestInitials(primaryTest, primaryTest?.test_master) ||
+    deriveTestInitials(
+      primaryTest?.test_master?.component_parameter ||
+      primaryTest?.test_master?.specific_test ||
+      primaryTest?.test_name ||
+      primaryTest?.test_parameters
+    ) ||
+    "-";
   const materialLocation =
     primaryTest?.material_details_location || addVals?.sample_code_no || "-";
   const sampleQty =
@@ -692,6 +704,10 @@ export function InwardDetailsView({
                     <span className="font-extrabold text-slate-900 text-right truncate max-w-[170px]">{materialDesc}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-medium">Test Initials:</span>
+                    <span className="font-extrabold text-orange-600">{testInitials}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-medium">Grade / Quantity:</span>
                     <span className="font-bold text-orange-600">{grade} • {sampleQty}</span>
                   </div>
@@ -724,10 +740,15 @@ export function InwardDetailsView({
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 pt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3.5 pt-1">
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Material ID</p>
             <p className="text-sm font-extrabold text-slate-900 truncate">{materialId}</p>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Test Initials</p>
+            <p className="text-sm font-extrabold text-orange-600 truncate">{testInitials}</p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
