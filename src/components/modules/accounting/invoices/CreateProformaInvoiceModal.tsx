@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
-import { X, Plus, Trash2, FileText, AlertCircle, CheckCircle2, IndianRupee, Loader2, Building, Calendar, Hash, Scroll, Clock } from "lucide-react";
+import React, { useState, useEffect, useMemo, useTransition } from "react";
+import { X, Plus, Trash2, FileText, AlertCircle, CheckCircle2, IndianRupee, Loader2, Building, Calendar, Hash, Scroll, Clock, Package, FlaskConical, Search, Layers, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +63,7 @@ interface CreateProformaInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   inward?: InwardJob | null;
+  inwards?: InwardJob[];
   isRemainingBalance?: boolean;
   defaultBalanceAmount?: number;
   initialPreviousInvoice?: any;
@@ -77,6 +78,7 @@ export function CreateProformaInvoiceModal({
   isOpen,
   onClose,
   inward,
+  inwards = [],
   isRemainingBalance,
   defaultBalanceAmount,
   initialPreviousInvoice,
@@ -89,6 +91,8 @@ export function CreateProformaInvoiceModal({
 
   const [selectedClientId, setSelectedClientId] = useState<string>(inward?.clients?.id || inward?.client_id || "");
   const [selectedInwardId, setSelectedInwardId] = useState<string>(inward?.id || "");
+  const [billingMode, setBillingMode] = useState<"test_wise" | "inward_wise">("test_wise");
+  const [inwardSearch, setInwardSearch] = useState<string>("");
   const [projectId, setProjectId] = useState<string>("");
   const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState<string>(() => {
@@ -162,6 +166,90 @@ export function CreateProformaInvoiceModal({
     }) || null;
   })();
 
+  // Active Inward (pre-selected or picked from inwards)
+  const activeInward = inward || (selectedInwardId ? inwards.find((i) => i.id === selectedInwardId) : null);
+
+  // Filtered Inwards for selector
+  const filteredInwards = useMemo(() => {
+    if (!inwardSearch.trim()) return inwards;
+    const q = inwardSearch.toLowerCase();
+    return inwards.filter((inv) => {
+      const uid = (inv.uid_label || String(inv.uid || "")).toLowerCase();
+      const client = (inv.clients?.name || "").toLowerCase();
+      const proj = (inv.project_name || "").toLowerCase();
+      return uid.includes(q) || client.includes(q) || proj.includes(q);
+    });
+  }, [inwards, inwardSearch]);
+
+  const buildTestWiseItems = (targetInward: InwardJob | null | undefined): LineItem[] => {
+    if (!targetInward) return [{ description: "Testing and inspection services", qty: 1, rate: 0, amount: 0 }];
+    const tests = targetInward.job_entry_tests || [];
+    if (tests.length > 0) {
+      return tests.map((t) => {
+        const tm = t.test_master;
+        const nameParts = [
+          tm?.material_product || tm?.component_parameter,
+          tm?.specific_test,
+        ].filter(Boolean);
+        const desc = nameParts.length > 0 ? nameParts.join(" - ") : t.material_description || "Laboratory Test Analysis";
+        return {
+          description: desc,
+          qty: 1,
+          rate: 0,
+          amount: 0,
+        };
+      });
+    }
+    return [{ description: targetInward.project_name ? `Testing Charges for ${targetInward.project_name}` : "Testing Charges", qty: 1, rate: 0, amount: 0 }];
+  };
+
+  const buildInwardWiseItem = (targetInward: InwardJob | null | undefined): LineItem[] => {
+    if (!targetInward) return [{ description: "Consolidated testing and inspection services", qty: 1, rate: 0, amount: 0 }];
+    const tests = targetInward.job_entry_tests || [];
+    const testNames = tests
+      .map((t) => t.test_master?.specific_test || t.material_description)
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(", ");
+    const suffix = tests.length > 4 ? ` +${tests.length - 4} more` : "";
+    const testSummary = tests.length > 0 ? ` [${tests.length} Registered Tests: ${testNames}${suffix}]` : "";
+    return [
+      {
+        description: `Consolidated Testing & Inspection Charges for Inward UID: ${targetInward.uid_label || targetInward.uid} (${targetInward.project_name || "Project"})${testSummary}`,
+        qty: 1,
+        rate: 0,
+        amount: 0,
+      },
+    ];
+  };
+
+  const switchBillingMode = (mode: "test_wise" | "inward_wise") => {
+    setBillingMode(mode);
+    if (remainingBalanceMode) return;
+    if (mode === "test_wise") {
+      setItems(buildTestWiseItems(activeInward));
+    } else {
+      setItems(buildInwardWiseItem(activeInward));
+    }
+  };
+
+  const handleSelectInward = (id: string) => {
+    setSelectedInwardId(id);
+    const found = inwards.find((i) => i.id === id);
+    if (found) {
+      if (found.clients?.id || found.client_id) {
+        setSelectedClientId(found.clients?.id || found.client_id || "");
+      }
+      if (billingMode === "inward_wise") {
+        setItems(buildInwardWiseItem(found));
+      } else {
+        setItems(buildTestWiseItems(found));
+      }
+    } else {
+      setItems([{ description: "Testing and inspection services", qty: 1, rate: 0, amount: 0 }]);
+    }
+  };
+
   // Initialize line items from inward when modal opens or inward changes
   useEffect(() => {
     if (!isOpen) return;
@@ -189,39 +277,10 @@ export function CreateProformaInvoiceModal({
         setPreviousInvoice(targetPartialInvoice);
         setCarryForwardPrev(false);
       } else {
-        // Prepopulate line items from inward tests
-        const tests = inward.job_entry_tests || [];
-        if (tests.length > 0) {
-          const initialItems: LineItem[] = tests.map((t) => {
-            const tm = t.test_master;
-            const nameParts = [
-              tm?.material_product || tm?.component_parameter,
-              tm?.specific_test,
-            ].filter(Boolean);
-
-            const desc = nameParts.length > 0
-              ? nameParts.join(" - ")
-              : t.material_description || "Laboratory Test Analysis";
-
-            return {
-              description: desc,
-              qty: 1,
-              rate: 0,
-              amount: 0,
-            };
-          });
-          setItems(initialItems);
+        if (billingMode === "inward_wise") {
+          setItems(buildInwardWiseItem(inward));
         } else {
-          setItems([
-            {
-              description: inward.project_name
-                ? `Testing Charges for ${inward.project_name}`
-                : "Testing Charges",
-              qty: 1,
-              rate: 0,
-              amount: 0,
-            },
-          ]);
+          setItems(buildTestWiseItems(inward));
         }
       }
     } else {
@@ -253,7 +312,7 @@ export function CreateProformaInvoiceModal({
 
   if (!isOpen) return null;
 
-  const resolvedClient = inward?.clients || clients.find((c) => c.id === selectedClientId);
+  const resolvedClient = activeInward?.clients || clients.find((c) => c.id === selectedClientId);
 
   const addItem = () => {
     setItems((prev) => [...prev, { description: "", qty: 1, rate: 0, amount: 0 }]);
@@ -317,7 +376,9 @@ export function CreateProformaInvoiceModal({
         due_date: dueDate || null,
         notes: notes.trim() || null,
         clauses: selectedClauses,
-        remarks: inward?.uid_label ? `Generated from Inward UID: ${inward.uid_label}` : undefined,
+        remarks: activeInward?.uid_label
+          ? `Billing: ${billingMode === "test_wise" ? "Test-Wise Itemized" : "Inward-Wise Consolidated"} | Inward UID: ${activeInward.uid_label}`
+          : undefined,
       });
 
       if (res.success && "data" in res) {
@@ -448,6 +509,51 @@ export function CreateProformaInvoiceModal({
             </div>
           )}
 
+          {/* Inward Selector (if inwards list provided and inward not hard-locked) */}
+          {!inward && inwards.length > 0 && (
+            <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-200/80 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                  <Package className="w-4 h-4 text-blue-600" />
+                  Select Inward Job Card (Links Billing to Laboratory Job UID)
+                </span>
+                {selectedInwardId && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectInward("")}
+                    className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 underline cursor-pointer"
+                  >
+                    Detach Inward
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <select
+                  value={selectedInwardId}
+                  onChange={(e) => handleSelectInward(e.target.value)}
+                  className="h-9 px-3 bg-white border border-blue-300 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">— Select an Inward UID (Optional) —</option>
+                  {filteredInwards.map((inv) => (
+                    <option key={inv.id} value={inv.id}>
+                      UID: {inv.uid_label || inv.uid} — {inv.clients?.name || "Client"} ({inv.project_name || "Project"}) [{(inv.job_entry_tests || []).length} Tests]
+                    </option>
+                  ))}
+                </select>
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search Inwards by UID, Client, or Project..."
+                    value={inwardSearch}
+                    onChange={(e) => setInwardSearch(e.target.value)}
+                    className="w-full h-9 pl-8 pr-3 bg-white border border-blue-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Inward & Client Info Banner */}
           <div className="grid sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-sm">
             <div>
@@ -481,28 +587,113 @@ export function CreateProformaInvoiceModal({
                 Inward & Project Details
               </span>
               <div className="space-y-1 text-xs text-slate-600">
-                {inward?.uid_label && (
+                {activeInward?.uid_label ? (
                   <div className="flex items-center gap-1.5 font-medium text-slate-800">
                     <Hash className="w-3.5 h-3.5 text-blue-500" />
-                    <span>Inward UID: <strong>{inward.uid_label}</strong></span>
+                    <span>Inward UID: <strong>{activeInward.uid_label}</strong></span>
                   </div>
+                ) : (
+                  <div className="text-slate-400 italic">No specific Inward linked (Direct Billing)</div>
                 )}
-                {inward?.inward_on && (
+                {activeInward?.inward_on && (
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Inward Date: {inward.inward_on}</span>
+                    <span>Inward Date: {activeInward.inward_on}</span>
                   </div>
                 )}
-                {(inward?.project_name || resolvedClient?.site_name) && (
+                {(activeInward?.project_name || resolvedClient?.site_name) && (
                   <div className="flex items-center gap-1.5">
                     <Building className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Site / Project: {inward?.project_name || resolvedClient?.site_name}</span>
+                    <span>Site / Project: {activeInward?.project_name || resolvedClient?.site_name}</span>
                   </div>
                 )}
-                <div>Tests under Inward: <strong className="text-slate-900">{inward?.job_entry_tests?.length || items.length}</strong></div>
+                <div>Tests under Inward: <strong className="text-slate-900">{activeInward?.job_entry_tests?.length || items.length}</strong></div>
               </div>
             </div>
           </div>
+
+          {/* Billing Mode Switcher: Inward-Wise vs Test-Wise */}
+          {activeInward && (
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div>
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                    Billing Structure for Inward UID: {activeInward.uid_label || activeInward.uid}
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Choose between itemized per-test billing or a single consolidated lump-sum fee for the job card.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-slate-200 shadow-xs self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => switchBillingMode("test_wise")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      billingMode === "test_wise"
+                        ? "bg-blue-600 text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <FlaskConical className="w-3.5 h-3.5" />
+                    <span>Test-Wise Billing</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      billingMode === "test_wise" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                    }`}>
+                      {activeInward.job_entry_tests?.length || 0}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchBillingMode("inward_wise")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      billingMode === "inward_wise"
+                        ? "bg-indigo-600 text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Package className="w-3.5 h-3.5" />
+                    <span>Inward-Wise Billing</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Mode Explanation */}
+              {billingMode === "test_wise" ? (
+                <div className="p-3 bg-blue-50/70 rounded-lg border border-blue-200/80 text-xs text-blue-900 flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold text-blue-950 flex items-center gap-1.5">
+                      <FlaskConical className="w-4 h-4 text-blue-600" />
+                      <span>Test-Wise Itemized Billing Active</span>
+                    </div>
+                    <p className="text-[11px] text-blue-700 mt-0.5">
+                      Each laboratory test registered under this Inward is listed as an individual billable line item below with its own quantity and rate.
+                    </p>
+                  </div>
+                  {activeInward.job_entry_tests && activeInward.job_entry_tests.length > 0 && (
+                    <span className="text-[10px] font-bold px-2 py-1 rounded bg-blue-100 text-blue-800 shrink-0">
+                      {activeInward.job_entry_tests.length} Registered Tests
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="p-3 bg-indigo-50/70 rounded-lg border border-indigo-200/80 text-xs text-indigo-900 flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold text-indigo-950 flex items-center gap-1.5">
+                      <Package className="w-4 h-4 text-indigo-600" />
+                      <span>Inward-Wise Consolidated Package Billing Active</span>
+                    </div>
+                    <p className="text-[11px] text-indigo-700 mt-0.5">
+                      A single consolidated testing package fee is billed for the entire Inward job card. All {activeInward.job_entry_tests?.length || 0} registered tests are covered under this invoice lump sum.
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-1 rounded bg-indigo-100 text-indigo-800 shrink-0">
+                    Consolidated Package
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Previous Invoice & Outstanding Balance Tracker Alert */}
           {loadingPrev ? (

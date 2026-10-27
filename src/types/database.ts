@@ -108,8 +108,12 @@ export type Database = {
           ip_address: string | null
           user_agent: string | null
           device_type: string | null
+          device_model: string | null
           browser: string | null
           os: string | null
+          screen_resolution: string | null
+          city: string | null
+          country: string | null
           status: string
           failure_reason: string | null
           created_at: string
@@ -123,8 +127,12 @@ export type Database = {
           ip_address?: string | null
           user_agent?: string | null
           device_type?: string | null
+          device_model?: string | null
           browser?: string | null
           os?: string | null
+          screen_resolution?: string | null
+          city?: string | null
+          country?: string | null
           status?: string
           failure_reason?: string | null
           created_at?: string
@@ -138,8 +146,12 @@ export type Database = {
           ip_address?: string | null
           user_agent?: string | null
           device_type?: string | null
+          device_model?: string | null
           browser?: string | null
           os?: string | null
+          screen_resolution?: string | null
+          city?: string | null
+          country?: string | null
           status?: string
           failure_reason?: string | null
           created_at?: string
@@ -308,7 +320,7 @@ export type Database = {
           tds_amount: number | null
           vendor_name: string | null
           inward_id?: string | null
-          expense_type?: 'inward' | 'company' | null
+          expense_type?: 'inward' | 'company' | 'inhouse' | null
         }
         Insert: {
           account_id?: string | null
@@ -342,7 +354,7 @@ export type Database = {
           tds_amount?: number | null
           vendor_name?: string | null
           inward_id?: string | null
-          expense_type?: 'inward' | 'company' | null
+          expense_type?: 'inward' | 'company' | 'inhouse' | null
         }
         Update: {
           account_id?: string | null
@@ -376,7 +388,7 @@ export type Database = {
           tds_amount?: number | null
           vendor_name?: string | null
           inward_id?: string | null
-          expense_type?: 'inward' | 'company' | null
+          expense_type?: 'inward' | 'company' | 'inhouse' | null
         }
         Relationships: [
           {

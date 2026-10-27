@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import Image from "next/image";
 import Link from "next/link";
@@ -107,7 +108,9 @@ export default function LoginPage() {
           </div>
 
           <div className="w-full">
-            <LoginForm />
+            <Suspense fallback={<div className="h-48 flex items-center justify-center text-slate-400 text-sm">Loading...</div>}>
+              <LoginForm />
+            </Suspense>
           </div>
 
 

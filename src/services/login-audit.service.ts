@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { parseUserAgent, extractClientIp } from "@/lib/utils/device-parser";
+import { parseUserAgent, extractClientIp, isPrivateOrLocalIp } from "@/lib/utils/device-parser";
+import type { ClientDeviceTelemetry } from "@/lib/utils/client-device-info";
 
 export interface RecordLoginParams {
   userId?: string | null;
@@ -11,6 +12,11 @@ export interface RecordLoginParams {
   headers?: { get: (name: string) => string | null } | null;
   userAgent?: string | null;
   ipAddress?: string | null;
+  deviceModel?: string | null;
+  screenResolution?: string | null;
+  city?: string | null;
+  country?: string | null;
+  clientTelemetry?: ClientDeviceTelemetry | null;
 }
 
 export interface LoginAuditFilter {
@@ -23,19 +29,46 @@ export interface LoginAuditFilter {
 }
 
 /**
- * Record a login event into login_audit_logs
+ * Record a login event into login_audit_logs with high-entropy device & IP precision
  */
 export async function recordLoginAudit(params: RecordLoginParams): Promise<void> {
   try {
-    let uaString = params.userAgent || "";
+    const ct = params.clientTelemetry;
+    let uaString = ct?.rawUserAgent || params.userAgent || "";
     let ip = params.ipAddress || "";
 
+    // Extract IP & Geo from edge headers if available
+    let headerIp = "";
     if (params.headers) {
       if (!uaString) uaString = params.headers.get("user-agent") || "";
-      if (!ip) ip = extractClientIp(params.headers);
+      headerIp = extractClientIp(params.headers, ct?.clientIp);
     }
 
-    const { deviceType, browser, os } = parseUserAgent(uaString);
+    // Determine the most accurate IP:
+    // If headerIp is a genuine public IP, use it.
+    // If headerIp is local/private and client detected public IP, use client's verified public IP!
+    if (!ip) {
+      if (headerIp && !isPrivateOrLocalIp(headerIp)) {
+        ip = headerIp;
+      } else if (ct?.clientIp && !isPrivateOrLocalIp(ct.clientIp)) {
+        ip = ct.clientIp;
+      } else {
+        ip = headerIp || ct?.clientIp || "127.0.0.1 (Localhost)";
+      }
+    }
+
+    // Server-side parsing with header hints
+    const parsed = parseUserAgent(uaString, params.headers);
+
+    // Merge high-precision client telemetry over generic user-agent strings
+    const deviceType = ct?.deviceType || parsed.deviceType || "Desktop";
+    const os = (ct?.os && ct.os !== "Unknown OS") ? ct.os : parsed.os;
+    const browser = (ct?.browser && ct.browser !== "Unknown Browser") ? ct.browser : parsed.browser;
+    const deviceModel = ct?.deviceModel || params.deviceModel || parsed.deviceModel || null;
+    const screenResolution = ct?.screenResolution || params.screenResolution || null;
+    const city = ct?.city || params.city || parsed.city || null;
+    const country = ct?.country || params.country || parsed.country || null;
+
     const supabase = createAdminClient();
 
     const { error } = await supabase.from("login_audit_logs").insert({
@@ -43,11 +76,15 @@ export async function recordLoginAudit(params: RecordLoginParams): Promise<void>
       email: params.email.toLowerCase().trim(),
       full_name: params.fullName ?? null,
       role: params.role ?? null,
-      ip_address: ip || "127.0.0.1",
+      ip_address: ip,
       user_agent: uaString || "Unknown",
       device_type: deviceType,
+      device_model: deviceModel,
       browser,
       os,
+      screen_resolution: screenResolution,
+      city,
+      country,
       status: params.status,
       failure_reason: params.failureReason ?? null,
     });
@@ -90,7 +127,7 @@ export async function getLoginAuditLogs(filters: LoginAuditFilter = {}) {
     if (filters.search) {
       const q = filters.search.trim();
       query = query.or(
-        `email.ilike.%${q}%,full_name.ilike.%${q}%,ip_address.ilike.%${q}%,browser.ilike.%${q}%,os.ilike.%${q}%`
+        `email.ilike.%${q}%,full_name.ilike.%${q}%,ip_address.ilike.%${q}%,browser.ilike.%${q}%,os.ilike.%${q}%,device_model.ilike.%${q}%,city.ilike.%${q}%,country.ilike.%${q}%`
       );
     }
 

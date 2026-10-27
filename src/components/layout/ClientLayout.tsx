@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { AdminSidebar } from "@/components/layout/sidebars/AdminSidebar";
 import { ScrollArea } from "@/components/ui/ScrollArea";
+import { SessionTimeoutManager } from "@/components/common/SessionTimeoutManager";
 
 import { User } from "@supabase/supabase-js";
 
@@ -25,6 +26,7 @@ export function ClientLayout({ children, user, role, roles = [], branchName }: C
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
+      <SessionTimeoutManager />
       <AdminSidebar
         isOpen={isSidebarOpen}
         setIsOpen={setSidebarOpen}

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { getAuthenticatedUserWithRoles } from "./auth.service";
 import { canManageClientsAndJobs, isSuperAdmin } from "@/config/roles";
+import { compareJobCardsByUidRecentFirst } from "@/utils/uid-sort";
 
 export class JobEntryService {
   static toRoman(num: number): string {
@@ -367,7 +368,7 @@ export class JobEntryService {
       .eq("client_id", clientId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return data;
+    return (data || []).sort(compareJobCardsByUidRecentFirst);
   }
 
   static async updateJobEntryTest(
@@ -445,7 +446,7 @@ export class JobEntryService {
 
     const { data, error } = await query;
     if (error) throw new Error(error.message);
-    return data;
+    return (data || []).sort(compareJobCardsByUidRecentFirst);
   }
 
   static async getJobEntryByUidOrId(identifier: string) {

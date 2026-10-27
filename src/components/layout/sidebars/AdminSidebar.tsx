@@ -10,10 +10,9 @@ import {
   CalendarDays,
   Banknote,
   UserSquare,
-  // Database,
 } from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
-import { canManageTestMaster, canManageClientsAndJobs, canManageEmployees /*, canAccessSystemConsole */ } from "@/config/roles";
+import { canManageTestMaster, canManageClientsAndJobs, canManageEmployees } from "@/config/roles";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -72,37 +71,6 @@ export function AdminSidebar({ isOpen, setIsOpen, role, roles }: AdminSidebarPro
   if (isPayrollAllowed) {
     adminLinks.push({ title: "Payroll", href: "/hr/payroll", icon: Banknote });
   }
-
-  /*
-  // Hidden from sidebar as requested
-  if (canAccessSystemConsole(roleArray)) {
-    adminLinks.push({
-      title: "System & Backups",
-      href: "/system",
-      icon: Database,
-    });
-  }
-  */
-
-  /*
-  // Hidden from sidebar as requested
-  if (canViewAccounting(roleArray)) {
-    adminLinks.push({
-      title: "Accounting",
-      icon: Receipt,
-      subLinks: [
-        { title: "Dashboard", href: "/accounting", icon: LayoutDashboard },
-        { title: "Quotations", href: "/accounting/quotations", icon: FileText },
-        { title: "T&C Templates", href: "/accounting/templates", icon: Scroll },
-        { title: "Billings & Collection", href: "/accounting/billing", icon: CreditCard },
-        { title: "Ledgers", href: "/accounting/ledgers", icon: BookOpen },
-        { title: "Banks", href: "/accounting/banks", icon: Landmark },
-        { title: "Reconciliation", href: "/accounting/reconciliation", icon: Scale },
-        { title: "Reports", href: "/accounting/reports", icon: BarChart3 },
-      ],
-    });
-  }
-  */
 
   return <BaseSidebar links={adminLinks} isOpen={isOpen} setIsOpen={setIsOpen} />;
 }

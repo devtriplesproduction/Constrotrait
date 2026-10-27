@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { canManageJobAssignments, isHR, isTestEngineer, isSuperAdmin } from "@/config/roles";
+import { compareJobCardsByUidRecentFirst } from "@/utils/uid-sort";
 
 const TEST_SELECT = `
   id,
@@ -103,7 +104,7 @@ export class JobAssignmentService {
     if (asgnErr) throw new Error(asgnErr.message);
 
     const assignedIds = new Set(assignments.map((a: any) => a.job_entry_test_id));
-    return (tests || []).filter((test: any) => !assignedIds.has(test.id));
+    return (tests || []).filter((test: any) => !assignedIds.has(test.id)).sort(compareJobCardsByUidRecentFirst);
   }
 
   static async getAssignments(filters?: { team_id?: string; employee_id?: string; status?: string; branch_id?: string }) {
@@ -143,7 +144,7 @@ export class JobAssignmentService {
     const { data, error } = await query;
     if (error) throw new Error(error.message);
     
-    return data || [];
+    return (data || []).sort(compareJobCardsByUidRecentFirst);
   }
 
   static async getAssignmentById(id: string) {
@@ -281,7 +282,7 @@ export class JobAssignmentService {
     else query = query.eq("assigned_to", user.id);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
-    return data;
+    return (data || []).sort(compareJobCardsByUidRecentFirst);
   }
 
   static async assignJobCard(data: {

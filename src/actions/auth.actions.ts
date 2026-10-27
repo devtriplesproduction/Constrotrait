@@ -8,9 +8,13 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { getAuthenticatedUser } from "@/services/auth.service";
 import { createClient } from "@/lib/supabase/server";
+import type { ClientDeviceTelemetry } from "@/lib/utils/client-device-info";
 
-export async function loginAction(data: LoginFormData) {
-  const result = await loginWithEmailPassword(data);
+export async function loginAction(
+  data: LoginFormData,
+  clientTelemetry?: ClientDeviceTelemetry | null
+) {
+  const result = await loginWithEmailPassword(data, clientTelemetry);
   if (result.success) {
     revalidatePath("/", "layout");
     return { success: true };
@@ -18,11 +22,15 @@ export async function loginAction(data: LoginFormData) {
   return { success: false, error: result.error };
 }
 
-export async function logoutAction() {
+export async function logoutAction(reasonOrFormData?: string | FormData) {
+  const reason = typeof reasonOrFormData === "string" ? reasonOrFormData : undefined;
   const cookieStore = await cookies();
   cookieStore.delete("active_role");
   await logoutUser();
   revalidatePath("/", "layout");
+  if (reason) {
+    redirect(`/login?reason=${encodeURIComponent(reason)}`);
+  }
   redirect("/login");
 }
 

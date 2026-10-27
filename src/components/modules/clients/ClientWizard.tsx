@@ -193,10 +193,11 @@ export function ClientWizard({
   const uniqueMaterials = React.useMemo(() => {
     const materialMap = new Map<string, string>();
     availableTests.forEach(test => {
-      if (test.material_product) {
-        const lower = test.material_product.toLowerCase();
+      const mat = test.material_product || (!test.is_nabl ? (test as any).particulars : null);
+      if (mat) {
+        const lower = mat.toLowerCase();
         if (!materialMap.has(lower)) {
-          materialMap.set(lower, test.material_product);
+          materialMap.set(lower, mat);
         }
       }
     });
@@ -584,13 +585,17 @@ export function ClientWizard({
       const test = availableTests.find(t => t.id === id);
       if (!test) return;
 
-      if (!selectedMaterial && test.material_product) {
-        setSelectedMaterial(test.material_product);
+      const matProduct = test.material_product || (!test.is_nabl ? (test as any).particulars : "") || "";
+      const testName = test.component_parameter || test.specific_test || (test as any).particulars || "";
+      const testMethod = test.test_method || (test as any).tested_as_per_is || "";
+
+      if (!selectedMaterial && matProduct) {
+        setSelectedMaterial(matProduct);
       }
 
       setValue("selectedTestIds", [...currentIds, id], { shouldValidate: true });
 
-      const matName = selectedMaterial || test.material_product || test.component_parameter || test.specific_test || "";
+      const matName = selectedMaterial || matProduct || testName;
       const currentInitials = getValues("materialDetails.material_initials");
       if (!currentInitials) {
         const derived = deriveMaterialInitials(matName);
@@ -614,11 +619,11 @@ export function ClientWizard({
 
       const newTestData = {
         test_master_id: test.id,
-        test_name: test.component_parameter || test.specific_test || "",
-        test_method: test.test_method || "",
+        test_name: testName,
+        test_method: testMethod,
         testing_age: "",
         date_of_testing: initialTestingDate,
-        material_description: test.material_product || "",
+        material_description: matProduct || testName,
         material_id: getValues("materialDetails.material_id") || "",
         material_details_location: getValues("materialDetails.material_details_location") || "",
         sample_quantity: getValues("materialDetails.sample_quantity") || "",
@@ -788,7 +793,8 @@ export function ClientWizard({
   };
 
   const filteredTests = availableTests.filter((test) => {
-    if (selectedMaterial && (!test.material_product || test.material_product.toLowerCase() !== selectedMaterial.toLowerCase())) return false;
+    const testMat = test.material_product || (!test.is_nabl ? (test as any).particulars : "");
+    if (selectedMaterial && (!testMat || testMat.toLowerCase() !== selectedMaterial.toLowerCase())) return false;
     if (testNablFilter === "nabl" && test.is_nabl !== true) return false;
     if (testNablFilter === "non-nabl" && test.is_nabl === true) return false;
     if (testCategoryFilter !== "all" && test.category !== testCategoryFilter) return false;
@@ -799,7 +805,10 @@ export function ClientWizard({
       (test.material_product && test.material_product.toLowerCase().includes(q)) ||
       (test.component_parameter && test.component_parameter.toLowerCase().includes(q)) ||
       (test.specific_test && test.specific_test.toLowerCase().includes(q)) ||
-      (test.discipline_group && test.discipline_group.toLowerCase().includes(q))
+      (test.discipline_group && test.discipline_group.toLowerCase().includes(q)) ||
+      ((test as any).particulars && (test as any).particulars.toLowerCase().includes(q)) ||
+      ((test as any).tested_as_per_is && (test as any).tested_as_per_is.toLowerCase().includes(q)) ||
+      (test.test_method && test.test_method.toLowerCase().includes(q))
     );
   });
 
@@ -1348,19 +1357,27 @@ export function ClientWizard({
                                   }}
                                   className="group p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-all duration-200 flex flex-col gap-1.5"
                                 >
-                                  <div className="font-semibold text-[14px] text-slate-700 group-hover:text-slate-900 transition-colors pl-1">{test.component_parameter || test.specific_test}</div>
+                                  <div className="font-semibold text-[14px] text-slate-700 group-hover:text-slate-900 transition-colors pl-1">
+                                    {test.component_parameter || test.specific_test || (test as any).particulars}
+                                  </div>
                                   <div className="flex gap-4 text-[11px] text-slate-500 font-medium pl-1">
-                                    <span className="flex items-center gap-1">
-                                      <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MAT</span>
-                                      <span className="text-slate-600 truncate max-w-[150px]" title={test.material_product}>{test.material_product}</span>
-                                    </span>
-                                    {test.test_method && (
+                                    {(test.material_product || (!test.is_nabl ? (test as any).particulars : null)) && (
                                       <span className="flex items-center gap-1">
-                                        <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MTH</span>
-                                        <span className="text-slate-600 truncate max-w-[150px]" title={test.test_method}>{test.test_method}</span>
+                                        <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MAT</span>
+                                        <span className="text-slate-600 truncate max-w-[150px]" title={test.material_product || (test as any).particulars}>{test.material_product || (test as any).particulars}</span>
                                       </span>
                                     )}
-                                    {test.is_nabl && <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold ml-auto border border-emerald-100 uppercase tracking-wider text-[9px]">NABL</span>}
+                                    {(test.test_method || (test as any).tested_as_per_is) && (
+                                      <span className="flex items-center gap-1">
+                                        <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">MTH</span>
+                                        <span className="text-slate-600 truncate max-w-[150px]" title={test.test_method || (test as any).tested_as_per_is}>{test.test_method || (test as any).tested_as_per_is}</span>
+                                      </span>
+                                    )}
+                                    {test.is_nabl ? (
+                                      <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold ml-auto border border-emerald-100 uppercase tracking-wider text-[9px]">NABL</span>
+                                    ) : (
+                                      <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full font-bold ml-auto border border-orange-100 uppercase tracking-wider text-[9px]">NON-NABL</span>
+                                    )}
                                   </div>
                                 </div>
                               ))}
@@ -1407,11 +1424,15 @@ export function ClientWizard({
                                       </div>
                                       <div>
                                         <h4 className="font-bold text-[14px] text-slate-900 pr-20 leading-snug">
-                                          {test.component_parameter || test.specific_test}
+                                          {test.component_parameter || test.specific_test || (test as any).particulars}
                                         </h4>
-                                        {test.is_nabl && (
+                                        {test.is_nabl ? (
                                           <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold rounded-full uppercase tracking-wider shadow-sm">
                                             <CheckCircle2 className="w-2.5 h-2.5" /> NABL Accredited
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 bg-orange-50 border border-orange-200 text-orange-700 text-[9px] font-bold rounded-full uppercase tracking-wider shadow-sm">
+                                            Non-NABL
                                           </span>
                                         )}
                                         {test.is_nabl && !test.category && (
@@ -1425,12 +1446,16 @@ export function ClientWizard({
                                     <div className="flex flex-col gap-1.5 pt-2 border-t border-orange-100/50">
                                       <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/60 border border-orange-100/50 hover:bg-white transition-colors shadow-sm">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Material</span>
-                                        <span className="text-[12px] font-semibold text-slate-700 text-right truncate ml-2" title={test.material_product || ''}>{test.material_product}</span>
+                                        <span className="text-[12px] font-semibold text-slate-700 text-right truncate ml-2" title={test.material_product || (test as any).particulars || ''}>
+                                          {test.material_product || (test as any).particulars || '—'}
+                                        </span>
                                       </div>
-                                      {test.test_method && (
+                                      {(test.test_method || (test as any).tested_as_per_is) && (
                                         <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/60 border border-orange-100/50 hover:bg-white transition-colors shadow-sm">
-                                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Method</span>
-                                          <span className="text-[12px] font-semibold text-slate-700 text-right truncate ml-2" title={test.test_method || ''}>{test.test_method}</span>
+                                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Method / IS</span>
+                                          <span className="text-[12px] font-semibold text-slate-700 text-right truncate ml-2" title={test.test_method || (test as any).tested_as_per_is || ''}>
+                                            {test.test_method || (test as any).tested_as_per_is}
+                                          </span>
                                         </div>
                                       )}
                                     </div>

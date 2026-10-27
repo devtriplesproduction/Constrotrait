@@ -113,7 +113,11 @@ export async function getAccountingDashboard(branchId?: string) {
   if (effectiveBranch) invoicesQuery = invoicesQuery.eq("branch_id", effectiveBranch);
   const { data: invoices } = await invoicesQuery;
 
-  let quotationsQuery = supabase.from("quotations").select("*").order("created_at", { ascending: false }).limit(20);
+  let quotationsQuery = supabase.from("quotations").select(`
+    *,
+    clients ( id, name, email, mobile, address, gst_no, contact_person ),
+    accounting_projects ( id, name )
+  `).order("created_at", { ascending: false }).limit(50);
   if (effectiveBranch) quotationsQuery = quotationsQuery.eq("branch_id", effectiveBranch);
   const { data: quotations } = await quotationsQuery;
 
@@ -240,7 +244,7 @@ export async function createExpense(payload: any) {
   else if (payload.is_reimbursement && !payload.bill_attached && Number(payload.amount) >= 500) requires_approval = true;
 
   const resolvedExpenseType = payload.expense_type || (payload.inward_id ? "inward" : "company");
-  const isCompany = resolvedExpenseType === "company" && !payload.inward_id && !payload.project_id;
+  const isCompany = (resolvedExpenseType === "company" || resolvedExpenseType === "inhouse") && !payload.inward_id && !payload.project_id;
 
   const supabase = await createClient();
   const insertPayload = {
@@ -647,13 +651,260 @@ export async function getProfitAndLoss(fromDate?: string, toDate?: string, branc
   return { success: true, data: { totalIncome, totalExpense, profit: totalIncome - totalExpense } };
 }
 
+export async function getComprehensiveFinancialReports(fromDate?: string, toDate?: string, branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  const effectiveBranch = branchScope(user, branchId);
+
+  // 1. Inward Receipts
+  let receiptsQ = supabase
+    .from("inward_receipts")
+    .select(`
+      *,
+      clients ( id, name, gst_no ),
+      financial_accounts ( id, name, account_type )
+    `)
+    .neq("status", "cancelled");
+  if (effectiveBranch) receiptsQ = receiptsQ.or(`branch_id.eq.${effectiveBranch},branch_id.is.null`);
+  if (fromDate) receiptsQ = receiptsQ.gte("receipt_date", fromDate);
+  if (toDate) receiptsQ = receiptsQ.lte("receipt_date", toDate);
+  const { data: receipts } = await receiptsQ;
+
+  // 2. Invoices & Payments (Revenue & GST & Aging)
+  let invoicesQ = supabase
+    .from("invoices")
+    .select(`
+      *,
+      clients ( id, name, mobile, contact_person, gst_no ),
+      invoice_payments ( id, amount, payment_date, payment_mode, account_id )
+    `);
+  if (effectiveBranch) invoicesQ = invoicesQ.eq("branch_id", effectiveBranch);
+  const { data: allInvoices } = await invoicesQ;
+
+  // 3. Expenses
+  let expensesQ = supabase
+    .from("accounting_expenses")
+    .select(`
+      *,
+      expense_categories ( id, name, scope ),
+      financial_accounts ( id, name, account_type )
+    `)
+    .eq("status", "recorded")
+    .eq("approval_status", "approved");
+  if (effectiveBranch) expensesQ = expensesQ.eq("branch_id", effectiveBranch);
+  if (fromDate) expensesQ = expensesQ.gte("expense_date", fromDate);
+  if (toDate) expensesQ = expensesQ.lte("expense_date", toDate);
+  const { data: expenses } = await expensesQ;
+
+  // 4. Financial Accounts (Liquid Assets)
+  let accountsQ = supabase.from("financial_accounts").select("*").eq("is_active", true);
+  if (effectiveBranch) accountsQ = accountsQ.or(`branch_id.eq.${effectiveBranch},branch_id.is.null`);
+  const { data: accounts } = await accountsQ;
+
+  // --- A. PROFIT & LOSS CALCULATIONS ---
+  const totalIncome = (receipts || []).reduce((s, r) => s + Number(r.amount || 0), 0);
+  const inwardRevenue = (receipts || []).filter(r => !!(r as any).inward_id).reduce((s, r) => s + Number(r.amount || 0), 0);
+  const directClientIncome = totalIncome - inwardRevenue;
+
+  const directInwardExpenses = (expenses || []).filter(e => e.expense_type === "inward").reduce((s, e) => s + Number(e.amount || 0), 0);
+  const inhouseLabExpenses = (expenses || []).filter(e => e.expense_type === "inhouse").reduce((s, e) => s + Number(e.amount || 0), 0);
+  const totalDirectCosts = directInwardExpenses + inhouseLabExpenses;
+  const grossProfit = totalIncome - totalDirectCosts;
+  const grossMargin = totalIncome > 0 ? (grossProfit / totalIncome) * 100 : 0;
+
+  const companyOverheads = (expenses || []).filter(e => e.expense_type === "company" || (!e.expense_type && !e.inward_id)).reduce((s, e) => s + Number(e.amount || 0), 0);
+  const totalExpenses = totalDirectCosts + companyOverheads;
+  const netProfit = totalIncome - totalExpenses;
+  const netMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0;
+
+  // Category breakdown for expenses
+  const categoryMap: Record<string, { name: string; type: string; amount: number; count: number }> = {};
+  (expenses || []).forEach(e => {
+    const catName = e.expense_categories?.name || (e.expense_type === 'inward' ? 'Inward Direct Cost' : e.expense_type === 'inhouse' ? 'In-House Lab Operations' : 'General Overhead');
+    if (!categoryMap[catName]) {
+      categoryMap[catName] = { name: catName, type: e.expense_type || 'company', amount: 0, count: 0 };
+    }
+    categoryMap[catName].amount += Number(e.amount || 0);
+    categoryMap[catName].count += 1;
+  });
+  const expenseCategories = Object.values(categoryMap).sort((a, b) => b.amount - a.amount);
+
+  // --- B. BALANCE SHEET / LIQUIDITY SUMMARY ---
+  const bankAccountsBalance = (accounts || []).filter(a => a.account_type === 'bank').reduce((s, a) => s + Number(a.current_balance || 0), 0);
+  const cashAccountsBalance = (accounts || []).filter(a => a.account_type === 'cash').reduce((s, a) => s + Number(a.current_balance || 0), 0);
+  const totalLiquidCashBank = bankAccountsBalance + cashAccountsBalance;
+
+  const tradeReceivables = (allInvoices || [])
+    .filter(i => (i.status === 'unpaid' || i.status === 'partial') && Number(i.balance_amount || 0) > 0)
+    .reduce((s, i) => s + Number(i.balance_amount || 0), 0);
+
+  const totalCurrentAssets = totalLiquidCashBank + tradeReceivables;
+
+  const { data: pendingExpenses } = await supabase
+    .from("accounting_expenses")
+    .select("amount")
+    .eq("status", "recorded")
+    .eq("approval_status", "pending");
+  const pendingLiabilities = (pendingExpenses || []).reduce((s, e) => s + Number(e.amount || 0), 0);
+  const netWorkingCapital = totalCurrentAssets - pendingLiabilities;
+
+  // --- C. DEBTORS / CLIENT AGING ANALYSIS ---
+  const today = new Date();
+  const agingBuckets = {
+    current: 0,      // 0-30 days
+    days31to60: 0,   // 31-60 days
+    days61to90: 0,   // 61-90 days
+    days90Plus: 0,   // 90+ days
+  };
+
+  const clientAgingMap: Record<string, {
+    clientId: string;
+    clientName: string;
+    mobile: string;
+    contactPerson: string;
+    invoiceCount: number;
+    totalDue: number;
+    oldestDate: string;
+    current: number;
+    days31to60: number;
+    days61to90: number;
+    days90Plus: number;
+  }> = {};
+
+  (allInvoices || [])
+    .filter(i => (i.status === 'unpaid' || i.status === 'partial') && Number(i.balance_amount || 0) > 0)
+    .forEach(inv => {
+      const balance = Number(inv.balance_amount || 0);
+      const invDateStr = inv.invoice_date || inv.created_at?.slice(0, 10) || new Date().toISOString().slice(0, 10);
+      const invDate = new Date(invDateStr);
+      const diffTime = Math.abs(today.getTime() - invDate.getTime());
+      const ageDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      let bucket: "current" | "days31to60" | "days61to90" | "days90Plus" = "current";
+      if (ageDays <= 30) {
+        agingBuckets.current += balance;
+        bucket = "current";
+      } else if (ageDays <= 60) {
+        agingBuckets.days31to60 += balance;
+        bucket = "days31to60";
+      } else if (ageDays <= 90) {
+        agingBuckets.days61to90 += balance;
+        bucket = "days61to90";
+      } else {
+        agingBuckets.days90Plus += balance;
+        bucket = "days90Plus";
+      }
+
+      const cId = inv.client_id || "unspecified";
+      const cName = inv.clients?.name || "Unspecified Client";
+      if (!clientAgingMap[cId]) {
+        clientAgingMap[cId] = {
+          clientId: cId,
+          clientName: cName,
+          mobile: inv.clients?.mobile || "",
+          contactPerson: inv.clients?.contact_person || "",
+          invoiceCount: 0,
+          totalDue: 0,
+          oldestDate: invDateStr,
+          current: 0,
+          days31to60: 0,
+          days61to90: 0,
+          days90Plus: 0,
+        };
+      }
+
+      const row = clientAgingMap[cId];
+      row.invoiceCount += 1;
+      row.totalDue += balance;
+      row[bucket] += balance;
+      if (new Date(invDateStr) < new Date(row.oldestDate)) {
+        row.oldestDate = invDateStr;
+      }
+    });
+
+  const clientAgingList = Object.values(clientAgingMap).sort((a, b) => b.totalDue - a.totalDue);
+
+  // --- D. GST TAX SUMMARY ---
+  let periodInvoices = allInvoices || [];
+  if (fromDate) periodInvoices = periodInvoices.filter(i => (i.invoice_date || i.created_at?.slice(0, 10)) >= fromDate);
+  if (toDate) periodInvoices = periodInvoices.filter(i => (i.invoice_date || i.created_at?.slice(0, 10)) <= toDate);
+
+  const totalTaxableTurnover = periodInvoices.reduce((s, i) => s + Number(i.subtotal || i.amount || 0), 0);
+  const totalOutputGst = periodInvoices.reduce((s, i) => s + Number(i.gst_amount || 0), 0);
+  const totalInputGst = (expenses || []).reduce((s, e) => s + Number(e.gst_amount || 0), 0);
+  const netGstPayable = totalOutputGst - totalInputGst;
+
+  const gstInvoiceBreakdown = periodInvoices.map(inv => ({
+    id: inv.id,
+    invoiceNo: inv.invoice_no,
+    invoiceDate: inv.invoice_date || inv.created_at?.slice(0, 10),
+    invoiceType: inv.invoice_type || 'tax_invoice',
+    clientName: inv.clients?.name || 'Customer',
+    clientGst: inv.clients?.gst_no || 'Unregistered',
+    taxableAmount: Number(inv.subtotal || inv.amount || 0),
+    gstAmount: Number(inv.gst_amount || 0),
+    totalAmount: Number(inv.total_amount || 0),
+  })).sort((a, b) => new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime());
+
+  return {
+    success: true,
+    data: {
+      dateRange: { fromDate: fromDate || null, toDate: toDate || null },
+      pnl: {
+        totalIncome,
+        inwardRevenue,
+        directClientIncome,
+        directInwardExpenses,
+        inhouseLabExpenses,
+        totalDirectCosts,
+        grossProfit,
+        grossMargin,
+        companyOverheads,
+        totalExpenses,
+        netProfit,
+        netMargin,
+        expenseCategories,
+      },
+      balanceSheet: {
+        bankAccountsBalance,
+        cashAccountsBalance,
+        totalLiquidCashBank,
+        tradeReceivables,
+        totalCurrentAssets,
+        pendingLiabilities,
+        netWorkingCapital,
+        accountsList: (accounts || []).map(a => ({
+          id: a.id,
+          name: a.name,
+          account_type: a.account_type,
+          bank_name: a.bank_name,
+          current_balance: Number(a.current_balance || 0),
+        })),
+      },
+      aging: {
+        totalOutstanding: tradeReceivables,
+        agingBuckets,
+        clientAgingList,
+      },
+      gst: {
+        totalTaxableTurnover,
+        totalOutputGst,
+        totalInputGst,
+        netGstPayable,
+        gstInvoiceBreakdown,
+      }
+    }
+  };
+}
+
 export async function getReconciliation(branchId?: string) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
   const effectiveBranch = branchScope(user, branchId);
   let receiptsQ = supabase.from("inward_receipts").select("*").eq("status", "received").order("receipt_date", { ascending: false });
-  let paymentsQ = supabase.from("invoice_payments").select("*, invoices(invoice_no, branch_id)").order("payment_date", { ascending: false });
+  const paymentsQ = supabase.from("invoice_payments").select("*, invoices(invoice_no, branch_id)").order("payment_date", { ascending: false });
   if (effectiveBranch) receiptsQ = receiptsQ.eq("branch_id", effectiveBranch);
   const { data: receipts } = await receiptsQ;
   const { data: payments } = await paymentsQ;
@@ -666,11 +917,114 @@ export async function getQuotations(branchId?: string) {
   if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
   const effectiveBranch = branchScope(user, branchId);
-  let q = supabase.from("quotations").select("*").order("created_at", { ascending: false });
+  let q = supabase
+    .from("quotations")
+    .select(`
+      *,
+      clients ( id, name, email, mobile, address, gst_no, contact_person ),
+      accounting_projects ( id, name )
+    `)
+    .order("created_at", { ascending: false });
   if (effectiveBranch) q = q.eq("branch_id", effectiveBranch);
   const { data, error } = await q;
   if (error) return { success: false, error: error.message };
   return { success: true, data };
+}
+
+export async function updateQuotationStatus(id: string, status: "draft" | "sent" | "accepted" | "rejected") {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quotations")
+    .update({ status })
+    .eq("id", id)
+    .select(`
+      *,
+      clients ( id, name, email, mobile, address, gst_no, contact_person ),
+      accounting_projects ( id, name )
+    `)
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  await supabase.from("accounting_audit_log").insert({
+    branch_id: user.branch_id,
+    table_name: "quotations",
+    record_id: id,
+    action: "status_update",
+    new_data: { status },
+    performed_by: user.id
+  });
+
+  return { success: true, data };
+}
+
+export async function convertQuotationToProforma(quotationId: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  const { data: qtn, error: qErr } = await supabase
+    .from("quotations")
+    .select(`
+      *,
+      clients ( id, name, email, mobile, address, gst_no, contact_person )
+    `)
+    .eq("id", quotationId)
+    .single();
+
+  if (qErr || !qtn) return { success: false, error: "Quotation not found" };
+
+  const subtotal = Number(qtn.subtotal || qtn.amount || 0);
+  const gstAmount = Number(qtn.gst_amount || 0);
+  const invoice_no = `PI/${new Date().getFullYear()}/${Date.now().toString().slice(-4)}`;
+
+  const { data: invoice, error: invErr } = await supabase
+    .from("invoices")
+    .insert({
+      branch_id: user.branch_id || qtn.branch_id,
+      invoice_no,
+      invoice_type: "proforma",
+      client_id: qtn.client_id || null,
+      project_id: qtn.project_id || null,
+      quotation_id: quotationId,
+      amount: subtotal,
+      gst_amount: gstAmount,
+      tds_amount: 0,
+      items: qtn.items || [],
+      subtotal,
+      notes: (qtn.remarks ? qtn.remarks + " | " : "") + `Generated from Quotation ${qtn.quotation_no}`,
+      clauses: qtn.clauses || [],
+      remarks: qtn.remarks || null,
+      invoice_date: new Date().toISOString().slice(0, 10),
+      due_date: qtn.valid_until || null,
+      status: "unpaid",
+      created_by: user.id,
+    })
+    .select(`
+      *,
+      clients ( id, name, email, mobile, address, gst_no, contact_person )
+    `)
+    .single();
+
+  if (invErr) return { success: false, error: invErr.message };
+
+  // Auto-mark quotation as accepted
+  await supabase
+    .from("quotations")
+    .update({ status: "accepted" })
+    .eq("id", quotationId);
+
+  await supabase.from("accounting_audit_log").insert({
+    branch_id: user.branch_id,
+    table_name: "invoices",
+    record_id: invoice.id,
+    action: "create_from_quotation",
+    new_data: { quotation_id: quotationId, invoice_no },
+    performed_by: user.id
+  });
+
+  return { success: true, data: invoice };
 }
 
 export async function getInvoices(branchId?: string) {
@@ -1040,16 +1394,37 @@ export async function saveBankReconciliation(payload: any) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
-  const { data, error } = await supabase.from("bank_reconciliations").insert({
+
+  const insertPayload = {
     branch_id: user.branch_id,
     account_id: payload.account_id,
     statement_date: payload.statement_date,
-    statement_balance: payload.statement_balance,
-    erp_balance: payload.erp_balance,
+    statement_balance: Number(payload.statement_balance || 0),
+    erp_balance: Number(payload.erp_balance || 0),
     notes: payload.notes || null,
     reconciled_by: user.id,
-  }).select().single();
+  };
+
+  const { data, error } = await supabase
+    .from("bank_reconciliations")
+    .upsert(insertPayload, { onConflict: "account_id,statement_date" })
+    .select(`
+      *,
+      financial_accounts ( id, name, account_type, bank_name )
+    `)
+    .single();
+
   if (error) return { success: false, error: error.message };
+
+  await supabase.from("accounting_audit_log").insert({
+    branch_id: user.branch_id,
+    table_name: "bank_reconciliations",
+    record_id: data.id,
+    action: "reconcile",
+    new_data: { ...insertPayload, difference: Number(payload.statement_balance || 0) - Number(payload.erp_balance || 0) },
+    performed_by: user.id
+  });
+
   return { success: true, data };
 }
 
@@ -1057,12 +1432,204 @@ export async function getBankReconciliations(accountId?: string) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
-  let q = supabase.from("bank_reconciliations").select("*").order("statement_date", { ascending: false });
+  let q = supabase
+    .from("bank_reconciliations")
+    .select(`
+      *,
+      financial_accounts ( id, name, account_type, bank_name )
+    `)
+    .order("statement_date", { ascending: false });
   if (accountId) q = q.eq("account_id", accountId);
   if (!isSuperAdmin(user.roles) && user.branch_id) q = q.eq("branch_id", user.branch_id);
   const { data, error } = await q;
   if (error) return { success: false, error: error.message };
   return { success: true, data };
+}
+
+export async function calculateAccountBalanceAsOf(accountId: string, asOfDate: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+
+  const { data: account, error: accErr } = await supabase
+    .from("financial_accounts")
+    .select("*")
+    .eq("id", accountId)
+    .single();
+
+  if (accErr || !account) return { success: false, error: "Account not found" };
+
+  const openingBalance = Number(account.opening_balance || 0);
+
+  // Inflows: Inward receipts deposited to this account up to asOfDate
+  const { data: receipts } = await supabase
+    .from("inward_receipts")
+    .select("id, amount")
+    .eq("account_id", accountId)
+    .neq("status", "cancelled")
+    .lte("receipt_date", asOfDate);
+
+  // Inflows: Direct invoice payments deposited to this account up to asOfDate
+  const { data: payments } = await supabase
+    .from("invoice_payments")
+    .select("id, amount, receipt_id")
+    .eq("account_id", accountId)
+    .lte("payment_date", asOfDate);
+
+  const countedReceiptIds = new Set((receipts || []).map(r => r.id));
+  const uncountedPayments = (payments || []).filter(p => !p.receipt_id || !countedReceiptIds.has(p.receipt_id));
+
+  const totalInflows = (receipts || []).reduce((s, r) => s + Number(r.amount || 0), 0) +
+    uncountedPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
+
+  // Outflows: Approved recorded expenses paid from this account up to asOfDate
+  const { data: expenses } = await supabase
+    .from("accounting_expenses")
+    .select("amount")
+    .eq("account_id", accountId)
+    .eq("approval_status", "approved")
+    .neq("status", "cancelled")
+    .lte("expense_date", asOfDate);
+
+  const totalOutflows = (expenses || []).reduce((s, e) => s + Number(e.amount || 0), 0);
+  const erpBalance = openingBalance + totalInflows - totalOutflows;
+
+  return {
+    success: true,
+    data: {
+      accountId,
+      accountName: account.name,
+      asOfDate,
+      openingBalance,
+      totalInflows,
+      totalOutflows,
+      erpBalance,
+      currentBalance: Number(account.current_balance || 0),
+    }
+  };
+}
+
+export async function getAccountTransactionsForReconciliation(accountId: string, fromDate?: string, toDate?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+
+  // Inflows: Inward receipts
+  let receiptsQ = supabase
+    .from("inward_receipts")
+    .select(`
+      id,
+      receipt_no,
+      receipt_date,
+      amount,
+      payment_mode,
+      remarks,
+      party_name,
+      clients ( name )
+    `)
+    .eq("account_id", accountId)
+    .neq("status", "cancelled")
+    .order("receipt_date", { ascending: false });
+
+  if (fromDate) receiptsQ = receiptsQ.gte("receipt_date", fromDate);
+  if (toDate) receiptsQ = receiptsQ.lte("receipt_date", toDate);
+
+  const { data: receipts } = await receiptsQ;
+
+  // Inflows: Invoice payments not already linked to an inward receipt
+  let paymentsQ = supabase
+    .from("invoice_payments")
+    .select(`
+      id,
+      payment_date,
+      amount,
+      payment_mode,
+      remarks,
+      receipt_id,
+      invoices ( invoice_no, clients ( name ) )
+    `)
+    .eq("account_id", accountId)
+    .order("payment_date", { ascending: false });
+
+  if (fromDate) paymentsQ = paymentsQ.gte("payment_date", fromDate);
+  if (toDate) paymentsQ = paymentsQ.lte("payment_date", toDate);
+
+  const { data: payments } = await paymentsQ;
+
+  // Outflows: Approved expenses
+  let expensesQ = supabase
+    .from("accounting_expenses")
+    .select(`
+      id,
+      bill_number,
+      expense_date,
+      amount,
+      payment_mode,
+      description,
+      vendor_name,
+      expense_type,
+      expense_categories ( name )
+    `)
+    .eq("account_id", accountId)
+    .eq("approval_status", "approved")
+    .neq("status", "cancelled")
+    .order("expense_date", { ascending: false });
+
+  if (fromDate) expensesQ = expensesQ.gte("expense_date", fromDate);
+  if (toDate) expensesQ = expensesQ.lte("expense_date", toDate);
+
+  const { data: expenses } = await expensesQ;
+
+  const transactions: any[] = [];
+  const countedReceiptIds = new Set((receipts || []).map(r => r.id));
+
+  (receipts || []).forEach(r => {
+    transactions.push({
+      id: r.id,
+      type: "deposit",
+      date: r.receipt_date,
+      voucher_no: r.receipt_no,
+      particulars: r.remarks || `Inward receipt from ${r.clients?.name || r.party_name || 'Customer'}`,
+      party: r.clients?.name || r.party_name || "Customer",
+      payment_mode: r.payment_mode,
+      amount: Number(r.amount || 0),
+      is_deposit: true,
+    });
+  });
+
+  (payments || []).forEach(p => {
+    if (!p.receipt_id || !countedReceiptIds.has(p.receipt_id)) {
+      transactions.push({
+        id: p.id,
+        type: "deposit",
+        date: p.payment_date,
+        voucher_no: p.invoices?.invoice_no || `PMT-${p.id.slice(0, 6).toUpperCase()}`,
+        particulars: p.remarks || `Payment against invoice ${p.invoices?.invoice_no || ''}`,
+        party: p.invoices?.clients?.name || "Client",
+        payment_mode: p.payment_mode,
+        amount: Number(p.amount || 0),
+        is_deposit: true,
+      });
+    }
+  });
+
+  (expenses || []).forEach(e => {
+    transactions.push({
+      id: e.id,
+      type: "withdrawal",
+      date: e.expense_date,
+      voucher_no: e.bill_number || `EXP-${e.id.slice(0, 6).toUpperCase()}`,
+      particulars: e.description || `${e.expense_categories?.name || 'Expense'} - ${e.vendor_name || 'Vendor'}`,
+      party: e.vendor_name || "Vendor",
+      payment_mode: e.payment_mode,
+      amount: Number(e.amount || 0),
+      is_deposit: false,
+    });
+  });
+
+  transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  return { success: true, data: transactions };
 }
 
 export async function getQuotationTemplates(branchId?: string) {
@@ -1349,7 +1916,7 @@ export async function getLedgersData(filters?: {
       id: e.id,
       date: e.expense_date || e.created_at?.slice(0, 10),
       voucher_no: e.bill_number || `EXP-${e.id.slice(0, 6).toUpperCase()}`,
-      expense_type: resolvedType as "inward" | "company",
+      expense_type: resolvedType as "inward" | "company" | "inhouse",
       category_id: e.category_id,
       category_name: e.expense_categories?.name || (resolvedType === 'inward' ? 'Inward Direct Cost' : 'General Overhead'),
       inward_id: e.inward_id || inward?.id || null,
@@ -1389,9 +1956,281 @@ export async function getLedgersData(filters?: {
 
         totalExpense: expenseEntries.filter(e => e.approval_status === "approved").reduce((s, e) => s + e.amount, 0),
         inwardExpense: expenseEntries.filter(e => e.expense_type === "inward" && e.approval_status === "approved").reduce((s, e) => s + e.amount, 0),
+        inhouseExpense: expenseEntries.filter(e => e.expense_type === "inhouse" && e.approval_status === "approved").reduce((s, e) => s + e.amount, 0),
         companyExpense: expenseEntries.filter(e => e.expense_type === "company" && e.approval_status === "approved").reduce((s, e) => s + e.amount, 0),
         pendingExpense: expenseEntries.filter(e => e.approval_status === "pending").reduce((s, e) => s + e.amount, 0),
       }
+    }
+  };
+}
+
+export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?: string, branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  const effectiveBranch = branchScope(user, branchId);
+
+  // 1. Fetch job_entry_tests with parent job_entry, client, and test_master
+  let jetQ = supabase
+    .from("job_entry_tests")
+    .select(`
+      id,
+      job_entry_id,
+      material_description,
+      sample_quantity,
+      grade,
+      test_method,
+      uid_label,
+      created_at,
+      test_master (
+        id,
+        material_product,
+        component_parameter,
+        specific_test,
+        discipline_group,
+        category,
+        unit
+      ),
+      job_entries (
+        id,
+        uid,
+        uid_label,
+        client_id,
+        project_name,
+        branch_id,
+        clients ( id, name )
+      )
+    `);
+
+  if (effectiveBranch) jetQ = jetQ.eq("job_entries.branch_id", effectiveBranch);
+  if (fromDate) jetQ = jetQ.gte("created_at", fromDate);
+  if (toDate) jetQ = jetQ.lte("created_at", toDate + "T23:59:59.999Z");
+
+  const { data: testsData, error: testErr } = await jetQ;
+  if (testErr) return { success: false, error: testErr.message };
+
+  // 2. Fetch all invoices in period
+  let invQ = supabase
+    .from("invoices")
+    .select(`
+      id,
+      invoice_no,
+      inward_id,
+      amount,
+      total_amount,
+      paid_amount,
+      items,
+      created_at
+    `);
+  if (effectiveBranch) invQ = invQ.eq("branch_id", effectiveBranch);
+  if (fromDate) invQ = invQ.gte("created_at", fromDate);
+  if (toDate) invQ = invQ.lte("created_at", toDate + "T23:59:59.999Z");
+  const { data: invoicesData } = await invQ;
+
+  // 3. Fetch all expenses in period
+  let expQ = supabase
+    .from("accounting_expenses")
+    .select(`
+      id,
+      amount,
+      expense_type,
+      inward_id,
+      description,
+      expense_categories ( name )
+    `)
+    .eq("status", "recorded")
+    .eq("approval_status", "approved");
+  if (effectiveBranch) expQ = expQ.eq("branch_id", effectiveBranch);
+  if (fromDate) expQ = expQ.gte("expense_date", fromDate);
+  if (toDate) expQ = expQ.lte("expense_date", toDate);
+  const { data: expensesData } = await expQ;
+
+  // Map inward_id to invoices and expenses
+  const inwardInvoicesMap: Record<string, Array<{ id: string; invoice_no: string; amount: number; total_amount: number; items?: unknown }>> = {};
+  (invoicesData || []).forEach((inv: any) => {
+    if (inv.inward_id) {
+      if (!inwardInvoicesMap[inv.inward_id]) inwardInvoicesMap[inv.inward_id] = [];
+      inwardInvoicesMap[inv.inward_id].push(inv);
+    }
+  });
+
+  const inwardExpensesMap: Record<string, number> = {};
+  (expensesData || []).filter((e: any) => e.expense_type === "inward" && e.inward_id).forEach((e: any) => {
+    if (e.inward_id) {
+      inwardExpensesMap[e.inward_id] = (inwardExpensesMap[e.inward_id] || 0) + Number(e.amount || 0);
+    }
+  });
+
+  const totalInhouseExpenses = (expensesData || [])
+    .filter((e: any) => e.expense_type === "inhouse")
+    .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+
+  // Count tests per inward to apportion proportional amounts
+  const testsPerInward: Record<string, number> = {};
+  (testsData || []).forEach((t: { job_entry_id: string | null }) => {
+    if (t.job_entry_id) {
+      testsPerInward[t.job_entry_id] = (testsPerInward[t.job_entry_id] || 0) + 1;
+    }
+  });
+
+  const totalTestsCount = (testsData || []).length;
+
+  interface TestAggregate {
+    testId: string;
+    testName: string;
+    materialGroup: string;
+    discipline: string;
+    testCount: number;
+    inwardCount: number;
+    inwardIds: Set<string>;
+    clientNames: Set<string>;
+    revenue: number;
+    directExpense: number;
+    inhouseExpense: number;
+    totalCost: number;
+    grossProfit: number;
+    grossMargin: number;
+    avgRevenuePerTest: number;
+    avgCostPerTest: number;
+  }
+
+  const aggregates: Record<string, TestAggregate> = {};
+
+  (testsData || []).forEach((t: Record<string, unknown>) => {
+    const tm = t.test_master as Record<string, unknown> | null;
+    const je = t.job_entries as Record<string, unknown> | null;
+    const clientObj = je?.clients as Record<string, unknown> | null;
+    const jobEntryId = t.job_entry_id as string | null;
+
+    const testName = (tm?.component_parameter as string) || (tm?.specific_test as string) || (t.material_description as string) || "General Testing";
+    const materialGroup = (tm?.material_product as string) || (tm?.discipline_group as string) || "General Material";
+    const discipline = (tm?.discipline_group as string) || "Mechanical";
+    const key = `${materialGroup}___${testName}`;
+
+    if (!aggregates[key]) {
+      aggregates[key] = {
+        testId: (tm?.id as string) || (t.id as string),
+        testName,
+        materialGroup,
+        discipline,
+        testCount: 0,
+        inwardCount: 0,
+        inwardIds: new Set<string>(),
+        clientNames: new Set<string>(),
+        revenue: 0,
+        directExpense: 0,
+        inhouseExpense: 0,
+        totalCost: 0,
+        grossProfit: 0,
+        grossMargin: 0,
+        avgRevenuePerTest: 0,
+        avgCostPerTest: 0,
+      };
+    }
+
+    const agg = aggregates[key];
+    agg.testCount += 1;
+    if (jobEntryId) {
+      agg.inwardIds.add(jobEntryId);
+    }
+    const clientName = clientObj?.name as string | undefined;
+    if (clientName) agg.clientNames.add(clientName);
+
+    // Calculate revenue for this test instance
+    let testRevenue = 0;
+    if (jobEntryId && inwardInvoicesMap[jobEntryId]) {
+      const parentInvs = inwardInvoicesMap[jobEntryId];
+      parentInvs.forEach((inv) => {
+        const items = Array.isArray(inv.items) ? (inv.items as Array<{ description?: string; amount?: number; qty?: number; rate?: number }>) : [];
+        const matchingItem = items.find((it) =>
+          it.description && (
+            it.description.toLowerCase().includes(testName.toLowerCase()) ||
+            it.description.toLowerCase().includes(materialGroup.toLowerCase())
+          )
+        );
+
+        if (matchingItem) {
+          testRevenue += Number(matchingItem.amount || ((matchingItem.qty || 1) * (matchingItem.rate || 0)) || 0);
+        } else {
+          const countInInward = testsPerInward[jobEntryId] || 1;
+          testRevenue += Number(inv.amount || inv.total_amount || 0) / countInInward;
+        }
+      });
+    }
+
+    agg.revenue += testRevenue;
+
+    // Direct inward expense apportioned to this test
+    if (jobEntryId && inwardExpensesMap[jobEntryId]) {
+      const countInInward = testsPerInward[jobEntryId] || 1;
+      agg.directExpense += inwardExpensesMap[jobEntryId] / countInInward;
+    }
+
+    // Allocate inhouse lab expense proportionally
+    if (totalTestsCount > 0 && totalInhouseExpenses > 0) {
+      agg.inhouseExpense += totalInhouseExpenses / totalTestsCount;
+    }
+  });
+
+  const testBreakdown = Object.values(aggregates).map((a) => {
+    const totalCost = a.directExpense + a.inhouseExpense;
+    const grossProfit = a.revenue - totalCost;
+    const grossMargin = a.revenue > 0 ? (grossProfit / a.revenue) * 100 : (grossProfit === 0 ? 0 : -100);
+    const avgRevenuePerTest = a.testCount > 0 ? a.revenue / a.testCount : 0;
+    const avgCostPerTest = a.testCount > 0 ? totalCost / a.testCount : 0;
+
+    return {
+      testId: a.testId,
+      testName: a.testName,
+      materialGroup: a.materialGroup,
+      discipline: a.discipline,
+      testCount: a.testCount,
+      inwardCount: a.inwardIds.size,
+      clientCount: a.clientNames.size,
+      revenue: Math.round(a.revenue * 100) / 100,
+      directExpense: Math.round(a.directExpense * 100) / 100,
+      inhouseExpense: Math.round(a.inhouseExpense * 100) / 100,
+      totalCost: Math.round(totalCost * 100) / 100,
+      grossProfit: Math.round(grossProfit * 100) / 100,
+      grossMargin: Math.round(grossMargin * 10) / 10,
+      avgRevenuePerTest: Math.round(avgRevenuePerTest * 100) / 100,
+      avgCostPerTest: Math.round(avgCostPerTest * 100) / 100,
+    };
+  }).sort((a, b) => b.revenue - a.revenue || b.testCount - a.testCount);
+
+  // Group by Material / Discipline
+  const materialMap: Record<string, { material: string; count: number; revenue: number; expense: number; profit: number }> = {};
+  testBreakdown.forEach((t) => {
+    if (!materialMap[t.materialGroup]) {
+      materialMap[t.materialGroup] = { material: t.materialGroup, count: 0, revenue: 0, expense: 0, profit: 0 };
+    }
+    materialMap[t.materialGroup].count += t.testCount;
+    materialMap[t.materialGroup].revenue += t.revenue;
+    materialMap[t.materialGroup].expense += t.totalCost;
+    materialMap[t.materialGroup].profit += t.grossProfit;
+  });
+
+  const materialBreakdown = Object.values(materialMap).sort((a, b) => b.revenue - a.revenue);
+
+  const totalTests = testBreakdown.reduce((s, t) => s + t.testCount, 0);
+  const totalRev = testBreakdown.reduce((s, t) => s + t.revenue, 0);
+  const totalCost = testBreakdown.reduce((s, t) => s + t.totalCost, 0);
+  const totalProfit = totalRev - totalCost;
+  const overallMargin = totalRev > 0 ? (totalProfit / totalRev) * 100 : 0;
+
+  return {
+    success: true,
+    data: {
+      dateRange: { fromDate: fromDate || null, toDate: toDate || null },
+      summary: {
+        totalTests,
+        totalRevenue: Math.round(totalRev * 100) / 100,
+        totalCost: Math.round(totalCost * 100) / 100,
+        grossProfit: Math.round(totalProfit * 100) / 100,
+        overallMargin: Math.round(overallMargin * 10) / 10,
+      },
+      testBreakdown,
+      materialBreakdown,
     }
   };
 }

@@ -21,6 +21,7 @@ import {
   FileText,
   AlertCircle,
   FileSpreadsheet,
+  FlaskConical,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ export function ExpenseLedgerTable({
 }: ExpenseLedgerTableProps) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [scopeFilter, setScopeFilter] = useState<"all" | "inward" | "company">("all");
+  const [scopeFilter, setScopeFilter] = useState<"all" | "inward" | "inhouse" | "company">("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [approvalFilter, setApprovalFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
@@ -71,6 +72,7 @@ export function ExpenseLedgerTable({
 
       // Scope filter
       if (scopeFilter === "inward" && expenseType !== "inward") return false;
+      if (scopeFilter === "inhouse" && expenseType !== "inhouse") return false;
       if (scopeFilter === "company" && expenseType !== "company") return false;
 
       // Category filter
@@ -121,6 +123,7 @@ export function ExpenseLedgerTable({
   const summary = useMemo(() => {
     let total = 0;
     let inwardTotal = 0;
+    let inhouseTotal = 0;
     let companyTotal = 0;
     let pendingCount = 0;
     let pendingAmount = 0;
@@ -134,6 +137,7 @@ export function ExpenseLedgerTable({
       if (status === "approved") {
         total += amt;
         if (type === "inward") inwardTotal += amt;
+        else if (type === "inhouse") inhouseTotal += amt;
         else companyTotal += amt;
       } else if (status === "pending") {
         pendingCount += 1;
@@ -141,7 +145,7 @@ export function ExpenseLedgerTable({
       }
     });
 
-    return { total, inwardTotal, companyTotal, pendingCount, pendingAmount };
+    return { total, inwardTotal, inhouseTotal, companyTotal, pendingCount, pendingAmount };
   }, [filtered]);
 
   // Handle Approve / Reject
@@ -234,57 +238,70 @@ export function ExpenseLedgerTable({
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4.5 bg-white rounded-2xl border border-slate-200 shadow-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Total Approved Outflows
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Total Outflows
             </span>
-            <div className="p-2 rounded-xl bg-rose-50 text-rose-600">
+            <div className="p-1.5 rounded-xl bg-rose-50 text-rose-600">
               <TrendingDown className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-2">{fmt(summary.total)}</div>
-          <span className="text-[11px] text-slate-500">All cleared debit transactions</span>
+          <div className="text-xl font-black text-slate-900 mt-2">{fmt(summary.total)}</div>
+          <span className="text-[10px] text-slate-500">All cleared debit transactions</span>
         </div>
 
-        <div className="p-4.5 bg-white rounded-2xl border border-blue-200 bg-blue-50/20 shadow-xs">
+        <div className="p-4 bg-white rounded-2xl border border-blue-200 bg-blue-50/20 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-              Inward Direct Expenses
+            <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
+              Inward Direct
             </span>
-            <div className="p-2 rounded-xl bg-blue-100 text-blue-700">
+            <div className="p-1.5 rounded-xl bg-blue-100 text-blue-700">
               <Package className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-blue-900 mt-2">{fmt(summary.inwardTotal)}</div>
-          <span className="text-[11px] text-blue-600 font-medium">Job testing, freight & field costs</span>
+          <div className="text-xl font-black text-blue-900 mt-2">{fmt(summary.inwardTotal)}</div>
+          <span className="text-[10px] text-blue-600 font-medium">Job testing & field costs</span>
         </div>
 
-        <div className="p-4.5 bg-white rounded-2xl border border-purple-200 bg-purple-50/20 shadow-xs">
+        <div className="p-4 bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
+              In-House Lab
+            </span>
+            <div className="p-1.5 rounded-xl bg-emerald-100 text-emerald-700">
+              <FlaskConical className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-xl font-black text-emerald-900 mt-2">{fmt(summary.inhouseTotal)}</div>
+          <span className="text-[10px] text-emerald-600 font-medium">Calibration, chemicals & PT/ILC</span>
+        </div>
+
+        <div className="p-4 bg-white rounded-2xl border border-purple-200 bg-purple-50/20 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">
               Company Overheads
             </span>
-            <div className="p-2 rounded-xl bg-purple-100 text-purple-700">
+            <div className="p-1.5 rounded-xl bg-purple-100 text-purple-700">
               <Building2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-purple-900 mt-2">{fmt(summary.companyTotal)}</div>
-          <span className="text-[11px] text-purple-600 font-medium">Rent, salaries, power & admin</span>
+          <div className="text-xl font-black text-purple-900 mt-2">{fmt(summary.companyTotal)}</div>
+          <span className="text-[10px] text-purple-600 font-medium">Rent, salaries & admin</span>
         </div>
 
-        <div className="p-4.5 bg-white rounded-2xl border border-amber-200 bg-amber-50/20 shadow-xs">
+        <div className="p-4 bg-white rounded-2xl border border-amber-200 bg-amber-50/20 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">
-              Pending Approvals
+            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
+              Pending
             </span>
-            <div className="p-2 rounded-xl bg-amber-100 text-amber-700">
+            <div className="p-1.5 rounded-xl bg-amber-100 text-amber-700">
               <Clock className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-900 mt-2">{fmt(summary.pendingAmount)}</div>
-          <span className="text-[11px] text-amber-700 font-bold">
+          <div className="text-xl font-black text-amber-900 mt-2">{fmt(summary.pendingAmount)}</div>
+          <span className="text-[10px] text-amber-700 font-bold">
             {summary.pendingCount} transaction{summary.pendingCount === 1 ? "" : "s"} waiting
           </span>
         </div>
@@ -294,10 +311,10 @@ export function ExpenseLedgerTable({
       <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4">
         {/* Scope Pill Toggle */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
             <button
               onClick={() => setScopeFilter("all")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 scopeFilter === "all"
                   ? "bg-white text-slate-900 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -307,7 +324,7 @@ export function ExpenseLedgerTable({
             </button>
             <button
               onClick={() => setScopeFilter("inward")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 scopeFilter === "inward"
                   ? "bg-white text-blue-700 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -317,8 +334,19 @@ export function ExpenseLedgerTable({
               <span>Inward Expenses</span>
             </button>
             <button
+              onClick={() => setScopeFilter("inhouse")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                scopeFilter === "inhouse"
+                  ? "bg-white text-emerald-700 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <FlaskConical className="w-3.5 h-3.5" />
+              <span>In-House Lab ({expenses.filter((e) => e.expense_type === "inhouse").length})</span>
+            </button>
+            <button
               onClick={() => setScopeFilter("company")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 scopeFilter === "company"
                   ? "bg-white text-purple-700 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -497,6 +525,11 @@ export function ExpenseLedgerTable({
                               </div>
                             )}
                           </div>
+                        ) : type === "inhouse" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <FlaskConical className="w-3 h-3 text-emerald-600" />
+                            <span>IN-HOUSE LAB</span>
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
                             <Building2 className="w-3 h-3 text-purple-600" />

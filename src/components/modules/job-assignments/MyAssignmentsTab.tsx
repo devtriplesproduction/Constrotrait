@@ -15,6 +15,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { compareJobCardsByUidRecentFirst, isNablJob } from "@/utils/uid-sort";
 
 function uidOf(a: any) {
   const t = a.job_entry_tests;
@@ -45,6 +46,7 @@ export function MyAssignmentsTab({
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filterDate, setFilterDate] = useState<string>("all");
+  const [filterNabl, setFilterNabl] = useState<string>("all");
   const router = useRouter();
 
   const effectiveRoles = userRoles && userRoles.length > 0
@@ -61,6 +63,12 @@ export function MyAssignmentsTab({
       if (!isMine) return false;
       if (a.status === 'approved') return false;
       if (filterStatus !== "all" && a.status !== filterStatus) return false;
+      
+      if (filterNabl !== "all") {
+        const isNabl = isNablJob(a);
+        if (filterNabl === "nabl" && !isNabl) return false;
+        if (filterNabl === "non_nabl" && isNabl) return false;
+      }
       
       if (searchQuery.trim() !== "") {
         const q = searchQuery.toLowerCase();
@@ -103,7 +111,7 @@ export function MyAssignmentsTab({
       
       return true;
     });
-  }, [assignments, userId, filterStatus, searchQuery, filterDate]);
+  }, [assignments, userId, filterStatus, searchQuery, filterDate, filterNabl]);
 
   const groupedMyAssignments = React.useMemo(() => {
     const groups = new Map<string, any>();
@@ -123,7 +131,7 @@ export function MyAssignmentsTab({
         existing.all_assignments.push(a);
       }
     });
-    return Array.from(groups.values());
+    return Array.from(groups.values()).sort(compareJobCardsByUidRecentFirst);
   }, [myAssignments]);
 
   const pagination = usePagination({
@@ -402,7 +410,21 @@ return (
               ]} 
             />
           </div>
-          <div className="w-full sm:w-48">
+          <div className="w-full sm:w-44">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Accreditation</label>
+            <Dropdown 
+              value={filterNabl} 
+              onChange={setFilterNabl} 
+              placeholder="All Types" 
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" 
+              options={[
+                { value: "all", label: "All Types" },
+                { value: "nabl", label: "NABL" },
+                { value: "non_nabl", label: "Non-NABL" },
+              ]} 
+            />
+          </div>
+          <div className="w-full sm:w-44">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Range</label>
             <Dropdown value={filterDate} onChange={setFilterDate} placeholder="All Time" buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" options={[
               { value: "today", label: "Today" },
@@ -418,6 +440,7 @@ return (
                 setSearchQuery("");
                 setFilterStatus("all");
                 setFilterDate("all");
+                setFilterNabl("all");
               }}
               className="w-full sm:w-auto h-10 px-4 rounded-xl text-orange-600 border-orange-200 bg-orange-50/50 hover:bg-orange-100 hover:text-orange-700 font-bold text-xs flex items-center gap-2 shadow-sm transition-colors"
             >
@@ -451,6 +474,7 @@ return (
             <tbody className="divide-y divide-slate-100">
               {pagination.paginatedData.map((a: any) => {
                 const uid = uidOf(a);
+                const isNabl = isNablJob(a);
                 const receivedRawDate = a.grouped_tests[0]?.job_entries?.created_at;
                 const receivedDateObj = receivedRawDate ? new Date(receivedRawDate) : null;
                 const receivedStr = receivedDateObj ? receivedDateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }) : '-';
@@ -470,9 +494,17 @@ return (
                         <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
                           <ClipboardList className="w-4 h-4" />
                         </div>
-                        <div className="font-bold text-slate-800 text-[13px]">
-                          {uid ? `UID: ${uid}` : 'UID missing'}
-
+                        <div className="font-bold text-slate-800 text-[13px] flex items-center gap-1.5 flex-wrap">
+                          <span>{uid ? `UID: ${uid}` : 'UID missing'}</span>
+                          {isNabl ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                              NABL
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                              Non-NABL
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>

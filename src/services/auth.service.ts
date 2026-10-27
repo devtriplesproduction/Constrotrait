@@ -2,7 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { LoginFormData } from "@/lib/validations/auth";
 import { cache } from "react";
 
-export async function loginWithEmailPassword(data: LoginFormData) {
+import type { ClientDeviceTelemetry } from "@/lib/utils/client-device-info";
+
+export async function loginWithEmailPassword(
+  data: LoginFormData,
+  clientTelemetry?: ClientDeviceTelemetry | null
+) {
   const supabase = await createClient();
   const { data: authData, error } = await supabase.auth.signInWithPassword({
     email: data.email,
@@ -20,6 +25,7 @@ export async function loginWithEmailPassword(data: LoginFormData) {
         status: "FAILED",
         failureReason: error.message || "Invalid login credentials",
         headers: headerList,
+        clientTelemetry,
       });
     } catch (auditErr) {
       console.error("Failed to log failed login audit:", auditErr);
@@ -58,6 +64,7 @@ export async function loginWithEmailPassword(data: LoginFormData) {
         role: primaryRole,
         status: "SUCCESS",
         headers: headerList,
+        clientTelemetry,
       });
     } catch (auditErr) {
       console.error("Failed to record login audit log:", auditErr);

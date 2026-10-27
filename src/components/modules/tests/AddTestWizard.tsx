@@ -109,7 +109,7 @@ export function AddTestWizard({
       if (is_nabl) {
         fieldsToValidate = ["category", "is_nabl", "discipline_group", "material_product", "component_parameter", "test_method", "report_qr", "datasheet_qr"];
       } else {
-        fieldsToValidate = ["category", "is_nabl", "discipline_group", "particulars", "unit", "sample_size", "minimum_value", "time_required", "tested_as_per_is", "report_qr", "datasheet_qr"];
+        fieldsToValidate = ["category", "is_nabl", "discipline_group", "material_product", "particulars", "unit", "sample_size", "minimum_value", "time_required", "tested_as_per_is", "report_qr", "datasheet_qr"];
       }
     } else if (currentStep === 1) {
       fieldsToValidate = ["additional_details"];
@@ -342,6 +342,12 @@ export function AddTestWizard({
                             <SelectItem value="Chemical">Chemical</SelectItem>
                           </Select>
                           {errors.discipline_group && <p className="text-red-500 text-xs">{errors.discipline_group.message}</p>}
+                        </div>
+
+                        <div className="col-span-1 md:col-span-2 flex flex-col justify-end gap-1.5">
+                          <label className="text-sm font-semibold text-slate-700 leading-tight">Materials or Products Name <span className="text-red-500">*</span></label>
+                          <Input {...register("material_product")} placeholder="e.g. Cement, Concrete, Soil..." />
+                          {errors.material_product && <p className="text-red-500 text-xs">{errors.material_product.message}</p>}
                         </div>
 
                         <div className="col-span-1 md:col-span-2 flex flex-col justify-end gap-1.5">

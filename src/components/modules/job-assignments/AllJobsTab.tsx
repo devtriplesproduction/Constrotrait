@@ -15,6 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { compareJobCardsByUidRecentFirst, isNablJob } from "@/utils/uid-sort";
 
 function assignmentUid(assignment: any) {
   const t = assignment.job_entry_tests;
@@ -30,6 +31,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
   const [initialAssignment, setInitialAssignment] = useState<any>(null);
   const [filterBranch, setFilterBranch] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<string>("all");
+  const [filterNabl, setFilterNabl] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [remarkObj, setRemarkObj] = useState<{ id: string; remark: string } | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -95,6 +97,11 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
       const assignmentBranch = a.branch_id || a.job_entry_tests?.job_entries?.branch_id || employees.find((e: any) => e.id === a.assigned_to)?.branch_id;
       if (assignmentBranch !== filterBranch) return false;
     }
+    if (filterNabl !== "all") {
+      const isNabl = isNablJob(a);
+      if (filterNabl === "nabl" && !isNabl) return false;
+      if (filterNabl === "non_nabl" && isNabl) return false;
+    }
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase();
       // Employee Name / Team
@@ -148,7 +155,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
         existing.all_assignments.push(a);
       }
     });
-    return Array.from(groups.values());
+    return Array.from(groups.values()).sort(compareJobCardsByUidRecentFirst);
   }, [filteredAssignments]);
 
   const pagination = usePagination({
@@ -246,14 +253,28 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
               ]} 
             />
           </div>
-          <div className="w-full sm:w-48">
+          <div className="w-full sm:w-44">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Accreditation</label>
+            <Dropdown 
+              value={filterNabl} 
+              onChange={setFilterNabl} 
+              placeholder="All Types" 
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" 
+              options={[
+                { value: "all", label: "All Types" },
+                { value: "nabl", label: "NABL" },
+                { value: "non_nabl", label: "Non-NABL" },
+              ]} 
+            />
+          </div>
+          <div className="w-full sm:w-44">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Branch</label>
             <Dropdown value={filterBranch} onChange={setFilterBranch} placeholder="All Branches" buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" options={[
               { value: "all", label: "All Branches" },
               ...branches.map((b: any) => ({ value: b.id, label: b.name })),
             ]} />
           </div>
-          <div className="w-full sm:w-48">
+          <div className="w-full sm:w-44">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Range</label>
             <Dropdown value={filterDate} onChange={setFilterDate} placeholder="All Time" buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" options={[
               { value: "today", label: "Today" },
@@ -270,6 +291,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
                 setFilterStatus("all");
                 setFilterBranch("all");
                 setFilterDate("all");
+                setFilterNabl("all");
               }}
               className="w-full sm:w-auto h-10 px-4 rounded-xl text-orange-600 border-orange-200 bg-orange-50/50 hover:bg-orange-100 hover:text-orange-700 font-bold text-xs flex items-center gap-2 shadow-sm transition-colors"
             >
@@ -292,7 +314,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {pagination.paginatedData.map((assignment) => {
+            {pagination.paginatedData.map((assignment: any) => {
               const assignedName = assignment.team_id 
                 ? assignment.teams?.name 
                 : `${assignment.assigned_to_profile?.first_name || ""} ${assignment.assigned_to_profile?.last_name || ""}`;
@@ -304,6 +326,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
               const receivedRawDate = assignment.grouped_tests[0]?.job_entries?.created_at;
               const receivedDateObj = receivedRawDate ? new Date(receivedRawDate) : null;
               const receivedStr = receivedDateObj ? format(receivedDateObj, "dd MMM, yyyy") : '-';
+              const isNabl = isNablJob(assignment);
 
               return (
                 <Fragment key={assignment.id}>
@@ -322,6 +345,15 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
                       </div>
                       <div className="font-bold text-slate-800 text-[13px] flex items-center gap-1.5 flex-wrap">
                         <span>{assignmentUid(assignment)}</span>
+                        {isNabl ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                            NABL
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                            Non-NABL
+                          </span>
+                        )}
                         {(assignment.branches?.name || branches.find((b: any) => b.id === (assignment.branch_id || assignment.job_entry_tests?.job_entries?.branch_id))?.name) && (
                           <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/50 text-[10px] font-bold">
                             {assignment.branches?.name || branches.find((b: any) => b.id === (assignment.branch_id || assignment.job_entry_tests?.job_entries?.branch_id))?.name}

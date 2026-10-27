@@ -10,6 +10,7 @@ import { clsx } from "clsx";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useRouter } from "next/navigation";
 import { ClientWizard } from "@/components/modules/clients/ClientWizard";
+import { compareJobCardsByUidRecentFirst } from "@/utils/uid-sort";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntry = Database["public"]["Tables"]["job_entries"]["Row"];
@@ -101,7 +102,7 @@ function ProjectJobsList({
   }
 
   if (view === "jobs" && selectedProject) {
-    const projectJobs = jobsByProject[selectedProject] || [];
+    const projectJobs = (jobsByProject[selectedProject] || []).slice().sort(compareJobCardsByUidRecentFirst);
     return (
       <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col">
         <div className="flex items-center justify-between mb-2 shrink-0">

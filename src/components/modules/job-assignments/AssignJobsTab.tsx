@@ -10,6 +10,7 @@ import { Select, SelectItem, SelectGroup, SelectLabel } from "@/components/ui/se
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { toast } from "@/hooks/use-toast";
 import { isTestEngineer, isSuperAdminOrBranchManager } from "@/config/roles";
+import { compareJobCardsByUidRecentFirst } from "@/utils/uid-sort";
 
 export function AssignJobsTab({ employees, teams, branches, initialAssignment, onSuccess }: { employees: any[], teams?: any[], branches?: any[], initialAssignment?: any, onSuccess?: () => void }) {
   const router = useRouter();
@@ -84,7 +85,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
       isAssigned: isAllAssigned,
       testCount: tests.length
     };
-  });
+  }).sort(compareJobCardsByUidRecentFirst);
 
   const relevantAssignments = existingAssignments.filter(a => {
     if (dueDate && (!a.due_date || !a.due_date.startsWith(dueDate))) return false;
@@ -117,7 +118,7 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
         existing.all_assignments.push(a);
       }
     });
-    return Array.from(groups.values());
+    return Array.from(groups.values()).sort(compareJobCardsByUidRecentFirst);
   }, [relevantAssignments]);
 
   const handleAssign = async () => {

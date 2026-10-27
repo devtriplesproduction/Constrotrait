@@ -7,6 +7,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { compareJobCardsByUidRecentFirst, isNablJob } from "@/utils/uid-sort";
 
 function uidOf(a: any) {
   const t = a.job_entry_tests;
@@ -32,11 +33,18 @@ function getSampleCode(a: any) {
 
 export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', setFilterStatus, currentUserProfile }: { assignments: any[], userId: string, filterStatus?: string, setFilterStatus?: (s: string) => void, currentUserProfile?: any }) {
   const [filterDate, setFilterDate] = useState<string>("all");
+  const [filterNabl, setFilterNabl] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   
   const scheduleAssignments = useMemo(() => {
     return assignments.filter(a => {
       if (a.status === 'approved') return false;
+
+      if (filterNabl !== "all") {
+        const isNabl = isNablJob(a);
+        if (filterNabl === "nabl" && !isNabl) return false;
+        if (filterNabl === "non_nabl" && isNabl) return false;
+      }
       
       if (filterDate !== "all") {
         const dueDateStr = a.job_entry_tests?.date_of_testing || a.due_date;
@@ -96,7 +104,7 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
 
       return true;
     });
-  }, [assignments, filterDate, searchQuery, filterStatus]);
+  }, [assignments, filterDate, searchQuery, filterStatus, filterNabl]);
 
   // Group by specific date
   const groupedByDate = useMemo(() => {
@@ -106,6 +114,9 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
       const dateKey = dueDateStr ? new Date(dueDateStr).toDateString() : "No Date Assigned";
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(a);
+    });
+    Object.keys(groups).forEach(key => {
+      groups[key].sort(compareJobCardsByUidRecentFirst);
     });
     return groups;
   }, [scheduleAssignments]);
@@ -147,6 +158,7 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
       content = items.map((a, idx) => {
         const uid = uidOf(a) || 'No UID';
         const specificTest = a.job_entry_tests?.test_master?.specific_test || a.job_entry_tests?.test_master?.component_parameter || 'Unknown Test';
+        const isNabl = isNablJob(a);
         
         return (
         <div key={a.id || idx} className="bg-white rounded-2xl border border-slate-200/60 p-3 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 flex flex-col">
@@ -158,6 +170,15 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
                  </div>
                  <h4 className="font-semibold text-base text-slate-800 tracking-tight shrink-0">{specificTest}</h4>
                  <span className="font-medium text-xs text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-md shadow-sm">UID: {uid}</span> 
+                 {isNabl ? (
+                   <span className="font-bold text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">
+                     NABL
+                   </span>
+                 ) : (
+                   <span className="font-bold text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
+                     Non-NABL
+                   </span>
+                 )}
               </div>
             </div>
             <div className="shrink-0 bg-white shadow-sm rounded-xl border border-slate-100 p-1">
@@ -268,7 +289,21 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
               ]} 
             />
           </div>
-          <div className="w-full sm:w-48">
+          <div className="w-full sm:w-44">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Accreditation</label>
+            <Dropdown 
+              value={filterNabl} 
+              onChange={setFilterNabl} 
+              placeholder="All Types" 
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" 
+              options={[
+                { value: "all", label: "All Types" },
+                { value: "nabl", label: "NABL" },
+                { value: "non_nabl", label: "Non-NABL" },
+              ]} 
+            />
+          </div>
+          <div className="w-full sm:w-44">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Range</label>
             <Dropdown value={filterDate} onChange={setFilterDate} placeholder="All Time" buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10" options={[
               { value: "all", label: "All Time" },
@@ -285,6 +320,7 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
                 setSearchQuery("");
                 setFilterStatus?.("all");
                 setFilterDate("all");
+                setFilterNabl("all");
               }}
               className="w-full sm:w-auto h-10 px-4 rounded-xl text-orange-600 border-orange-200 bg-orange-50/50 hover:bg-orange-100 hover:text-orange-700 font-bold text-xs flex items-center gap-2 shadow-sm transition-colors"
             >

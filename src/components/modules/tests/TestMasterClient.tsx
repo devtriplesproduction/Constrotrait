@@ -338,14 +338,15 @@ export function TestMasterClient({
                     </div>
                   </div>
 
-                  {/* Title */}
-                  <h3 className="text-[15px] font-extrabold text-slate-900 leading-snug mb-1 line-clamp-2">
-                    {test.test_method || "Unknown Test Method"}
-                  </h3>
-                  <p className="text-[13px] font-semibold text-slate-600 mb-2">
+                  {/* Title: Test Name at Top in Bold */}
+                  <h3 className="text-[15px] font-extrabold text-slate-900 leading-snug mb-1 line-clamp-2" title={test.is_nabl !== false ? (test.component_parameter || test.specific_test || undefined) : (test.particulars || undefined)}>
                     {test.is_nabl !== false 
-                      ? (test.component_parameter || "Unknown Component") 
-                      : (test.particulars || "Unknown Particulars")}
+                      ? (test.component_parameter || test.specific_test || "Unknown Test Name") 
+                      : (test.particulars || "Unknown Test Name")}
+                  </h3>
+                  {/* Subtitle: Test Method / Standard below */}
+                  <p className="text-[13px] font-semibold text-slate-600 mb-2 truncate" title={test.test_method || test.tested_as_per_is || undefined}>
+                    {test.test_method || test.tested_as_per_is || "Unknown Test Method"}
                   </p>
 
                   {/* Details Grid */}
@@ -366,8 +367,12 @@ export function TestMasterClient({
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-3 gap-1.5">
-                        <div className="bg-orange-50/50 rounded-md p-1.5 border border-orange-100/50 min-w-0 col-span-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                        <div className="bg-slate-50/80 rounded-md p-1.5 border border-slate-100 min-w-0">
+                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest block mb-0.5 truncate">Material</span>
+                          <span className="text-xs font-bold text-slate-800 truncate block" title={test.material_product || undefined}>{test.material_product || "-"}</span>
+                        </div>
+                        <div className="bg-orange-50/50 rounded-md p-1.5 border border-orange-100/50 min-w-0">
                           <span className="text-[9px] font-extrabold text-orange-600 uppercase tracking-widest block mb-0.5 truncate">Particulars</span>
                           <span className="text-xs font-bold text-orange-950 truncate block" title={test.particulars || undefined}>{test.particulars || "-"}</span>
                         </div>

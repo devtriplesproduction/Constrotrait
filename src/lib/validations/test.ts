@@ -30,6 +30,7 @@ export const createTestSchema = z.object({
     if (!data.report_qr) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Report QR is required", path: ["report_qr"] });
   } else {
     if (!data.discipline_group) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Group is required", path: ["discipline_group"] });
+    if (!data.material_product) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Materials or Products Name is required", path: ["material_product"] });
     if (!data.particulars) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Particulars is required", path: ["particulars"] });
     if (!data.unit) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Unit is required", path: ["unit"] });
     if (!data.sample_size) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Sample size is required", path: ["sample_size"] });

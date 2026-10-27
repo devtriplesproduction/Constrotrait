@@ -300,5 +300,50 @@ export async function getLedgersDataAction(filters?: {
   return accounting.getLedgersData(filters);
 }
 
+export async function updateQuotationStatusAction(id: string, status: "draft" | "sent" | "accepted" | "rejected") {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.updateQuotationStatus(id, status);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/quotations");
+  }
+  return result;
+}
 
+export async function convertQuotationToProformaAction(quotationId: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.convertQuotationToProforma(quotationId);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/quotations");
+    revalidatePath("/accounting/billing");
+    revalidatePath("/accounting/invoices");
+  }
+  return result;
+}
 
+export async function calculateAccountBalanceAsOfAction(accountId: string, asOfDate: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.calculateAccountBalanceAsOf(accountId, asOfDate);
+}
+
+export async function getAccountTransactionsForReconciliationAction(accountId: string, fromDate?: string, toDate?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getAccountTransactionsForReconciliation(accountId, fromDate, toDate);
+}
+
+export async function getComprehensiveFinancialReportsAction(fromDate?: string, toDate?: string, branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getComprehensiveFinancialReports(fromDate, toDate, branchId);
+}
+
+export async function getTestWiseProfitabilityReportAction(fromDate?: string, toDate?: string, branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getTestWiseProfitabilityReport(fromDate, toDate, branchId);
+}

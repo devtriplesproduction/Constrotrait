@@ -16,6 +16,7 @@ import {
   CreditCard,
   User,
   Paperclip,
+  FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +49,7 @@ export function RecordExpenseModal({
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const [expenseType, setExpenseType] = useState<"inward" | "company">("company");
+  const [expenseType, setExpenseType] = useState<"inward" | "inhouse" | "company">("inhouse");
   const [inwardId, setInwardId] = useState("");
   const [inwardSearch, setInwardSearch] = useState("");
 
@@ -81,7 +82,7 @@ export function RecordExpenseModal({
         description: `Direct expense for Inward UID: ${inward.uid_label || inward.uid}`,
       }));
     } else {
-      setExpenseType("company");
+      setExpenseType("inhouse");
       setInwardId("");
     }
   }, [inward, isOpen]);
@@ -110,6 +111,22 @@ export function RecordExpenseModal({
       c.scope === "site"
   );
 
+  const inhouseCategories = categories.filter(
+    (c) =>
+      c.name.toLowerCase().includes("calibration") ||
+      c.name.toLowerCase().includes("chemical") ||
+      c.name.toLowerCase().includes("consumable") ||
+      c.name.toLowerCase().includes("proficiency") ||
+      c.name.toLowerCase().includes("ilc") ||
+      c.name.toLowerCase().includes("spares") ||
+      c.name.toLowerCase().includes("curing") ||
+      c.name.toLowerCase().includes("power") ||
+      c.name.toLowerCase().includes("safety") ||
+      c.name.toLowerCase().includes("ppe") ||
+      c.name.toLowerCase().includes("amc") ||
+      c.name.toLowerCase().includes("testing")
+  );
+
   const companyCategories = categories.filter(
     (c) =>
       c.name.toLowerCase().includes("salaries") ||
@@ -129,12 +146,10 @@ export function RecordExpenseModal({
 
   const displayedCategories =
     expenseType === "inward"
-      ? inwardCategories.length > 0
-        ? inwardCategories
-        : categories
-      : companyCategories.length > 0
-      ? companyCategories
-      : categories;
+      ? (inwardCategories.length > 0 ? inwardCategories : categories)
+      : expenseType === "inhouse"
+      ? (inhouseCategories.length > 0 ? inhouseCategories : categories)
+      : (companyCategories.length > 0 ? companyCategories : categories);
 
   // Selected Inward metadata
   const selectedInward =
@@ -238,14 +253,20 @@ export function RecordExpenseModal({
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                     expenseType === "inward"
                       ? "bg-blue-500/20 text-blue-300 border-blue-400/30"
+                      : expenseType === "inhouse"
+                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
                       : "bg-purple-500/20 text-purple-300 border-purple-400/30"
                   }`}
                 >
-                  {expenseType === "inward" ? "INWARD DIRECT EXPENSE" : "COMPANY EXPENSE"}
+                  {expenseType === "inward"
+                    ? "INWARD DIRECT EXPENSE"
+                    : expenseType === "inhouse"
+                    ? "IN-HOUSE LAB EXPENSE"
+                    : "COMPANY OVERHEAD"}
                 </span>
               </div>
               <p className="text-xs text-slate-300 mt-0.5">
-                Record material testing job costs or general company operating overheads
+                Record material testing job costs, internal lab operations, or company overheads
               </p>
             </div>
           </div>
@@ -264,38 +285,67 @@ export function RecordExpenseModal({
             <label className="text-xs font-bold text-slate-700 block mb-1.5 uppercase tracking-wider">
               Expense Scope & Allocation
             </label>
-            <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80">
               <button
                 type="button"
                 onClick={() => setExpenseType("inward")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   expenseType === "inward"
                     ? "bg-white text-blue-700 shadow-md shadow-blue-500/10 border border-blue-200"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 <Package className="w-4 h-4 text-blue-600" />
-                <span>Inward Direct Expense (Job UID)</span>
+                <span>Inward Direct (Job UID)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setExpenseType("inhouse")}
+                className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  expenseType === "inhouse"
+                    ? "bg-white text-emerald-700 shadow-md shadow-emerald-500/10 border border-emerald-200"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <FlaskConical className="w-4 h-4 text-emerald-600" />
+                <span>In-House Lab Operations</span>
               </button>
               <button
                 type="button"
                 onClick={() => setExpenseType("company")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   expenseType === "company"
                     ? "bg-white text-purple-700 shadow-md shadow-purple-500/10 border border-purple-200"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 <Building2 className="w-4 h-4 text-purple-600" />
-                <span>Company Operational Expense</span>
+                <span>Company Overhead</span>
               </button>
             </div>
             <p className="text-[11px] text-slate-500 mt-1.5 px-1">
               {expenseType === "inward"
                 ? "Costs directly linked to sample testing, site inspection, logistics, or lab consumables for a specific job UID."
+                : expenseType === "inhouse"
+                ? "Internal testing laboratory expenses: calibration (NABL), test consumables/chemicals, PT/ILC charges, machine spares, curing & lab power."
                 : "General overheads such as rent, salaries, electricity, tea/pantry, administration, and branch expenses."}
             </p>
           </div>
+
+          {/* In-House Informational Notice */}
+          {expenseType === "inhouse" && (
+            <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900 flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
+                <FlaskConical className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="font-bold text-emerald-950">In-House Laboratory Operations Expense</div>
+                <p className="text-[11px] text-emerald-700 mt-0.5">
+                  This expense will be allocated to internal laboratory operational capacity (calibration, chemicals, power, maintenance) and factored into unit economics and test-wise profitability analysis.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Inward Selector (if inward expense) */}
           {expenseType === "inward" && (

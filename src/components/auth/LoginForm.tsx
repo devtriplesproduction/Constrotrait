@@ -1,20 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginFormData } from "@/lib/validations/auth";
 import { loginAction } from "@/actions/auth.actions";
 import { Button } from "@/components/ui/button";
-import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff, Clock } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "../ui/input";
+import {
+  collectClientDeviceTelemetry,
+  ClientDeviceTelemetry,
+} from "@/lib/utils/client-device-info";
 
 export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [telemetry, setTelemetry] = useState<ClientDeviceTelemetry | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reason = searchParams.get("reason");
+
+  useEffect(() => {
+    // Pre-collect high-entropy device & public IP telemetry in background on load
+    collectClientDeviceTelemetry().then((t) => setTelemetry(t));
+  }, []);
 
   const {
     register,
@@ -27,18 +39,46 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setError(null);
-    const result = await loginAction(data);
-    if (!result.success) {
-      setError(result.error || "Failed to sign in");
+
+    try {
+      // Use pre-collected telemetry, or resolve quickly
+      const activeTelemetry =
+        telemetry ||
+        (await Promise.race([
+          collectClientDeviceTelemetry(),
+          new Promise<null>((r) => setTimeout(() => r(null), 400)),
+        ]));
+
+      const result = await loginAction(data, activeTelemetry);
+      if (!result.success) {
+        setError(result.error || "Failed to sign in");
+        setIsLoading(false);
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to sign in");
       setIsLoading(false);
-    } else {
-      router.push("/dashboard");
     }
   };
 
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {reason === "timeout" && (
+          <div className="p-4 bg-amber-50 border border-amber-200/90 text-amber-900 rounded-2xl text-sm font-medium flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="p-2 bg-amber-100 text-amber-700 rounded-xl mt-0.5 shrink-0">
+              <Clock className="h-4 w-4 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-amber-950 text-sm">Session Expired</p>
+              <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+                You were automatically signed out after 60 minutes of inactivity. Please sign in again to continue.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-1.5">
           <label className="block text-sm font-medium text-slate-700 ml-1">
             Email Address

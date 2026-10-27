@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { compareJobCardsByUidRecentFirst, isNablJob } from "@/utils/uid-sort";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
@@ -64,6 +65,7 @@ export default function AllJobsTab({
   const [searchClient, setSearchClient] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterJobType, setFilterJobType] = useState<"all" | "dummy" | "active">("all");
+  const [filterNabl, setFilterNabl] = useState<"all" | "nabl" | "non_nabl">("all");
   const [filterBranch, setFilterBranch] = useState("all");
   
   const { toast } = useToast();
@@ -94,6 +96,13 @@ export default function AllJobsTab({
         if (jobBranch && jobBranch !== filterBranch) return false;
       }
 
+      // NABL / Non-NABL Filter
+      if (filterNabl !== "all") {
+        const isNabl = isNablJob(job);
+        if (filterNabl === "nabl" && !isNabl) return false;
+        if (filterNabl === "non_nabl" && isNabl) return false;
+      }
+
       // UID Filter
       const searchUidLower = searchUid.trim().toLowerCase();
       const uidMatch = searchUidLower === "" || 
@@ -120,8 +129,8 @@ export default function AllJobsTab({
       }
 
       return uidMatch && clientMatch && dateMatch && jobTypeMatch;
-    });
-  }, [allJobs, searchUid, searchClient, filterDate, filterJobType, filterBranch]);
+    }).sort(compareJobCardsByUidRecentFirst);
+  }, [allJobs, searchUid, searchClient, filterDate, filterJobType, filterNabl, filterBranch]);
 
   const {
     currentPage,
@@ -187,6 +196,18 @@ export default function AllJobsTab({
               onChange={(val) => setFilterJobType(val as any)}
             />
           </div>
+          <div className="flex-1 w-full space-y-1.5">
+            <Dropdown
+              label="Accreditation"
+              options={[
+                { label: "All Types", value: "all" },
+                { label: "NABL", value: "nabl" },
+                { label: "Non-NABL", value: "non_nabl" },
+              ]}
+              value={filterNabl}
+              onChange={(val) => setFilterNabl(val as any)}
+            />
+          </div>
           {isSuperAdmin && branches.length > 0 && (
             <div className="flex-1 w-full space-y-1.5">
               <Dropdown
@@ -209,6 +230,7 @@ export default function AllJobsTab({
                 setSearchClient("");
                 setFilterDate("");
                 setFilterJobType("all");
+                setFilterNabl("all");
                 setFilterBranch("all");
               }}
             >
@@ -233,6 +255,7 @@ export default function AllJobsTab({
             {paginatedJobs.map((job) => {
               const client = job.clients;
               const testCount = job.job_entry_tests?.length || 0;
+              const isNabl = isNablJob(job);
               // Pass the UID string exactly as job-cards/[id] expects
               const groupId = job.uid_label || job.id;
               
@@ -257,6 +280,15 @@ export default function AllJobsTab({
                           <h3 className="font-semibold text-slate-800 text-lg tracking-tight">
                             UID: {job.uid_label || "Missing"}
                           </h3>
+                          {isNabl ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                              NABL
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold">
+                              Non-NABL
+                            </span>
+                          )}
                           {job.branches?.name && (
                             <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/50 text-xs font-bold">
                               {job.branches.name}

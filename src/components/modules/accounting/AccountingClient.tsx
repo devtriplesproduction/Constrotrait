@@ -19,6 +19,9 @@ import { RecordExpenseModal } from "./expenses/RecordExpenseModal";
 import { LedgersHub } from "./ledgers/LedgersHub";
 import { ExpenseLedgerTable } from "./ledgers/ExpenseLedgerTable";
 import { TemplateManager } from "./templates/TemplateManager";
+import { QuotationViewModal } from "./quotations/QuotationViewModal";
+import { BankReconHub } from "./recon/BankReconHub";
+import { ReportsHub } from "./reports/ReportsHub";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
 import {
@@ -338,7 +341,15 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
           onOpenRecordExpense={handleOpenRecordExpense}
         />
       )}
-      {currentTab === "quotations" && <QuotationsTab data={data} run={run} pending={pending} />}
+      {currentTab === "quotations" && (
+        <QuotationsTab
+          data={data}
+          run={run}
+          pending={pending}
+          onRefresh={refresh}
+          onOpenViewInvoice={handleOpenViewInvoice}
+        />
+      )}
       {currentTab === "templates" && <TemplateManager initialTemplates={data.templates} />}
       {currentTab === "banks" && (
         <BankCards
@@ -348,8 +359,8 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
           onRefresh={refresh}
         />
       )}
-      {currentTab === "recon" && <ReconTab data={data} run={run} pending={pending} />}
-      {currentTab === "reports" && <ReportsTab />}
+      {currentTab === "recon" && <BankReconHub accounts={data.accounts || []} onRefresh={refresh} />}
+      {currentTab === "reports" && <ReportsHub />}
 
       {/* Add Bank Account Modal */}
       <AddBankAccountModal
@@ -371,6 +382,7 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
           setProformaOptions({});
         }}
         inward={selectedInwardForProforma}
+        inwards={data.recentInwards || []}
         isRemainingBalance={proformaOptions.isRemainingBalance}
         defaultBalanceAmount={proformaOptions.defaultBalanceAmount}
         initialPreviousInvoice={proformaOptions.previousInvoice}
@@ -915,7 +927,7 @@ function BillingAndCollectionTab({
   );
 }
 
-function QuotationsTab({ data, run, pending }: any) {
+function QuotationsTab({ data, run, pending, onRefresh, onOpenViewInvoice }: any) {
   const [items, setItems] = useState([
     { description: "Concrete Cube Compressive Strength Testing (IS 516)", qty: 3, rate: 450 }
   ]);
@@ -1298,7 +1310,7 @@ function QuotationsTab({ data, run, pending }: any) {
           <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
             {activeClauses.length === 0 ? (
               <div className="p-6 text-center border border-dashed border-slate-200 rounded-xl text-slate-400 text-xs">
-                No clauses loaded. Select a template above or click "+ Add Clause" to specify custom terms.
+                No clauses loaded. Select a template above or click &quot;+ Add Clause&quot; to specify custom terms.
               </div>
             ) : (
               activeClauses.map((clause, idx) => (
@@ -1466,144 +1478,17 @@ function QuotationsTab({ data, run, pending }: any) {
         </div>
       </div>
 
-      {/* Quotation Detail Modal */}
-      {selectedQuotationForView && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 space-y-4 shadow-xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">Quotation: {selectedQuotationForView.quotation_no}</h3>
-                <p className="text-xs text-slate-500">Status: {selectedQuotationForView.status?.toUpperCase()}</p>
-              </div>
-              <button
-                onClick={() => setSelectedQuotationForView(null)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Line Items */}
-            {selectedQuotationForView.items && selectedQuotationForView.items.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-700">Line Items</span>
-                <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
-                  <thead className="bg-slate-50 text-slate-600 text-[10px] uppercase font-bold">
-                    <tr>
-                      <th className="p-2 text-left">Description</th>
-                      <th className="p-2 text-center">Qty</th>
-                      <th className="p-2 text-right">Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {selectedQuotationForView.items.map((it: any, idx: number) => (
-                      <tr key={idx}>
-                        <td className="p-2 font-medium">{it.description}</td>
-                        <td className="p-2 text-center">{it.qty}</td>
-                        <td className="p-2 text-right">{fmt(it.rate)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Financial summary */}
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-              <div className="flex justify-between"><span>Subtotal:</span><span>{fmt(selectedQuotationForView.subtotal || selectedQuotationForView.amount)}</span></div>
-              <div className="flex justify-between"><span>GST:</span><span>{fmt(selectedQuotationForView.gst_amount || 0)}</span></div>
-              <div className="flex justify-between font-bold text-sm text-blue-700 pt-1 border-t border-slate-200">
-                <span>Total Amount:</span><span>{fmt(selectedQuotationForView.total_amount || selectedQuotationForView.amount)}</span>
-              </div>
-            </div>
-
-            {/* Clauses */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-700">Attached Terms & Conditions</span>
-              {selectedQuotationForView.clauses && selectedQuotationForView.clauses.length > 0 ? (
-                <div className="space-y-2 pl-3 border-l-2 border-blue-500">
-                  {selectedQuotationForView.clauses.map((c: any, idx: number) => (
-                    <div key={idx} className="text-xs text-slate-600 leading-relaxed">
-                      <strong className="text-slate-800">{c.display_order || idx + 1}. {c.title}:</strong>{" "}
-                      <span>{c.content}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : selectedQuotationForView.terms ? (
-                <div className="p-3 rounded-lg bg-slate-50 text-xs text-slate-600 whitespace-pre-wrap leading-relaxed">
-                  {selectedQuotationForView.terms}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-400">No specific terms attached.</p>
-              )}
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                onClick={() => setSelectedQuotationForView(null)}
-                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-
-
-function ReconTab({ data, run, pending }: any) {
-  const [accountId, setAccountId] = useState("");
-  const [statementDate, setStatementDate] = useState("");
-  const [statementBalance, setStatementBalance] = useState("");
-  const [notes, setNotes] = useState("");
-  const [erpBalance, setErpBalance] = useState<number | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (accountId) {
-      getBankReconciliationsAction(accountId).then((r: any) => setHistory(r.success ? r.data || [] : []));
-    }
-  }, [accountId]);
-
-  async function calc() {
-    // Simple ERP balance from account current_balance for demo; real calc would sum receipts - expenses for date
-    const acc = (data.accounts || []).find((a: any) => a.id === accountId);
-    setErpBalance(acc ? Number(acc.current_balance) : 0);
-  }
-
-  return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="p-5 bg-white border rounded-2xl space-y-3">
-        <h3 className="font-medium">Bank Reconciliation</h3>
-        <Field label="Account"><select className={inputCls} value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">Select</option>{(data.accounts || []).map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></Field>
-        <Field label="Statement Date"><input type="date" className={inputCls} value={statementDate} onChange={(e) => setStatementDate(e.target.value)} /></Field>
-        <button type="button" onClick={calc} className="px-3 py-2 bg-slate-200 rounded text-sm">Calculate ERP Balance</button>
-        {erpBalance !== null && <div className="text-sm">ERP Balance: {fmt(erpBalance)}</div>}
-        <Field label="Statement Balance"><input type="number" step="0.01" className={inputCls} value={statementBalance} onChange={(e) => setStatementBalance(e.target.value)} /></Field>
-        {erpBalance !== null && statementBalance && <div className="text-sm">Difference: {fmt(Number(statementBalance) - erpBalance)}</div>}
-        <Field label="Notes"><textarea className={inputCls} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-        <button disabled={pending || !accountId || !statementDate || !statementBalance} className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm" onClick={() => run(() => saveBankReconciliationAction({ account_id: accountId, statement_date: statementDate, statement_balance: Number(statementBalance), erp_balance: erpBalance || 0, notes }), "Reconciliation saved")}>Save Reconciliation</button>
-      </div>
-      <List title="Reconciliation History" items={history} render={(h: any) => <div className="text-sm">{h.statement_date} · Diff {fmt(h.difference)}</div>} />
-    </div>
-  );
-}
-
-function ReportsTab() {
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [pnl, setPnl] = useState<any>(null);
-  return (
-    <div className="p-5 bg-white border rounded-2xl space-y-3 max-w-lg">
-      <h3 className="font-medium">Profit & Loss</h3>
-      <div className="flex gap-2"><input type="date" className={inputCls} value={from} onChange={(e) => setFrom(e.target.value)} /><input type="date" className={inputCls} value={to} onChange={(e) => setTo(e.target.value)} /></div>
-      <button className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm" onClick={async () => { const r = await getProfitAndLossAction(from, to); if (r.success) setPnl(r.data); }}>Generate</button>
-      {pnl && <div className="text-sm space-y-1"><div>Income: {fmt(pnl.totalIncome)}</div><div>Expense: {fmt(pnl.totalExpense)}</div><div className="font-medium">Profit: {fmt(pnl.profit)}</div></div>}
+      {/* Quotation Detail & Printable Modal */}
+      <QuotationViewModal
+        isOpen={!!selectedQuotationForView}
+        onClose={() => setSelectedQuotationForView(null)}
+        quotation={selectedQuotationForView}
+        onRefresh={onRefresh}
+        onConvertedToInvoice={(inv) => {
+          setSelectedQuotationForView(null);
+          if (onOpenViewInvoice) onOpenViewInvoice(inv);
+        }}
+      />
     </div>
   );
 }
