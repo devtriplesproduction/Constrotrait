@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { create } from "zustand";
 
 export type ToastVariant = "default" | "success" | "error" | "warning" | "destructive";
@@ -43,11 +44,22 @@ export const useToastStore = create<ToastStore>((set) => ({
 export const toast = (props: Omit<Toast, "id">) => useToastStore.getState().addToast(props);
 
 export function useToast() {
-  const { addToast, removeToast, toasts } = useToastStore();
+  const toasts = useToastStore((state) => state.toasts);
+  const addToast = useToastStore((state) => state.addToast);
+  const removeToast = useToastStore((state) => state.removeToast);
+
+  const stableToast = useCallback((props: Omit<Toast, "id">) => {
+    addToast(props);
+  }, [addToast]);
+
+  const stableDismiss = useCallback((id: string) => {
+    removeToast(id);
+  }, [removeToast]);
 
   return {
     toasts,
-    toast: (props: Omit<Toast, "id">) => addToast(props),
-    dismiss: (id: string) => removeToast(id),
+    toast: stableToast,
+    dismiss: stableDismiss,
   };
 }
+

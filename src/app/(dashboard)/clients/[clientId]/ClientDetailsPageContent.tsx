@@ -10,7 +10,7 @@ import { clsx } from "clsx";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useRouter } from "next/navigation";
 import { ClientWizard } from "@/components/modules/clients/ClientWizard";
-import { compareJobCardsByUidRecentFirst } from "@/utils/uid-sort";
+import { compareJobCardsByUidRecentFirst, isNablJob } from "@/utils/uid-sort";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntry = Database["public"]["Tables"]["job_entries"]["Row"];
@@ -20,6 +20,202 @@ type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"] & {
 
 interface JobEntryWithTests extends JobEntry {
   job_entry_tests: JobEntryTest[];
+}
+
+function UnifiedJobCard({
+  job,
+  client,
+  onEditClick,
+  router,
+}: {
+  job: JobEntryWithTests & { matchingTests?: JobEntryTest[] };
+  client: Client;
+  onEditClick: (test: JobEntryTest & { job_entries?: any }, client: Client) => void;
+  router: any;
+}) {
+  const tests = job.job_entry_tests || [];
+  const totalTests = tests.length;
+  const isNabl = isNablJob(job);
+  
+  const primaryMaterial =
+    tests[0]?.material_description && tests[0].material_description.trim() !== "-"
+      ? tests[0].material_description
+      : (tests[0]?.test_master?.material_product || tests[0]?.material_id || "-");
+      
+  const primaryGrade =
+    tests[0]?.grade ||
+    (tests[0]?.additional_details_values as any)?.Grade ||
+    (tests[0]?.additional_details_values as any)?.grade ||
+    "-";
+
+  const castDate = tests[0]?.date_of_casting;
+  const recvDate = tests[0]?.date_of_receiving;
+  const testDate = tests[0]?.date_of_testing;
+
+  const gid = job.uid_label || String(job.uid || "") || tests.find(t => t.uid_label)?.uid_label || job.id;
+
+  return (
+    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all overflow-hidden isolate flex flex-col">
+      {/* Header */}
+      <div className="p-5 sm:p-6 bg-gradient-to-r from-orange-50/50 via-white to-slate-50/40 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/25 shrink-0">
+            <FlaskConical className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h3 className="font-bold text-slate-800 text-xl tracking-tight">
+                Job UID: {job.uid_label || String(job.uid || "") || "Missing"}
+              </h3>
+              {isNabl ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                  NABL
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold">
+                  Non-NABL
+                </span>
+              )}
+              <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-bold text-xs">
+                {totalTests} Test{totalTests !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <p className="text-xs font-medium text-slate-500 mt-1">
+              Project: <strong className="text-slate-700">{job.project_name || "Project"}</strong> • Created: {new Date(job.created_at).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Top Actions */}
+        <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+          <Button
+            className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-sm flex items-center gap-1.5"
+            onClick={(e) => {
+              e.stopPropagation();
+              const firstTest = tests[0];
+              onEditClick(firstTest ? { ...firstTest, job_entries: job } : ({ job_entries: job } as any), client);
+            }}
+          >
+            <Edit className="w-3.5 h-3.5" /> Edit Inward
+          </Button>
+          <Button
+            variant="outline"
+            className="border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-9 px-4 rounded-xl text-xs flex items-center gap-1.5"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/job-cards/${encodeURIComponent(gid)}`);
+            }}
+          >
+            <Receipt className="w-3.5 h-3.5" /> View Inward
+          </Button>
+        </div>
+      </div>
+
+      {/* Sample Specification Summary */}
+      <div className="p-4 sm:px-6 sm:py-4 bg-slate-50/70 border-b border-slate-100">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Material / Sample</p>
+            <p className="text-sm font-semibold text-slate-800 truncate" title={primaryMaterial}>{primaryMaterial}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Grade</p>
+            <div className="bg-white px-2.5 py-0.5 rounded-md text-xs font-bold text-slate-700 inline-block border border-slate-200/80 shadow-2xs">
+              {primaryGrade}
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Receiving Date</p>
+            <p className="text-sm font-medium text-slate-700">{recvDate ? new Date(recvDate).toLocaleDateString() : "-"}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Testing Date</p>
+            <p className="text-sm font-medium text-slate-700">{testDate ? new Date(testDate).toLocaleDateString() : "-"}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* All Tests in One Section */}
+      <div className="p-5 sm:p-6 flex-1 flex flex-col">
+        <div className="flex items-center justify-between mb-3.5">
+          <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <FlaskConical className="w-4 h-4 text-orange-500" />
+            All Tests Included in this Job ({totalTests})
+          </h4>
+          <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+            All parameters tested under Job UID: {job.uid_label || job.uid}
+          </span>
+        </div>
+
+        {totalTests === 0 ? (
+          <div className="text-center py-6 text-slate-400 text-xs italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            No test parameters assigned to this job card yet.
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50/90 text-[11px] uppercase font-bold text-slate-500 tracking-wider border-b border-slate-200">
+                  <tr>
+                    <th className="py-2.5 px-4 w-12 text-center">#</th>
+                    <th className="py-2.5 px-4">Test Parameter</th>
+                    <th className="py-2.5 px-4">Testing Method</th>
+                    <th className="py-2.5 px-4">Discipline</th>
+                    <th className="py-2.5 px-4">ULR Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {tests.map((test, index) => {
+                    const testName =
+                      test.test_master?.component_parameter ||
+                      test.test_master?.specific_test ||
+                      (test as any)?.test_name ||
+                      `Test Parameter ${index + 1}`;
+                    const method = test.test_method || test.test_master?.test_method || "-";
+                    const discipline = test.test_master?.discipline_group || test.test_master?.specific_test || "Physical";
+                    const isGenerated = test.ulr_status === "generated";
+
+                    return (
+                      <tr key={test.id} className="hover:bg-orange-50/30 transition-colors">
+                        <td className="py-3 px-4 text-center font-bold text-slate-400 text-xs">
+                          {index + 1}
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-slate-800">
+                          <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                            <span>{testName}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 font-medium text-slate-600 text-xs">
+                          <span className="bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60 font-mono">
+                            {method}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 text-xs font-medium">
+                          {discipline}
+                        </td>
+                        <td className="py-3 px-4">
+                          {isGenerated ? (
+                            <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                              {test.ulr_number}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-0.5 rounded-full">
+                              ULR Pending
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function ProjectJobsList({
@@ -104,8 +300,8 @@ function ProjectJobsList({
   if (view === "jobs" && selectedProject) {
     const projectJobs = (jobsByProject[selectedProject] || []).slice().sort(compareJobCardsByUidRecentFirst);
     return (
-      <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col">
-        <div className="flex items-center justify-between mb-2 shrink-0">
+      <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col">
+        <div className="flex items-center justify-between mb-1 shrink-0">
           <button 
             className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-orange-600 transition-colors bg-slate-50 hover:bg-orange-50 px-3 py-1.5 rounded-lg border border-slate-100"
             onClick={() => { setSelectedProject(null); setView("projects"); }}
@@ -114,34 +310,22 @@ function ProjectJobsList({
           </button>
           <div className="text-sm font-bold text-slate-800 flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-orange-500" /> {selectedProject}
+            <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+              {projectJobs.length} Job{projectJobs.length !== 1 ? 's' : ''}
+            </span>
           </div>
         </div>
         
-        <div className="pr-3 pb-2">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {projectJobs.map(job => (
-              <div 
-                key={job.id}
-                className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 sm:p-4 cursor-pointer hover:border-orange-300 hover:shadow-md transition-all flex justify-between items-center group"
-                onClick={() => { setSelectedJob(job); setView("tests"); }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center border border-orange-100 group-hover:bg-orange-100 transition-colors">
-                    <Briefcase className="w-5 h-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-800 text-base m-0">Job UID: {job.uid_label || String(job.uid || "") || job.job_entry_tests?.find(t => t.uid_label)?.uid_label || "Missing"}</h4>
-                    <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                      {job.matchingTests.length} Test{job.matchingTests.length !== 1 ? 's' : ''} • Created: {new Date(job.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-orange-50 transition-colors">
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-orange-500 transition-colors" />
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-6 pr-3 pb-2">
+          {projectJobs.map(job => (
+            <UnifiedJobCard
+              key={job.id}
+              job={job}
+              client={client}
+              onEditClick={onEditClick}
+              router={router}
+            />
+          ))}
         </div>
       </div>
     );
@@ -149,113 +333,26 @@ function ProjectJobsList({
 
   if (view === "tests" && selectedJob) {
     return (
-      <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col">
-        <div className="flex items-center justify-between mb-2 shrink-0">
+      <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col">
+        <div className="flex items-center justify-between mb-1 shrink-0">
           <button 
             className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-orange-600 transition-colors bg-slate-50 hover:bg-orange-50 px-3 py-1.5 rounded-lg border border-slate-100"
             onClick={() => { setSelectedJob(null); setView("jobs"); }}
           >
             <ArrowLeft className="w-4 h-4" /> Back to Jobs
           </button>
-          <div className="text-sm font-bold text-slate-800 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-            Job: {selectedJob.uid_label || String(selectedJob.uid || "") || selectedJob.job_entry_tests?.find(t => t.uid_label)?.uid_label || "UID missing"}
+          <div className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-orange-500" /> {selectedProject || selectedJob.project_name || "Project"}
           </div>
         </div>
 
         <div className="pr-3 pb-2">
-          <div className="space-y-3">
-          {(!selectedJob.job_entry_tests || selectedJob.job_entry_tests.length === 0) ? (
-            <div className="text-center p-8 text-slate-500 border border-dashed rounded-xl bg-slate-50">
-              This job card does not have any tests assigned yet.
-            </div>
-          ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {selectedJob.job_entry_tests?.map(test => {
-              return (
-                <div 
-                  key={test.id}
-                  className="group relative bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row p-5 gap-5 overflow-hidden isolate"
-                >
-                  <div className="absolute top-0 right-0 w-[140px] h-[130px] bg-[#FFF8F3] rounded-bl-[120px] pointer-events-none -z-10 hidden sm:block" />
-
-                  <div className="flex-1 min-w-0 flex flex-col gap-5 relative z-10">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-14 h-14 shrink-0 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
-                          <FlaskConical className="w-7 h-7" />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-bold text-slate-800 text-lg leading-tight truncate">
-                            UID: {test.uid_label || selectedJob.uid_label || String(selectedJob.uid || "") || "Missing"}
-                          </h3>
-                          <p className="font-bold text-orange-500 text-sm mt-1 truncate">
-                            {test.ulr_status === 'generated' ? `ULR: ${test.ulr_number}` : `ULR Pending`}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-orange-100/50 shrink-0">
-                        <FlaskConical className="w-3.5 h-3.5 shrink-0" /> Test
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-50/80 rounded-2xl p-4 flex gap-4 border border-slate-100/50 w-full min-w-0">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Material</p>
-                        <p className="text-[14px] font-semibold text-slate-700 truncate" title={(test.material_description && test.material_description.trim() !== "-") ? test.material_description : (test.test_master?.material_product || test.material_id || "-")}>
-                          {(test.material_description && test.material_description.trim() !== "-") ? test.material_description : (test.test_master?.material_product || test.material_id || "-")}
-                        </p>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Method</p>
-                        <p className="text-[14px] font-semibold text-slate-700 truncate" title={test.test_method || "-"}>{test.test_method || "-"}</p>
-                      </div>
-                      <div className="shrink-0 text-center">
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Grade</p>
-                        <div className="bg-slate-200/50 px-2.5 py-0.5 rounded-md text-[13px] font-bold text-slate-700 inline-block border border-slate-200/60">
-                          {test.grade || (test.additional_details_values as any)?.Grade || (test.additional_details_values as any)?.grade || "-"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Key Dates</p>
-                      <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap">
-                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0 whitespace-nowrap"><span className="font-bold text-slate-800">Cast:</span> {test.date_of_casting ? new Date(test.date_of_casting).toLocaleDateString() : "-"}</div>
-                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0 whitespace-nowrap"><span className="font-bold text-slate-800">Recv:</span> {test.date_of_receiving ? new Date(test.date_of_receiving).toLocaleDateString() : "-"}</div>
-                        <div className="text-[12px] sm:text-[13px] font-medium text-slate-600 shrink-0 whitespace-nowrap"><span className="font-bold text-slate-800">Test:</span> {test.date_of_testing ? new Date(test.date_of_testing).toLocaleDateString() : "-"}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="sm:w-[140px] shrink-0 sm:border-l sm:border-slate-100 sm:pl-5 flex flex-row sm:flex-col justify-center gap-2 relative z-10 pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                    <Button
-                      className="flex-1 sm:flex-none w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-md shadow-orange-500/20 font-bold h-10 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditClick({ ...test, job_entries: selectedJob }, client);
-                      }}
-                    >
-                      <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit Details
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 sm:flex-none w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10 rounded-xl text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const gid = test.uid_label || selectedJob.uid_label || String(selectedJob.uid || "") || test.id;
-                        router.push(`/job-cards/${encodeURIComponent(gid)}`);
-                      }}
-                    >
-                      <Receipt className="h-3.5 w-3.5 mr-1.5" /> View Inward
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          )}
-          </div>
+          <UnifiedJobCard
+            job={selectedJob}
+            client={client}
+            onEditClick={onEditClick}
+            router={router}
+          />
         </div>
       </div>
     );
@@ -294,7 +391,16 @@ export default function ClientDetailsPageContent({
   }, [client.id]);
 
   const handleEditClick = (test: JobEntryTest & { job_entries?: any }, client: Client) => {
-    setEditingTest({ test, client });
+    const job = test.job_entries || jobEntries.find(j => j.id === test.job_entry_id);
+    const allTests = (job?.job_entry_tests && job.job_entry_tests.length > 0)
+      ? job.job_entry_tests
+      : [test];
+    setEditingTest({
+      test,
+      allTests,
+      jobEntry: job,
+      client,
+    });
   };
 
   const initials = client.name
@@ -542,7 +648,9 @@ export default function ClientDetailsPageContent({
               mode="edit"
               initialData={{
                 client: editingTest.client,
+                jobEntry: editingTest.jobEntry,
                 jobEntryTest: editingTest.test,
+                jobEntryTests: editingTest.allTests,
               }}
               onClose={() => setEditingTest(null)}
               onSuccess={() => {

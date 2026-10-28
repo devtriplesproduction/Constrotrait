@@ -41,3 +41,19 @@ export async function getAllJobEntriesAction(branchId?: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function getJobEntryTestsByJobEntryIdAction(jobEntryId: string) {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("job_entry_tests")
+      .select("*, test_master(*), job_entries(*)")
+      .eq("job_entry_id", jobEntryId);
+    if (error) throw new Error(error.message);
+    return { success: true, data };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+

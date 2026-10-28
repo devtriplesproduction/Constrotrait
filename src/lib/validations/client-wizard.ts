@@ -32,6 +32,7 @@ export const jobEntryDetailsSchema = z.object({
 export type JobEntryDetailsValues = z.infer<typeof jobEntryDetailsSchema>;
 
 export const testDetailsSchema = z.object({
+  id: z.string().optional(),
   test_master_id: z.string().optional().or(z.literal("")),
   test_name: z.string().optional(), // For UI purposes
   test_method: z.string().optional(), // Auto-filled from test master

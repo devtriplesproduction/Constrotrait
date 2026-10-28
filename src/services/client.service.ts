@@ -212,7 +212,7 @@ export class ClientService {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("job_entries")
-      .select("project_name, division, agency, dispatch_name, dispatch_address, collected_by")
+      .select("project_name, site_name, contact_person, division, agency, dispatch_name, dispatch_address, collected_by, invoice_no, invoice_date, letter_reference, payment_status")
       .eq("client_id", clientId)
       .not("project_name", "is", null)
       .order("created_at", { ascending: false });
@@ -223,8 +223,53 @@ export class ClientService {
     }
 
     const uniqueProjects = Array.from(
-      new Map((data || []).filter((d) => d.project_name).map((item) => [item.project_name, item])).values()
+      new Map(
+        (data || [])
+          .filter((d) => d.project_name && d.project_name.trim().length > 0)
+          .map((item) => [item.project_name.trim().toLowerCase(), item])
+      ).values()
     );
+
+    // Also check if clients table has project/site/contact details
+    const { data: clientData } = await supabase
+      .from("clients")
+      .select("project_name, site_name, contact_person, division, agency_name, dispatch_name, dispatch_address, collected_by")
+      .eq("id", clientId)
+      .maybeSingle();
+
+    if (clientData) {
+      if (clientData.project_name && clientData.project_name.trim().length > 0) {
+        const key = clientData.project_name.trim().toLowerCase();
+        const existing = uniqueProjects.find((p) => p.project_name.trim().toLowerCase() === key);
+        if (!existing) {
+          uniqueProjects.push({
+            project_name: clientData.project_name.trim(),
+            site_name: clientData.site_name || "",
+            contact_person: clientData.contact_person || "",
+            division: clientData.division || "",
+            agency: clientData.agency_name || "",
+            dispatch_name: clientData.dispatch_name || "",
+            dispatch_address: clientData.dispatch_address || "",
+            collected_by: clientData.collected_by || "",
+            invoice_no: "",
+            invoice_date: null,
+            letter_reference: "",
+            payment_status: "",
+          } as any);
+        }
+      }
+
+      // Backfill any empty fields in uniqueProjects using clientData as fallback
+      for (const p of uniqueProjects) {
+        if (!p.site_name && clientData.site_name) p.site_name = clientData.site_name;
+        if (!p.contact_person && clientData.contact_person) p.contact_person = clientData.contact_person;
+        if (!p.agency && clientData.agency_name) p.agency = clientData.agency_name;
+        if (!p.division && clientData.division) p.division = clientData.division;
+        if (!p.dispatch_name && clientData.dispatch_name) p.dispatch_name = clientData.dispatch_name;
+        if (!p.dispatch_address && clientData.dispatch_address) p.dispatch_address = clientData.dispatch_address;
+        if (!p.collected_by && clientData.collected_by) p.collected_by = clientData.collected_by;
+      }
+    }
 
     return uniqueProjects;
   }

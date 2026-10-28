@@ -320,6 +320,7 @@ export type Database = {
           tds_amount: number | null
           vendor_name: string | null
           inward_id?: string | null
+          job_entry_test_id?: string | null
           expense_type?: 'inward' | 'company' | 'inhouse' | null
         }
         Insert: {
@@ -354,6 +355,7 @@ export type Database = {
           tds_amount?: number | null
           vendor_name?: string | null
           inward_id?: string | null
+          job_entry_test_id?: string | null
           expense_type?: 'inward' | 'company' | 'inhouse' | null
         }
         Update: {
@@ -388,6 +390,7 @@ export type Database = {
           tds_amount?: number | null
           vendor_name?: string | null
           inward_id?: string | null
+          job_entry_test_id?: string | null
           expense_type?: 'inward' | 'company' | 'inhouse' | null
         }
         Relationships: [
@@ -1047,6 +1050,12 @@ export type Database = {
           clauses?: Json | null
           total_amount: number | null
           valid_until: string | null
+          version_number?: number | null
+          rework_notes?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
         }
         Insert: {
           amount?: number
@@ -1070,6 +1079,12 @@ export type Database = {
           clauses?: Json | null
           total_amount?: number | null
           valid_until?: string | null
+          version_number?: number | null
+          rework_notes?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
         }
         Update: {
           amount?: number
@@ -1093,6 +1108,12 @@ export type Database = {
           clauses?: Json | null
           total_amount?: number | null
           valid_until?: string | null
+          version_number?: number | null
+          rework_notes?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
         }
         Relationships: [
           {
@@ -1121,6 +1142,81 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "accounting_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_versions: {
+        Row: {
+          id: string
+          quotation_id: string
+          version_number: number
+          items: Json
+          subtotal: number
+          discount_amount: number | null
+          gst_rate: number | null
+          gst_amount: number | null
+          total_amount: number
+          terms: string | null
+          clauses: Json | null
+          remarks: string | null
+          status: string
+          action_type: string | null
+          action_reason: string | null
+          performed_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          quotation_id: string
+          version_number?: number
+          items?: Json
+          subtotal?: number
+          discount_amount?: number | null
+          gst_rate?: number | null
+          gst_amount?: number | null
+          total_amount?: number
+          terms?: string | null
+          clauses?: Json | null
+          remarks?: string | null
+          status?: string
+          action_type?: string | null
+          action_reason?: string | null
+          performed_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          quotation_id?: string
+          version_number?: number
+          items?: Json
+          subtotal?: number
+          discount_amount?: number | null
+          gst_rate?: number | null
+          gst_amount?: number | null
+          total_amount?: number
+          terms?: string | null
+          clauses?: Json | null
+          remarks?: string | null
+          status?: string
+          action_type?: string | null
+          action_reason?: string | null
+          performed_by?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_versions_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_versions_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1847,6 +1943,7 @@ export type Database = {
           branch_id: string | null
           client_id: string
           collected_by: string | null
+          contact_person: string | null
           created_at: string
           created_by: string | null
           dispatch_address: string | null
@@ -1860,6 +1957,7 @@ export type Database = {
           letter_reference: string | null
           payment_status: string | null
           project_name: string | null
+          site_name: string | null
           uid: number | null
           uid_label: string | null
           updated_at: string
@@ -1870,6 +1968,7 @@ export type Database = {
           branch_id?: string | null
           client_id: string
           collected_by?: string | null
+          contact_person?: string | null
           created_at?: string
           created_by?: string | null
           dispatch_address?: string | null
@@ -1883,6 +1982,7 @@ export type Database = {
           letter_reference?: string | null
           payment_status?: string | null
           project_name?: string | null
+          site_name?: string | null
           uid?: number | null
           uid_label?: string | null
           updated_at?: string
@@ -1893,6 +1993,7 @@ export type Database = {
           branch_id?: string | null
           client_id?: string
           collected_by?: string | null
+          contact_person?: string | null
           created_at?: string
           created_by?: string | null
           dispatch_address?: string | null
@@ -1906,6 +2007,7 @@ export type Database = {
           letter_reference?: string | null
           payment_status?: string | null
           project_name?: string | null
+          site_name?: string | null
           uid?: number | null
           uid_label?: string | null
           updated_at?: string

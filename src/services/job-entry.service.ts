@@ -53,8 +53,10 @@ export class JobEntryService {
       const matOrTestName = firstTestMaster?.material_product || testsData[0]?.material_description || firstTestMaster?.component_parameter || firstTestMaster?.specific_test;
       initials = JobEntryService.deriveTestInitials(matOrTestName);
     }
+    // Strictly sanitize initials: uppercase letters and digits only, no commas or slashes
+    initials = (initials || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     if (!initials) {
-      throw new Error("test_initials is required for code generation.");
+      initials = JobEntryService.deriveTestInitials(firstTestMaster?.material_product || testsData[0]?.material_description) || "GEN";
     }
 
     const category = firstTestMaster?.category === 'Environmental' ? 'ENV' : 'CON';
@@ -72,6 +74,11 @@ export class JobEntryService {
     const sampleQuantityStr = testsData[0].sample_quantity || "1";
     const sampleQuantityMatch = sampleQuantityStr.match(/\d+/);
     let qty = sampleQuantityMatch ? parseInt(sampleQuantityMatch[0], 10) : 1;
+    const matId = testsData[0].material_id;
+    if (qty === 1 && matId && typeof matId === 'string' && matId.includes(',')) {
+      const matCount = matId.split(',').filter((s: string) => s.trim().length > 0).length;
+      if (matCount > 1) qty = matCount;
+    }
     if (isNaN(qty) || qty <= 0) qty = 1;
 
     const sampleCodes: string[] = [];
@@ -308,10 +315,11 @@ export class JobEntryService {
       .eq("job_entry_id", jobEntryId);
 
     let existingSampleCodeNo: string | null = null;
+    const valid5Part = /^CMTS\/(?:CON|ENV)\/[^\/]+\/\d{2}-\d{2}\/\d+/i;
     if (existingTests && existingTests.length > 0) {
       for (const t of existingTests) {
         const code = (t.additional_details_values as any)?.sample_code_no;
-        if (code) {
+        if (code && valid5Part.test(code.split(',')[0].trim())) {
           existingSampleCodeNo = code;
           break;
         }

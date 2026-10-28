@@ -76,6 +76,8 @@ export async function submitClientWizard(data: ClientWizardValues) {
     const jobEntryData = {
       client_id: clientId,
       branch_id: branchId,
+      site_name: data.jobEntry.site_name,
+      contact_person: data.jobEntry.contact_person,
       division: data.jobEntry.division,
       agency: data.jobEntry.agency_name,
       project_name: data.jobEntry.project_name,
@@ -100,7 +102,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
   }
 }
 
-export async function updateClientWizardAction(data: ClientWizardValues, testId: string) {
+export async function updateClientWizardAction(data: ClientWizardValues, targetId: string) {
   try {
     const clientId = data.client.id;
     if (!clientId) throw new Error("Client ID is required for updating");
@@ -120,166 +122,161 @@ export async function updateClientWizardAction(data: ClientWizardValues, testId:
       contact_person: data.jobEntry.contact_person,
       collected_by: data.jobEntry.collected_by,
     });
-    
-    // In edit mode we only update the test, we'll leave job_entries fields untouched for now
-    // as JobEntryService.updateJobEntryTest only takes testData.
-    // If needed we'd create a JobEntryService.updateJobEntry.
 
-    const jobEntryTest = data.jobEntryTests[0];
-    if (jobEntryTest) {
-      const rawAddVals: Record<string, any> = { ...(jobEntryTest.additional_details_values || {}) };
-      const materialInitials = ((data.materialDetails as any)?.test_initials || data.materialDetails?.material_initials)?.trim();
+    const supabase = await createClient() as any;
 
-      if (materialInitials !== undefined && materialInitials !== null) {
-        rawAddVals.test_initials = materialInitials;
-        rawAddVals.material_initials = materialInitials;
+    // Resolve jobEntryId whether targetId is a job_entry_id or a job_entry_test_id
+    let jobEntryId = targetId;
+    const { data: jeDirect } = await supabase
+      .from("job_entries")
+      .select("id, uid, uid_label, created_at")
+      .eq("id", targetId)
+      .maybeSingle();
 
-          if (rawAddVals.sample_code_no) {
-            let codes = String(rawAddVals.sample_code_no).split(/,\s*(?=CMTS\/)|,\s*/);
-            codes = codes.map((code: string) =>
-              code.replace(/^(CMTS\/(?:CON|ENV)\/)[^\/]+(\/\d{2}-\d{2}\/.*)$/, (m, p1, p2) => `${p1}${materialInitials}${p2}`)
-            );
+    let jobCreatedAt = jeDirect?.created_at;
+    let jobUidLabel = jeDirect?.uid_label;
 
-            const sampleQuantityStr = data.materialDetails?.sample_quantity || jobEntryTest.sample_quantity || "1";
-            const sampleQuantityMatch = sampleQuantityStr.match(/\d+/);
-            let qty = sampleQuantityMatch ? parseInt(sampleQuantityMatch[0], 10) : 1;
-            if (isNaN(qty) || qty <= 0) qty = 1;
+    if (!jeDirect) {
+      const { data: testRow } = await supabase
+        .from("job_entry_tests")
+        .select("id, job_entry_id, uid_label, job_entries (id, created_at, uid_label)")
+        .eq("id", targetId)
+        .maybeSingle();
+      if (testRow?.job_entry_id) {
+        jobEntryId = testRow.job_entry_id;
+        jobCreatedAt = testRow.job_entries?.created_at;
+        jobUidLabel = testRow.uid_label || testRow.job_entries?.uid_label;
+      }
+    }
 
-            if (codes.length === 1 && qty > 1) {
-              const baseMatch = codes[0].match(/^(.*\/[^\/]+)-(?:[IVXLCDM\d]+)$/i);
-              if (baseMatch) {
-                const prefix = baseMatch[1];
-                codes = [];
-                for (let i = 1; i <= qty; i++) {
-                  codes.push(`${prefix}-${JobEntryService.toRoman(i)}`);
-                }
-              }
-            } else if (codes.length > 1 && qty < codes.length) {
-              codes = codes.slice(0, qty);
-            } else if (codes.length > 1 && qty > codes.length) {
-              const baseMatch = codes[0].match(/^(.*\/[^\/]+)-(?:[IVXLCDM\d]+)$/i);
-              if (baseMatch) {
-                const prefix = baseMatch[1];
-                for (let i = codes.length + 1; i <= qty; i++) {
-                  codes.push(`${prefix}-${JobEntryService.toRoman(i)}`);
-                }
-              }
-            }
+    if (jobEntryId) {
+      await supabase.from("job_entries").update({
+        site_name: toNull(data.jobEntry?.site_name),
+        division: toNull(data.jobEntry?.division),
+        agency: toNull(data.jobEntry?.agency_name),
+        project_name: toNull(data.jobEntry?.project_name),
+        dispatch_name: toNull(data.jobEntry?.dispatch_name),
+        dispatch_address: toNull(data.jobEntry?.dispatch_address),
+        contact_person: toNull(data.jobEntry?.contact_person),
+        collected_by: toNull(data.jobEntry?.collected_by),
+        invoice_no: toNull(data.jobEntry?.invoice_no),
+        invoice_date: toNull(data.jobEntry?.invoice_date),
+        letter_reference: toNull(data.jobEntry?.letter_reference),
+        payment_status: toNull(data.jobEntry?.payment_status),
+      }).eq("id", jobEntryId);
+    }
 
-            rawAddVals.sample_code_no = codes.join(', ');
-          } else {
-            const supabase = await createClient() as any;
-            const { data: currentTest } = await supabase
-              .from("job_entry_tests")
-              .select("job_entry_id, test_master_id, job_entries (created_at)")
-              .eq("id", testId)
-              .single();
+    const { data: existingJobTests } = await supabase
+      .from("job_entry_tests")
+      .select("id, test_master_id, additional_details_values, uid_label")
+      .eq("job_entry_id", jobEntryId);
 
-            if (currentTest?.job_entry_id) {
-              const { data: siblings } = await supabase
-                .from("job_entry_tests")
-                .select("additional_details_values")
-                .eq("job_entry_id", currentTest.job_entry_id);
+    const materialInitials = ((data.materialDetails as any)?.test_initials || data.materialDetails?.material_initials)?.trim();
+    const cleanInitials = materialInitials ? (materialInitials.replace(/[^A-Za-z0-9]/g, '').toUpperCase() || 'GEN') : undefined;
 
-              let siblingCode: string | null = null;
-              if (siblings) {
-                for (const s of siblings) {
-                  const sc = (s.additional_details_values as any)?.sample_code_no;
-                  if (sc) {
-                    siblingCode = sc;
-                    break;
-                  }
-                }
-              }
+    const valid5Part = /^CMTS\/(?:CON|ENV)\/([^\/]+)\/(\d{2}-\d{2})\/(\d+)(?:-([IVXLCDM\d]+))?$/i;
+    let unifiedSampleCode: string | null = null;
 
-              if (siblingCode) {
-                const codes = String(siblingCode).split(/,\s*(?=CMTS\/)/);
-                rawAddVals.sample_code_no = codes.map((c: string) =>
-                  c.replace(/^(CMTS\/(?:CON|ENV)\/)[^\/]+(\/\d{2}-\d{2}\/.*)$/, (m, p1, p2) => `${p1}${materialInitials}${p2}`)
-                ).join(', ');
-              } else {
-                const jobYear = currentTest.job_entries?.created_at
-                  ? new Date(currentTest.job_entries.created_at).getFullYear()
-                  : new Date().getFullYear();
-
-                let category = 'CON';
-                const tmId = jobEntryTest.test_master_id || currentTest.test_master_id;
-                if (tmId) {
-                  const { data: tm } = await supabase.from("test_master").select("category").eq("id", tmId).single();
-                  if (tm?.category === 'Environmental') category = 'ENV';
-                }
-
-                const yy = jobYear.toString().slice(-2);
-                const nextYy = (jobYear + 1).toString().slice(-2);
-                const yearSegment = `${yy}-${nextYy}`;
-                const seqName = category === 'ENV' ? 'SAMPLE_ENV' : 'SAMPLE_CON';
-                const { data: sampleData, error: sampleError } = await supabase.rpc("next_uid_seq", { p_name: seqName, p_year: jobYear });
-                if (!sampleError && sampleData) {
-                  const sampleNo = sampleData.toString();
-                  const sampleQuantityStr = data.materialDetails?.sample_quantity || jobEntryTest.sample_quantity || "1";
-                  const sampleQuantityMatch = sampleQuantityStr.match(/\d+/);
-                  let qty = sampleQuantityMatch ? parseInt(sampleQuantityMatch[0], 10) : 1;
-                  if (isNaN(qty) || qty <= 0) qty = 1;
-
-                  const sampleCodes: string[] = [];
-                  for (let i = 1; i <= qty; i++) {
-                    sampleCodes.push(`CMTS/${category}/${materialInitials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
-                  }
-                  rawAddVals.sample_code_no = sampleCodes.join(', ');
-                }
-              }
-            }
-          }
-        }
-
-      await JobEntryService.updateJobEntryTest(testId, {
-        test_master_id: toNull(jobEntryTest.test_master_id),
-        date_of_receiving: toNull(data.materialDetails?.date_of_receiving ?? jobEntryTest.date_of_receiving),
-        testing_age: jobEntryTest.testing_age,
-        date_of_testing: toNull(jobEntryTest.date_of_testing),
-        material_description: jobEntryTest.material_description,
-        material_id: data.materialDetails?.material_id ?? jobEntryTest.material_id,
-        material_details_location: data.materialDetails?.material_details_location ?? jobEntryTest.material_details_location,
-        sample_quantity: data.materialDetails?.sample_quantity ?? jobEntryTest.sample_quantity,
-        testing_day: jobEntryTest.testing_day ?? data.materialDetails?.testing_day ?? null,
-        date_of_casting: toNull(jobEntryTest.date_of_casting ?? data.materialDetails?.date_of_casting),
-        additional_details_values: rawAddVals,
-        test_method: jobEntryTest.test_method,
-        grade: data.materialDetails?.grade ?? jobEntryTest.grade ?? jobEntryTest.additional_details_values?.Grade ?? jobEntryTest.additional_details_values?.grade ?? null,
-      });
-
-      if (materialInitials) {
-        const supabase = await createClient() as any;
-        const { data: updatedTest } = await supabase
-          .from("job_entry_tests")
-          .select("job_entry_id")
-          .eq("id", testId)
-          .single();
-
-        if (updatedTest?.job_entry_id) {
-          const { data: siblings } = await supabase
-            .from("job_entry_tests")
-            .select("id, additional_details_values")
-            .eq("job_entry_id", updatedTest.job_entry_id)
-            .neq("id", testId);
-
-          if (siblings && siblings.length > 0) {
-            for (const sib of siblings) {
-              const sibVals = { ...(sib.additional_details_values || {}) };
-              sibVals.test_initials = materialInitials;
-              sibVals.material_initials = materialInitials;
-              if (rawAddVals.sample_code_no) {
-                sibVals.sample_code_no = rawAddVals.sample_code_no;
-              }
-              await supabase
-                .from("job_entry_tests")
-                .update({ additional_details_values: sibVals })
-                .eq("id", sib.id);
-            }
+    if (existingJobTests && existingJobTests.length > 0) {
+      for (const t of existingJobTests) {
+        const sc = (t.additional_details_values as any)?.sample_code_no;
+        if (sc) {
+          const firstCode = String(sc).split(/,\s*(?=CMTS\/)|,\s*/)[0]?.trim();
+          if (firstCode && valid5Part.test(firstCode)) {
+            unifiedSampleCode = sc;
+            break;
           }
         }
       }
     }
+
+    const sampleQuantityStr = data.materialDetails?.sample_quantity || data.jobEntryTests?.[0]?.sample_quantity || "1";
+    const sampleQuantityMatch = sampleQuantityStr.match(/\d+/);
+    let qty = sampleQuantityMatch ? parseInt(sampleQuantityMatch[0], 10) : 1;
+    const matId = data.materialDetails?.material_id || data.jobEntryTests?.[0]?.material_id;
+    if (qty === 1 && matId && typeof matId === 'string' && matId.includes(',')) {
+      const matCount = matId.split(',').filter((s: string) => s.trim().length > 0).length;
+      if (matCount > 1) qty = matCount;
+    }
+    if (isNaN(qty) || qty <= 0) qty = 1;
+
+    if (unifiedSampleCode && cleanInitials) {
+      const firstCode = String(unifiedSampleCode).split(/,\s*(?=CMTS\/)|,\s*/)[0]?.trim();
+      const match = firstCode?.match(valid5Part);
+      if (match) {
+        const category = match[1].toUpperCase();
+        const yearSegment = match[2];
+        const sampleNo = match[3];
+        const codes: string[] = [];
+        for (let i = 1; i <= qty; i++) {
+          codes.push(`CMTS/${category}/${cleanInitials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
+        }
+        unifiedSampleCode = codes.join(', ');
+      }
+    }
+
+    const submittedTestIds = new Set<string>();
+    const testsToProcess = data.jobEntryTests || [];
+
+    for (let i = 0; i < testsToProcess.length; i++) {
+      const t = testsToProcess[i];
+      const rawAddVals = { ...(t.additional_details_values || {}) };
+      if (cleanInitials) {
+        rawAddVals.material_initials = cleanInitials;
+        rawAddVals.test_initials = cleanInitials;
+      }
+      if (unifiedSampleCode) {
+        rawAddVals.sample_code_no = unifiedSampleCode;
+      }
+
+      let matchedExisting = (t as any).id
+        ? existingJobTests?.find((e: any) => e.id === (t as any).id)
+        : existingJobTests?.find((e: any) => e.test_master_id === t.test_master_id && !submittedTestIds.has(e.id));
+
+      const testPayload = {
+        test_master_id: toNull(t.test_master_id),
+        date_of_receiving: toNull(data.materialDetails?.date_of_receiving ?? t.date_of_receiving),
+        testing_age: t.testing_age || null,
+        date_of_testing: toNull(t.date_of_testing),
+        material_description: t.material_description || null,
+        material_id: data.materialDetails?.material_id ?? t.material_id ?? null,
+        material_details_location: data.materialDetails?.material_details_location ?? t.material_details_location ?? null,
+        sample_quantity: data.materialDetails?.sample_quantity ?? t.sample_quantity ?? null,
+        testing_day: t.testing_day ?? data.materialDetails?.testing_day ?? null,
+        date_of_casting: toNull(t.date_of_casting ?? data.materialDetails?.date_of_casting),
+        additional_details_values: rawAddVals,
+        test_method: t.test_method || null,
+        grade: data.materialDetails?.grade ?? t.grade ?? rawAddVals.Grade ?? rawAddVals.grade ?? null,
+      };
+
+      if (matchedExisting) {
+        submittedTestIds.add(matchedExisting.id);
+        await JobEntryService.updateJobEntryTest(matchedExisting.id, testPayload);
+      } else {
+        const { data: newTest } = await supabase.from("job_entry_tests").insert({
+          ...testPayload,
+          job_entry_id: jobEntryId,
+          uid_label: jobUidLabel || existingJobTests?.[0]?.uid_label || null,
+        }).select().single();
+        if (newTest) {
+          submittedTestIds.add(newTest.id);
+        }
+      }
+    }
+
+    // Delete tests that were unselected by the user
+    if (existingJobTests && data.selectedTestIds && data.selectedTestIds.length > 0) {
+      const testsToDelete = existingJobTests.filter((e: any) => !data.selectedTestIds.includes(e.test_master_id));
+      for (const td of testsToDelete) {
+        await supabase.from("job_assignments").delete().eq("job_entry_test_id", td.id);
+        await supabase.from("job_entry_tests").delete().eq("id", td.id);
+      }
+    }
+
+    if (jobEntryId) {
+      await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: jobEntryId });
+    }
+
     revalidatePath("/dashboard");
     revalidatePath("/clients");
     revalidatePath("/", "layout");

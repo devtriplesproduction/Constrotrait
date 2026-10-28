@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   TrendingUp,
   TrendingDown,
@@ -11,6 +12,7 @@ import {
   Landmark,
   Receipt,
   FileSpreadsheet,
+  FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IncomeLedgerTable } from "./IncomeLedgerTable";
@@ -34,6 +36,7 @@ export function LedgersHub({
   onOpenCreateProforma,
   onRefresh,
 }: LedgersHubProps) {
+  const router = useRouter();
   const [activeLedger, setActiveLedger] = useState<"expenses" | "income" | "inward_pnl">("expenses");
 
   // Construct combined income entries from dashboardData if initialLedgersData not loaded yet
@@ -122,6 +125,16 @@ export function LedgersHub({
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/accounting/reports?tab=test_pnl")}
+            className="h-9 px-3 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200 rounded-xl shadow-xs gap-1.5 cursor-pointer"
+          >
+            <FlaskConical className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Test Financials Report</span>
+          </Button>
+
           <Button
             size="sm"
             onClick={() => onOpenRecordExpense()}

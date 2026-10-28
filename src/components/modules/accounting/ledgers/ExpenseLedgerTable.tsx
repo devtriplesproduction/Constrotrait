@@ -108,9 +108,16 @@ export function ExpenseLedgerTable({
         ""
       )
         .toLowerCase()
+      const testMatch = (
+        e.test_name ||
+        e.job_entry_tests?.test_master?.specific_test ||
+        e.job_entry_tests?.material_description ||
+        ""
+      )
+        .toLowerCase()
         .includes(q);
 
-      return descMatch || vendorMatch || billMatch || uidMatch || clientMatch;
+      return descMatch || vendorMatch || billMatch || uidMatch || clientMatch || testMatch;
     });
   }, [expenses, scopeFilter, categoryFilter, approvalFilter, fromDate, toDate, searchTerm]);
 
@@ -514,11 +521,22 @@ export function ExpenseLedgerTable({
                       {/* Scope & Ref */}
                       <td className="py-3 px-3.5">
                         {type === "inward" ? (
-                          <div className="space-y-0.5">
+                          <div className="space-y-1">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                               <Package className="w-3 h-3 text-blue-600" />
                               <span>{uid || "INWARD"}</span>
                             </span>
+                            {(e.test_name || e.job_entry_tests?.test_master?.specific_test || e.job_entry_tests?.material_description) && (
+                              <div
+                                className="flex items-center gap-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50/90 px-1.5 py-0.5 rounded border border-indigo-200/80 max-w-[170px] truncate"
+                                title={`Tagged to Test: ${e.test_name || e.job_entry_tests?.test_master?.specific_test || e.job_entry_tests?.material_description}`}
+                              >
+                                <FlaskConical className="w-2.5 h-2.5 shrink-0 text-indigo-600" />
+                                <span className="truncate">
+                                  {e.test_name || e.job_entry_tests?.test_master?.specific_test || e.job_entry_tests?.material_description}
+                                </span>
+                              </div>
+                            )}
                             {client && (
                               <div className="text-[11px] text-slate-500 truncate max-w-[150px]">
                                 {client}

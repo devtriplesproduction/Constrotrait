@@ -218,7 +218,7 @@ export function MyAssignmentsTab({
     doc.text("CONSTROTRAIT MATERIAL TESTING AND SERVICES LLP WAI", pageWidth / 2, 21, { align: "center" });
     
     // Info Table
-    const docNo = a.job_entry_tests?.test_master?.datasheet_qr || "-";
+    const docNo = "QR-234";
     autoTable(doc, {
       startY: 28,
       theme: "plain",
@@ -236,7 +236,9 @@ export function MyAssignmentsTab({
     const receivedDate = a.job_entry_tests?.job_entries?.created_at ? new Date(a.job_entry_tests.job_entries.created_at).toLocaleDateString('en-GB') : '';
     const dueDate = a.due_date ? new Date(a.due_date).toLocaleDateString('en-GB') : '';
     const allottedDate = a.created_at ? new Date(a.created_at).toLocaleDateString('en-GB') : '';
-    const assignedName = a.team_id ? a.teams?.name : `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`;
+    const assignedName = a.team_id ? a.teams?.name : `${a.assigned_to_profile?.first_name || ""} ${a.assigned_to_profile?.last_name || ""}`.replace(/\s+/g, ' ').trim();
+    const catLower = (a.job_entry_tests?.test_master?.category || '').toLowerCase();
+    const deptName = catLower.includes('env') ? 'Environment Department' : 'Construction Department';
     
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 3,
@@ -244,7 +246,7 @@ export function MyAssignmentsTab({
       styles: { font: "times", lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 9 },
       body: [
         [`Sample Received: ${receivedDate}`, `Date of Sample Allotted: ${allottedDate}`],
-        [`Due Date: ${dueDate}`, `Issue To: ${assignedName}`]
+        [`Due Date: ${dueDate}`, `Issue To: ${deptName}`]
       ]
     });
     
@@ -320,7 +322,7 @@ export function MyAssignmentsTab({
     
     doc.setFont("times", "bold");
     doc.setFontSize(9.5);
-    doc.text("Sample Received By-", 14, (doc as any).lastAutoTable.finalY + 12);
+    doc.text(`Sample Received By-${assignedName}`, 14, (doc as any).lastAutoTable.finalY + 12);
 
     const issueDateStr = a.job_entry_tests?.job_entries?.created_at ? new Date(a.job_entry_tests.job_entries.created_at).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB');
 
@@ -329,8 +331,8 @@ export function MyAssignmentsTab({
       theme: "plain",
       styles: { font: "times", lineWidth: 0.1, lineColor: 0, cellPadding: 2, fontSize: 8.5 },
       body: [
-        ["Issue No. : 01", "Amendment No & Date : ", "Page No: 1-1"],
-        [`Issue Date: ${issueDateStr}`, "Prepared by : ", "Reviewed & Approved by: "]
+        ["Issue No. : 01", "Amendment No & Date : 02 & 08.06.2026", "Page No: 1-1"],
+        ["Issue Date: 02.09.2024", "Prepared by : ", "Reviewed & Approved by: "]
       ]
     });
 

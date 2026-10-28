@@ -133,7 +133,24 @@ export function ReportsHub() {
 
   const [activeReportTab, setActiveReportTab] = useState<
     "pnl" | "balancesheet" | "aging" | "gst" | "test_pnl"
-  >("pnl");
+  >(() => {
+    if (typeof window !== "undefined") {
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      if (tab === "test_pnl" || tab === "pnl" || tab === "balancesheet" || tab === "aging" || tab === "gst") {
+        return tab;
+      }
+    }
+    return "pnl";
+  });
+
+  const handleSelectReportTab = (tab: "pnl" | "balancesheet" | "aging" | "gst" | "test_pnl") => {
+    setActiveReportTab(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
 
   // Date filters
   const [fromDate, setFromDate] = useState<string>(() => {
@@ -157,7 +174,7 @@ export function ReportsHub() {
     const activeTo = to !== undefined ? to : toDate;
     getTestWiseProfitabilityReportAction(activeFrom, activeTo)
       .then((res) => {
-        if (res.success && res.data) {
+        if (res.success && "data" in res && res.data) {
           setTestReportData(res.data);
         }
       })
@@ -170,18 +187,17 @@ export function ReportsHub() {
       const activeFrom = from !== undefined ? from : fromDate;
       const activeTo = to !== undefined ? to : toDate;
       const res = await getComprehensiveFinancialReportsAction(activeFrom, activeTo);
-      if (res.success && res.data) {
+      if (res.success && "data" in res && res.data) {
         setReportsData(res.data as unknown as FinancialReportsResponse);
       } else {
         toast({
           title: "Report Error",
-          description: res.error || "Failed to load financial reports.",
+          description: ("error" in res ? res.error : undefined) || "Failed to load financial reports.",
           variant: "destructive",
         });
       }
-      fetchTestProfitability(activeFrom, activeTo);
     });
-  }, [fromDate, toDate, toast, fetchTestProfitability]);
+  }, [fromDate, toDate]);
 
   const setPresetRange = (preset: "this_month" | "last_month" | "this_quarter" | "this_fy" | "all") => {
     const today = new Date();
@@ -206,6 +222,9 @@ export function ReportsHub() {
       setFromDate("");
       setToDate("");
       fetchReportData("", "");
+      if (activeReportTab === "test_pnl") {
+        fetchTestProfitability("", "");
+      }
       return;
     }
 
@@ -214,11 +233,15 @@ export function ReportsHub() {
     setFromDate(sStr);
     setToDate(eStr);
     fetchReportData(sStr, eStr);
+    if (activeReportTab === "test_pnl") {
+      fetchTestProfitability(sStr, eStr);
+    }
   };
 
   useEffect(() => {
     fetchReportData();
-  }, [fetchReportData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Lazy load test report if switching to test_pnl and not yet fetched
   useEffect(() => {
@@ -252,7 +275,8 @@ export function ReportsHub() {
         "Inward Jobs",
         "Clients",
         "Revenue (INR)",
-        "Inward Direct Cost (INR)",
+        "Tagged Direct Test Cost (INR)",
+        "Shared Inward Cost (INR)",
         "In-House Lab Cost (INR)",
         "Total Cost (INR)",
         "Gross Profit (INR)",
@@ -268,7 +292,8 @@ export function ReportsHub() {
         t.inwardCount,
         t.clientCount,
         t.revenue,
-        t.directExpense,
+        t.taggedExpense || 0,
+        t.sharedInwardExpense || 0,
         t.inhouseExpense,
         t.totalCost,
         t.grossProfit,
@@ -479,11 +504,16 @@ export function ReportsHub() {
 
             <Button
               size="sm"
-              onClick={() => fetchReportData()}
-              disabled={isPending}
+              onClick={() => {
+                fetchReportData();
+                if (activeReportTab === "test_pnl") {
+                  fetchTestProfitability();
+                }
+              }}
+              disabled={isPending || loadingTests}
               className="h-8 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs cursor-pointer gap-1.5"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isPending ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isPending || loadingTests ? "animate-spin" : ""}`} />
               <span>Apply Filter</span>
             </Button>
           </div>
@@ -555,7 +585,7 @@ export function ReportsHub() {
       <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl overflow-x-auto no-scrollbar print:hidden">
         <button
           type="button"
-          onClick={() => setActiveReportTab("pnl")}
+          onClick={() => handleSelectReportTab("pnl")}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeReportTab === "pnl"
               ? "bg-white text-blue-700 shadow-xs border border-slate-200/80"
@@ -568,7 +598,7 @@ export function ReportsHub() {
 
         <button
           type="button"
-          onClick={() => setActiveReportTab("balancesheet")}
+          onClick={() => handleSelectReportTab("balancesheet")}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeReportTab === "balancesheet"
               ? "bg-white text-blue-700 shadow-xs border border-slate-200/80"
@@ -581,7 +611,7 @@ export function ReportsHub() {
 
         <button
           type="button"
-          onClick={() => setActiveReportTab("aging")}
+          onClick={() => handleSelectReportTab("aging")}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeReportTab === "aging"
               ? "bg-white text-amber-800 shadow-xs border border-slate-200/80"
@@ -594,7 +624,7 @@ export function ReportsHub() {
 
         <button
           type="button"
-          onClick={() => setActiveReportTab("gst")}
+          onClick={() => handleSelectReportTab("gst")}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeReportTab === "gst"
               ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
@@ -607,7 +637,7 @@ export function ReportsHub() {
 
         <button
           type="button"
-          onClick={() => setActiveReportTab("test_pnl")}
+          onClick={() => handleSelectReportTab("test_pnl")}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeReportTab === "test_pnl"
               ? "bg-white text-emerald-700 shadow-xs border border-slate-200/80"
@@ -1065,7 +1095,7 @@ export function ReportsHub() {
                     {fmt(testReportData?.summary?.totalCost)}
                   </div>
                   <div className="text-[11px] text-rose-600 font-medium mt-0.5">
-                    Inward Direct + In-House Lab Capacity
+                    Tagged Direct: {fmt(testReportData?.summary?.totalTaggedExpense || 0)} · Shared/Lab: {fmt((testReportData?.summary?.totalCost || 0) - (testReportData?.summary?.totalTaggedExpense || 0))}
                   </div>
                 </div>
 
@@ -1176,7 +1206,8 @@ export function ReportsHub() {
                         <th className="p-3 text-left">Specific Test Parameter</th>
                         <th className="p-3 text-center">Volume</th>
                         <th className="p-3 text-right">Revenue (₹)</th>
-                        <th className="p-3 text-right">Direct Cost (₹)</th>
+                        <th className="p-3 text-right">Tagged Direct Cost (₹)</th>
+                        <th className="p-3 text-right">Shared Inward (₹)</th>
                         <th className="p-3 text-right">In-House Lab (₹)</th>
                         <th className="p-3 text-right">Total Cost (₹)</th>
                         <th className="p-3 text-right">Gross Profit (₹)</th>
@@ -1226,8 +1257,18 @@ export function ReportsHub() {
                               <td className="p-3 text-right font-bold text-blue-900">
                                 {fmt(t.revenue)}
                               </td>
+                              <td className="p-3 text-right">
+                                {t.taggedExpense > 0 ? (
+                                  <span className="inline-flex items-center gap-1 font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                                    <FlaskConical className="w-3 h-3 text-indigo-600" />
+                                    <span>{fmt(t.taggedExpense)}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 font-mono text-[11px]">₹0</span>
+                                )}
+                              </td>
                               <td className="p-3 text-right text-slate-600">
-                                {fmt(t.directExpense)}
+                                {fmt(t.sharedInwardExpense || 0)}
                               </td>
                               <td className="p-3 text-right text-emerald-700 font-medium">
                                 {fmt(t.inhouseExpense)}

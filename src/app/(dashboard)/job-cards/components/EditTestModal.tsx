@@ -42,7 +42,12 @@ export function EditTestModal({ client, test }: { client: any; test: any }) {
 
             <ClientWizard
               mode="edit"
-              initialData={{ client, jobEntryTest: test }}
+              initialData={{
+                client,
+                jobEntry: test?.job_entries,
+                jobEntryTest: test,
+                jobEntryTests: test?.job_entries?.job_entry_tests,
+              }}
               onSuccess={() => setIsOpen(false)}
             />
           </div>

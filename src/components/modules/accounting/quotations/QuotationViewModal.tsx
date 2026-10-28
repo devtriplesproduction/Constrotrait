@@ -10,11 +10,16 @@ import {
   ArrowRight,
   Loader2,
   Scroll,
+  History,
+  AlertCircle,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { numberToWordsINR } from "@/utils/numberToWords";
-import { updateQuotationStatusAction, convertQuotationToProformaAction } from "@/actions/accounting.actions";
+import { convertQuotationToProformaAction } from "@/actions/accounting.actions";
+import { QuotationApprovalPanel } from "./QuotationApprovalPanel";
+import { QuotationVersionHistory } from "./QuotationVersionHistory";
 
 export interface QuotationItem {
   description: string;
@@ -48,13 +53,17 @@ export interface QuotationProject {
 export interface QuotationData {
   id: string;
   quotation_no?: string;
+  version_number?: number;
   status?: string;
+  rework_notes?: string;
+  rejection_reason?: string;
   created_at?: string;
   valid_until?: string;
   client?: QuotationClient;
   clients?: QuotationClient;
   project?: QuotationProject;
   projects?: QuotationProject;
+  accounting_projects?: QuotationProject;
   quotation_items?: QuotationItem[];
   items?: QuotationItem[];
   clauses?: QuotationClause[];
@@ -73,6 +82,7 @@ interface QuotationViewModalProps {
   quotation: QuotationData | null;
   onRefresh?: () => void;
   onConvertedToInvoice?: (invoice: Record<string, unknown>) => void;
+  onRevise?: (quotation: QuotationData) => void;
 }
 
 const fmt = (n: number) =>
@@ -87,14 +97,17 @@ export function QuotationViewModal({
   quotation,
   onRefresh,
   onConvertedToInvoice,
+  onRevise,
 }: QuotationViewModalProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   if (!isOpen || !quotation) return null;
 
   const qtnNo = quotation.quotation_no || "QTN/—";
+  const versionNum = quotation.version_number || 1;
   const createdDate = quotation.created_at
     ? new Date(quotation.created_at).toLocaleDateString("en-IN")
     : "N/A";
@@ -109,7 +122,7 @@ export function QuotationViewModal({
   const gstRate = Number(quotation.gst_rate || 18);
   const gstAmount = Number(quotation.gst_amount || 0);
   const totalAmount = Number(quotation.total_amount || quotation.amount || 0);
-  const currentStatus = quotation.status || "draft";
+  const currentStatus = (quotation.status || "draft").toLowerCase();
 
   const handlePrint = () => {
     window.print();
@@ -118,7 +131,7 @@ export function QuotationViewModal({
   const handleCopySummary = () => {
     const text =
       `*CONSTROTRAIT COMMERCIAL QUOTATION*\n` +
-      `Quotation No: ${qtnNo}\n` +
+      `Quotation No: ${qtnNo} (V${versionNum})\n` +
       `Client: ${client?.name || "Customer"}\n` +
       `Date: ${createdDate}\n` +
       `Valid Until: ${validUntil}\n` +
@@ -138,19 +151,6 @@ export function QuotationViewModal({
     setCopied(true);
     toast({ title: "Copied!", description: "Quotation summary copied to clipboard." });
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleStatusUpdate = (status: "draft" | "sent" | "accepted" | "rejected") => {
-    startTransition(async () => {
-      const res = await updateQuotationStatusAction(quotation.id, status);
-      if (res.success) {
-        toast({ title: "Status Updated", description: `Quotation marked as ${status.toUpperCase()}.` });
-        quotation.status = status;
-        if (onRefresh) onRefresh();
-      } else {
-        toast({ title: "Update Failed", description: res.error || "Could not update status.", variant: "destructive" });
-      }
-    });
   };
 
   const handleConvertToProforma = () => {
@@ -178,10 +178,14 @@ export function QuotationViewModal({
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "approved":
       case "accepted":
-        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Accepted</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Approved</span>;
       case "sent":
         return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">Sent to Client</span>;
+      case "rework":
+      case "revision_requested":
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">Rework Needed</span>;
       case "rejected":
         return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">Rejected</span>;
       default:
@@ -190,115 +194,100 @@ export function QuotationViewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
-        {/* Top Header Actions Bar (Hidden in Print) */}
-        <div className="flex items-center justify-between p-4 px-6 border-b border-slate-200 bg-slate-50/70 print:hidden">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-900 text-base">{qtnNo}</h3>
-                {getStatusBadge(currentStatus)}
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+          {/* Top Header Actions Bar (Hidden in Print) */}
+          <div className="flex items-center justify-between p-4 px-6 border-b border-slate-200 bg-slate-50/70 print:hidden">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                <FileText className="w-5 h-5" />
               </div>
-              <p className="text-xs text-slate-500">Commercial Estimation & Laboratory Quotation</p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-900 text-base">{qtnNo}</h3>
+                  <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                    V{versionNum}
+                  </span>
+                  {getStatusBadge(currentStatus)}
+                </div>
+                <p className="text-xs text-slate-500">Preview Quotation & Engineering Commercial Proposal</p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopySummary}
-              className="h-8 px-3 text-xs gap-1.5 rounded-lg cursor-pointer hover:bg-slate-100"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? "Copied" : "Copy"}</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsHistoryOpen(true)}
+                className="h-8 px-3 text-xs gap-1.5 rounded-lg cursor-pointer hover:bg-purple-50 text-purple-700 border-purple-200"
+              >
+                <History className="w-3.5 h-3.5" />
+                <span>History</span>
+              </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrint}
-              className="h-8 px-3 text-xs gap-1.5 rounded-lg cursor-pointer hover:bg-slate-100"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-600" />
-              <span>Print</span>
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopySummary}
+                className="h-8 px-3 text-xs gap-1.5 rounded-lg cursor-pointer hover:bg-slate-100"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? "Copied" : "Copy"}</span>
+              </Button>
 
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-all cursor-pointer ml-1"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrint}
+                className="h-8 px-3 text-xs gap-1.5 rounded-lg cursor-pointer hover:bg-slate-100"
+              >
+                <Printer className="w-3.5 h-3.5 text-slate-600" />
+                <span>Print</span>
+              </Button>
 
-        {/* Action Banner for Conversion & Status (Hidden in Print) */}
-        <div className="p-3 px-6 bg-blue-50/70 border-b border-blue-100 flex flex-wrap items-center justify-between gap-2 print:hidden text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-700">Workflow Action:</span>
-            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-xs">
               <button
-                type="button"
-                disabled={isPending || currentStatus === "draft"}
-                onClick={() => handleStatusUpdate("draft")}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-all cursor-pointer ${
-                  currentStatus === "draft" ? "bg-slate-800 text-white" : "text-slate-600 hover:text-slate-900"
-                }`}
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-all cursor-pointer ml-1"
               >
-                Draft
-              </button>
-              <button
-                type="button"
-                disabled={isPending || currentStatus === "sent"}
-                onClick={() => handleStatusUpdate("sent")}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-all cursor-pointer ${
-                  currentStatus === "sent" ? "bg-blue-600 text-white" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Sent
-              </button>
-              <button
-                type="button"
-                disabled={isPending || currentStatus === "accepted"}
-                onClick={() => handleStatusUpdate("accepted")}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-all cursor-pointer ${
-                  currentStatus === "accepted" ? "bg-emerald-600 text-white" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Accepted
-              </button>
-              <button
-                type="button"
-                disabled={isPending || currentStatus === "rejected"}
-                onClick={() => handleStatusUpdate("rejected")}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-all cursor-pointer ${
-                  currentStatus === "rejected" ? "bg-rose-600 text-white" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Rejected
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          <Button
-            size="sm"
-            disabled={isPending}
-            onClick={handleConvertToProforma}
-            className="h-8 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 rounded-lg shadow-xs cursor-pointer"
-          >
-            {isPending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <ArrowRight className="w-3.5 h-3.5" />
-            )}
-            <span>Convert to Proforma Invoice</span>
-          </Button>
-        </div>
+          {/* Alert Banners for Rework or Rejection */}
+          {quotation.rework_notes && (
+            <div className="p-3 px-6 bg-amber-50/90 border-b border-amber-200 flex items-start gap-2.5 text-xs text-amber-900 print:hidden">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="font-bold mr-1">Rework Instructions:</strong>
+                <span>{quotation.rework_notes}</span>
+              </div>
+            </div>
+          )}
+
+          {quotation.rejection_reason && (
+            <div className="p-3 px-6 bg-rose-50/90 border-b border-rose-200 flex items-start gap-2.5 text-xs text-rose-900 print:hidden">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="font-bold mr-1">Rejection Reason:</strong>
+                <span>{quotation.rejection_reason}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Workflow Action Panel (MaleeHouse-style: Approve, Reject, Rework, Send, Revise) */}
+          <div className="p-3 px-6 bg-slate-50/80 border-b border-slate-200 print:hidden">
+            <QuotationApprovalPanel
+              quotation={quotation}
+              onRefresh={onRefresh}
+              onRevise={() => {
+                onClose();
+                if (onRevise) onRevise(quotation);
+              }}
+              onConvertToProforma={handleConvertToProforma}
+            />
+          </div>
 
         {/* Printable Quotation Document Body */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 print:p-0 print:overflow-visible">
@@ -476,5 +465,15 @@ export function QuotationViewModal({
         </div>
       </div>
     </div>
+
+    {/* Version History Modal */}
+    <QuotationVersionHistory
+      isOpen={isHistoryOpen}
+      onClose={() => setIsHistoryOpen(false)}
+      quotationId={quotation.id}
+      quotationNo={qtnNo}
+      currentVersion={versionNum}
+    />
+  </>
   );
 }

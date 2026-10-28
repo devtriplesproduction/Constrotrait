@@ -144,7 +144,12 @@ export default function ClientInwardManager({
 
             <ClientWizard
               mode="edit"
-              initialData={{ client: editingClient, jobEntryTest: editingTest }}
+              initialData={{
+                client: editingClient,
+                jobEntry: (editingTest as any)?.job_entries,
+                jobEntryTest: editingTest,
+                jobEntryTests: (editingTest as any)?.job_entries?.job_entry_tests,
+              }}
               branches={branches}
               userBranchId={userBranchId}
               isSuperAdmin={isSuperAdmin}

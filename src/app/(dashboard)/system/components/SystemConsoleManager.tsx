@@ -41,11 +41,13 @@ import {
   ChevronRight,
   CheckCheck,
   Lock,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/Pagination";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { useToast } from "@/hooks/use-toast";
 import {
   getLoginAuditLogsAction,
@@ -418,17 +420,17 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* ==================== PAGE HEADER ==================== */}
-      <div className="relative overflow-hidden bg-white/90 backdrop-blur-md p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-xs transition-all">
-        {/* Subtle decorative radiant mesh background */}
-        <div className="absolute -top-24 -right-24 w-80 h-80 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-gradient-to-tr from-amber-500/5 via-orange-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden bg-white/95 backdrop-blur-md p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-xs transition-all">
+        {/* Subtle decorative radiant mesh background with brand orange warmth */}
+        <div className="absolute -top-24 -right-24 w-80 h-80 bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-gradient-to-tr from-amber-500/8 via-orange-500/8 to-transparent rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
           <div className="flex items-start sm:items-center gap-4">
-            {/* Glowing Icon Badge */}
+            {/* Glowing Icon Badge in ConstroTrait Orange */}
             <div className="relative shrink-0">
-              <div className="absolute inset-0 bg-indigo-600/25 blur-lg rounded-2xl" />
-              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20 border border-white/25">
+              <div className="absolute inset-0 bg-orange-500/30 blur-lg rounded-2xl" />
+              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 text-white flex items-center justify-center shadow-lg shadow-orange-500/25 border border-white/25">
                 <Database className="w-6 h-6 drop-shadow-sm" />
               </div>
             </div>
@@ -446,15 +448,15 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                   <span>Live DB Active</span>
                 </div>
               </div>
-              <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
-                Production-grade control plane for telemetry tracking, real-time login audit trails, modular folder database backups, and rollback-safe data synchronization.
+              <p className="text-sm text-slate-500 max-w-xl leading-relaxed">
+                Manage database backups, login audit trails, and system telemetry.
               </p>
             </div>
           </div>
 
-          {/* User Profile Badge */}
+          {/* User Profile Badge in Brand Orange */}
           <div className="flex items-center gap-3.5 bg-slate-50/90 backdrop-blur-sm px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-2xs self-start lg:self-auto">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 text-white font-bold text-xs flex items-center justify-center shadow-sm shadow-orange-500/20">
               {currentUser.name
                 ? currentUser.name.slice(0, 2).toUpperCase()
                 : currentUser.email.slice(0, 2).toUpperCase()}
@@ -469,8 +471,8 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
               className={cn(
                 "px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider border shadow-2xs shrink-0",
                 currentUser.roles.includes("SUPER_ADMIN")
-                  ? "bg-purple-100/80 text-purple-800 border-purple-200"
-                  : "bg-emerald-100/80 text-emerald-800 border-emerald-200"
+                  ? "bg-orange-50 text-orange-700 border-orange-200"
+                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
               )}
             >
               {currentUser.roles.includes("SUPER_ADMIN") ? "SUPER ADMIN" : "DEVELOPER"}
@@ -486,13 +488,13 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
           className={cn(
             "flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap",
             activeTab === "logins"
-              ? "bg-white text-slate-900 shadow-sm border border-slate-200/80 ring-1 ring-slate-900/5"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+              ? "bg-white text-orange-600 shadow-sm border border-orange-200/80 ring-1 ring-orange-500/10 font-bold"
+              : "text-slate-600 hover:text-orange-600 hover:bg-white/60"
           )}
         >
           <div className={cn(
             "p-1.5 rounded-lg transition-colors",
-            activeTab === "logins" ? "bg-indigo-50 text-indigo-600" : "text-slate-500"
+            activeTab === "logins" ? "bg-orange-50 text-orange-600" : "text-slate-500"
           )}>
             <ShieldCheck className="w-4 h-4" />
           </div>
@@ -501,7 +503,7 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
             <span className={cn(
               "ml-1 px-2 py-0.5 text-xs rounded-full font-bold transition-colors",
               activeTab === "logins"
-                ? "bg-indigo-100 text-indigo-700"
+                ? "bg-orange-100 text-orange-700"
                 : "bg-slate-200/70 text-slate-600"
             )}>
               {stats.todayCount} today
@@ -514,13 +516,13 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
           className={cn(
             "flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap",
             activeTab === "backup"
-              ? "bg-white text-slate-900 shadow-sm border border-slate-200/80 ring-1 ring-slate-900/5"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+              ? "bg-white text-orange-600 shadow-sm border border-orange-200/80 ring-1 ring-orange-500/10 font-bold"
+              : "text-slate-600 hover:text-orange-600 hover:bg-white/60"
           )}
         >
           <div className={cn(
             "p-1.5 rounded-lg transition-colors",
-            activeTab === "backup" ? "bg-emerald-50 text-emerald-600" : "text-slate-500"
+            activeTab === "backup" ? "bg-orange-50 text-orange-600" : "text-slate-500"
           )}>
             <Download className="w-4 h-4" />
           </div>
@@ -532,8 +534,8 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
           className={cn(
             "flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap",
             activeTab === "restore"
-              ? "bg-white text-slate-900 shadow-sm border border-slate-200/80 ring-1 ring-slate-900/5"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+              ? "bg-white text-orange-600 shadow-sm border border-orange-200/80 ring-1 ring-orange-500/10 font-bold"
+              : "text-slate-600 hover:text-orange-600 hover:bg-white/60"
           )}
         >
           <div className={cn(
@@ -550,13 +552,13 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
           className={cn(
             "flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap",
             activeTab === "history"
-              ? "bg-white text-slate-900 shadow-sm border border-slate-200/80 ring-1 ring-slate-900/5"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+              ? "bg-white text-orange-600 shadow-sm border border-orange-200/80 ring-1 ring-orange-500/10 font-bold"
+              : "text-slate-600 hover:text-orange-600 hover:bg-white/60"
           )}
         >
           <div className={cn(
             "p-1.5 rounded-lg transition-colors",
-            activeTab === "history" ? "bg-purple-50 text-purple-600" : "text-slate-500"
+            activeTab === "history" ? "bg-orange-50 text-orange-600" : "text-slate-500"
           )}>
             <History className="w-4 h-4" />
           </div>
@@ -567,44 +569,38 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
       {/* ==================== TAB 2: DATABASE BACKUP (HERO BANNER) ==================== */}
       {activeTab === "backup" && (
         <div className="space-y-6 animate-in fade-in-50 duration-300">
-          {/* Main Hero Card */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-[#0B1120] to-[#0F172A] border border-slate-800 shadow-2xl p-7 sm:p-9 text-white">
-            {/* Subtle decorative dot grid overlay */}
-            <div
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{
-                backgroundImage: "radial-gradient(#94a3b8 1px, transparent 1px)",
-                backgroundSize: "24px 24px",
-              }}
-            />
+          {/* Main Hero Card in Light Theme with ConstroTrait Brand Accents */}
+          <div className="relative overflow-hidden rounded-3xl bg-white border border-slate-200/90 shadow-sm p-7 sm:p-9 text-slate-900">
+            {/* Top accent bar */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-400" />
 
-            {/* Glowing ambient radial orbs */}
-            <div className="absolute -top-20 -right-20 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+            {/* Glowing ambient radial orbs in Brand Orange & Amber */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-orange-400/10 to-amber-300/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-gradient-to-tr from-orange-500/5 to-amber-400/5 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               {/* Left Column: Copy & Actions */}
               <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-                <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 backdrop-blur-md shadow-xs">
+                <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200 shadow-2xs">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
                   </span>
                   <span>Production Snapshot Engine • Relational & Modular Archive</span>
                 </div>
 
                 <div className="space-y-3">
-                  <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight">
+                  <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
                     Export Full Database Backup
                   </h2>
-                  <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl">
+                  <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-2xl">
                     Take an immediate, complete snapshot of all database tables. All tables are automatically organized into{" "}
-                    <strong className="text-white font-semibold">ERP module folders</strong>. Each table includes both structured{" "}
-                    <span className="inline-block px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-xs border border-emerald-500/30">
+                    <strong className="text-slate-900 font-bold">ERP module folders</strong>. Each table includes both structured{" "}
+                    <span className="inline-block px-2 py-0.5 rounded-md bg-orange-50 text-orange-700 font-mono text-xs font-semibold border border-orange-200">
                       .json
                     </span>{" "}
                     data and{" "}
-                    <span className="inline-block px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-xs border border-amber-500/30">
+                    <span className="inline-block px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-mono text-xs font-semibold border border-amber-200">
                       .csv
                     </span>{" "}
                     spreadsheet format (ready for Excel/Sheets), plus the full restore snapshot.
@@ -612,38 +608,38 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                 </div>
 
                 {/* Feature Tags Row */}
-                <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-300">
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-700 font-medium shadow-2xs">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                     <span>Instant Streaming</span>
                   </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <FolderArchive className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-700 font-medium shadow-2xs">
+                    <FolderArchive className="w-3.5 h-3.5 text-orange-600" />
                     <span>5 Module Folders</span>
                   </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-sky-400" />
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-700 font-medium shadow-2xs">
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Excel Ready (.csv)</span>
                   </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-700 font-medium shadow-2xs">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                     <span>ACID Consistent</span>
                   </span>
                 </div>
 
                 {/* Progress Indicator */}
                 {isGeneratingBackup && backupProgress && (
-                  <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 space-y-2.5 shadow-lg">
+                  <div className="bg-orange-50/80 p-4 rounded-2xl border border-orange-200 space-y-2.5 shadow-xs">
                     <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="flex items-center gap-2 text-emerald-300">
-                        <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
+                      <span className="flex items-center gap-2 text-orange-700">
+                        <RefreshCw className="w-4 h-4 animate-spin text-orange-600" />
                         {backupProgress.status}
                       </span>
-                      <span className="font-mono text-white text-sm">{backupProgress.percent}%</span>
+                      <span className="font-mono text-slate-800 text-sm">{backupProgress.percent}%</span>
                     </div>
-                    <div className="w-full bg-slate-800/80 rounded-full h-2.5 overflow-hidden p-0.5 border border-white/10">
+                    <div className="w-full bg-orange-100 rounded-full h-2.5 overflow-hidden p-0.5 border border-orange-200">
                       <div
-                        className="bg-gradient-to-r from-emerald-400 to-teal-400 h-full rounded-full transition-all duration-300 ease-out shadow-sm shadow-emerald-500/50"
+                        className="bg-gradient-to-r from-orange-500 to-amber-500 h-full rounded-full transition-all duration-300 ease-out shadow-xs"
                         style={{ width: `${backupProgress.percent}%` }}
                       />
                     </div>
@@ -656,7 +652,7 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                     onClick={() => handleGenerateBackup("zip")}
                     disabled={isGeneratingBackup}
                     variant="custom"
-                    className="bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold text-sm sm:text-base px-6 py-4 h-auto rounded-2xl shadow-xl shadow-emerald-500/25 border border-emerald-400/30 cursor-pointer transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-3 disabled:opacity-60"
+                    className="bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-extrabold text-sm sm:text-base px-6 py-3.5 h-auto rounded-2xl shadow-md shadow-orange-500/25 border border-orange-400/30 cursor-pointer transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-3 disabled:opacity-60"
                   >
                     {isGeneratingBackup ? (
                       <>
@@ -675,64 +671,64 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                     onClick={() => handleGenerateBackup("json")}
                     disabled={isGeneratingBackup}
                     variant="custom"
-                    className="bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 hover:text-white font-semibold text-sm px-5 py-4 h-auto rounded-2xl border border-slate-700/80 backdrop-blur-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2.5 disabled:opacity-60"
+                    className="bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-semibold text-sm px-5 py-3.5 h-auto rounded-2xl border border-slate-200 hover:border-orange-300 shadow-2xs cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2.5 disabled:opacity-60"
                   >
-                    <FileJson className="w-4 h-4 text-indigo-400" />
+                    <FileJson className="w-4 h-4 text-orange-500" />
                     <span>Download Raw .json Only</span>
                   </Button>
                 </div>
               </div>
 
-              {/* Right Column: Live Architectural Telemetry Glass Card */}
+              {/* Right Column: Live Architectural Telemetry Light Card */}
               <div className="lg:col-span-5 xl:col-span-4">
-                <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-5 sm:p-6 space-y-4 shadow-2xl relative overflow-hidden">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                      <Server className="w-4 h-4 text-emerald-400" />
+                <div className="bg-slate-50/90 rounded-2xl border border-slate-200/90 p-5 sm:p-6 space-y-4 shadow-2xs relative overflow-hidden">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                      <Server className="w-4 h-4 text-orange-600" />
                       <span>PostgreSQL Core Engine</span>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       READY
                     </span>
                   </div>
 
                   {/* Stylized Visual Database Stack */}
                   <div className="space-y-2 py-1">
-                    <div className="p-2.5 rounded-xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent border border-indigo-500/20 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-indigo-300 font-semibold">
-                        <HardDrive className="w-3.5 h-3.5" />
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-slate-700 font-semibold">
+                        <HardDrive className="w-3.5 h-3.5 text-slate-500" />
                         <span>Schema & Relations</span>
                       </div>
-                      <span className="font-mono text-[11px] text-slate-400">All Tables</span>
+                      <span className="font-mono text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded">All Tables</span>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/20 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-emerald-300 font-semibold">
-                        <FolderArchive className="w-3.5 h-3.5" />
+                    <div className="p-2.5 rounded-xl bg-white border border-orange-200/80 shadow-2xs flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-orange-700 font-semibold">
+                        <FolderArchive className="w-3.5 h-3.5 text-orange-600" />
                         <span>Modular Packaging</span>
                       </div>
-                      <span className="font-mono text-[11px] text-emerald-400">5 ERP Folders</span>
+                      <span className="font-mono text-[11px] font-bold text-orange-600 bg-orange-50 border border-orange-200/60 px-2 py-0.5 rounded">5 ERP Folders</span>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-transparent border border-amber-500/20 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-amber-300 font-semibold">
-                        <Layers className="w-3.5 h-3.5" />
+                    <div className="p-2.5 rounded-xl bg-white border border-emerald-200/80 shadow-2xs flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                        <Layers className="w-3.5 h-3.5 text-emerald-600" />
                         <span>Export Payload</span>
                       </div>
-                      <span className="font-mono text-[11px] text-amber-400">.json + .csv</span>
+                      <span className="font-mono text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded">.json + .csv</span>
                     </div>
                   </div>
 
                   {/* Engine Details */}
-                  <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50">
-                      <div className="text-slate-400">Compression</div>
-                      <div className="font-bold text-slate-200 mt-0.5">ZIP Archive</div>
+                  <div className="pt-2 border-t border-slate-200 grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                      <div className="text-slate-400 font-medium">Compression</div>
+                      <div className="font-bold text-slate-800 mt-0.5">ZIP Archive</div>
                     </div>
-                    <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50">
-                      <div className="text-slate-400">Integrity</div>
-                      <div className="font-bold text-emerald-400 mt-0.5">FK & Types Safe</div>
+                    <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                      <div className="text-slate-400 font-medium">Integrity</div>
+                      <div className="font-bold text-emerald-600 mt-0.5">FK & Types Safe</div>
                     </div>
                   </div>
                 </div>
@@ -906,13 +902,13 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                  <div className="p-1.5 rounded-lg bg-orange-50 text-orange-600">
                     <History className="w-4 h-4" />
                   </div>
                   <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
                     Database Backup History
                   </h3>
-                  <Badge className="bg-slate-100 text-slate-700 border-slate-200 font-mono text-xs">
+                  <Badge className="bg-orange-50 text-orange-700 border-orange-200 font-mono text-xs">
                     {backups.length} snapshots
                   </Badge>
                 </div>
@@ -926,38 +922,35 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                 size="sm"
                 onClick={fetchBackupHistory}
                 disabled={isLoadingBackups}
-                className="gap-2 cursor-pointer rounded-xl h-9 hover:bg-slate-50 font-semibold text-slate-700"
+                className="gap-2 cursor-pointer rounded-xl h-9 hover:bg-orange-50 hover:text-orange-600 font-semibold text-slate-700 border-slate-200"
               >
-                <RefreshCw className={cn("w-3.5 h-3.5", isLoadingBackups && "animate-spin text-indigo-600")} />
+                <RefreshCw className={cn("w-3.5 h-3.5", isLoadingBackups && "animate-spin text-orange-600")} />
                 <span>Refresh Logs</span>
               </Button>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-slate-200/80">
-              <table className="w-full text-left border-collapse text-sm">
+            <div className="rounded-2xl border border-slate-200/80 overflow-hidden">
+              <table className="w-full table-fixed text-left border-collapse text-sm">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold text-[11px] uppercase tracking-wider">
-                    <th className="py-3.5 px-4">Backup File Name</th>
-                    <th className="py-3.5 px-4">Type</th>
-                    <th className="py-3.5 px-4">Size</th>
-                    <th className="py-3.5 px-4">Tables</th>
-                    <th className="py-3.5 px-4">Total Records</th>
-                    <th className="py-3.5 px-4">Created By</th>
-                    <th className="py-3.5 px-4">Timestamp</th>
-                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4 w-[36%]">Backup Snapshot & Type</th>
+                    <th className="py-3.5 px-4 w-[18%]">Tables & Records</th>
+                    <th className="py-3.5 px-4 w-[20%]">Created By</th>
+                    <th className="py-3.5 px-4 w-[14%]">Timestamp</th>
+                    <th className="py-3.5 px-4 w-[12%]">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {isLoadingBackups && backups.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
+                      <td colSpan={5} className="py-12 text-center text-slate-400">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-orange-500" />
                         <span>Loading backup records...</span>
                       </td>
                     </tr>
                   ) : backups.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400">
+                      <td colSpan={5} className="py-12 text-center text-slate-400">
                         <FolderArchive className="w-10 h-10 mx-auto mb-2 text-slate-300" />
                         <p className="font-semibold text-slate-600">No previous backups recorded</p>
                         <p className="text-xs text-slate-400 mt-1">
@@ -970,56 +963,83 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                       const isZipArchive = b.file_name?.toLowerCase().endsWith(".zip");
                       return (
                         <tr key={b.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-3.5 px-4 font-mono text-xs text-slate-900 font-semibold flex items-center gap-2.5">
-                            {isZipArchive ? (
-                              <div className="p-1 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-100">
-                                <FolderArchive className="w-4 h-4 shrink-0" />
+                          {/* Backup Snapshot & Type */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div
+                                className={cn(
+                                  "p-2 rounded-xl shrink-0 border shadow-2xs",
+                                  isZipArchive
+                                    ? "bg-orange-50 text-orange-600 border-orange-200"
+                                    : "bg-amber-50 text-amber-600 border-amber-200"
+                                )}
+                              >
+                                {isZipArchive ? (
+                                  <FolderArchive className="w-4 h-4" />
+                                ) : (
+                                  <FileJson className="w-4 h-4" />
+                                )}
                               </div>
-                            ) : (
-                              <div className="p-1 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-100">
-                                <FileJson className="w-4 h-4 shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <div className="font-mono text-xs font-bold text-slate-900 truncate" title={b.file_name}>
+                                  {b.file_name}
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span
+                                    className={cn(
+                                      "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border",
+                                      isZipArchive
+                                        ? "bg-orange-50 text-orange-700 border-orange-200"
+                                        : "bg-amber-50 text-amber-700 border-amber-200"
+                                    )}
+                                  >
+                                    {isZipArchive ? "ZIP Folders" : "JSON Dump"}
+                                  </span>
+                                  <span className="text-[11px] text-slate-500 font-mono font-medium">
+                                    {b.file_size_bytes > 1048576
+                                      ? `${(b.file_size_bytes / 1048576).toFixed(2)} MB`
+                                      : `${(b.file_size_bytes / 1024).toFixed(1)} KB`}
+                                  </span>
+                                </div>
                               </div>
-                            )}
-                            <span className="truncate max-w-xs">{b.file_name}</span>
+                            </div>
                           </td>
-                          <td className="py-3.5 px-4 text-xs">
-                            {isZipArchive ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                <Folder className="w-3 h-3" />
-                                <span>ZIP Folders</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                <FileCode className="w-3 h-3" />
-                                <span>JSON Dump</span>
-                              </span>
-                            )}
+
+                          {/* Tables & Records */}
+                          <td className="py-3.5 px-4">
+                            <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                              <Database className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                              <span>{b.total_tables} Tables</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                              {b.total_records.toLocaleString()} rows
+                            </div>
                           </td>
-                          <td className="py-3.5 px-4 text-xs text-slate-700 font-mono font-medium">
-                            {b.file_size_bytes > 1048576
-                              ? `${(b.file_size_bytes / 1048576).toFixed(2)} MB`
-                              : `${(b.file_size_bytes / 1024).toFixed(1)} KB`}
+
+                          {/* Created By */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-700 border border-orange-100 font-bold text-[11px] flex items-center justify-center shrink-0">
+                                {(b.creator_email || "SY").slice(0, 2).toUpperCase()}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-bold text-slate-800 truncate" title={b.creator_email || "System"}>
+                                  {b.creator_email ? b.creator_email.split("@")[0] : "System"}
+                                </div>
+                                <div className="text-[10px] text-slate-400 truncate" title={b.creator_email || "System"}>
+                                  {b.creator_email || "Automated"}
+                                </div>
+                              </div>
+                            </div>
                           </td>
-                          <td className="py-3.5 px-4 text-xs font-semibold text-slate-800">
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-                              {b.total_tables} tables
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-xs font-semibold text-slate-800">
-                            <span className="font-mono text-slate-800">
-                              {b.total_records.toLocaleString()}
-                            </span>{" "}
-                            <span className="text-slate-400 text-[11px]">rows</span>
-                          </td>
-                          <td className="py-3.5 px-4 text-xs text-slate-600 font-medium">
-                            {b.creator_email || "System"}
-                          </td>
+
+                          {/* Timestamp */}
                           <td className="py-3.5 px-4 text-xs text-slate-600">
-                            <div className="font-medium text-slate-800">
+                            <div className="font-semibold text-slate-800">
                               {new Date(b.created_at).toLocaleDateString("en-IN", {
-                                year: "numeric",
+                                day: "2-digit",
                                 month: "short",
-                                day: "numeric",
+                                year: "numeric",
                               })}
                             </div>
                             <div className="text-slate-400 text-[11px] font-mono">
@@ -1029,11 +1049,13 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                               })}
                             </div>
                           </td>
+
+                          {/* Status */}
                           <td className="py-3.5 px-4">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-bold text-[11px] flex items-center gap-1.5 w-fit">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              {b.status}
-                            </span>
+                              <span>{b.status}</span>
+                            </Badge>
                           </td>
                         </tr>
                       );
@@ -1059,11 +1081,11 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                   {stats?.totalLogins ?? totalLogs}
                 </h3>
                 <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                  <Activity className="w-3.5 h-3.5 text-blue-500" />
+                  <Activity className="w-3.5 h-3.5 text-orange-500" />
                   <span>Recorded across all users</span>
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 text-white flex items-center justify-center shadow-lg shadow-orange-500/25">
                 <ShieldCheck className="w-6 h-6" />
               </div>
             </div>
@@ -1113,14 +1135,14 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
 
                 {/* Split Visual Meter */}
                 <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden flex gap-0.5">
-                  <div style={{ width: `${desktopPct}%` }} className="bg-indigo-500 h-full transition-all" title={`Desktop: ${desktopPct}%`} />
+                  <div style={{ width: `${desktopPct}%` }} className="bg-orange-500 h-full transition-all" title={`Desktop: ${desktopPct}%`} />
                   <div style={{ width: `${mobilePct}%` }} className="bg-emerald-500 h-full transition-all" title={`Mobile: ${mobilePct}%`} />
                   <div style={{ width: `${tabletPct}%` }} className="bg-amber-500 h-full transition-all" title={`Tablet: ${tabletPct}%`} />
                 </div>
 
                 <div className="grid grid-cols-3 gap-1 pt-3 text-[11px]">
                   <div className="flex items-center gap-1.5 text-slate-700">
-                    <Monitor className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <Monitor className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                     <span>D: {desktopCount}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-700">
@@ -1156,45 +1178,53 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchLoginLogs()}
-                className="pl-10 h-10 w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-indigo-500"
+                className="pl-10 h-10 w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-orange-500"
               />
             </div>
 
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="h-10 px-3.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-2xs"
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="SUCCESS">Success Only</option>
-                <option value="FAILED">Failed Only</option>
-              </select>
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full md:w-auto">
+              <div className="w-full sm:w-40 shrink-0">
+                <Dropdown
+                  value={statusFilter}
+                  onChange={(val) => {
+                    setStatusFilter(val);
+                    setPage(1);
+                  }}
+                  placeholder="All Statuses"
+                  buttonClassName="bg-white border-slate-200 shadow-2xs rounded-xl h-10 font-medium text-slate-700 hover:border-slate-300"
+                  options={[
+                    { value: "ALL", label: "All Statuses" },
+                    { value: "SUCCESS", label: "Success Only" },
+                    { value: "FAILED", label: "Failed Only" },
+                  ]}
+                />
+              </div>
 
-              <select
-                value={deviceFilter}
-                onChange={(e) => {
-                  setDeviceFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="h-10 px-3.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-2xs"
-              >
-                <option value="ALL">All Devices</option>
-                <option value="Desktop">Desktop</option>
-                <option value="Mobile">Mobile</option>
-                <option value="Tablet">Tablet</option>
-              </select>
+              <div className="w-full sm:w-36 shrink-0">
+                <Dropdown
+                  value={deviceFilter}
+                  onChange={(val) => {
+                    setDeviceFilter(val);
+                    setPage(1);
+                  }}
+                  placeholder="All Devices"
+                  buttonClassName="bg-white border-slate-200 shadow-2xs rounded-xl h-10 font-medium text-slate-700 hover:border-slate-300"
+                  options={[
+                    { value: "ALL", label: "All Devices" },
+                    { value: "Desktop", label: "Desktop" },
+                    { value: "Mobile", label: "Mobile" },
+                    { value: "Tablet", label: "Tablet" },
+                  ]}
+                />
+              </div>
 
               <Button
                 variant="outline"
                 onClick={fetchLoginLogs}
                 disabled={isLoadingLogs}
-                className="h-10 gap-2 cursor-pointer rounded-xl font-semibold"
+                className="h-10 gap-2 cursor-pointer rounded-xl font-semibold hover:bg-orange-50 hover:text-orange-600 border-slate-200 shrink-0"
               >
-                <RefreshCw className={cn("w-4 h-4", isLoadingLogs && "animate-spin text-indigo-600")} />
+                <RefreshCw className={cn("w-4 h-4", isLoadingLogs && "animate-spin text-orange-600")} />
                 <span className="hidden sm:inline">Refresh</span>
               </Button>
             </div>
@@ -1202,71 +1232,74 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
 
           {/* Logins Table */}
           <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold text-[11px] uppercase tracking-wider">
-                    <th className="py-3.5 px-4">User & Role</th>
-                    <th className="py-3.5 px-4">Status</th>
-                    <th className="py-3.5 px-4">Device & OS</th>
-                    <th className="py-3.5 px-4">Browser</th>
-                    <th className="py-3.5 px-4">IP Address & Location</th>
-                    <th className="py-3.5 px-4">Timestamp</th>
+            <table className="w-full table-fixed text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold text-[11px] uppercase tracking-wider">
+                  <th className="py-3.5 px-4 w-[28%]">User & Role</th>
+                  <th className="py-3.5 px-4 w-[18%]">Status & Browser</th>
+                  <th className="py-3.5 px-4 w-[20%]">Device & OS</th>
+                  <th className="py-3.5 px-4 w-[20%]">IP Address & Location</th>
+                  <th className="py-3.5 px-4 w-[14%]">Timestamp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {isLoadingLogs && logs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-slate-400">
+                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-orange-500" />
+                      <span>Loading login records...</span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {isLoadingLogs && logs.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
-                        <span>Loading login records...</span>
-                      </td>
-                    </tr>
-                  ) : logs.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400">
-                        <ShieldCheck className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                        <p className="font-semibold text-slate-600">No login audit logs found</p>
-                        <p className="text-xs text-slate-400 mt-1">Try adjusting your search criteria or filters.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    logs.map((log) => {
-                      const badgeStyle = getRoleColorBadge(log.role);
-                      const displayName = log.full_name || log.email.split("@")[0];
-                      const initials = displayName.slice(0, 2).toUpperCase();
+                ) : logs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-slate-400">
+                      <ShieldCheck className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                      <p className="font-semibold text-slate-600">No login audit logs found</p>
+                      <p className="text-xs text-slate-400 mt-1">Try adjusting your search criteria or filters.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  logs.map((log) => {
+                    const badgeStyle = getRoleColorBadge(log.role);
+                    const displayName = log.full_name || log.email.split("@")[0];
+                    const initials = displayName.slice(0, 2).toUpperCase();
 
-                      return (
-                        <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
-                          {/* User & Role */}
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold text-xs flex items-center justify-center shrink-0">
-                                {initials}
-                              </div>
-                              <div>
-                                <div className="font-bold text-slate-900">{displayName}</div>
-                                <div className="text-xs text-slate-500">{log.email}</div>
-                                {log.role && (
-                                  <div className="mt-1">
-                                    <span
-                                      className={cn(
-                                        "inline-block px-2 py-0.5 text-[10px] font-bold rounded-md border",
-                                        badgeStyle.bg,
-                                        badgeStyle.text,
-                                        badgeStyle.border
-                                      )}
-                                    >
-                                      {getRoleDisplayName(log.role)}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
+                    return (
+                      <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
+                        {/* User & Role */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-700 border border-orange-100 font-bold text-xs flex items-center justify-center shrink-0">
+                              {initials}
                             </div>
-                          </td>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-slate-900 truncate" title={displayName}>
+                                {displayName}
+                              </div>
+                              <div className="text-xs text-slate-500 truncate" title={log.email}>
+                                {log.email}
+                              </div>
+                              {log.role && (
+                                <div className="mt-1">
+                                  <span
+                                    className={cn(
+                                      "inline-block px-2 py-0.5 text-[10px] font-bold rounded-md border",
+                                      badgeStyle.bg,
+                                      badgeStyle.text,
+                                      badgeStyle.border
+                                    )}
+                                  >
+                                    {getRoleDisplayName(log.role)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
 
-                          {/* Status */}
-                          <td className="py-3.5 px-4">
+                        {/* Status & Browser */}
+                        <td className="py-3.5 px-4">
+                          <div className="min-w-0">
                             {log.status === "SUCCESS" ? (
                               <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 w-fit font-bold text-[11px]">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -1279,16 +1312,24 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                                   <span>FAILED</span>
                                 </Badge>
                                 {log.failure_reason && (
-                                  <p className="text-[11px] text-rose-500 mt-1 max-w-[180px] truncate" title={log.failure_reason}>
+                                  <p className="text-[11px] text-rose-500 mt-1 truncate" title={log.failure_reason}>
                                     {log.failure_reason}
                                   </p>
                                 )}
                               </div>
                             )}
-                          </td>
+                            <div className="mt-1.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200/80 truncate max-w-full" title={log.browser || "Unknown Browser"}>
+                                <Globe className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span className="truncate">{log.browser || "Unknown Browser"}</span>
+                              </span>
+                            </div>
+                          </div>
+                        </td>
 
-                          {/* Device & OS */}
-                          <td className="py-3.5 px-4">
+                        {/* Device & OS */}
+                        <td className="py-3.5 px-4">
+                          <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <div className="flex items-center gap-1.5">
                                 {log.device_type === "Mobile" ? (
@@ -1296,12 +1337,12 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                                 ) : log.device_type === "Tablet" ? (
                                   <Tablet className="w-4 h-4 text-amber-600 shrink-0" />
                                 ) : (
-                                  <Monitor className="w-4 h-4 text-indigo-600 shrink-0" />
+                                  <Monitor className="w-4 h-4 text-orange-600 shrink-0" />
                                 )}
                                 <span className="font-bold text-slate-800 text-xs">{log.device_type || "Desktop"}</span>
                               </div>
                               {log.device_model && (
-                                <span className="text-[11px] font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                                <span className="text-[11px] font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 truncate max-w-[110px]" title={log.device_model}>
                                   {log.device_model}
                                 </span>
                               )}
@@ -1314,22 +1355,19 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                                 </span>
                               )}
                             </div>
-                          </td>
+                          </div>
+                        </td>
 
-                          {/* Browser */}
-                          <td className="py-3.5 px-4">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200/80">
-                              {log.browser || "Unknown Browser"}
-                            </span>
-                          </td>
-
-                          {/* IP Address */}
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-1.5 font-mono text-xs text-slate-800 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 w-fit">
-                              <span>{log.ip_address || "127.0.0.1"}</span>
+                        {/* IP Address & Location */}
+                        <td className="py-3.5 px-4">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 font-mono text-xs text-slate-800 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 w-fit max-w-full">
+                              <span className="truncate max-w-[130px] sm:max-w-[160px]" title={log.ip_address || "127.0.0.1"}>
+                                {log.ip_address || "127.0.0.1"}
+                              </span>
                               <button
                                 onClick={() => handleCopyIp(log.ip_address || "127.0.0.1")}
-                                className="text-slate-400 hover:text-slate-700 cursor-pointer ml-1 p-0.5 rounded hover:bg-slate-200/50"
+                                className="text-slate-400 hover:text-slate-700 cursor-pointer ml-1 p-0.5 rounded hover:bg-slate-200/50 shrink-0"
                                 title="Copy IP"
                               >
                                 {copiedIp === (log.ip_address || "127.0.0.1") ? (
@@ -1340,59 +1378,59 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                               </button>
                             </div>
                             {(log.city || log.country) && (
-                              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1 truncate" title={[log.city, log.country].filter(Boolean).join(", ")}>
                                 <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                                <span>{[log.city, log.country].filter(Boolean).join(", ")}</span>
+                                <span className="truncate">{[log.city, log.country].filter(Boolean).join(", ")}</span>
                               </div>
                             )}
-                          </td>
+                          </div>
+                        </td>
 
-                          {/* Timestamp */}
-                          <td className="py-3.5 px-4 text-xs text-slate-600">
-                            <div className="font-semibold text-slate-800">
-                              {new Date(log.created_at).toLocaleDateString("en-IN", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })}
-                            </div>
-                            <div className="text-slate-400 font-mono text-[11px]">
-                              {new Date(log.created_at).toLocaleTimeString("en-IN", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                              })}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                        {/* Timestamp */}
+                        <td className="py-3.5 px-4 text-xs text-slate-600">
+                          <div className="font-semibold text-slate-800">
+                            {new Date(log.created_at).toLocaleDateString("en-IN", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                          <div className="text-slate-400 font-mono text-[11px]">
+                            {new Date(log.created_at).toLocaleTimeString("en-IN", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
 
             {/* Pagination */}
-            {totalLogs > 0 && (
-              <div className="p-4 border-t border-slate-200/80 bg-slate-50/50">
-                <Pagination
-                  currentPage={page}
-                  totalPages={Math.ceil(totalLogs / pageSize)}
-                  totalItems={totalLogs}
-                  pageSize={pageSize}
-                  onPageChange={setPage}
-                  onPageSizeChange={(newSize) => {
-                    setPageSize(newSize);
-                    setPage(1);
-                  }}
-                  pageSizeOptions={[15, 30, 50, 100]}
-                  itemLabel="logins"
-                />
-              </div>
-            )}
-          </div>
+          {totalLogs > 0 && (
+            <div className="p-4 border-t border-slate-200/80 bg-slate-50/50">
+              <Pagination
+                currentPage={page}
+                totalPages={Math.ceil(totalLogs / pageSize)}
+                totalItems={totalLogs}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+                pageSizeOptions={[15, 30, 50, 100]}
+                itemLabel="logins"
+              />
+            </div>
+          )}
         </div>
-      )}
+      </div>
+    )}
 
       {/* ==================== TAB 3: REPOPULATE & RESTORE ==================== */}
       {activeTab === "restore" && (
@@ -1404,7 +1442,7 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
                 <div className="p-1.5 rounded-lg bg-orange-50 text-orange-600">
                   <Upload className="w-4 h-4" />
                 </div>
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">
                   Upload Backup Archive or JSON File to Repopulate Database
                 </h2>
               </div>
@@ -1413,406 +1451,436 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
               </p>
             </div>
 
-            <div className="group border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50/50 hover:bg-indigo-50/20 rounded-2xl p-10 text-center transition-all duration-200 cursor-pointer relative shadow-inner">
-              <input
-                type="file"
-                accept=".json,.zip"
-                onChange={handleFileUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              />
-              <div className="flex flex-col items-center justify-center space-y-3.5 pointer-events-none">
-                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 shadow-sm group-hover:scale-110 transition-transform">
-                  <Upload className="w-8 h-8" />
-                </div>
-                <div>
-                  <p className="text-base font-extrabold text-slate-800">
-                    {uploadedFile ? uploadedFile.name : "Click to select or drag and drop your .zip backup archive or .json file"}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Accepts Constrotrait database backup archives (.zip) or JSON dumps (Max 200MB)
-                  </p>
-                </div>
-                {isInspecting && (
-                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-full shadow-2xs">
-                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
-                    <span>Unpacking archive and analyzing tables and schema compatibility...</span>
-                  </div>
+            <div className="group border-2 border-dashed border-slate-300 hover:border-orange-500 bg-slate-50/50 hover:bg-orange-50/20 rounded-2xl p-10 text-center transition-all duration-200 cursor-pointer relative shadow-inner">
+          <input
+            type="file"
+            accept=".json,.zip"
+            onChange={handleFileUpload}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          />
+          <div className="flex flex-col items-center justify-center space-y-3.5 pointer-events-none">
+            <div className="p-4 bg-orange-50 border border-orange-100 rounded-2xl text-orange-600 shadow-sm group-hover:scale-110 transition-transform">
+              <Upload className="w-8 h-8" />
+            </div>
+            <div>
+              <p className="text-base font-extrabold text-slate-800">
+                {uploadedFile ? uploadedFile.name : "Click to select or drag and drop your .zip backup archive or .json file"}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                Accepts Constrotrait database backup archives (.zip) or JSON dumps (Max 200MB)
+              </p>
+            </div>
+            {isInspecting && (
+              <div className="flex items-center gap-2 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-100 px-4 py-2 rounded-full shadow-2xs">
+                <RefreshCw className="w-4 h-4 animate-spin text-orange-600" />
+                <span>Unpacking archive and analyzing tables and schema compatibility...</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Inspection & Repopulation Settings */}
+      {inspection && (
+        <div className="bg-white p-7 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-3">
+            <div>
+              <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <span>Backup Verified: Ready to Repopulate</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Exported at {new Date(inspection.exportedAt).toLocaleString("en-IN")} by {inspection.exportedBy}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-orange-50 text-orange-700 border-orange-200 font-bold px-3 py-1">
+                {inspection.totalTables} Tables Detected
+              </Badge>
+              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold px-3 py-1">
+                {inspection.totalRecords.toLocaleString()} Records
+              </Badge>
+            </div>
+          </div>
+
+          {/* Mode Selection */}
+          <div className="space-y-3">
+            <label className="text-sm font-bold text-slate-800">1. Select Repopulation Mode</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Mode A: Upsert */}
+              <div
+                onClick={() => setRestoreMode("UPSERT")}
+                className={cn(
+                  "p-5 rounded-2xl border-2 transition-all cursor-pointer relative shadow-2xs",
+                  restoreMode === "UPSERT"
+                    ? "border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-500/20"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
                 )}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-slate-900">Safe Upsert & Merge (Recommended)</span>
+                    <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">Non-Destructive</Badge>
+                  </div>
+                  <input
+                    type="radio"
+                    checked={restoreMode === "UPSERT"}
+                    onChange={() => setRestoreMode("UPSERT")}
+                    className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
+                  />
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Updates existing rows matching Primary Key IDs and inserts any new records. Existing records not in the backup are preserved safely. Replication role handles constraint bypasses cleanly.
+                </p>
+              </div>
+
+              {/* Mode B: Clean Restore */}
+              <div
+                onClick={() => setRestoreMode("CLEAN_RESTORE")}
+                className={cn(
+                  "p-5 rounded-2xl border-2 transition-all cursor-pointer relative shadow-2xs",
+                  restoreMode === "CLEAN_RESTORE"
+                    ? "border-rose-500 bg-rose-50/40 ring-2 ring-rose-500/20"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                )}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-slate-900">Clean Wipe & Repopulate</span>
+                    <Badge className="bg-rose-100 text-rose-800 text-[10px] font-extrabold">Destructive</Badge>
+                  </div>
+                  <input
+                    type="radio"
+                    checked={restoreMode === "CLEAN_RESTORE"}
+                    onChange={() => setRestoreMode("CLEAN_RESTORE")}
+                    className="w-4 h-4 text-rose-600 focus:ring-rose-500"
+                  />
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Clears/truncates the selected tables first and inserts fresh data from the backup file inside a single rollback-safe transaction. Use when restoring a clean environment.
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Inspection & Repopulation Settings */}
-          {inspection && (
-            <div className="bg-white p-7 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-3">
-                <div>
-                  <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    <span>Backup Verified: Ready to Repopulate</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Exported at {new Date(inspection.exportedAt).toLocaleString("en-IN")} by {inspection.exportedBy}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold px-3 py-1">
-                    {inspection.totalTables} Tables Detected
-                  </Badge>
-                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold px-3 py-1">
-                    {inspection.totalRecords.toLocaleString()} Records
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Mode Selection */}
-              <div className="space-y-3">
-                <label className="text-sm font-bold text-slate-800">1. Select Repopulation Mode</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Mode A: Upsert */}
-                  <div
-                    onClick={() => setRestoreMode("UPSERT")}
-                    className={cn(
-                      "p-5 rounded-2xl border-2 transition-all cursor-pointer relative shadow-2xs",
-                      restoreMode === "UPSERT"
-                        ? "border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-500/20"
-                        : "border-slate-200 hover:border-slate-300 bg-white"
-                    )}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-slate-900">Safe Upsert & Merge (Recommended)</span>
-                        <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">Non-Destructive</Badge>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={restoreMode === "UPSERT"}
-                        onChange={() => setRestoreMode("UPSERT")}
-                        className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
-                      />
-                    </div>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      Updates existing rows matching Primary Key IDs and inserts any new records. Existing records not in the backup are preserved safely. Replication role handles constraint bypasses cleanly.
-                    </p>
-                  </div>
-
-                  {/* Mode B: Clean Restore */}
-                  <div
-                    onClick={() => setRestoreMode("CLEAN_RESTORE")}
-                    className={cn(
-                      "p-5 rounded-2xl border-2 transition-all cursor-pointer relative shadow-2xs",
-                      restoreMode === "CLEAN_RESTORE"
-                        ? "border-rose-500 bg-rose-50/40 ring-2 ring-rose-500/20"
-                        : "border-slate-200 hover:border-slate-300 bg-white"
-                    )}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-slate-900">Clean Wipe & Repopulate</span>
-                        <Badge className="bg-rose-100 text-rose-800 text-[10px] font-extrabold">Destructive</Badge>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={restoreMode === "CLEAN_RESTORE"}
-                        onChange={() => setRestoreMode("CLEAN_RESTORE")}
-                        className="w-4 h-4 text-rose-600 focus:ring-rose-500"
-                      />
-                    </div>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      Clears/truncates the selected tables first and inserts fresh data from the backup file inside a single rollback-safe transaction. Use when restoring a clean environment.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Table Selection */}
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <label className="text-sm font-bold text-slate-800">
-                    2. Select Tables to Repopulate ({selectedTables.length} of {inspection.tables.length} selected)
-                  </label>
-                  <div className="flex items-center gap-2 text-xs">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        setSelectedTables(
-                          inspection.tables.filter((t: any) => t.existsInDatabase).map((t: any) => t.name)
-                        )
-                      }
-                      className="h-7 text-xs font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
-                    >
-                      Select All
-                    </Button>
-                    <span className="text-slate-300">|</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedTables([])}
-                      className="h-7 text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
-                    >
-                      Deselect All
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <Input
-                    placeholder="Filter tables..."
-                    value={tableSearch}
-                    onChange={(e) => setTableSearch(e.target.value)}
-                    className="pl-8 h-9 text-xs w-full sm:w-64 rounded-xl border-slate-200"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-72 overflow-y-auto p-3 bg-slate-50 rounded-2xl border border-slate-200">
-                  {filteredInspectionTables.map((table: any) => {
-                    const isSelected = selectedTables.includes(table.name);
-                    return (
-                      <label
-                        key={table.name}
-                        className={cn(
-                          "flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all select-none shadow-2xs",
-                          isSelected
-                            ? "bg-white border-indigo-400 font-bold text-slate-900"
-                            : "bg-slate-100/60 border-slate-200 text-slate-500 hover:bg-white"
-                        )}
-                      >
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedTables((prev) => [...prev, table.name]);
-                              } else {
-                                setSelectedTables((prev) => prev.filter((n) => n !== table.name));
-                              }
-                            }}
-                            className="rounded text-indigo-600 focus:ring-indigo-500"
-                          />
-                          <span className="truncate">{table.name}</span>
-                        </div>
-                        <span className="font-mono text-[11px] text-slate-500 px-1.5 py-0.5 bg-slate-200/60 rounded">
-                          {table.recordsCount}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Confirmation for Destructive Mode */}
-              {restoreMode === "CLEAN_RESTORE" && (
-                <div className="p-5 bg-rose-50 border border-rose-200 rounded-2xl space-y-3">
-                  <div className="flex items-center gap-2 text-rose-700 font-extrabold text-sm">
-                    <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600" />
-                    <span>Warning: Destructive Table Truncation</span>
-                  </div>
-                  <p className="text-xs text-rose-600 leading-relaxed">
-                    This mode will wipe existing records in the selected {selectedTables.length} tables before repopulating from the file. To confirm and proceed, type <span className="font-bold underline">CONFIRM RESTORE</span> below:
-                  </p>
-                  <Input
-                    placeholder='Type "CONFIRM RESTORE" to unlock execution...'
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                    className="max-w-md h-9 text-xs bg-white border-rose-300 focus:ring-rose-500 rounded-xl"
-                  />
-                </div>
-              )}
-
-              {/* Action Button */}
-              <div className="pt-2 flex items-center gap-3">
+          {/* Table Selection */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label className="text-sm font-bold text-slate-800">
+                2. Select Tables to Repopulate ({selectedTables.length} of {inspection.tables.length} selected)
+              </label>
+              <div className="flex items-center gap-2 text-xs">
                 <Button
-                  onClick={handleExecuteRepopulate}
-                  disabled={
-                    isRestoring ||
-                    selectedTables.length === 0 ||
-                    (restoreMode === "CLEAN_RESTORE" && confirmText.trim() !== "CONFIRM RESTORE")
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setSelectedTables(
+                      inspection.tables.filter((t: any) => t.existsInDatabase).map((t: any) => t.name)
+                    )
                   }
-                  variant="custom"
-                  className={cn(
-                    "font-extrabold px-8 py-4 h-auto rounded-2xl shadow-lg cursor-pointer flex items-center gap-2 text-sm text-white transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50",
-                    restoreMode === "CLEAN_RESTORE"
-                      ? "bg-rose-600 hover:bg-rose-700 shadow-rose-500/20"
-                      : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20"
-                  )}
+                  className="h-7 text-xs font-bold text-orange-600 hover:text-orange-800 cursor-pointer"
                 >
-                  {isRestoring ? (
-                    <>
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      <span>Repopulating Database...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-5 h-5" />
-                      <span>Execute Repopulate ({selectedTables.length} Tables)</span>
-                    </>
-                  )}
+                  Select All
                 </Button>
-
+                <span className="text-slate-300">|</span>
                 <Button
-                  variant="outline"
-                  onClick={() => {
-                    setUploadedFile(null);
-                    setFileContent(null);
-                    setInspection(null);
-                    setRestoreResult(null);
-                  }}
-                  className="cursor-pointer rounded-2xl px-6 py-4 h-auto text-sm font-semibold"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedTables([])}
+                  className="h-7 text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
                 >
-                  Cancel
+                  Deselect All
                 </Button>
               </div>
+            </div>
 
-              {/* Results Breakdown */}
-              {restoreResult && (
-                <div className="p-6 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-3 mt-4">
-                  <div className="flex items-center gap-2 text-emerald-800 font-extrabold text-base">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                    <span>Database Repopulation Completed!</span>
-                  </div>
-                  <p className="text-xs text-emerald-700">
-                    A total of <strong>{restoreResult.totalRestored.toLocaleString()} records</strong> were successfully restored across {Object.keys(restoreResult.tableBreakdown || {}).length} tables.
-                  </p>
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                placeholder="Filter tables..."
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+                className="pl-8 h-9 text-xs w-full sm:w-64 rounded-xl border-slate-200 focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 pt-2">
-                    {Object.entries(restoreResult.tableBreakdown || {}).map(([table, count]) => (
-                      <div key={table} className="bg-white px-3 py-1.5 rounded-lg border border-emerald-200 text-xs flex justify-between shadow-2xs">
-                        <span className="font-semibold text-slate-800 truncate">{table}</span>
-                        <span className="font-bold text-emerald-700">+{String(count)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-72 overflow-y-auto p-3 bg-slate-50 rounded-2xl border border-slate-200">
+              {filteredInspectionTables.map((table: any) => {
+                const isSelected = selectedTables.includes(table.name);
+                return (
+                  <label
+                    key={table.name}
+                    className={cn(
+                      "flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all select-none shadow-2xs",
+                      isSelected
+                        ? "bg-white border-orange-400 font-bold text-slate-900"
+                        : "bg-slate-100/60 border-slate-200 text-slate-500 hover:bg-white"
+                    )}
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedTables((prev) => [...prev, table.name]);
+                          } else {
+                            setSelectedTables((prev) => prev.filter((n) => n !== table.name));
+                          }
+                        }}
+                        className="rounded text-orange-600 focus:ring-orange-500"
+                      />
+                      <span className="truncate">{table.name}</span>
+                    </div>
+                    <span className="font-mono text-[11px] text-slate-500 px-1.5 py-0.5 bg-slate-200/60 rounded">
+                      {table.recordsCount}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Confirmation for Destructive Mode */}
+          {restoreMode === "CLEAN_RESTORE" && (
+            <div className="p-5 bg-rose-50 border border-rose-200 rounded-2xl space-y-3">
+              <div className="flex items-center gap-2 text-rose-700 font-extrabold text-sm">
+                <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600" />
+                <span>Warning: Destructive Table Truncation</span>
+              </div>
+              <p className="text-xs text-rose-600 leading-relaxed">
+                This mode will wipe existing records in the selected {selectedTables.length} tables before repopulating from the file. To confirm and proceed, type <span className="font-bold underline">CONFIRM RESTORE</span> below:
+              </p>
+              <Input
+                placeholder='Type "CONFIRM RESTORE" to unlock execution...'
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                className="max-w-md h-9 text-xs bg-white border-rose-300 focus:ring-rose-500 rounded-xl"
+              />
+            </div>
+          )}
+
+          {/* Action Button */}
+          <div className="pt-2 flex items-center gap-3">
+            <Button
+              onClick={handleExecuteRepopulate}
+              disabled={
+                isRestoring ||
+                selectedTables.length === 0 ||
+                (restoreMode === "CLEAN_RESTORE" && confirmText.trim() !== "CONFIRM RESTORE")
+              }
+              variant="custom"
+              className={cn(
+                "font-extrabold px-8 py-4 h-auto rounded-2xl shadow-lg cursor-pointer flex items-center gap-2 text-sm text-white transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50",
+                restoreMode === "CLEAN_RESTORE"
+                  ? "bg-rose-600 hover:bg-rose-700 shadow-rose-500/20"
+                  : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-orange-500/25"
               )}
+            >
+              {isRestoring ? (
+                <>
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  <span>Repopulating Database...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-5 h-5" />
+                  <span>Execute Repopulate ({selectedTables.length} Tables)</span>
+                </>
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setUploadedFile(null);
+                setFileContent(null);
+                setInspection(null);
+                setRestoreResult(null);
+              }}
+              className="cursor-pointer rounded-2xl px-6 py-4 h-auto text-sm font-semibold"
+            >
+              Cancel
+            </Button>
+          </div>
+
+          {/* Results Breakdown */}
+          {restoreResult && (
+            <div className="p-6 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-3 mt-4">
+              <div className="flex items-center gap-2 text-emerald-800 font-extrabold text-base">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                <span>Database Repopulation Completed!</span>
+              </div>
+              <p className="text-xs text-emerald-700">
+                A total of <strong>{restoreResult.totalRestored.toLocaleString()} records</strong> were successfully restored across {Object.keys(restoreResult.tableBreakdown || {}).length} tables.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 pt-2">
+                {Object.entries(restoreResult.tableBreakdown || {}).map(([table, count]) => (
+                  <div key={table} className="bg-white px-3 py-1.5 rounded-lg border border-emerald-200 text-xs flex justify-between shadow-2xs">
+                    <span className="font-semibold text-slate-800 truncate">{table}</span>
+                    <span className="font-bold text-emerald-700">+{String(count)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
       )}
-
-      {/* ==================== TAB 4: OPERATIONS HISTORY ==================== */}
-      {activeTab === "history" && (
-        <div className="space-y-6 animate-in fade-in-50 duration-300">
-          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 sm:p-7 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-purple-50 text-purple-600">
-                    <History className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
-                    Database Repopulate / Restore Log
-                  </h3>
-                  <Badge className="bg-slate-100 text-slate-700 border-slate-200 font-mono text-xs">
-                    {restoreLogs.length} events
-                  </Badge>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Audit trail of all database restoration and synchronization operations executed in PostgreSQL.
-                </p>
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchRestoreHistory}
-                disabled={isLoadingRestoreLogs}
-                className="gap-2 cursor-pointer rounded-xl h-9 hover:bg-slate-50 font-semibold text-slate-700"
-              >
-                <RefreshCw className={cn("w-3.5 h-3.5", isLoadingRestoreLogs && "animate-spin text-indigo-600")} />
-                <span>Refresh Logs</span>
-              </Button>
-            </div>
-
-            <div className="overflow-x-auto rounded-2xl border border-slate-200/80">
-              <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold text-[11px] uppercase tracking-wider">
-                    <th className="py-3.5 px-4">File Name</th>
-                    <th className="py-3.5 px-4">Mode</th>
-                    <th className="py-3.5 px-4">Restored By</th>
-                    <th className="py-3.5 px-4">Records Processed</th>
-                    <th className="py-3.5 px-4">Timestamp</th>
-                    <th className="py-3.5 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {isLoadingRestoreLogs && restoreLogs.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
-                        <span>Loading restore history...</span>
-                      </td>
-                    </tr>
-                  ) : restoreLogs.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400">
-                        <History className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                        <p className="font-semibold text-slate-600">No database restore events recorded yet</p>
-                        <p className="text-xs text-slate-400 mt-1">Upload and execute a restore file from the Repopulate tab to see history here.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    restoreLogs.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-4 font-mono text-xs text-slate-900 font-semibold flex items-center gap-2">
-                          <FileJson className="w-4 h-4 text-indigo-600 shrink-0" />
-                          <span>{r.file_name}</span>
-                        </td>
-                        <td className="py-3.5 px-4 text-xs font-semibold">
-                          <Badge
-                            className={
-                              r.restore_mode === "CLEAN_RESTORE"
-                                ? "bg-rose-50 text-rose-700 border-rose-200 font-bold"
-                                : "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold"
-                            }
-                          >
-                            {r.restore_mode}
-                          </Badge>
-                        </td>
-                        <td className="py-3.5 px-4 text-xs text-slate-600 font-medium">
-                          {r.restorer_email || "Developer"}
-                        </td>
-                        <td className="py-3.5 px-4 text-xs font-semibold text-slate-800">
-                          <span className="font-mono">{r.total_records_processed?.toLocaleString() || 0}</span> rows
-                        </td>
-                        <td className="py-3.5 px-4 text-xs text-slate-600">
-                          <div className="font-medium text-slate-800">
-                            {new Date(r.created_at).toLocaleDateString("en-IN", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </div>
-                          <div className="text-slate-400 text-[11px] font-mono">
-                            {new Date(r.created_at).toLocaleTimeString("en-IN", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <Badge
-                            className={
-                              r.status === "SUCCESS"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold"
-                                : "bg-rose-50 text-rose-700 border-rose-200 font-bold"
-                            }
-                          >
-                            {r.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
+  )}
+
+  {/* ==================== TAB 4: OPERATIONS HISTORY ==================== */}
+  {activeTab === "history" && (
+    <div className="space-y-6 animate-in fade-in-50 duration-300">
+      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 sm:p-7 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-orange-50 text-orange-600">
+                <History className="w-4 h-4" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                Database Repopulate / Restore Log
+              </h3>
+              <Badge className="bg-orange-50 text-orange-700 border-orange-200 font-mono text-xs">
+                {restoreLogs.length} events
+              </Badge>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Audit trail of all database restoration and synchronization operations executed in PostgreSQL.
+            </p>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchRestoreHistory}
+            disabled={isLoadingRestoreLogs}
+            className="gap-2 cursor-pointer rounded-xl h-9 hover:bg-orange-50 hover:text-orange-600 font-semibold text-slate-700 border-slate-200"
+          >
+            <RefreshCw className={cn("w-3.5 h-3.5", isLoadingRestoreLogs && "animate-spin text-orange-600")} />
+            <span>Refresh Logs</span>
+          </Button>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 overflow-hidden">
+          <table className="w-full table-fixed text-left border-collapse text-sm">
+            <thead>
+              <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold text-[11px] uppercase tracking-wider">
+                <th className="py-3.5 px-4 w-[36%]">File & Mode</th>
+                <th className="py-3.5 px-4 w-[18%]">Records Processed</th>
+                <th className="py-3.5 px-4 w-[20%]">Restored By</th>
+                <th className="py-3.5 px-4 w-[14%]">Timestamp</th>
+                <th className="py-3.5 px-4 w-[12%]">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-700">
+              {isLoadingRestoreLogs && restoreLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-orange-500" />
+                    <span>Loading restore history...</span>
+                  </td>
+                </tr>
+              ) : restoreLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                    <History className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                    <p className="font-semibold text-slate-600">No database restore events recorded yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Upload and execute a restore file from the Repopulate tab to see history here.</p>
+                  </td>
+                </tr>
+              ) : (
+                restoreLogs.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
+                    {/* File & Mode */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="p-2 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 shadow-2xs shrink-0">
+                          <FileJson className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-mono text-xs font-bold text-slate-900 truncate" title={r.file_name}>
+                            {r.file_name}
+                          </div>
+                          <div className="mt-1">
+                            <Badge
+                              className={
+                                r.restore_mode === "CLEAN_RESTORE"
+                                  ? "bg-rose-50 text-rose-700 border-rose-200 font-bold text-[10px]"
+                                  : "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-[10px]"
+                              }
+                            >
+                              {r.restore_mode}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Records Processed */}
+                    <td className="py-3.5 px-4 text-xs font-semibold text-slate-800">
+                      <span className="font-mono font-bold text-slate-900">{r.total_records_processed?.toLocaleString() || 0}</span>
+                      <span className="text-slate-400 text-[11px] ml-1">rows</span>
+                    </td>
+
+                    {/* Restored By */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-700 border border-orange-100 font-bold text-[11px] flex items-center justify-center shrink-0">
+                          {(r.restorer_email || "DV").slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold text-slate-800 truncate" title={r.restorer_email || "Developer"}>
+                            {r.restorer_email ? r.restorer_email.split("@")[0] : "Developer"}
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate" title={r.restorer_email || "Developer"}>
+                            {r.restorer_email || "System"}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Timestamp */}
+                    <td className="py-3.5 px-4 text-xs text-slate-600">
+                      <div className="font-semibold text-slate-800">
+                        {new Date(r.created_at).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </div>
+                      <div className="text-slate-400 text-[11px] font-mono">
+                        {new Date(r.created_at).toLocaleTimeString("en-IN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </td>
+
+                    {/* Status */}
+                    <td className="py-3.5 px-4">
+                      <Badge
+                        className={
+                          r.status === "SUCCESS"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 font-bold text-[11px] flex items-center gap-1.5 w-fit"
+                            : "bg-rose-50 text-rose-700 border-rose-200/80 font-bold text-[11px] flex items-center gap-1.5 w-fit"
+                        }
+                      >
+                        <span className={cn("w-1.5 h-1.5 rounded-full", r.status === "SUCCESS" ? "bg-emerald-500" : "bg-rose-500")} />
+                        <span>{r.status}</span>
+                      </Badge>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
   );
 }

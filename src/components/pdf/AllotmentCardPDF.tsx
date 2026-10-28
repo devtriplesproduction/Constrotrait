@@ -165,12 +165,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#000',
     minHeight: 18,
-    alignItems: 'center',
+    alignItems: 'stretch',
   },
   tableDataRowLast: {
     flexDirection: 'row',
     minHeight: 18,
-    alignItems: 'center',
+    alignItems: 'stretch',
   },
   tableHeaderCell: {
     borderRightWidth: 1,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerCol1: {
-    width: '38%',
+    width: '30%',
     borderRightWidth: 1,
     borderColor: '#000',
     paddingVertical: 2,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   footerCol2: {
-    width: '35%',
+    width: '38%',
     borderRightWidth: 1,
     borderColor: '#000',
     paddingVertical: 2,
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   footerCol3: {
-    width: '27%',
+    width: '32%',
     paddingVertical: 2,
     paddingHorizontal: 6,
     justifyContent: 'center',
@@ -301,12 +301,10 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
   const jobEntry = jobEntryTest?.job_entries || {};
   const testMaster = jobEntryTest?.test_master || {};
 
-  // Dynamic Form Values
-  const foundDatasheetQr = targetAssignments
-    .map((a: any) => (a.job_entry_tests || a)?.test_master?.datasheet_qr)
-    .find(Boolean);
-
-  const displayDocNo = docNo || testMaster?.datasheet_qr || foundDatasheetQr || primaryJob?.doc_no || '-';
+  // Dynamic Form Values - Standard Quality Record No. for Sample Allotment Form is QR-234
+  const displayDocNo = docNo || 'QR-234';
+  const displayAmendment = amendmentNo || '02 & 08.06.2026';
+  const displayIssueDate = issueDate ? (issueDate.includes('.') ? issueDate : formatDate(issueDate)) : '02.09.2024';
   const receivingDate = jobEntry?.date_of_receiving || jobEntry?.inward_on || primaryJob?.date_of_receiving || jobEntry?.created_at;
   const allottedDate = primaryJob?.created_at || primaryJob?.date_of_allotment;
   const dueDate = primaryJob?.due_date || jobEntryTest?.due_date || jobEntryTest?.date_of_testing;
@@ -316,11 +314,64 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
     : primaryJob?.assigned_to_profile;
   const profileName = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : '';
 
-  const issueTo = primaryJob?.teams?.name ||
-    profileName ||
-    (primaryJob?.assigned_to && !primaryJob.assigned_to.includes('-') ? primaryJob.assigned_to : (currentUser?.first_name ? `${currentUser.first_name} ${currentUser.last_name || ''}`.trim() : 'Construction Dept.'));
+  // Determine Department for "Issue To:" (Construction Department or Environment Department)
+  let categoryStr = testMaster?.category || '';
+  if (!categoryStr && targetAssignments.length > 0) {
+    for (const a of targetAssignments) {
+      const tm = (a.job_entry_tests || a)?.test_master;
+      if (tm?.category) {
+        categoryStr = tm.category;
+        break;
+      }
+    }
+  }
 
-  const productTestName = testGroup || testMaster?.material_product || testMaster?.specific_test || jobEntryTest?.material_description || '';
+  let departmentName = 'Construction Department';
+  const catLower = (categoryStr || '').toLowerCase();
+  const sampleCodeRaw = (jobEntryTest?.additional_details_values?.sample_code_no || jobEntryTest?.sample_code_no || '').toUpperCase();
+
+  if (catLower.includes('env') || sampleCodeRaw.includes('/ENV/')) {
+    departmentName = 'Environment Department';
+  } else if (catLower.includes('const') || sampleCodeRaw.includes('/CON/')) {
+    departmentName = 'Construction Department';
+  } else if (categoryStr) {
+    departmentName = categoryStr.endsWith('Department') ? categoryStr : `${categoryStr} Department`;
+  }
+
+  const issueTo = departmentName;
+
+  let assignedEmployeeName = '';
+  for (const a of targetAssignments) {
+    const prof = Array.isArray(a.assigned_to_profile) ? a.assigned_to_profile[0] : a.assigned_to_profile;
+    const name = prof ? `${prof.first_name || ''} ${prof.last_name || ''}`.replace(/\s+/g, ' ').trim() : '';
+    if (name) {
+      assignedEmployeeName = name;
+      break;
+    }
+    if (a.assigned_to && !a.assigned_to.includes('-')) {
+      assignedEmployeeName = a.assigned_to.replace(/\s+/g, ' ').trim();
+      break;
+    }
+  }
+
+  const receivedByName = assignedEmployeeName ||
+    profileName ||
+    (currentUser?.first_name ? `${currentUser.first_name} ${currentUser.last_name || ''}`.replace(/\s+/g, ' ').trim() : 'Mukund Gaikwad');
+
+  // Priority for Product Test Name: testMaster.material_product ("Materials or Products Name *")
+  let productMaterialName = testMaster?.material_product || '';
+  if (!productMaterialName && targetAssignments.length > 0) {
+    for (const a of targetAssignments) {
+      const tm = (a.job_entry_tests || a)?.test_master;
+      if (tm?.material_product) {
+        productMaterialName = tm.material_product;
+        break;
+      }
+    }
+  }
+
+  const rawProductTestName = productMaterialName || testMaster?.specific_test || testGroup || jobEntryTest?.material_description || '';
+  const productTestName = rawProductTestName.replace(/Rainforcement/gi, 'Reinforcement');
   const uidLabel = uid || jobEntryTest?.uid_label || '';
 
   // Prepare table data rows from real assignment data
@@ -333,51 +384,98 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
     remark: string;
   }[] = [];
 
-  targetAssignments.forEach((assignment: any) => {
-    const t = assignment.job_entry_tests || assignment;
-    const tm = t?.test_master || {};
+  if (targetAssignments.length > 1) {
+    // Specific priority ranking matching client's standard test format
+    const getTestRank = (paramStr: string) => {
+      const p = (paramStr || '').toLowerCase().trim();
+      if (p.includes('yield strength')) return 1;
+      if (p.includes('re-bend') || p.includes('rebend')) return 6;
+      if (p.includes('bend')) return 2;
+      if (p.includes('mass per meter') || p.includes('mass/meter') || p.includes('weight per meter')) return 3;
+      if (p.includes('ultimate tensile strength') || p.includes('uts') || p.includes('tensile strength')) return 4;
+      if (p.includes('elongation')) return 5;
+      return 99;
+    };
 
-    const codeNo = t?.additional_details_values?.sample_code_no || t?.sample_code_no || '';
-    let codes: string[] = [];
-    if (codeNo) {
-      codes = codeNo.split(/,\s*(?=CMTS\/)|,\s*/).map((c: string) => c.trim()).filter(Boolean);
-    }
+    const sortedAssignments = [...targetAssignments].sort((a: any, b: any) => {
+      const ta = a.job_entry_tests || a;
+      const tb = b.job_entry_tests || b;
+      const pa = (ta?.test_master?.component_parameter || ta?.test_master?.specific_test || ta?.test_parameters || '');
+      const pb = (tb?.test_master?.component_parameter || tb?.test_master?.specific_test || tb?.test_parameters || '');
+      const rankA = getTestRank(pa);
+      const rankB = getTestRank(pb);
+      if (rankA !== rankB) return rankA - rankB;
+      return 0;
+    });
 
-    const qtyStr = t?.sample_quantity || assignment?.sample_quantity || '';
+    // Extract all specimen codes from the inward's tests
+    const allCodesSet = new Set<string>();
+    sortedAssignments.forEach((assignment: any) => {
+      const t = assignment.job_entry_tests || assignment;
+      const codeNo = t?.additional_details_values?.sample_code_no || t?.sample_code_no || '';
+      if (codeNo) {
+        const splitCodes = codeNo.split(/,\s*(?=CMTS\/)|,\s*/).map((c: string) => c.trim()).filter(Boolean);
+        splitCodes.forEach((c: string) => allCodesSet.add(c));
+      }
+    });
+
+    let codes = Array.from(allCodesSet);
+
+    // Expand if only 1 base code was stored but sample quantity > 1
+    const firstTest = sortedAssignments[0]?.job_entry_tests || sortedAssignments[0] || {};
+    const qtyStr = firstTest?.sample_quantity || sortedAssignments[0]?.sample_quantity || '';
     const qtyMatch = qtyStr ? String(qtyStr).match(/\d+/) : null;
     let qty = qtyMatch ? parseInt(qtyMatch[0], 10) : 1;
+    const matId = firstTest?.material_id || sortedAssignments[0]?.material_id;
+    if (qty === 1 && matId && typeof matId === 'string' && matId.includes(',')) {
+      const matCount = matId.split(',').filter((s: string) => s.trim().length > 0).length;
+      if (matCount > 1) qty = matCount;
+    }
     if (isNaN(qty) || qty <= 0) qty = 1;
 
-    // If only one code was stored but sample quantity is greater than 1, expand into individual sample items
-    if (codes.length === 1 && codes[0] && qty > 1) {
-      const romanMap = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI", "XXII", "XXIII", "XXIV", "XXV", "XXVI", "XXVII", "XXVIII", "XXIX", "XXX"];
-      const baseCode = codes[0].replace(/-[IVXLCDM\d]+$/i, '');
+    if (codes.length === 1 && codes[0] && qty > 1 && !codes[0].match(/-[IVXLCDM\d]+$/i)) {
+      const romanMap = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"];
+      const base = codes[0];
       codes = [];
       for (let i = 0; i < qty; i++) {
-        codes.push(`${baseCode}-${romanMap[i] || (i + 1)}`);
+        codes.push(`${base}-${romanMap[i] || (i + 1)}`);
       }
     }
 
-    if (codes.length === 0) {
-      codes = [''];
-    }
+    // Every test parameter gets its own row; sample codes are placed row-by-row on the first N rows, remaining rows stay empty in Sample Code column
+    sortedAssignments.forEach((assignment: any, index: number) => {
+      const t = assignment.job_entry_tests || assignment;
+      const tm = t?.test_master || {};
 
-    const sampleName = tm?.material_product || t?.material_description || '';
-    const testParams = tm?.specific_test || tm?.component_parameter || t?.test_parameters || '';
-    const method = tm?.test_method || t?.test_method || '';
+      const sampleCode = codes[index] || '';
+      const rawSampleName = t?.material_description ||
+        jobEntry?.material_description ||
+        t?.additional_details_values?.sample_name ||
+        t?.additional_details_values?.material_description ||
+        t?.additional_details_values?.location ||
+        tm?.material_product ||
+        productTestName ||
+        '';
+      const sampleName = rawSampleName.replace(/Rainforcement/gi, 'Reinforcement');
+      const testParams = tm?.component_parameter || tm?.specific_test || t?.test_parameters || '';
+      const method = tm?.test_method || t?.test_method || '';
 
-    const rawDetails = { ...(t?.additional_details_values || {}) };
-    delete rawDetails.sample_quantity;
-    delete rawDetails.sample_code_no;
-    delete rawDetails.test_initials;
-    delete rawDetails.material_initials;
-    delete rawDetails.material_id;
-    const sampleDetails = Object.values(rawDetails).filter(Boolean).join(', ') || t?.material_id || '';
-    const remark = 'ok';
+      const rawDetails = { ...(t?.additional_details_values || {}) };
+      delete rawDetails.sample_quantity;
+      delete rawDetails.sample_code_no;
+      delete rawDetails.test_initials;
+      delete rawDetails.material_initials;
+      delete rawDetails.material_id;
+      const sampleDetails = t?.grade ||
+        (t?.additional_details_values as any)?.Grade ||
+        (t?.additional_details_values as any)?.grade ||
+        Object.values(rawDetails).filter(Boolean).join(', ') ||
+        t?.material_id ||
+        '';
+      const remark = 'ok';
 
-    codes.forEach((code) => {
       rows.push({
-        sampleCode: code,
+        sampleCode,
         sampleName,
         testParams,
         method,
@@ -385,7 +483,80 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
         remark,
       });
     });
-  });
+  } else {
+    // Single test (e.g. concrete cube with 3 specimens): 1 row per specimen code
+    targetAssignments.forEach((assignment: any) => {
+      const t = assignment.job_entry_tests || assignment;
+      const tm = t?.test_master || {};
+
+      const codeNo = t?.additional_details_values?.sample_code_no || t?.sample_code_no || '';
+      let codes: string[] = [];
+      if (codeNo) {
+        codes = codeNo.split(/,\s*(?=CMTS\/)|,\s*/).map((c: string) => c.trim()).filter(Boolean);
+      }
+
+      const qtyStr = t?.sample_quantity || assignment?.sample_quantity || '';
+      const qtyMatch = qtyStr ? String(qtyStr).match(/\d+/) : null;
+      let qty = qtyMatch ? parseInt(qtyMatch[0], 10) : 1;
+      const matId = t?.material_id || assignment?.material_id;
+      if (qty === 1 && matId && typeof matId === 'string' && matId.includes(',')) {
+        const matCount = matId.split(',').filter((s: string) => s.trim().length > 0).length;
+        if (matCount > 1) qty = matCount;
+      }
+      if (isNaN(qty) || qty <= 0) qty = 1;
+
+      // Expand into individual codes if only base code was saved but qty > 1
+      if (codes.length === 1 && codes[0] && qty > 1 && !codes[0].match(/-[IVXLCDM\d]+$/i)) {
+        const romanMap = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"];
+        const base = codes[0];
+        codes = [];
+        for (let i = 0; i < qty; i++) {
+          codes.push(`${base}-${romanMap[i] || (i + 1)}`);
+        }
+      }
+
+      if (codes.length === 0) {
+        codes = [''];
+      }
+
+      const rawSampleName = t?.material_description ||
+        jobEntry?.material_description ||
+        t?.additional_details_values?.sample_name ||
+        t?.additional_details_values?.material_description ||
+        t?.additional_details_values?.location ||
+        tm?.material_product ||
+        productTestName ||
+        '';
+      const sampleName = rawSampleName.replace(/Rainforcement/gi, 'Reinforcement');
+      const testParams = tm?.component_parameter || tm?.specific_test || t?.test_parameters || '';
+      const method = tm?.test_method || t?.test_method || '';
+
+      const rawDetails = { ...(t?.additional_details_values || {}) };
+      delete rawDetails.sample_quantity;
+      delete rawDetails.sample_code_no;
+      delete rawDetails.test_initials;
+      delete rawDetails.material_initials;
+      delete rawDetails.material_id;
+      const sampleDetails = t?.grade ||
+        (t?.additional_details_values as any)?.Grade ||
+        (t?.additional_details_values as any)?.grade ||
+        Object.values(rawDetails).filter(Boolean).join(', ') ||
+        t?.material_id ||
+        '';
+      const remark = 'ok';
+
+      codes.forEach((code) => {
+        rows.push({
+          sampleCode: code,
+          sampleName,
+          testParams,
+          method,
+          sampleDetails,
+          remark,
+        });
+      });
+    });
+  }
 
   // Maintain at least 5 rows for standard form appearance without adding fake data
   while (rows.length < 5) {
@@ -504,22 +675,26 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
             return (
               <View key={index} style={isLast ? styles.tableDataRowLast : styles.tableDataRow}>
                 <View style={[styles.tableCell, { width: '22%' }]}>
-                  <Text style={[styles.regular, styles.textCenter]}>{row.sampleCode}</Text>
+                  <Text style={[styles.regular, styles.textCenter]}>{row.sampleCode || '\u00A0'}</Text>
                 </View>
                 <View style={[styles.tableCell, { width: '18%' }]}>
-                  <Text style={[styles.regular, styles.textCenter]}>{row.sampleName}</Text>
+                  <Text style={[styles.regular, styles.textCenter]}>{row.sampleName || '\u00A0'}</Text>
                 </View>
                 <View style={[styles.tableCell, { width: '16%' }]}>
-                  <Text style={[styles.regular, styles.textCenter]}>{row.testParams}</Text>
+                  <Text style={[styles.regular, styles.textCenter, row.testParams.length > 45 ? { fontSize: 7.5 } : (row.testParams.length > 25 ? { fontSize: 8.5 } : {})]}>
+                    {row.testParams || '\u00A0'}
+                  </Text>
                 </View>
                 <View style={[styles.tableCell, { width: '20%' }]}>
-                  <Text style={[styles.regular, styles.textCenter]}>{row.method}</Text>
+                  <Text style={[styles.regular, styles.textCenter, row.method.length > 30 ? { fontSize: 8 } : {}]}>
+                    {row.method || '\u00A0'}
+                  </Text>
                 </View>
                 <View style={[styles.tableCell, { width: '14%' }]}>
-                  <Text style={[styles.regular, styles.textCenter]}>{row.sampleDetails}</Text>
+                  <Text style={[styles.regular, styles.textCenter]}>{row.sampleDetails || '\u00A0'}</Text>
                 </View>
                 <View style={[styles.tableCellLast, { width: '10%' }]}>
-                  <Text style={[styles.regular, styles.textCenter]}>{row.remark}</Text>
+                  <Text style={[styles.regular, styles.textCenter]}>{row.remark || '\u00A0'}</Text>
                 </View>
               </View>
             );
@@ -528,7 +703,7 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
 
         {/* SAMPLE RECEIVED BY (Outside boxes) */}
         <Text style={styles.sampleReceivedByText}>
-          Sample Received By-{currentUser?.first_name ? ` ${currentUser.first_name} ${currentUser.last_name || ''}`.trim() : ''}
+          Sample Received By-{receivedByName}
         </Text>
 
         {/* BOX 6: FOOTER */}
@@ -539,7 +714,7 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
               <Text style={styles.bold}>Issue No. : 01</Text>
             </View>
             <View style={styles.footerCol2}>
-              <Text style={styles.bold}>Amendment No & Date : {amendmentNo || ''}</Text>
+              <Text style={styles.bold}>Amendment No & Date : {displayAmendment}</Text>
             </View>
             <View style={styles.footerCol3}>
               <Text style={styles.bold}>Page No: 1-1</Text>
@@ -549,7 +724,7 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
           {/* Row 2 */}
           <View style={styles.footerRow2}>
             <View style={styles.footerCol1}>
-              <Text style={styles.bold}>Issue Date: {formatDate(effectiveIssueDate)}</Text>
+              <Text style={styles.bold}>Issue Date: {displayIssueDate}</Text>
             </View>
             <View style={styles.footerCol2}>
               <View style={styles.footerSignContainer}>

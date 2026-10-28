@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   Receipt,
@@ -27,6 +27,8 @@ interface RecordExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   inward?: any;
+  initialTestId?: string;
+  defaultExpenseType?: "inward" | "inhouse" | "company";
   inwards?: any[];
   categories?: any[];
   accounts?: any[];
@@ -40,6 +42,8 @@ export function RecordExpenseModal({
   isOpen,
   onClose,
   inward,
+  initialTestId,
+  defaultExpenseType,
   inwards = [],
   categories = [],
   accounts = [],
@@ -47,7 +51,7 @@ export function RecordExpenseModal({
   onSuccess,
 }: RecordExpenseModalProps) {
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [expenseType, setExpenseType] = useState<"inward" | "inhouse" | "company">("inhouse");
   const [inwardId, setInwardId] = useState("");
@@ -70,22 +74,34 @@ export function RecordExpenseModal({
     description: "",
     gst_amount: "",
     tds_amount: "",
+    job_entry_test_id: "",
   });
 
   useEffect(() => {
     if (inward) {
       setExpenseType("inward");
       setInwardId(inward.id);
+      const test = initialTestId && inward.job_entry_tests
+        ? inward.job_entry_tests.find((t: any) => t.id === initialTestId)
+        : null;
+      const testName = test
+        ? test.test_master?.specific_test || test.test_master?.component_parameter || test.material_description || "Specific Test"
+        : "";
+
       setForm((prev) => ({
         ...prev,
+        job_entry_test_id: initialTestId || "",
         site_name: inward.project_name || inward.clients?.site_name || prev.site_name,
-        description: `Direct expense for Inward UID: ${inward.uid_label || inward.uid}`,
+        description: testName
+          ? `Direct test expense for: ${testName} (Inward UID: ${inward.uid_label || inward.uid})`
+          : `Direct expense for Inward UID: ${inward.uid_label || inward.uid}`,
       }));
     } else {
-      setExpenseType("inhouse");
+      setExpenseType(defaultExpenseType || "inhouse");
       setInwardId("");
+      setForm((prev) => ({ ...prev, job_entry_test_id: initialTestId || "" }));
     }
-  }, [inward, isOpen]);
+  }, [inward, initialTestId, defaultExpenseType, isOpen]);
 
   if (!isOpen) return null;
 
@@ -155,7 +171,7 @@ export function RecordExpenseModal({
   const selectedInward =
     inward || inwards.find((i) => i.id === inwardId);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!form.amount || Number(form.amount) <= 0) {
@@ -176,53 +192,57 @@ export function RecordExpenseModal({
       return;
     }
 
-    startTransition(async () => {
-      try {
-        const payload = {
-          ...form,
-          amount: Number(form.amount),
-          gst_amount: Number(form.gst_amount || 0),
-          tds_amount: Number(form.tds_amount || 0),
-          expense_type: expenseType,
-          inward_id: expenseType === "inward" ? inwardId : null,
-          is_general_expense: expenseType === "company",
-          project_id: form.project_id || null,
-          category_id: form.category_id || null,
-          account_id: form.account_id || null,
-        };
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        ...form,
+        amount: Number(form.amount),
+        gst_amount: Number(form.gst_amount || 0),
+        tds_amount: Number(form.tds_amount || 0),
+        expense_type: expenseType,
+        inward_id: expenseType === "inward" ? inwardId : null,
+        job_entry_test_id: expenseType === "inward" ? (form.job_entry_test_id || null) : null,
+        is_general_expense: expenseType === "company",
+        project_id: form.project_id || null,
+        category_id: form.category_id || null,
+        account_id: form.account_id || null,
+      };
 
-        const res = await createExpenseAction(payload);
+      const res = await createExpenseAction(payload);
 
-        if (res.success) {
-          toast({
-            title: "Expense Recorded",
-            description: `${
-              expenseType === "inward" ? "Inward-linked" : "Company"
-            } expense of ₹${Number(form.amount).toLocaleString(
-              "en-IN"
-            )} recorded successfully. ${
-              requiresApproval
-                ? "Pending managerial approval."
-                : "Approved."
-            }`,
-          });
-          onSuccess?.();
-          onClose();
-        } else {
-          toast({
-            title: "Expense Recording Failed",
-            description: res.error || "Could not record expense.",
-            variant: "error",
-          });
-        }
-      } catch (err: any) {
+      if (res.success) {
+        // Close modal immediately so the user doesn't wait
+        onClose();
         toast({
-          title: "Unexpected Error",
-          description: err.message || "An unexpected error occurred.",
+          title: "Expense Recorded",
+          description: `${
+            expenseType === "inward" ? "Inward-linked" : "Company"
+          } expense of ₹${Number(form.amount).toLocaleString(
+            "en-IN"
+          )} recorded successfully. ${
+            requiresApproval
+              ? "Pending managerial approval."
+              : "Approved."
+          }`,
+        });
+        // Background refresh
+        onSuccess?.();
+      } else {
+        toast({
+          title: "Expense Recording Failed",
+          description: res.error || "Could not record expense.",
           variant: "error",
         });
       }
-    });
+    } catch (err: any) {
+      toast({
+        title: "Unexpected Error",
+        description: err.message || "An unexpected error occurred.",
+        variant: "error",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredInwardOptions = inwards.filter((item) => {
@@ -388,6 +408,7 @@ export function RecordExpenseModal({
                       if (inv) {
                         setForm((prev) => ({
                           ...prev,
+                          job_entry_test_id: "",
                           site_name: inv.project_name || inv.clients?.site_name || prev.site_name,
                           description: prev.description || `Direct expense for Inward UID: ${inv.uid_label || inv.uid}`,
                         }));
@@ -413,6 +434,68 @@ export function RecordExpenseModal({
                       className="w-full h-8 px-2.5 text-xs bg-white/80 border border-blue-200 rounded-lg text-slate-700 placeholder-slate-400"
                     />
                   )}
+                </div>
+              )}
+
+              {/* Specific Test Allocation Dropdown (Optional) */}
+              {selectedInward?.job_entry_tests && selectedInward.job_entry_tests.length > 0 && (
+                <div className="pt-2.5 border-t border-blue-200/70 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                      <FlaskConical className="w-3.5 h-3.5 text-blue-600" />
+                      Allocate to Specific Test (Optional)
+                    </label>
+                    <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                      {selectedInward.job_entry_tests.length} Registered Tests
+                    </span>
+                  </div>
+
+                  <select
+                    value={form.job_entry_test_id}
+                    onChange={(e) => {
+                      const testId = e.target.value;
+                      set("job_entry_test_id", testId);
+                      const t = selectedInward.job_entry_tests.find((item: any) => item.id === testId);
+                      if (t) {
+                        const testName =
+                          t.test_master?.specific_test ||
+                          t.test_master?.component_parameter ||
+                          t.material_description ||
+                          "Test";
+                        setForm((prev) => ({
+                          ...prev,
+                          job_entry_test_id: testId,
+                          description: `Direct test expense for: ${testName} (Inward UID: ${selectedInward.uid_label || selectedInward.uid})`,
+                        }));
+                      } else {
+                        setForm((prev) => ({
+                          ...prev,
+                          job_entry_test_id: "",
+                          description: `Direct expense for Inward UID: ${selectedInward.uid_label || selectedInward.uid}`,
+                        }));
+                      }
+                    }}
+                    className="w-full h-9 px-3 bg-white border border-blue-300 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                  >
+                    <option value="">— Entire Inward Job (Shared / General Inward Cost) —</option>
+                    {selectedInward.job_entry_tests.map((t: any) => {
+                      const tm = t.test_master;
+                      const testName =
+                        tm?.specific_test ||
+                        tm?.component_parameter ||
+                        t.material_description ||
+                        "Test Parameter";
+                      const mat = tm?.material_product || tm?.discipline_group || "Material";
+                      return (
+                        <option key={t.id} value={t.id}>
+                          {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <p className="text-[10px] text-blue-700/80">
+                    Tagging a specific test attributes this cost directly to that test for individual test-wise revenue & profitability tracking.
+                  </p>
                 </div>
               )}
             </div>
@@ -677,18 +760,18 @@ export function RecordExpenseModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              disabled={isPending}
+              disabled={isSubmitting}
               className="h-10 px-5 text-xs font-semibold rounded-xl"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={isPending}
+              disabled={isSubmitting}
               className="h-10 px-6 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-md gap-2"
             >
-              {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span>{isPending ? "Recording..." : "Record Expense"}</span>
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>{isSubmitting ? "Recording..." : "Record Expense"}</span>
             </Button>
           </div>
         </form>

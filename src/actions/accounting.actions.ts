@@ -19,6 +19,7 @@ export async function createInwardReceiptAction(payload: any) {
     revalidatePath("/accounting");
     revalidatePath("/accounting/billing");
     revalidatePath("/accounting/receipts");
+    revalidatePath("/accounting/test-financials");
   }
   return result;
 }
@@ -31,6 +32,7 @@ export async function cancelInwardReceiptAction(receiptId: string, reason: strin
     revalidatePath("/accounting");
     revalidatePath("/accounting/billing");
     revalidatePath("/accounting/receipts");
+    revalidatePath("/accounting/test-financials");
   }
   return result;
 }
@@ -43,6 +45,7 @@ export async function createExpenseAction(payload: any) {
     revalidatePath("/accounting");
     revalidatePath("/accounting/billing");
     revalidatePath("/accounting/expenses");
+    revalidatePath("/accounting/test-financials");
     revalidatePath("/accounting/ledgers");
   }
   return result;
@@ -56,6 +59,7 @@ export async function approveExpenseAction(expenseId: string, approve: boolean, 
     revalidatePath("/accounting");
     revalidatePath("/accounting/billing");
     revalidatePath("/accounting/expenses");
+    revalidatePath("/accounting/test-financials");
     revalidatePath("/accounting/ledgers");
   }
   return result;
@@ -300,15 +304,36 @@ export async function getLedgersDataAction(filters?: {
   return accounting.getLedgersData(filters);
 }
 
-export async function updateQuotationStatusAction(id: string, status: "draft" | "sent" | "accepted" | "rejected") {
+export async function updateQuotationStatusAction(
+  id: string,
+  status: "draft" | "sent" | "accepted" | "approved" | "rejected" | "rework" | "revision_requested" | "superseded",
+  options?: { reason?: string; actionType?: string }
+) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
-  const result = await accounting.updateQuotationStatus(id, status);
+  const result = await accounting.updateQuotationStatus(id, status, options);
   if (result.success) {
     revalidatePath("/accounting");
     revalidatePath("/accounting/quotations");
   }
   return result;
+}
+
+export async function reviseQuotationAction(quotationId: string, payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.reviseQuotation(quotationId, payload);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/quotations");
+  }
+  return result;
+}
+
+export async function getQuotationVersionsAction(quotationId: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  return accounting.getQuotationVersions(quotationId);
 }
 
 export async function convertQuotationToProformaAction(quotationId: string) {

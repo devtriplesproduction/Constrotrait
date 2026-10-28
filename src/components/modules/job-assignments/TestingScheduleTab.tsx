@@ -151,82 +151,135 @@ export function TestingScheduleTab({ assignments, userId, filterStatus = 'all', 
   const renderGroup = (title: string, items: any[], icon: React.ReactNode, bgColor: string, textColor: string, isToday = false) => {
     if (items.length === 0 && title !== "Today's Tests") return null;
 
-    // For Today's tests, group by UID + Test Name to show the allotment form download button
     let content;
     
     if (items.length > 0) {
-      content = items.map((a, idx) => {
+      // Group items by Inward / UID: 1 Inward = 1 Card & 1 Allotment Form
+      const inwardMap = new Map<string, {
+        jobEntryId: string;
+        uid: string;
+        materialName: string;
+        isNabl: boolean;
+        dateAssignments: any[];
+        allInwardAssignments: any[];
+      }>();
+
+      items.forEach(a => {
         const uid = uidOf(a) || 'No UID';
-        const specificTest = a.job_entry_tests?.test_master?.specific_test || a.job_entry_tests?.test_master?.component_parameter || 'Unknown Test';
-        const isNabl = isNablJob(a);
-        
+        const je = a.job_entry_tests;
+        const jeId = je?.job_entry_id || a.id;
+        const key = uid !== 'No UID' ? `${jeId}-${uid}` : `je-${jeId}`;
+        const matName = je?.material_description || je?.test_master?.material_product || je?.test_master?.specific_test || 'Material';
+
+        if (!inwardMap.has(key)) {
+          // Get all assignments belonging to this inward across the entire dataset
+          const allInward = assignments.filter(allA => {
+            const aJe = allA.job_entry_tests;
+            const aJeId = aJe?.job_entry_id || allA.id;
+            const aUid = uidOf(allA) || 'No UID';
+            return aJeId === jeId || (uid !== 'No UID' && aUid === uid);
+          });
+
+          inwardMap.set(key, {
+            jobEntryId: jeId,
+            uid,
+            materialName: matName,
+            isNabl: isNablJob(a),
+            dateAssignments: [a],
+            allInwardAssignments: allInward.length > 0 ? allInward : [a],
+          });
+        } else {
+          inwardMap.get(key)!.dateAssignments.push(a);
+        }
+      });
+
+      const inwardGroups = Array.from(inwardMap.values()).sort(compareJobCardsByUidRecentFirst);
+
+      content = inwardGroups.map((group, gIdx) => {
         return (
-        <div key={a.id || idx} className="bg-white rounded-2xl border border-slate-200/60 p-3 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 flex flex-col">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                 <div className="bg-orange-100 p-1.5 rounded-lg text-orange-600 shrink-0">
-                   <Beaker className="w-4 h-4" />
-                 </div>
-                 <h4 className="font-semibold text-base text-slate-800 tracking-tight shrink-0">{specificTest}</h4>
-                 <span className="font-medium text-xs text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-md shadow-sm">UID: {uid}</span> 
-                 {isNabl ? (
-                   <span className="font-bold text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">
-                     NABL
-                   </span>
-                 ) : (
-                   <span className="font-bold text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
-                     Non-NABL
-                   </span>
-                 )}
-              </div>
-            </div>
-            <div className="shrink-0 bg-white shadow-sm rounded-xl border border-slate-100 p-1">
-              <DownloadAllotmentButton 
-                testGroup={specificTest} 
-                uid={uid} 
-                assignments={[a]} 
-                currentUserProfile={currentUserProfile} 
-              />
-            </div>
-          </div>
-          <div className="grid gap-2">
-              <div className="flex flex-col md:flex-row md:items-center gap-2 bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm hover:border-orange-200 hover:shadow-md transition-all group ring-1 ring-slate-900/5">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    {a.job_entry_tests?.test_master?.datasheet_qr ? (
-                      <span className="text-xs font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 shadow-sm shrink-0">
-                        Doc No: {a.job_entry_tests.test_master.datasheet_qr}
-                      </span>
-                    ) : null}
+          <div key={group.jobEntryId || gIdx} className="bg-white rounded-2xl border border-slate-200/60 p-3.5 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 flex flex-col">
+            {/* Card Header: 1 Inward = 1 Allotment Form Button */}
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 mb-3 pb-2.5 border-b border-slate-100">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="bg-orange-100 p-1.5 rounded-lg text-orange-600 shrink-0">
+                    <Beaker className="w-4 h-4" />
                   </div>
-                  <div className="flex items-center gap-3 mt-1">
-                    {(!isToday && (a.job_entry_tests?.date_of_testing || a.due_date)) && (
-                      <span className="text-[10px] font-medium text-orange-600 flex items-center gap-1 bg-orange-50/80 border border-orange-100 px-1.5 py-0.5 rounded shadow-sm">
-                        <Calendar className="w-3 h-3 text-orange-400" />
-                        Due: {new Date(a.job_entry_tests?.date_of_testing || a.due_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="shrink-0">
-                  <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-                    a.status === 'pending' ? 'bg-slate-100 text-slate-700 border border-slate-200' :
-                    a.status === 'assigned' ? 'bg-orange-100 text-orange-700 border border-orange-200' :
-                    a.status === 'accepted' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
-                    a.status === 'in_testing' ? 'bg-orange-500 text-white shadow-sm shadow-orange-200/50 border border-transparent' :
-                    a.status === 'report_uploaded' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' :
-                    a.status === 'in_review' ? 'bg-orange-200 text-orange-800 border border-orange-300' :
-                    a.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
-                    a.status === 'rejected' ? 'bg-red-100 text-red-700 border border-red-200' :
-                    'bg-slate-100 text-slate-700 border border-slate-200'
-                  }`}>
-                    {a.status ? a.status.replace('_', ' ') : 'Unknown'}
+                  <h4 className="font-semibold text-base text-slate-800 tracking-tight truncate max-w-[200px] sm:max-w-[260px]" title={group.materialName}>
+                    {group.materialName}
+                  </h4>
+                  <span className="font-medium text-xs text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-md shadow-sm">
+                    UID: {group.uid}
+                  </span> 
+                  {group.isNabl ? (
+                    <span className="font-bold text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">
+                      NABL
+                    </span>
+                  ) : (
+                    <span className="font-bold text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
+                      Non-NABL
+                    </span>
+                  )}
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100/80 px-2 py-0.5 rounded-md border border-slate-200">
+                    {group.dateAssignments.length} {group.dateAssignments.length === 1 ? 'Test' : 'Tests'}
                   </span>
                 </div>
               </div>
+              <div className="shrink-0 bg-white shadow-sm rounded-xl border border-slate-100 p-1">
+                <DownloadAllotmentButton 
+                  testGroup={group.materialName} 
+                  uid={group.uid} 
+                  assignments={group.allInwardAssignments} 
+                  currentUserProfile={currentUserProfile} 
+                />
+              </div>
+            </div>
+
+            {/* List of tests for this inward */}
+            <div className="grid gap-2">
+              {group.dateAssignments.map((a, aIdx) => {
+                const specificTest = a.job_entry_tests?.test_master?.specific_test || a.job_entry_tests?.test_master?.component_parameter || 'Unknown Test';
+                const dueDateStr = a.job_entry_tests?.date_of_testing || a.due_date;
+                return (
+                  <div key={a.id || aIdx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/70 p-2.5 rounded-xl border border-slate-100 shadow-2xs hover:border-orange-200 hover:bg-orange-50/30 transition-all">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-slate-800 truncate" title={specificTest}>
+                          {specificTest}
+                        </span>
+                        {a.job_entry_tests?.test_master?.datasheet_qr ? (
+                          <span className="text-[10px] font-medium text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs shrink-0">
+                            Doc No: {a.job_entry_tests.test_master.datasheet_qr}
+                          </span>
+                        ) : null}
+                      </div>
+                      {(!isToday && dueDateStr) && (
+                        <div className="flex items-center gap-1 mt-1 text-[10px] font-medium text-orange-600">
+                          <Calendar className="w-3 h-3 text-orange-400" />
+                          Due: {new Date(dueDateStr).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                        </div>
+                      )}
+                    </div>
+                    <div className="shrink-0">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        a.status === 'pending' ? 'bg-slate-100 text-slate-700 border border-slate-200' :
+                        a.status === 'assigned' ? 'bg-orange-100 text-orange-700 border border-orange-200' :
+                        a.status === 'accepted' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                        a.status === 'in_testing' ? 'bg-orange-500 text-white shadow-sm shadow-orange-200/50 border border-transparent' :
+                        a.status === 'report_uploaded' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' :
+                        a.status === 'in_review' ? 'bg-orange-200 text-orange-800 border border-orange-300' :
+                        a.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                        a.status === 'rejected' ? 'bg-red-100 text-red-700 border border-red-200' :
+                        'bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}>
+                        {a.status ? a.status.replace('_', ' ') : 'Unknown'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
         );
       });
     }

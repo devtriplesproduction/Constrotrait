@@ -8,6 +8,10 @@ import { useToast } from "@/hooks/use-toast";
 import { createInvoiceWithItemsAction, getClientPreviousInvoiceAction, getQuotationTemplatesAction } from "@/actions/accounting.actions";
 
 interface LineItem {
+  job_entry_test_id?: string;
+  test_master_id?: string;
+  test_name?: string;
+  material_product?: string;
   description: string;
   qty: number;
   rate: number;
@@ -193,8 +197,12 @@ export function CreateProformaInvoiceModal({
         ].filter(Boolean);
         const desc = nameParts.length > 0 ? nameParts.join(" - ") : t.material_description || "Laboratory Test Analysis";
         return {
+          job_entry_test_id: t.id,
+          test_master_id: tm?.id,
+          test_name: tm?.specific_test || tm?.component_parameter || t.material_description || desc,
+          material_product: tm?.material_product || undefined,
           description: desc,
-          qty: 1,
+          qty: Number(t.sample_quantity) || 1,
           rate: 0,
           amount: 0,
         };
@@ -326,6 +334,11 @@ export function CreateProformaInvoiceModal({
         const q = key === "qty" ? Number(value || 0) : item.qty;
         const r = key === "rate" ? Number(value || 0) : item.rate;
         item.amount = Math.round(q * r * 100) / 100;
+      } else if (key === "amount") {
+        const amt = Number(value || 0);
+        item.amount = amt;
+        const q = item.qty || 1;
+        item.rate = q > 0 ? Math.round((amt / q) * 100) / 100 : amt;
       }
       copy[index] = item;
       return copy;
@@ -783,23 +796,35 @@ export function CreateProformaInvoiceModal({
 
             <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
               <div className="grid grid-cols-12 gap-2 bg-slate-100/70 p-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                <div className="col-span-6 sm:col-span-7">Description / Test Parameter</div>
+                <div className="col-span-5 sm:col-span-5">Description / Test Parameter</div>
                 <div className="col-span-2 sm:col-span-1 text-center">Qty</div>
-                <div className="col-span-2 text-right">Rate (₹)</div>
-                <div className="col-span-2 text-right">Amount (₹)</div>
+                <div className="col-span-2 sm:col-span-2 text-right">Rate (₹)</div>
+                <div className="col-span-3 sm:col-span-4 text-right">Separate Amount (₹)</div>
               </div>
 
               <div className="divide-y divide-slate-100 bg-white">
                 {items.map((item, idx) => (
                   <div key={idx} className="grid grid-cols-12 gap-2 p-2.5 items-center hover:bg-slate-50/50 transition-colors">
-                    <div className="col-span-6 sm:col-span-7">
+                    <div className="col-span-5 sm:col-span-5 space-y-1">
                       <Input
                         required
                         placeholder="Description of test or service"
                         value={item.description}
                         onChange={(e) => updateItem(idx, "description", e.target.value)}
-                        className="h-8 text-xs"
+                        className="h-8 text-xs font-medium"
                       />
+                      {item.material_product && (
+                        <div className="flex items-center gap-1.5 px-0.5">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                            {item.material_product}
+                          </span>
+                          {item.test_name && item.test_name !== item.description && (
+                            <span className="text-[10px] text-slate-400 truncate max-w-[200px]">
+                              {item.test_name}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="col-span-2 sm:col-span-1">
                       <Input
@@ -812,27 +837,38 @@ export function CreateProformaInvoiceModal({
                         className="h-8 text-xs text-center"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-2 sm:col-span-2">
                       <Input
-                        required
                         type="number"
                         min="0"
                         step="0.01"
                         placeholder="0.00"
                         value={item.rate || ""}
                         onChange={(e) => updateItem(idx, "rate", e.target.value)}
-                        className="h-8 text-xs text-right"
+                        className="h-8 text-xs text-right font-medium"
                       />
                     </div>
-                    <div className="col-span-2 flex items-center justify-end gap-2">
-                      <span className="font-semibold text-xs text-slate-800">
-                        {fmt(item.amount)}
-                      </span>
+                    <div className="col-span-3 sm:col-span-4 flex items-center justify-end gap-2">
+                      <div className="relative flex-1 max-w-[140px]">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold">
+                          ₹
+                        </span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={item.amount || ""}
+                          onChange={(e) => updateItem(idx, "amount", e.target.value)}
+                          className="h-8 text-xs text-right pl-5 font-bold text-slate-900 bg-blue-50/20 border-blue-200 focus:bg-white"
+                        />
+                      </div>
                       {items.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeItem(idx)}
-                          className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors"
+                          className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors shrink-0"
+                          title="Remove Line Item"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

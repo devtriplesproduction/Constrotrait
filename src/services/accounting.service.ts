@@ -173,7 +173,8 @@ export async function getAccountingDashboard(branchId?: string) {
         expense_date,
         expense_type,
         vendor_name,
-        category_id
+        category_id,
+        job_entry_test_id
       )
     `)
     .order("created_at", { ascending: false })
@@ -265,7 +266,8 @@ export async function createExpense(payload: any) {
       expense_categories ( id, name, scope ),
       financial_accounts ( id, name, account_type, bank_name ),
       accounting_projects ( id, name ),
-      job_entries ( id, uid, uid_label, inward_on, project_name, clients ( id, name ) )
+      job_entries ( id, uid, uid_label, inward_on, project_name, clients ( id, name ) ),
+      job_entry_tests ( id, material_description, test_master ( id, specific_test, component_parameter, material_product ) )
     `)
     .single();
 
@@ -312,7 +314,8 @@ export async function approveExpense(expenseId: string, approve: boolean, remark
       expense_categories ( id, name, scope ),
       financial_accounts ( id, name, account_type, bank_name ),
       accounting_projects ( id, name ),
-      job_entries ( id, uid, uid_label, inward_on, project_name, clients ( id, name ) )
+      job_entries ( id, uid, uid_label, inward_on, project_name, clients ( id, name ) ),
+      job_entry_tests ( id, material_description, test_master ( id, specific_test, component_parameter, material_product ) )
     `)
     .single();
 
@@ -931,13 +934,30 @@ export async function getQuotations(branchId?: string) {
   return { success: true, data };
 }
 
-export async function updateQuotationStatus(id: string, status: "draft" | "sent" | "accepted" | "rejected") {
+export async function updateQuotationStatus(
+  id: string,
+  status: "draft" | "sent" | "accepted" | "approved" | "rejected" | "rework" | "revision_requested" | "superseded",
+  options?: { reason?: string; actionType?: string }
+) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
+
+  const updateFields: any = { status };
+  if (status === "sent") {
+    updateFields.sent_at = new Date().toISOString();
+  } else if (status === "approved" || status === "accepted") {
+    updateFields.approved_at = new Date().toISOString();
+    updateFields.approved_by = user.id;
+  } else if (status === "rejected") {
+    if (options?.reason) updateFields.rejection_reason = options.reason;
+  } else if (status === "rework" || status === "revision_requested") {
+    if (options?.reason) updateFields.rework_notes = options.reason;
+  }
+
   const { data, error } = await supabase
     .from("quotations")
-    .update({ status })
+    .update(updateFields)
     .eq("id", id)
     .select(`
       *,
@@ -948,15 +968,132 @@ export async function updateQuotationStatus(id: string, status: "draft" | "sent"
 
   if (error) return { success: false, error: error.message };
 
+  // Log in quotation_versions for complete audit & revision history
+  const actionType = options?.actionType || (
+    status === "approved" || status === "accepted" ? "approved" :
+    status === "rejected" ? "rejected" :
+    status === "rework" || status === "revision_requested" ? "rework" :
+    status === "sent" ? "sent" : "status_update"
+  );
+
+  await (supabase as any).from("quotation_versions").insert({
+    quotation_id: id,
+    version_number: data.version_number || 1,
+    items: data.items || [],
+    subtotal: data.subtotal || data.amount || 0,
+    discount_amount: data.discount_amount || 0,
+    gst_rate: data.gst_rate || 18,
+    gst_amount: data.gst_amount || 0,
+    total_amount: data.total_amount || data.amount || 0,
+    terms: data.terms || "",
+    clauses: data.clauses || [],
+    remarks: data.remarks || "",
+    status: status,
+    action_type: actionType,
+    action_reason: options?.reason || `Quotation status changed to ${status.toUpperCase()}`,
+    performed_by: user.id,
+  });
+
   await supabase.from("accounting_audit_log").insert({
     branch_id: user.branch_id,
     table_name: "quotations",
     record_id: id,
     action: "status_update",
-    new_data: { status },
+    new_data: { status, ...options },
     performed_by: user.id
   });
 
+  return { success: true, data };
+}
+
+export async function reviseQuotation(quotationId: string, payload: any) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+
+  const { data: current, error: curErr } = await supabase
+    .from("quotations")
+    .select("*")
+    .eq("id", quotationId)
+    .single();
+
+  if (curErr || !current) return { success: false, error: "Quotation not found" };
+
+  const nextVersion = (current.version_number || 1) + 1;
+  const items = payload.items || current.items || [];
+  const subtotal = items.reduce((s: number, i: any) => s + Number(i.qty || 0) * Number(i.rate || 0), 0);
+  const discount = Number(payload.discount_amount !== undefined ? payload.discount_amount : (current.discount_amount || 0));
+  const gstRate = Number(payload.gst_rate !== undefined ? payload.gst_rate : (current.gst_rate || 18));
+  const taxable = Math.max(0, subtotal - discount);
+  const gst = (taxable * gstRate) / 100;
+  const total = taxable + gst;
+
+  const { data, error } = await supabase
+    .from("quotations")
+    .update({
+      version_number: nextVersion,
+      client_id: payload.client_id !== undefined ? payload.client_id : current.client_id,
+      project_id: payload.project_id !== undefined ? payload.project_id : current.project_id,
+      items,
+      subtotal,
+      discount_amount: discount,
+      gst_rate: gstRate,
+      gst_amount: gst,
+      total_amount: total,
+      amount: total,
+      valid_until: payload.valid_until || current.valid_until,
+      clauses: payload.clauses || current.clauses || [],
+      terms: payload.terms || current.terms,
+      remarks: payload.remarks || current.remarks,
+      rework_notes: payload.rework_notes || null,
+      status: payload.status || "draft",
+    })
+    .eq("id", quotationId)
+    .select(`
+      *,
+      clients ( id, name, email, mobile, address, gst_no, contact_person ),
+      accounting_projects ( id, name )
+    `)
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  await (supabase as any).from("quotation_versions").insert({
+    quotation_id: quotationId,
+    version_number: nextVersion,
+    items,
+    subtotal,
+    discount_amount: discount,
+    gst_rate: gstRate,
+    gst_amount: gst,
+    total_amount: total,
+    terms: data.terms,
+    clauses: data.clauses,
+    remarks: data.remarks,
+    status: data.status,
+    action_type: "revised",
+    action_reason: payload.revision_reason || `Revised to Version ${nextVersion}`,
+    performed_by: user.id,
+  });
+
+  return { success: true, data };
+}
+
+export async function getQuotationVersions(quotationId: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+
+  const { data, error } = await (supabase as any)
+    .from("quotation_versions")
+    .select(`
+      *,
+      performer:profiles ( id, first_name, last_name, email, roles )
+    `)
+    .eq("quotation_id", quotationId)
+    .order("created_at", { ascending: false });
+
+  if (error) return { success: false, error: error.message };
   return { success: true, data };
 }
 
@@ -1086,9 +1223,29 @@ export async function createQuotationWithItems(payload: any) {
     clauses: payload.clauses || [],
     remarks: payload.remarks || null,
     status: "draft",
+    version_number: 1,
     created_by: user.id,
   }).select().single();
   if (error) return { success: false, error: error.message };
+
+  await (supabase as any).from("quotation_versions").insert({
+    quotation_id: data.id,
+    version_number: 1,
+    items,
+    subtotal,
+    discount_amount: discount,
+    gst_rate: gstRate,
+    gst_amount: gst,
+    total_amount: total,
+    terms: data.terms || "",
+    clauses: data.clauses || [],
+    remarks: data.remarks || "",
+    status: "draft",
+    action_type: "created",
+    action_reason: "Initial quotation drafted",
+    performed_by: user.id,
+  });
+
   return { success: true, data };
 }
 
@@ -1894,7 +2051,8 @@ export async function getLedgersData(filters?: {
       expense_categories ( id, name, scope ),
       financial_accounts ( id, name, account_type, bank_name ),
       accounting_projects ( id, name ),
-      job_entries ( id, uid, uid_label, inward_on, project_name, clients ( id, name ) )
+      job_entries ( id, uid, uid_label, inward_on, project_name, clients ( id, name ) ),
+      job_entry_tests ( id, material_description, test_master ( id, specific_test, component_parameter, material_product ) )
     `)
     .eq("status", "recorded")
     .order("expense_date", { ascending: false });
@@ -1920,6 +2078,8 @@ export async function getLedgersData(filters?: {
       category_id: e.category_id,
       category_name: e.expense_categories?.name || (resolvedType === 'inward' ? 'Inward Direct Cost' : 'General Overhead'),
       inward_id: e.inward_id || inward?.id || null,
+      job_entry_test_id: e.job_entry_test_id || null,
+      test_name: e.job_entry_tests?.test_master?.specific_test || e.job_entry_tests?.test_master?.component_parameter || e.job_entry_tests?.material_description || null,
       inward_uid: inward?.uid_label || (inward?.uid ? `UID-${inward.uid}` : null),
       project_name: inward?.project_name || e.accounting_projects?.name || e.site_name || null,
       client_name: inward?.clients?.name || null,
@@ -1989,15 +2149,17 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
         specific_test,
         discipline_group,
         category,
+        is_nabl,
         unit
       ),
-      job_entries (
+      job_entries:job_entries!job_entry_tests_job_entry_id_fkey (
         id,
         uid,
         uid_label,
         client_id,
         project_name,
         branch_id,
+        branches ( id, name ),
         clients ( id, name )
       )
     `);
@@ -2007,9 +2169,12 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
   if (toDate) jetQ = jetQ.lte("created_at", toDate + "T23:59:59.999Z");
 
   const { data: testsData, error: testErr } = await jetQ;
-  if (testErr) return { success: false, error: testErr.message };
+  if (testErr) {
+    console.error("Error fetching job_entry_tests for profitability:", testErr);
+    return { success: false, error: testErr.message };
+  }
 
-  // 2. Fetch all invoices in period
+  // 2. Fetch only settled/paid invoices at DB level (excluding unpaid invoices)
   let invQ = supabase
     .from("invoices")
     .select(`
@@ -2019,15 +2184,27 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
       amount,
       total_amount,
       paid_amount,
+      balance_amount,
+      status,
       items,
       created_at
-    `);
+    `)
+    .neq("status", "cancelled")
+    .or("paid_amount.gt.0,status.eq.paid");
+
   if (effectiveBranch) invQ = invQ.eq("branch_id", effectiveBranch);
-  if (fromDate) invQ = invQ.gte("created_at", fromDate);
-  if (toDate) invQ = invQ.lte("created_at", toDate + "T23:59:59.999Z");
   const { data: invoicesData } = await invQ;
 
-  // 3. Fetch all expenses in period
+  // Filter only invoices where payment has ACTUALLY been received (paid or partially paid)
+  const paidInvoices = (invoicesData || []).filter((inv: any) => {
+    const paidAmt = Number(inv.paid_amount || 0);
+    const status = String(inv.status || "").toLowerCase();
+    return (paidAmt > 0 || status === "paid") && status !== "cancelled";
+  });
+
+  const { data: allBranches } = await supabase.from("branches").select("id, name").order("name");
+
+  // 3. Fetch all approved expenses
   let expQ = supabase
     .from("accounting_expenses")
     .select(`
@@ -2035,6 +2212,7 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
       amount,
       expense_type,
       inward_id,
+      job_entry_test_id,
       description,
       expense_categories ( name )
     `)
@@ -2045,19 +2223,37 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
   if (toDate) expQ = expQ.lte("expense_date", toDate);
   const { data: expensesData } = await expQ;
 
-  // Map inward_id to invoices and expenses
-  const inwardInvoicesMap: Record<string, Array<{ id: string; invoice_no: string; amount: number; total_amount: number; items?: unknown }>> = {};
-  (invoicesData || []).forEach((inv: any) => {
+  // Map inward_id to paid invoices
+  const inwardPaidInvoicesMap: Record<
+    string,
+    Array<{
+      id: string;
+      invoice_no: string;
+      amount: number;
+      total_amount: number;
+      paid_amount: number;
+      status: string;
+      items?: unknown;
+    }>
+  > = {};
+
+  paidInvoices.forEach((inv: any) => {
     if (inv.inward_id) {
-      if (!inwardInvoicesMap[inv.inward_id]) inwardInvoicesMap[inv.inward_id] = [];
-      inwardInvoicesMap[inv.inward_id].push(inv);
+      if (!inwardPaidInvoicesMap[inv.inward_id]) inwardPaidInvoicesMap[inv.inward_id] = [];
+      inwardPaidInvoicesMap[inv.inward_id].push(inv);
     }
   });
 
-  const inwardExpensesMap: Record<string, number> = {};
-  (expensesData || []).filter((e: any) => e.expense_type === "inward" && e.inward_id).forEach((e: any) => {
-    if (e.inward_id) {
-      inwardExpensesMap[e.inward_id] = (inwardExpensesMap[e.inward_id] || 0) + Number(e.amount || 0);
+  // Separate expenses into direct test-tagged vs general inward expenses
+  const testSpecificExpensesMap: Record<string, number> = {};
+  const inwardGeneralExpensesMap: Record<string, number> = {};
+
+  (expensesData || []).filter((e: any) => e.expense_type === "inward").forEach((e: any) => {
+    const amt = Number(e.amount || 0);
+    if (e.job_entry_test_id) {
+      testSpecificExpensesMap[e.job_entry_test_id] = (testSpecificExpensesMap[e.job_entry_test_id] || 0) + amt;
+    } else if (e.inward_id) {
+      inwardGeneralExpensesMap[e.inward_id] = (inwardGeneralExpensesMap[e.inward_id] || 0) + amt;
     }
   });
 
@@ -2075,17 +2271,31 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
 
   const totalTestsCount = (testsData || []).length;
 
+  interface TestPaidInvoiceItem {
+    invoiceNo: string;
+    paidAmount: number;
+    totalAmount: number;
+    testRevenue: number;
+    status: string;
+  }
+
   interface TestAggregate {
     testId: string;
     testName: string;
     materialGroup: string;
     discipline: string;
+    isNabl: boolean;
+    category: string;
+    branchId: string | null;
+    branchName: string | null;
     testCount: number;
     inwardCount: number;
     inwardIds: Set<string>;
     clientNames: Set<string>;
     revenue: number;
-    directExpense: number;
+    paidInvoices: TestPaidInvoiceItem[];
+    taggedExpense: number;
+    sharedInwardExpense: number;
     inhouseExpense: number;
     totalCost: number;
     grossProfit: number;
@@ -2101,10 +2311,16 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
     const je = t.job_entries as Record<string, unknown> | null;
     const clientObj = je?.clients as Record<string, unknown> | null;
     const jobEntryId = t.job_entry_id as string | null;
+    const testInstanceId = t.id as string;
+    const testMasterId = (tm?.id as string) || null;
 
     const testName = (tm?.component_parameter as string) || (tm?.specific_test as string) || (t.material_description as string) || "General Testing";
     const materialGroup = (tm?.material_product as string) || (tm?.discipline_group as string) || "General Material";
     const discipline = (tm?.discipline_group as string) || "Mechanical";
+    const isNabl = tm?.is_nabl === true;
+    const category = (tm?.category as string) || "Construction";
+    const branchId = (je?.branch_id as string) || null;
+    const branchName = ((je?.branches as any)?.name as string) || null;
     const key = `${materialGroup}___${testName}`;
 
     if (!aggregates[key]) {
@@ -2113,12 +2329,18 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
         testName,
         materialGroup,
         discipline,
+        isNabl,
+        category,
+        branchId,
+        branchName,
         testCount: 0,
         inwardCount: 0,
         inwardIds: new Set<string>(),
         clientNames: new Set<string>(),
         revenue: 0,
-        directExpense: 0,
+        paidInvoices: [],
+        taggedExpense: 0,
+        sharedInwardExpense: 0,
         inhouseExpense: 0,
         totalCost: 0,
         grossProfit: 0,
@@ -2136,34 +2358,96 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
     const clientName = clientObj?.name as string | undefined;
     if (clientName) agg.clientNames.add(clientName);
 
-    // Calculate revenue for this test instance
+    // Calculate revenue for this test instance STRICTLY from PAID invoices:
     let testRevenue = 0;
-    if (jobEntryId && inwardInvoicesMap[jobEntryId]) {
-      const parentInvs = inwardInvoicesMap[jobEntryId];
+    if (jobEntryId && inwardPaidInvoicesMap[jobEntryId]) {
+      const parentInvs = inwardPaidInvoicesMap[jobEntryId];
       parentInvs.forEach((inv) => {
-        const items = Array.isArray(inv.items) ? (inv.items as Array<{ description?: string; amount?: number; qty?: number; rate?: number }>) : [];
-        const matchingItem = items.find((it) =>
-          it.description && (
-            it.description.toLowerCase().includes(testName.toLowerCase()) ||
-            it.description.toLowerCase().includes(materialGroup.toLowerCase())
-          )
+        const totalAmt = Number(inv.total_amount || inv.amount || 0);
+        const paidAmt = Number(inv.paid_amount || 0);
+        const status = String(inv.status || "").toLowerCase();
+
+        // Calculate paid ratio: if status is 'paid' or paid_amount >= total_amount, 100% paid
+        let paidRatio = 0;
+        if (status === "paid" || (totalAmt > 0 && paidAmt >= totalAmt)) {
+          paidRatio = 1.0;
+        } else if (totalAmt > 0 && paidAmt > 0) {
+          paidRatio = Math.min(1, paidAmt / totalAmt);
+        }
+
+        if (paidRatio <= 0) return; // Ignore unpaid invoices
+
+        const items = Array.isArray(inv.items)
+          ? (inv.items as Array<{
+              job_entry_test_id?: string;
+              test_master_id?: string;
+              test_name?: string;
+              description?: string;
+              amount?: number;
+              qty?: number;
+              rate?: number;
+            }>)
+          : [];
+
+        // 1. Direct match by job_entry_test_id or test_master_id
+        const directMatch = items.find(
+          (it) =>
+            (it.job_entry_test_id && it.job_entry_test_id === testInstanceId) ||
+            (it.test_master_id && testMasterId && it.test_master_id === testMasterId)
         );
 
-        if (matchingItem) {
-          testRevenue += Number(matchingItem.amount || ((matchingItem.qty || 1) * (matchingItem.rate || 0)) || 0);
+        let recognizedForTest = 0;
+
+        if (directMatch) {
+          const itemBilled = Number(directMatch.amount ?? ((Number(directMatch.qty) || 1) * (Number(directMatch.rate) || 0)));
+          recognizedForTest = itemBilled * paidRatio;
         } else {
-          const countInInward = testsPerInward[jobEntryId] || 1;
-          testRevenue += Number(inv.amount || inv.total_amount || 0) / countInInward;
+          // 2. Fallback description match
+          const matchingItem = items.find(
+            (it) =>
+              it.description &&
+              (it.description.toLowerCase().includes(testName.toLowerCase()) ||
+                it.description.toLowerCase().includes(materialGroup.toLowerCase()) ||
+                (it.test_name && it.test_name.toLowerCase().includes(testName.toLowerCase())))
+          );
+          if (matchingItem) {
+            const itemBilled = Number(matchingItem.amount ?? ((Number(matchingItem.qty) || 1) * (Number(matchingItem.rate) || 0)));
+            recognizedForTest = itemBilled * paidRatio;
+          } else {
+            // 3. Fallback: Apportion the actual paid amount across tests in inward
+            const countInInward = testsPerInward[jobEntryId] || 1;
+            recognizedForTest = (status === "paid" && totalAmt > 0 ? totalAmt : paidAmt) / countInInward;
+          }
+        }
+
+        if (recognizedForTest > 0) {
+          testRevenue += recognizedForTest;
+          const exists = agg.paidInvoices.find((p) => p.invoiceNo === inv.invoice_no);
+          if (exists) {
+            exists.testRevenue = Math.round((exists.testRevenue + recognizedForTest) * 100) / 100;
+          } else {
+            agg.paidInvoices.push({
+              invoiceNo: inv.invoice_no,
+              paidAmount: paidAmt,
+              totalAmount: totalAmt,
+              testRevenue: Math.round(recognizedForTest * 100) / 100,
+              status: inv.status,
+            });
+          }
         }
       });
     }
 
     agg.revenue += testRevenue;
 
-    // Direct inward expense apportioned to this test
-    if (jobEntryId && inwardExpensesMap[jobEntryId]) {
+    // Direct tagged expense specifically linked to this test instance
+    const tagged = testSpecificExpensesMap[testInstanceId] || 0;
+    agg.taggedExpense += tagged;
+
+    // General inward expenses apportioned to this test
+    if (jobEntryId && inwardGeneralExpensesMap[jobEntryId]) {
       const countInInward = testsPerInward[jobEntryId] || 1;
-      agg.directExpense += inwardExpensesMap[jobEntryId] / countInInward;
+      agg.sharedInwardExpense += inwardGeneralExpensesMap[jobEntryId] / countInInward;
     }
 
     // Allocate inhouse lab expense proportionally
@@ -2173,7 +2457,8 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
   });
 
   const testBreakdown = Object.values(aggregates).map((a) => {
-    const totalCost = a.directExpense + a.inhouseExpense;
+    const directExpense = a.taggedExpense + a.sharedInwardExpense;
+    const totalCost = directExpense + a.inhouseExpense;
     const grossProfit = a.revenue - totalCost;
     const grossMargin = a.revenue > 0 ? (grossProfit / a.revenue) * 100 : (grossProfit === 0 ? 0 : -100);
     const avgRevenuePerTest = a.testCount > 0 ? a.revenue / a.testCount : 0;
@@ -2184,11 +2469,18 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
       testName: a.testName,
       materialGroup: a.materialGroup,
       discipline: a.discipline,
+      isNabl: a.isNabl,
+      category: a.category,
+      branchId: a.branchId,
+      branchName: a.branchName,
       testCount: a.testCount,
       inwardCount: a.inwardIds.size,
       clientCount: a.clientNames.size,
       revenue: Math.round(a.revenue * 100) / 100,
-      directExpense: Math.round(a.directExpense * 100) / 100,
+      paidInvoices: a.paidInvoices || [],
+      taggedExpense: Math.round(a.taggedExpense * 100) / 100,
+      sharedInwardExpense: Math.round(a.sharedInwardExpense * 100) / 100,
+      directExpense: Math.round(directExpense * 100) / 100,
       inhouseExpense: Math.round(a.inhouseExpense * 100) / 100,
       totalCost: Math.round(totalCost * 100) / 100,
       grossProfit: Math.round(grossProfit * 100) / 100,
@@ -2214,6 +2506,7 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
 
   const totalTests = testBreakdown.reduce((s, t) => s + t.testCount, 0);
   const totalRev = testBreakdown.reduce((s, t) => s + t.revenue, 0);
+  const totalTaggedExp = testBreakdown.reduce((s, t) => s + (t.taggedExpense || 0), 0);
   const totalCost = testBreakdown.reduce((s, t) => s + t.totalCost, 0);
   const totalProfit = totalRev - totalCost;
   const overallMargin = totalRev > 0 ? (totalProfit / totalRev) * 100 : 0;
@@ -2225,13 +2518,122 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
       summary: {
         totalTests,
         totalRevenue: Math.round(totalRev * 100) / 100,
+        totalTaggedExpense: Math.round(totalTaggedExp * 100) / 100,
         totalCost: Math.round(totalCost * 100) / 100,
         grossProfit: Math.round(totalProfit * 100) / 100,
         overallMargin: Math.round(overallMargin * 10) / 10,
       },
       testBreakdown,
       materialBreakdown,
+      branches: allBranches || [],
     }
+  };
+}
+
+export async function getExpenseFormData(branchId?: string, inwardId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+  const effectiveBranch = branchScope(user, branchId);
+
+  // 1. Financial Accounts (active)
+  let accountsQ = supabase
+    .from("financial_accounts")
+    .select("id, name, account_type, bank_name, current_balance")
+    .eq("is_active", true)
+    .order("name");
+  if (effectiveBranch) {
+    accountsQ = accountsQ.or(`branch_id.eq.${effectiveBranch},branch_id.is.null`);
+  }
+  const { data: accounts } = await accountsQ;
+
+  // 2. Expense Categories
+  const { data: categories } = await supabase
+    .from("expense_categories")
+    .select("id, name, scope")
+    .order("name");
+
+  // 3. Accounting Projects
+  let projQ = supabase
+    .from("accounting_projects")
+    .select("id, name, status")
+    .order("name");
+  if (effectiveBranch) projQ = projQ.eq("branch_id", effectiveBranch);
+  const { data: projects } = await projQ;
+
+  // 4. Inwards / Job Entries (recent 100 with tests)
+  let inwardsQ = supabase
+    .from("job_entries")
+    .select(`
+      id,
+      uid,
+      uid_label,
+      inward_on,
+      created_at,
+      project_name,
+      division,
+      letter_reference,
+      branch_id,
+      clients ( id, name, site_name, mobile ),
+      job_entry_tests!job_entry_tests_job_entry_id_fkey (
+        id,
+        test_master_id,
+        material_description,
+        sample_quantity,
+        test_master ( id, component_parameter, specific_test, discipline_group, material_product, unit )
+      )
+    `)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (effectiveBranch) inwardsQ = inwardsQ.eq("branch_id", effectiveBranch);
+  const { data: inwards } = await inwardsQ;
+
+  // 5. If specific inwardId was requested and not in top 100, fetch it
+  let specificInward = null;
+  if (inwardId) {
+    const found = (inwards || []).find((i: any) => i.id === inwardId);
+    if (!found) {
+      const { data: singleInv } = await supabase
+        .from("job_entries")
+        .select(`
+          id,
+          uid,
+          uid_label,
+          inward_on,
+          created_at,
+          project_name,
+          division,
+          letter_reference,
+          branch_id,
+          clients ( id, name, site_name, mobile ),
+          job_entry_tests!job_entry_tests_job_entry_id_fkey (
+            id,
+            test_master_id,
+            material_description,
+            sample_quantity,
+            test_master ( id, component_parameter, specific_test, discipline_group, material_product, unit )
+          )
+        `)
+        .eq("id", inwardId)
+        .single();
+      if (singleInv) specificInward = singleInv;
+    } else {
+      specificInward = found;
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      accounts: accounts || [],
+      categories: categories || [],
+      projects: projects || [],
+      inwards: specificInward && !(inwards || []).some((i: any) => i.id === specificInward.id)
+        ? [specificInward, ...(inwards || [])]
+        : (inwards || []),
+      specificInward,
+    },
   };
 }
 

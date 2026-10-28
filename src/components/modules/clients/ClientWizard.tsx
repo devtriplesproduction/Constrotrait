@@ -140,7 +140,9 @@ export interface ClientWizardProps {
   mode?: "create" | "edit";
   initialData?: {
     client: Database["public"]["Tables"]["clients"]["Row"];
-    jobEntryTest: Database["public"]["Tables"]["job_entry_tests"]["Row"] & { uid?: number; uid_label?: string | null; job_entries?: { uid?: number; uid_label?: string | null; branch_id?: string | null } | null };
+    jobEntry?: any;
+    jobEntryTest?: any;
+    jobEntryTests?: any[];
   };
   branches?: any[];
   userBranchId?: string | null;
@@ -158,8 +160,16 @@ export function ClientWizard({
   onSuccess,
   onClose,
 }: ClientWizardProps) {
+  const initialJobTests: any[] = (initialData?.jobEntryTests && initialData.jobEntryTests.length > 0)
+    ? initialData.jobEntryTests
+    : (initialData?.jobEntryTest ? [initialData.jobEntryTest] : []);
+
+  const primaryTest = initialJobTests[0] || initialData?.jobEntryTest;
+  const primaryJob = initialData?.jobEntry || primaryTest?.job_entries;
+
   const initialBranchId =
-    (initialData?.jobEntryTest as any)?.job_entries?.branch_id ||
+    primaryJob?.branch_id ||
+    (primaryTest as any)?.job_entries?.branch_id ||
     initialData?.client?.branch_id ||
     (isSuperAdmin ? (branches[0]?.id || "") : (userBranchId || ""));
 
@@ -234,51 +244,52 @@ export function ClientWizard({
         gst_no: initialData.client.gst_no || "",
       },
       jobEntry: {
-        branch_id: (initialData.jobEntryTest as any)?.job_entries?.branch_id || initialBranchId,
-        division: (initialData.jobEntryTest as any)?.job_entries?.division || "",
-        site_name: (initialData.jobEntryTest as any)?.job_entries?.site_name || "",
-        agency_name: (initialData.jobEntryTest as any)?.job_entries?.agency || "",
-        project_name: (initialData.jobEntryTest as any)?.job_entries?.project_name || "",
-        dispatch_name: (initialData.jobEntryTest as any)?.job_entries?.dispatch_name || "",
-        dispatch_address: (initialData.jobEntryTest as any)?.job_entries?.dispatch_address || "",
-        contact_person: (initialData.jobEntryTest as any)?.job_entries?.contact_person || "",
-        collected_by: (initialData.jobEntryTest as any)?.job_entries?.collected_by || "",
-        invoice_no: (initialData.jobEntryTest as any)?.job_entries?.invoice_no || "",
-        invoice_date: (initialData.jobEntryTest as any)?.job_entries?.invoice_date || "",
-        letter_reference: (initialData.jobEntryTest as any)?.job_entries?.letter_reference || "",
-        payment_status: (initialData.jobEntryTest as any)?.job_entries?.payment_status || "",
+        branch_id: primaryJob?.branch_id || initialBranchId,
+        division: primaryJob?.division || "",
+        site_name: primaryJob?.site_name || "",
+        agency_name: primaryJob?.agency || "",
+        project_name: primaryJob?.project_name || "",
+        dispatch_name: primaryJob?.dispatch_name || "",
+        dispatch_address: primaryJob?.dispatch_address || "",
+        contact_person: primaryJob?.contact_person || "",
+        collected_by: primaryJob?.collected_by || "",
+        invoice_no: primaryJob?.invoice_no || "",
+        invoice_date: primaryJob?.invoice_date || "",
+        letter_reference: primaryJob?.letter_reference || "",
+        payment_status: primaryJob?.payment_status || "",
       },
       materialDetails: {
-        material_id: initialData.jobEntryTest.material_id || "",
-        material_initials: (initialData.jobEntryTest.additional_details_values as any)?.material_initials ||
-          (initialData.jobEntryTest.additional_details_values as any)?.test_initials ||
-          extractMaterialInitials(initialData.jobEntryTest, (initialData.jobEntryTest as any)?.test_master) || "",
-        material_details_location: initialData.jobEntryTest.material_details_location || "",
-        sample_quantity: initialData.jobEntryTest.sample_quantity || "",
-        testing_day: initialData.jobEntryTest.testing_day || "",
-        grade: initialData.jobEntryTest.grade || "",
-        date_of_casting: initialData.jobEntryTest.date_of_casting || "",
-        date_of_testing: initialData.jobEntryTest.date_of_testing || calculateTestingDate(initialData.jobEntryTest.date_of_casting, initialData.jobEntryTest.testing_day) || "",
-        date_of_receiving: initialData.jobEntryTest.date_of_receiving || "",
+        material_id: primaryTest?.material_id || "",
+        material_initials: (primaryTest?.additional_details_values as any)?.material_initials ||
+          (primaryTest?.additional_details_values as any)?.test_initials ||
+          extractMaterialInitials(primaryTest, (primaryTest as any)?.test_master) || "",
+        material_details_location: primaryTest?.material_details_location || "",
+        sample_quantity: primaryTest?.sample_quantity || "",
+        testing_day: primaryTest?.testing_day || "",
+        grade: primaryTest?.grade || "",
+        date_of_casting: primaryTest?.date_of_casting || "",
+        date_of_testing: primaryTest?.date_of_testing || calculateTestingDate(primaryTest?.date_of_casting, primaryTest?.testing_day) || "",
+        date_of_receiving: primaryTest?.date_of_receiving || "",
       },
-      selectedTestIds: initialData && initialData.jobEntryTest.test_master_id ? [initialData.jobEntryTest.test_master_id] : [],
-      jobEntryTests: initialData ? [{
-        test_master_id: initialData.jobEntryTest.test_master_id || "",
-        test_name: "", // Will be updated when tests load
-        test_method: initialData.jobEntryTest.test_method || "",
-        date_of_receiving: initialData.jobEntryTest.date_of_receiving || "",
-        testing_age: initialData.jobEntryTest.testing_age || "",
-        date_of_testing: initialData.jobEntryTest.date_of_testing || calculateTestingDate(initialData.jobEntryTest.date_of_casting, initialData.jobEntryTest.testing_day) || "",
-        material_description: initialData.jobEntryTest.material_description || "",
-        material_id: initialData.jobEntryTest.material_id || "",
-        material_details_location: initialData.jobEntryTest.material_details_location || "",
-        sample_quantity: initialData.jobEntryTest.sample_quantity || "",
-        testing_day: initialData.jobEntryTest.testing_day || "",
-        grade: initialData.jobEntryTest.grade || "",
-        date_of_casting: initialData.jobEntryTest.date_of_casting || "",
-        additional_details_values: (initialData.jobEntryTest.additional_details_values as Record<string, string>) || {},
-      }] : [],
-      non_nabl_month: (initialData.jobEntryTest as any)?.job_entries?.uid_label?.split('-')[0] || new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+      selectedTestIds: initialJobTests.map(t => t.test_master_id).filter(Boolean) as string[],
+      jobEntryTests: initialJobTests.length > 0 ? initialJobTests.map((t: any) => ({
+        id: t.id,
+        test_master_id: t.test_master_id || "",
+        test_name: t.test_master?.component_parameter || t.test_master?.specific_test || t.test_name || "",
+        test_method: t.test_method || t.test_master?.test_method || "",
+        date_of_receiving: t.date_of_receiving || "",
+        testing_age: t.testing_age || "",
+        date_of_testing: t.date_of_testing || calculateTestingDate(t.date_of_casting, t.testing_day) || "",
+        material_description: t.material_description || t.test_master?.material_product || "",
+        material_id: t.material_id || "",
+        material_details_location: t.material_details_location || "",
+        sample_quantity: t.sample_quantity || "",
+        testing_day: t.testing_day || "",
+        grade: t.grade || (t.additional_details_values as any)?.Grade || (t.additional_details_values as any)?.grade || "",
+        date_of_casting: t.date_of_casting || "",
+        additional_details_values: (t.additional_details_values as Record<string, string>) || {},
+      })) : [],
+      non_nabl_month: primaryJob?.uid_label?.split('-')[0] || (primaryTest as any)?.job_entries?.uid_label?.split('-')[0] || new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase(),
       dummy_is_nabl: true,
     } as ClientWizardValues : {
       jobEntry: {
@@ -405,6 +416,20 @@ export function ClientWizard({
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
+  // Fetch client's past projects if client ID is present and projects not yet loaded
+  const selectedClientId = watch("client.id") || initialData?.client?.id;
+  useEffect(() => {
+    if (selectedClientId && clientProjects.length === 0 && !isFetchingProjects) {
+      setIsFetchingProjects(true);
+      getClientProjectsAction(selectedClientId).then(res => {
+        if (res.success && res.data) {
+          setClientProjects(res.data);
+        }
+        setIsFetchingProjects(false);
+      });
+    }
+  }, [selectedClientId, clientProjects.length, isFetchingProjects]);
+
   // Fetch tests when reaching step 2
   useEffect(() => {
     if ((currentStep === 1 || mode === "edit") && availableTests.length === 0) {
@@ -412,21 +437,37 @@ export function ClientWizard({
         setIsLoadingTests(true);
         const result = await getTestsAction(selectedBranchId || undefined);
         if (result.success && result.data) {
-          setAvailableTests(result.data as TestMaster[]);
+          const allMasters = result.data as TestMaster[];
+          setAvailableTests(allMasters);
           // If in edit mode, set the test name based on the loaded tests
-          if (mode === "edit" && initialData?.jobEntryTest?.test_master_id) {
-            const test = (result.data as TestMaster[]).find(t => t.id === initialData.jobEntryTest.test_master_id);
-            if (test) {
-              const testName = test.component_parameter || test.specific_test || "";
-              setValue("jobEntryTests.0.test_name", testName);
-              const currentInitials = getValues("materialDetails.material_initials");
-              if (!currentInitials) {
-                const derived = deriveMaterialInitials(test.material_product || testName);
-                if (derived) {
-                  setValue("materialDetails.material_initials", derived, { shouldDirty: true });
-                  setValue("jobEntryTests.0.additional_details_values.material_initials" as any, derived);
-                  setValue("jobEntryTests.0.additional_details_values.test_initials" as any, derived);
+          if (mode === "edit") {
+            const currentTests = getValues("jobEntryTests") || [];
+            currentTests.forEach((t, idx) => {
+              if (t.test_master_id) {
+                const test = allMasters.find(x => x.id === t.test_master_id);
+                if (test) {
+                  const testName = test.component_parameter || test.specific_test || "";
+                  setValue(`jobEntryTests.${idx}.test_name`, testName);
+                  if (!t.test_method && (test.test_method || (test as any).tested_as_per_is)) {
+                    setValue(`jobEntryTests.${idx}.test_method`, test.test_method || (test as any).tested_as_per_is);
+                  }
+                  if (!t.material_description && test.material_product) {
+                    setValue(`jobEntryTests.${idx}.material_description`, test.material_product);
+                  }
                 }
+              }
+            });
+            const currentInitials = getValues("materialDetails.material_initials");
+            if (!currentInitials && currentTests.length > 0) {
+              const firstT = currentTests[0];
+              const test = allMasters.find(x => x.id === firstT.test_master_id);
+              const derived = deriveMaterialInitials(test?.material_product || firstT.test_name);
+              if (derived) {
+                setValue("materialDetails.material_initials", derived, { shouldDirty: true });
+                currentTests.forEach((_, idx) => {
+                  setValue(`jobEntryTests.${idx}.additional_details_values.material_initials` as any, derived);
+                  setValue(`jobEntryTests.${idx}.additional_details_values.test_initials` as any, derived);
+                });
               }
             }
           }
@@ -435,23 +476,64 @@ export function ClientWizard({
       };
       fetchTests();
     }
-  }, [currentStep, availableTests.length, mode, initialData, setValue, selectedBranchId]);
+  }, [currentStep, availableTests.length, mode, setValue, selectedBranchId, getValues]);
+
+  // If in edit mode and only 1 test is provided, fetch sibling tests for this job entry
+  useEffect(() => {
+    if (mode === "edit") {
+      const currentTests = getValues("jobEntryTests") || [];
+      const jobEntryId = initialData?.jobEntry?.id || (primaryTest as any)?.job_entry_id;
+      if (currentTests.length <= 1 && jobEntryId) {
+        import("@/actions/job-entry.actions").then(({ getJobEntryTestsByJobEntryIdAction }) => {
+          getJobEntryTestsByJobEntryIdAction(jobEntryId).then((res) => {
+            if (res.success && res.data && res.data.length > 1) {
+              const dbTests = res.data;
+              const testIds = dbTests.map((t: any) => t.test_master_id).filter(Boolean);
+              setValue("selectedTestIds", testIds);
+              const formatted = dbTests.map((t: any) => ({
+                id: t.id,
+                test_master_id: t.test_master_id || "",
+                test_name: t.test_master?.component_parameter || t.test_master?.specific_test || "",
+                test_method: t.test_method || t.test_master?.test_method || "",
+                date_of_receiving: t.date_of_receiving || "",
+                testing_age: t.testing_age || "",
+                date_of_testing: t.date_of_testing || calculateTestingDate(t.date_of_casting, t.testing_day) || "",
+                material_description: t.material_description || t.test_master?.material_product || "",
+                material_id: t.material_id || "",
+                material_details_location: t.material_details_location || "",
+                sample_quantity: t.sample_quantity || "",
+                testing_day: t.testing_day || "",
+                grade: t.grade || (t.additional_details_values as any)?.Grade || (t.additional_details_values as any)?.grade || "",
+                date_of_casting: t.date_of_casting || "",
+                additional_details_values: (t.additional_details_values as Record<string, string>) || {},
+              }));
+              reset({
+                ...getValues(),
+                selectedTestIds: testIds,
+                jobEntryTests: formatted,
+              });
+            }
+          });
+        });
+      }
+    }
+  }, [mode, initialData, primaryTest, getValues, setValue, reset]);
 
   useEffect(() => {
-    if (mode === "edit" && initialData?.jobEntryTest) {
-      const matProd = (initialData.jobEntryTest as any)?.test_master?.material_product || initialData.jobEntryTest.material_description || "";
+    if (mode === "edit" && primaryTest) {
+      const matProd = (primaryTest as any)?.test_master?.material_product || primaryTest.material_description || "";
       if (matProd && !selectedMaterial) {
         setSelectedMaterial(matProd);
       }
-      const initials = (initialData.jobEntryTest.additional_details_values as any)?.material_initials ||
-        (initialData.jobEntryTest.additional_details_values as any)?.test_initials ||
-        extractMaterialInitials(initialData.jobEntryTest, (initialData.jobEntryTest as any)?.test_master) ||
+      const initials = (primaryTest.additional_details_values as any)?.material_initials ||
+        (primaryTest.additional_details_values as any)?.test_initials ||
+        extractMaterialInitials(primaryTest, (primaryTest as any)?.test_master) ||
         "";
       if (initials) {
         setValue("materialDetails.material_initials", initials);
       }
     }
-  }, [initialData, mode, setValue, selectedMaterial]);
+  }, [initialData, mode, setValue, selectedMaterial, primaryTest]);
 
   const watchedCastingDate = watch("materialDetails.date_of_casting");
   const watchedTestingDay = watch("materialDetails.testing_day");
@@ -532,15 +614,19 @@ export function ClientWizard({
     setValue("client.email", client.email || "", { shouldValidate: true, shouldDirty: true });
     setValue("client.gst_no", client.gst_no || "", { shouldValidate: true, shouldDirty: true });
 
-    // Clear project/site details by default, user can select from previous projects in step 2
-    setValue("jobEntry.division", "");
-    setValue("jobEntry.site_name", "");
-    setValue("jobEntry.agency_name", "");
-    setValue("jobEntry.project_name", "");
-    setValue("jobEntry.dispatch_name", "");
-    setValue("jobEntry.dispatch_address", "");
-    setValue("jobEntry.contact_person", "");
-    setValue("jobEntry.collected_by", "");
+    // Clear project/site/billing details by default, user can select from previous projects in step 2
+    setValue("jobEntry.division", "", { shouldDirty: true });
+    setValue("jobEntry.site_name", "", { shouldDirty: true });
+    setValue("jobEntry.agency_name", "", { shouldDirty: true });
+    setValue("jobEntry.project_name", "", { shouldDirty: true });
+    setValue("jobEntry.dispatch_name", "", { shouldDirty: true });
+    setValue("jobEntry.dispatch_address", "", { shouldDirty: true });
+    setValue("jobEntry.contact_person", "", { shouldDirty: true });
+    setValue("jobEntry.collected_by", "", { shouldDirty: true });
+    setValue("jobEntry.invoice_no", "", { shouldDirty: true });
+    setValue("jobEntry.invoice_date", "", { shouldDirty: true });
+    setValue("jobEntry.letter_reference", "", { shouldDirty: true });
+    setValue("jobEntry.payment_status", "", { shouldDirty: true });
 
     // Fetch projects for this client
     setIsFetchingProjects(true);
@@ -568,8 +654,8 @@ export function ClientWizard({
 
     if (currentIndex > -1) {
       // Remove
-      if (mode === "edit" && id === initialData?.jobEntryTest?.test_master_id) {
-        toast({ title: "Edit Mode", description: "You cannot remove the original test in edit mode.", variant: "error" });
+      if (currentIds.length <= 1) {
+        toast({ title: "Validation", description: "An inward must have at least one test parameter.", variant: "error" });
         return;
       }
       const newIds = [...currentIds];
@@ -755,8 +841,13 @@ export function ClientWizard({
     setIsSubmitting(true);
     try {
       let result;
-      if (mode === "edit" && initialData?.jobEntryTest?.id) {
-        result = await updateClientWizardAction(data, initialData.jobEntryTest.id);
+      if (mode === "edit") {
+        const targetId = initialData?.jobEntry?.id ||
+          primaryTest?.job_entry_id ||
+          primaryTest?.id ||
+          initialData?.jobEntryTest?.id ||
+          "";
+        result = await updateClientWizardAction(data, targetId);
       } else {
         result = await submitClientWizard(data);
       }
@@ -822,7 +913,7 @@ export function ClientWizard({
       <div className="w-full md:w-70 lg:w-72 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-6 flex flex-col shrink-0">
         <div className="mb-10">
           <PageHeader
-            title="Client Inward"
+            title={mode === "edit" ? "Edit Client Inward" : "Client Inward"}
 
             className="flex-col items-start gap-6 [&_h1]:text-2xl [&_h1]:leading-tight"
           />
@@ -1086,31 +1177,50 @@ export function ClientWizard({
                           buttonClassName="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white"
                           options={[
                             { label: "-- New Project --", value: "new_project" },
-                            ...clientProjects.map((p) => ({ label: p.project_name, value: p.project_name }))
+                            ...clientProjects.map((p) => ({ label: p.project_name?.trim() || p.project_name, value: p.project_name }))
                           ]}
-                          // Force reload and provide value for controlled behavior
-                          value={watch("jobEntry.project_name") || "new_project"}
+                          value={
+                            clientProjects.find(
+                              (p) =>
+                                p.project_name === watch("jobEntry.project_name") ||
+                                p.project_name?.trim() === watch("jobEntry.project_name")?.trim()
+                            )?.project_name || "new_project"
+                          }
                           onChange={(val) => {
                             if (val === "new_project") {
-                              setValue("jobEntry.division", "");
-                              setValue("jobEntry.site_name", "");
-                              setValue("jobEntry.agency_name", "");
-                              setValue("jobEntry.project_name", "");
-                              setValue("jobEntry.dispatch_name", "");
-                              setValue("jobEntry.dispatch_address", "");
-                              setValue("jobEntry.contact_person", "");
-                              setValue("jobEntry.collected_by", "");
+                              setValue("jobEntry.division", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.site_name", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.agency_name", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.project_name", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.dispatch_name", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.dispatch_address", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.contact_person", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.collected_by", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.invoice_no", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.invoice_date", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.letter_reference", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("jobEntry.payment_status", "", { shouldDirty: true, shouldValidate: true });
                             } else {
-                              const proj = clientProjects.find(p => p.project_name === val);
+                              const proj = clientProjects.find(
+                                (p) => p.project_name === val || p.project_name?.trim() === val?.trim()
+                              );
                               if (proj) {
-                                setValue("jobEntry.division", proj.division || "");
-                                setValue("jobEntry.site_name", proj.site_name || "");
-                                setValue("jobEntry.agency_name", proj.agency || "");
-                                setValue("jobEntry.project_name", proj.project_name || "");
-                                setValue("jobEntry.dispatch_name", proj.dispatch_name || "");
-                                setValue("jobEntry.dispatch_address", proj.dispatch_address || "");
-                                setValue("jobEntry.contact_person", proj.contact_person || "");
-                                setValue("jobEntry.collected_by", proj.collected_by || "");
+                                setValue("jobEntry.division", proj.division || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.site_name", proj.site_name || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.agency_name", proj.agency || (proj as any).agency_name || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.project_name", proj.project_name || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.dispatch_name", proj.dispatch_name || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.dispatch_address", proj.dispatch_address || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.contact_person", proj.contact_person || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.collected_by", proj.collected_by || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.invoice_no", proj.invoice_no || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.invoice_date", proj.invoice_date ? String(proj.invoice_date).split("T")[0] : "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.letter_reference", proj.letter_reference || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("jobEntry.payment_status", proj.payment_status || "", { shouldDirty: true, shouldValidate: true });
+                                toast({
+                                  title: "Project Auto-filled",
+                                  description: `Details for "${proj.project_name}" loaded successfully.`,
+                                });
                               }
                             }
                           }}
@@ -1399,7 +1509,9 @@ export function ClientWizard({
                             <div className="text-sm font-semibold text-slate-700">{selectedTestIds.length} test{selectedTestIds.length > 1 ? 's' : ''} selected:</div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {selectedTestIds.map(id => {
-                                const test = availableTests.find(t => t.id === id);
+                                const test = availableTests.find(t => t.id === id) ||
+                                  initialJobTests.find(t => t.test_master_id === id)?.test_master ||
+                                  (initialJobTests.find(t => t.test_master_id === id) as any);
                                 if (!test) return null;
                                 return (
                                   <div key={id} className="p-3.5 rounded-xl bg-gradient-to-br from-orange-50 to-white border border-orange-200 shadow-sm relative overflow-hidden group transition-all pb-12">
@@ -1407,16 +1519,14 @@ export function ClientWizard({
                                       <CheckCircle2 className="w-3 h-3 text-orange-600" /> Selected
                                     </div>
 
-                                    {mode !== "edit" && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="absolute right-2 bottom-2 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                        onClick={() => handleToggleTest(id)}
-                                      >
-                                        Remove
-                                      </Button>
-                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="absolute right-2 bottom-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                      onClick={() => handleToggleTest(id)}
+                                    >
+                                      Remove
+                                    </Button>
 
                                     <div className="flex items-start gap-3 mb-3">
                                       <div className="w-8 h-8 rounded-lg bg-orange-100/80 flex items-center justify-center shrink-0 border border-orange-200 shadow-inner mt-0.5">
@@ -1678,35 +1788,35 @@ export function ClientWizard({
                       )}
 
                       {fields.map((field, index) => {
-                        const testMaster = availableTests.find(t => t.id === field.test_master_id);
+                        const testMaster = availableTests.find(t => t.id === field.test_master_id) ||
+                          initialJobTests.find(t => t.test_master_id === field.test_master_id)?.test_master ||
+                          (initialJobTests.find(t => t.test_master_id === field.test_master_id) as any);
                         return (
                           <div key={field.id} className="bg-slate-50 rounded-xl p-6 border border-slate-200 shadow-sm relative">
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 rounded-l-xl"></div>
 
-                            {mode !== "edit" && (
-                              <div className="absolute right-4 top-4 flex gap-2">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                                  onClick={() => handleApplyToAll(index)}
-                                >
-                                  <Copy className="w-4 h-4 mr-2" />
-                                  Apply to All
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() => handleToggleTest(field.test_master_id!)}
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Remove Test
-                                </Button>
-                              </div>
-                            )}
+                            <div className="absolute right-4 top-4 flex gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                onClick={() => handleApplyToAll(index)}
+                              >
+                                <Copy className="w-4 h-4 mr-2" />
+                                Apply to All
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleToggleTest(field.test_master_id!)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Remove Test
+                              </Button>
+                            </div>
 
                             <div className="mb-4 pb-3 border-b border-slate-200 pr-24">
                               <h3 className="text-lg font-bold text-slate-900">{field.test_name}</h3>
@@ -1724,7 +1834,7 @@ export function ClientWizard({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                               <div className="flex flex-col gap-1.5 col-span-full md:col-span-1">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">{mode === "edit" ? "UID" : "UID Preview (final UID on test date)"}</label>
-                                <Input value={mode === "edit" ? (initialData?.jobEntryTest?.uid_label || initialData?.jobEntryTest?.job_entries?.uid_label || String(initialData?.jobEntryTest?.job_entries?.uid || "")) : (nextUidPreview !== null ? uidPreviews[index] || "Loading..." : "Loading...")} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
+                                <Input value={mode === "edit" ? (primaryJob?.uid_label || (primaryTest as any)?.uid_label || (primaryTest as any)?.job_entries?.uid_label || String(primaryJob?.uid || "") || (field as any).uid_label || "") : (nextUidPreview !== null ? uidPreviews[index] || "Loading..." : "Loading...")} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
                                 {mode !== "edit" && !availableTests.find(t => t.id === field.test_master_id)?.category && (
                                   <p className="text-[11px] text-amber-600 font-semibold mt-1">⚠️ Set test_master.category or preview will merge groups.</p>
                                 )}
@@ -1740,7 +1850,7 @@ export function ClientWizard({
                                 <Input {...register(`jobEntryTests.${index}.material_description`)} placeholder="Material Description" />
                               </div>
 
-                              {!testMaster?.additional_details?.some(d => d.toLowerCase().includes('testing day') || d.toLowerCase().includes('testing age')) && (
+                              {!testMaster?.additional_details?.some((d: any) => d.toLowerCase().includes('testing day') || d.toLowerCase().includes('testing age')) && (
                                 <div className="flex flex-col gap-1.5">
                                   <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Testing Day</label>
                                   <Input
@@ -1762,7 +1872,7 @@ export function ClientWizard({
                                 </div>
                               )}
 
-                              {!testMaster?.additional_details?.some(d => d.toLowerCase().includes('casting')) && (
+                              {!testMaster?.additional_details?.some((d: any) => d.toLowerCase().includes('casting')) && (
                                 <div className="flex flex-col gap-1.5">
                                   <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Casting Date</label>
                                   <PremiumDatePicker
@@ -1817,7 +1927,7 @@ export function ClientWizard({
                                 <div className="col-span-full mt-2">
                                   <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">Additional Details</h4>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                    {testMaster.additional_details.map((detailLabel, detailIdx) => {
+                                    {testMaster.additional_details.map((detailLabel: any, detailIdx: number) => {
                                       const isDateField = detailLabel.toLowerCase().includes('date');
                                       return (
                                         <div key={detailIdx} className="flex flex-col gap-1.5">

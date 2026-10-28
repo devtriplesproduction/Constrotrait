@@ -35,6 +35,9 @@ export function DownloadAllotmentButton({ testGroup, uid, assignments, currentUs
     assignments,
     currentUser: currentUserProfile,
     logoUrl: "/CMTS LOGO.png",
+    docNo: "QR-234",
+    amendmentNo: "02 & 08.06.2026",
+    issueDate: "02.09.2024",
   };
 
   const handleDownload = async () => {
