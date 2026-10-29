@@ -35,6 +35,8 @@ export function SessionTimeoutManager() {
     try {
       // Broadcast logout to any other open tabs
       localStorage.setItem(SESSION_CONFIG.STORAGE_KEYS.LOGOUT_BROADCAST, String(Date.now()));
+      // Clear last active so next login doesn't inherit a stale expired timestamp
+      localStorage.removeItem(SESSION_CONFIG.STORAGE_KEYS.LAST_ACTIVE);
     } catch {
       // Ignore localStorage exceptions
     }
@@ -91,17 +93,28 @@ export function SessionTimeoutManager() {
 
     // Initialize last active from localStorage if recently set
     try {
+      const now = Date.now();
       const stored = localStorage.getItem(SESSION_CONFIG.STORAGE_KEYS.LAST_ACTIVE);
       if (stored) {
         const parsed = parseInt(stored, 10);
-        if (!isNaN(parsed) && parsed > 0 && parsed <= Date.now()) {
+        // Only accept stored timestamp if valid, not in the future, and NOT already expired
+        if (
+          !isNaN(parsed) &&
+          parsed > 0 &&
+          parsed <= now &&
+          now - parsed < SESSION_CONFIG.INACTIVITY_TIMEOUT_MS
+        ) {
           lastActiveRef.current = parsed;
         } else {
-          localStorage.setItem(SESSION_CONFIG.STORAGE_KEYS.LAST_ACTIVE, String(Date.now()));
+          lastActiveRef.current = now;
+          localStorage.setItem(SESSION_CONFIG.STORAGE_KEYS.LAST_ACTIVE, String(now));
         }
       } else {
-        localStorage.setItem(SESSION_CONFIG.STORAGE_KEYS.LAST_ACTIVE, String(Date.now()));
+        lastActiveRef.current = now;
+        localStorage.setItem(SESSION_CONFIG.STORAGE_KEYS.LAST_ACTIVE, String(now));
       }
+      // Clear any leftover logout broadcast from previous sessions
+      localStorage.removeItem(SESSION_CONFIG.STORAGE_KEYS.LOGOUT_BROADCAST);
     } catch {
       // Ignore
     }
@@ -157,7 +170,7 @@ export function SessionTimeoutManager() {
         const stored = localStorage.getItem(SESSION_CONFIG.STORAGE_KEYS.LAST_ACTIVE);
         if (stored) {
           const parsed = parseInt(stored, 10);
-          if (!isNaN(parsed) && parsed > lastActive) {
+          if (!isNaN(parsed) && parsed > lastActive && parsed <= now) {
             lastActive = parsed;
             lastActiveRef.current = parsed;
           }

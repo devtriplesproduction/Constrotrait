@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/common/NotificationBell";
 import { RoleIcon } from "@/components/common/RoleIcon";
 import { getRoleDisplayName } from "@/config/roles";
+import { SESSION_CONFIG } from "@/config/session";
 import { cn } from "@/lib/utils/cn";
 
 interface TopbarProps {
@@ -322,7 +323,16 @@ export function Topbar({ user, role, roles = [], branchName, onMenuClick, onRole
                 My Profile
               </div>
 
-              <form action={logoutAction} className="w-full">
+              <form
+                action={logoutAction}
+                onSubmit={() => {
+                  try {
+                    localStorage.removeItem(SESSION_CONFIG.STORAGE_KEYS.LAST_ACTIVE);
+                    localStorage.removeItem(SESSION_CONFIG.STORAGE_KEYS.LOGOUT_BROADCAST);
+                  } catch {}
+                }}
+                className="w-full"
+              >
                 <Button
                   variant="custom"
                   type="submit"

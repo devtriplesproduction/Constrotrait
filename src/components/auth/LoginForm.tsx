@@ -13,6 +13,7 @@ import {
   collectClientDeviceTelemetry,
   ClientDeviceTelemetry,
 } from "@/lib/utils/client-device-info";
+import { SESSION_CONFIG } from "@/config/session";
 
 export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +55,12 @@ export function LoginForm() {
         setError(result.error || "Failed to sign in");
         setIsLoading(false);
       } else {
+        try {
+          localStorage.setItem(SESSION_CONFIG.STORAGE_KEYS.LAST_ACTIVE, String(Date.now()));
+          localStorage.removeItem(SESSION_CONFIG.STORAGE_KEYS.LOGOUT_BROADCAST);
+        } catch {
+          // Ignore storage restrictions
+        }
         router.push("/dashboard");
       }
     } catch (err: any) {

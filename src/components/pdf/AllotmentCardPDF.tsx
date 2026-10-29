@@ -729,7 +729,7 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
             <View style={styles.footerCol2}>
               <View style={styles.footerSignContainer}>
                 <Text style={styles.bold}>Prepared by :</Text>
-                <Image src={preparedBySignUrl || "/Sanket_sir-removebg-preview.png"} style={styles.signatureImage} />
+                <Image src={preparedBySignUrl || "/josna_madam-remove.png"} style={styles.signatureImage} />
               </View>
             </View>
             <View style={styles.footerCol3}>

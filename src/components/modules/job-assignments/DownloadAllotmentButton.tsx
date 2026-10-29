@@ -35,6 +35,8 @@ export function DownloadAllotmentButton({ testGroup, uid, assignments, currentUs
     assignments,
     currentUser: currentUserProfile,
     logoUrl: "/CMTS LOGO.png",
+    preparedBySignUrl: "/josna_madam-remove.png",
+    approvedBySignUrl: "/MUKUND_GAIKWAD_SIGN-removebg-preview.png",
     docNo: "QR-234",
     amendmentNo: "02 & 08.06.2026",
     issueDate: "02.09.2024",
