@@ -19,9 +19,10 @@ interface AdminSidebarProps {
   setIsOpen: (isOpen: boolean) => void;
   role?: string;
   roles?: string[];
+  hideOnDesktop?: boolean;
 }
 
-export function AdminSidebar({ isOpen, setIsOpen, role, roles }: AdminSidebarProps) {
+export function AdminSidebar({ isOpen, setIsOpen, role, roles, hideOnDesktop = false }: AdminSidebarProps) {
   const roleArray = roles && roles.length > 0 ? roles : (role ? [role] : []);
   const isEmployeeManagementAllowed = canManageEmployees(roleArray);
   const isPayrollAllowed = roleArray.some(r => r === 'HR' || r === 'SUPER_ADMIN' || r === 'BRANCH_MANAGER_ADMINISTRATIVE');
@@ -72,5 +73,5 @@ export function AdminSidebar({ isOpen, setIsOpen, role, roles }: AdminSidebarPro
     adminLinks.push({ title: "Payroll", href: "/hr/payroll", icon: Banknote });
   }
 
-  return <BaseSidebar links={adminLinks} isOpen={isOpen} setIsOpen={setIsOpen} />;
+  return <BaseSidebar links={adminLinks} isOpen={isOpen} setIsOpen={setIsOpen} hideOnDesktop={hideOnDesktop} />;
 }

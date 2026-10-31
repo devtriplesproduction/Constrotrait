@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -24,7 +24,8 @@ import {
   ChevronRight,
   ShieldAlert,
   RotateCcw,
-  FileCheck2,
+  HardHat,
+  Leaf,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,9 @@ interface RecordExpensePageClientProps {
   accounts: any[];
   projects: any[];
   initialInward?: any;
+  initialTestId?: string;
+  initialType?: string;
+  testMasters?: any[];
 }
 
 export function RecordExpensePageClient({
@@ -47,36 +51,80 @@ export function RecordExpensePageClient({
   accounts,
   projects,
   initialInward,
+  initialTestId,
+  initialType,
+  testMasters = [],
 }: RecordExpensePageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
-  const queryType = searchParams.get("type") as "inward" | "inhouse" | "company" | null;
+  const queryType = (searchParams.get("type") || initialType) as "inward" | "test" | "inhouse" | "company" | null;
+  const queryCategory = searchParams.get("category") as "Construction" | "Environmental" | null;
   const queryInwardId = searchParams.get("inward_id") || initialInward?.id || "";
-  const queryTestId = searchParams.get("test_id") || "";
+  const queryTestId = searchParams.get("test_id") || initialTestId || "";
   const returnUrl = searchParams.get("return_url") || "/accounting/test-financials";
 
-  const [expenseType, setExpenseType] = useState<"inward" | "inhouse" | "company">(() => {
-    if (queryType === "inward" || queryType === "inhouse" || queryType === "company") {
-      return queryType;
-    }
-    return queryInwardId ? "inward" : "inward";
+  // Helper to find test in an inward by id or test_master_id
+  const findMatchingTest = useCallback((inv: any, tid: string) => {
+    if (!inv || !tid || !inv.job_entry_tests) return null;
+    return (
+      inv.job_entry_tests.find((t: any) => t.id === tid) ||
+      inv.job_entry_tests.find((t: any) => t.test_master_id === tid) ||
+      inv.job_entry_tests.find((t: any) => t.test_master?.id === tid) ||
+      null
+    );
+  }, []);
+
+  type ExpenseScope = "inward_cost" | "test_expense" | "inhouse" | "company";
+
+  const isInitiallyTest = queryType === "test" || Boolean(queryTestId);
+
+  const [selectedScope, setSelectedScope] = useState<ExpenseScope>(() => {
+    if (queryType === "inhouse") return "inhouse";
+    if (queryType === "company") return "company";
+    if (isInitiallyTest) return "test_expense";
+    return "inward_cost";
   });
 
-  const [inwardId, setInwardId] = useState<string>(queryInwardId);
+  const [selectedCategory, setSelectedCategory] = useState<"Construction" | "Environmental">(() => {
+    if (queryCategory === "Construction" || queryCategory === "Environmental") {
+      return queryCategory;
+    }
+    const tm = (testMasters || []).find((m: any) => m.id === queryTestId);
+    if (tm?.category === "Environmental" || tm?.category === "Construction") {
+      return tm.category;
+    }
+    return "Construction";
+  });
+
+  const [expenseType, setExpenseType] = useState<"inward" | "test" | "inhouse" | "company">(() => {
+    if (queryType === "inhouse" || queryType === "company" || queryType === "test") {
+      return queryType;
+    }
+    if (isInitiallyTest) return "test";
+    return "inward";
+  });
+
+  // Never connect inwardId for individual test expenses
+  const [inwardId, setInwardId] = useState<string>(() => {
+    if (isInitiallyTest) return "";
+    return queryInwardId;
+  });
   const [inwardSearch, setInwardSearch] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Form state
   const [form, setForm] = useState(() => {
-    const matchedInward = initialInwards.find((i) => i.id === queryInwardId) || initialInward;
-    const test = queryTestId && matchedInward?.job_entry_tests
-      ? matchedInward.job_entry_tests.find((t: any) => t.id === queryTestId)
-      : null;
-    const testName = test
-      ? test.test_master?.specific_test || test.test_master?.component_parameter || test.material_description || "Specific Test"
+    const matchedMaster = (testMasters || []).find((m: any) => m.id === queryTestId);
+    const testCategory = matchedMaster?.category || queryCategory || "Construction";
+    const testName = matchedMaster
+      ? matchedMaster.specific_test || matchedMaster.component_parameter || "Specific Test"
       : "";
+
+    const matchedInward = !isInitiallyTest
+      ? (initialInwards.find((i) => i.id === queryInwardId) || initialInward)
+      : null;
 
     return {
       amount: "",
@@ -91,9 +139,9 @@ export function RecordExpensePageClient({
       is_reimbursement: false,
       project_id: "",
       site_name: matchedInward?.project_name || matchedInward?.clients?.site_name || "",
-      department: "",
+      department: isInitiallyTest ? `${testCategory} Department` : "Construction Department",
       description: testName
-        ? `Direct test expense for: ${testName} (Inward UID: ${matchedInward?.uid_label || matchedInward?.uid})`
+        ? `Direct test expense for: [${testCategory}] ${testName}`
         : matchedInward
         ? `Direct expense for Inward UID: ${matchedInward.uid_label || matchedInward.uid}`
         : "",
@@ -105,6 +153,36 @@ export function RecordExpensePageClient({
 
   const setField = (k: string, v: any) => setForm((prev) => ({ ...prev, [k]: v }));
 
+  // Keep test selection synchronized when URL params or test masters load
+  useEffect(() => {
+    if (selectedScope === "test_expense") {
+      setInwardId("");
+      if (queryTestId) {
+        const tm = (testMasters || []).find((m: any) => m.id === queryTestId);
+        if (tm) {
+          const cat = (tm.category as "Construction" | "Environmental") || "Construction";
+          const testName = tm.specific_test || tm.component_parameter || "Test";
+          setSelectedCategory(cat);
+          setForm((prev) => ({
+            ...prev,
+            job_entry_test_id: tm.id,
+            department: `${cat} Department`,
+            description:
+              prev.description && !prev.description.includes("Direct test expense")
+                ? prev.description
+                : `Direct test expense for: [${cat}] ${testName}`,
+          }));
+        }
+      }
+      return;
+    }
+
+    const matched = initialInwards.find((i) => i.id === queryInwardId) || initialInward;
+    if (queryInwardId && !inwardId) {
+      setInwardId(queryInwardId);
+    }
+  }, [selectedScope, queryInwardId, queryTestId, inwardId, initialInward, initialInwards, testMasters]);
+
   // Find currently selected inward
   const selectedInward = useMemo(() => {
     return initialInwards.find((i) => i.id === inwardId) || initialInward || null;
@@ -112,9 +190,71 @@ export function RecordExpensePageClient({
 
   // Find selected test
   const selectedTest = useMemo(() => {
-    if (!selectedInward || !form.job_entry_test_id) return null;
-    return (selectedInward.job_entry_tests || []).find((t: any) => t.id === form.job_entry_test_id) || null;
-  }, [selectedInward, form.job_entry_test_id]);
+    if (!form.job_entry_test_id) return null;
+    if (selectedInward?.job_entry_tests) {
+      const foundInwardTest = selectedInward.job_entry_tests.find((t: any) =>
+        t.id === form.job_entry_test_id ||
+        t.test_master_id === form.job_entry_test_id ||
+        t.test_master?.id === form.job_entry_test_id
+      );
+      if (foundInwardTest) return foundInwardTest;
+    }
+    const foundMaster = (testMasters || []).find((tm: any) => tm.id === form.job_entry_test_id);
+    if (foundMaster) {
+      return { id: foundMaster.id, test_master: foundMaster };
+    }
+    return null;
+  }, [selectedInward, form.job_entry_test_id, testMasters]);
+
+  // Tests belonging to selectedCategory for Test Expense tab (Individual master tests, NO inward/job card links)
+  const categoryTestsList = useMemo(() => {
+    const list: Array<{ id: string; name: string; displayName: string; rawTest?: any }> = [];
+    const seen = new Set<string>();
+
+    // 1. All master tests from testMasters matching selectedCategory
+    (testMasters || []).forEach((tm: any) => {
+      const cat = tm.category || "Construction";
+      if (cat === selectedCategory && !seen.has(tm.id)) {
+        const name = tm.specific_test || tm.component_parameter || "Test Parameter";
+        const mat = tm.material_product || tm.discipline_group || "";
+        list.push({
+          id: tm.id,
+          name,
+          displayName: `${name} ${mat ? `[${mat}]` : ""}`.trim(),
+          rawTest: tm,
+        });
+        seen.add(tm.id);
+      }
+    });
+
+    // 2. Fallback: extract distinct tests from inwards without inward/job card links
+    if (list.length === 0) {
+      initialInwards.forEach((inv) => {
+        (inv.job_entry_tests || []).forEach((t: any) => {
+          const tm = t.test_master;
+          const cat = tm?.category || "Construction";
+          const testId = tm?.id || t.id;
+          if (cat === selectedCategory && !seen.has(testId)) {
+            const name =
+              tm?.specific_test ||
+              tm?.component_parameter ||
+              t.material_description ||
+              "Test";
+            const mat = tm?.material_product || tm?.discipline_group || "";
+            list.push({
+              id: testId,
+              name,
+              displayName: `${name} ${mat ? `[${mat}]` : ""}`.trim(),
+              rawTest: tm || t,
+            });
+            seen.add(testId);
+          }
+        });
+      });
+    }
+
+    return list;
+  }, [selectedCategory, testMasters, initialInwards]);
 
   // Selected account metadata
   const selectedAccount = useMemo(() => {
@@ -221,10 +361,19 @@ export function RecordExpensePageClient({
       return;
     }
 
-    if (expenseType === "inward" && !inwardId) {
+    if (selectedScope === "inward_cost" && !inwardId) {
       toast({
         title: "Inward Selection Required",
-        description: "Please select an Inward Job UID for this direct expense.",
+        description: "Please select an Inward Job UID for this inward direct expense.",
+        variant: "error",
+      });
+      return;
+    }
+
+    if (selectedScope === "test_expense" && !form.job_entry_test_id) {
+      toast({
+        title: "Test Name Required",
+        description: "Please select a test name for this individual test expense.",
         variant: "error",
       });
       return;
@@ -232,16 +381,18 @@ export function RecordExpensePageClient({
 
     setIsSubmitting(true);
     try {
+      const isTestScope = selectedScope === "test_expense";
       const payload = {
         ...form,
         amount: Number(form.amount),
         gst_amount: Number(form.gst_amount || 0),
         tds_amount: Number(form.tds_amount || 0),
-        expense_type: expenseType,
-        inward_id: expenseType === "inward" ? inwardId : null,
-        job_entry_test_id: expenseType === "inward" ? (form.job_entry_test_id || null) : null,
+        expense_type: isTestScope ? "test" : expenseType,
+        inward_id: isTestScope ? null : (expenseType === "inward" ? inwardId : null),
+        job_entry_test_id: null,
+        test_master_id: isTestScope ? (form.job_entry_test_id || null) : null,
         is_general_expense: expenseType === "company",
-        project_id: form.project_id || null,
+        project_id: isTestScope ? null : (form.project_id || null),
         category_id: form.category_id || null,
         account_id: form.account_id || null,
       };
@@ -252,7 +403,9 @@ export function RecordExpensePageClient({
         toast({
           title: "Expense Successfully Recorded",
           description: `${
-            expenseType === "inward"
+            isTestScope
+              ? "Individual Test"
+              : expenseType === "inward"
               ? "Inward Direct Job"
               : expenseType === "inhouse"
               ? "In-House Lab"
@@ -333,18 +486,22 @@ export function RecordExpensePageClient({
             </h1>
             <span
               className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
-                expenseType === "inward"
+                selectedScope === "inward_cost"
                   ? "bg-blue-50 text-blue-700 border-blue-200"
-                  : expenseType === "inhouse"
+                  : selectedScope === "test_expense"
+                  ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                  : selectedScope === "inhouse"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : "bg-purple-50 text-purple-700 border-purple-200"
               }`}
             >
-              {expenseType === "inward"
-                ? "INWARD DIRECT COST"
-                : expenseType === "inhouse"
-                ? "IN-HOUSE LAB OVERHEAD"
-                : "COMPANY OVERHEAD"}
+              {selectedScope === "inward_cost"
+                ? "📦 INWARD DIRECT COST"
+                : selectedScope === "test_expense"
+                ? "🧪 TEST EXPENSE"
+                : selectedScope === "inhouse"
+                ? "🔬 IN-HOUSE LAB OVERHEAD"
+                : "🏢 COMPANY OVERHEAD"}
             </span>
           </div>
           <p className="text-xs text-slate-500 max-w-2xl">
@@ -395,115 +552,176 @@ export function RecordExpensePageClient({
               </div>
             </div>
 
-            {/* 3 Scope Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* 4 Scope Allocation Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Card 1: Inward Direct Cost */}
               <button
                 type="button"
                 onClick={() => {
+                  setSelectedScope("inward_cost");
                   setExpenseType("inward");
                 }}
                 className={`p-4 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                  expenseType === "inward"
-                    ? "bg-blue-50/70 border-blue-400 ring-2 ring-blue-500/20 shadow-xs"
+                  selectedScope === "inward_cost"
+                    ? "bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 shadow-xs"
                     : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div
                     className={`p-2 rounded-lg ${
-                      expenseType === "inward"
+                      selectedScope === "inward_cost"
                         ? "bg-blue-600 text-white"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
                     <Package className="w-5 h-5" />
                   </div>
-                  {expenseType === "inward" && (
+                  {selectedScope === "inward_cost" ? (
                     <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Inward Job
+                    </span>
                   )}
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-900">Inward Direct Cost</div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Tied directly to a customer sample UID and optional test parameter.
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                    Directly related to a specific inward Job UID (freight, sampling, site handling, or shared job cost).
                   </p>
                 </div>
               </button>
 
+              {/* Card 2: Test Expense (Individual Test - No Inward Connection) */}
               <button
                 type="button"
                 onClick={() => {
-                  setExpenseType("inhouse");
+                  setSelectedScope("test_expense");
+                  setExpenseType("test");
                   setInwardId("");
-                  setField("job_entry_test_id", "");
+                  setField("department", `${selectedCategory} Department`);
                 }}
                 className={`p-4 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                  expenseType === "inhouse"
-                    ? "bg-emerald-50/70 border-emerald-400 ring-2 ring-emerald-500/20 shadow-xs"
+                  selectedScope === "test_expense"
+                    ? "bg-indigo-50/80 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs"
                     : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div
                     className={`p-2 rounded-lg ${
-                      expenseType === "inhouse"
-                        ? "bg-emerald-600 text-white"
+                      selectedScope === "test_expense"
+                        ? "bg-indigo-600 text-white"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
                     <FlaskConical className="w-5 h-5" />
                   </div>
-                  {expenseType === "inhouse" && (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  {selectedScope === "test_expense" ? (
+                    <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                  ) : (
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Direct Test
+                    </span>
                   )}
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-900">In-House Lab Operations</div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    NABL calibration, reagents, consumables, equipment spares, power.
+                  <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span>Test Expense</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                    Select category (Construction / Environmental) and test name to add expense to that test.
                   </p>
                 </div>
               </button>
 
+              {/* Card 3: In-House Lab Operations */}
               <button
                 type="button"
                 onClick={() => {
-                  setExpenseType("company");
+                  setSelectedScope("inhouse");
+                  setExpenseType("inhouse");
                   setInwardId("");
                   setField("job_entry_test_id", "");
                 }}
                 className={`p-4 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                  expenseType === "company"
-                    ? "bg-purple-50/70 border-purple-400 ring-2 ring-purple-500/20 shadow-xs"
+                  selectedScope === "inhouse"
+                    ? "bg-emerald-50/80 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs"
                     : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div
                     className={`p-2 rounded-lg ${
-                      expenseType === "company"
+                      selectedScope === "inhouse"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  {selectedScope === "inhouse" ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Lab Capacity
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">In-House Lab Operations</div>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                    NABL calibration, reagents, consumables, equipment spares, power.
+                  </p>
+                </div>
+              </button>
+
+              {/* Card 4: Company Overhead */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedScope("company");
+                  setExpenseType("company");
+                  setInwardId("");
+                  setField("job_entry_test_id", "");
+                }}
+                className={`p-4 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                  selectedScope === "company"
+                    ? "bg-purple-50/80 border-purple-500 ring-2 ring-purple-500/20 shadow-xs"
+                    : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div
+                    className={`p-2 rounded-lg ${
+                      selectedScope === "company"
                         ? "bg-purple-600 text-white"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
                     <Building2 className="w-5 h-5" />
                   </div>
-                  {expenseType === "company" && (
+                  {selectedScope === "company" ? (
                     <CheckCircle2 className="w-4 h-4 text-purple-600" />
+                  ) : (
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Overhead
+                    </span>
                   )}
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-900">Company Overhead</div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
                     Office rent, administrative salaries, electricity, tea/pantry, audit.
                   </p>
                 </div>
               </button>
             </div>
 
-            {/* Inward Selector & Test Tagging Block */}
-            {expenseType === "inward" && (
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+            {/* Scope 1: INWARD DIRECT COST */}
+            {selectedScope === "inward_cost" && (
+              <div className="p-4 rounded-2xl bg-blue-50/40 border border-blue-200 space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -550,7 +768,7 @@ export function RecordExpensePageClient({
                             }));
                           }
                         }}
-                        className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
                       >
                         <option value="">— Select an Inward Job UID —</option>
                         {filteredInwardOptions.map((inv) => (
@@ -576,17 +794,26 @@ export function RecordExpensePageClient({
                   )}
                 </div>
 
-                {/* Specific Test Parameter Tagging */}
+                {/* Specific Test Parameter Tagging for Inward */}
                 {selectedInward?.job_entry_tests && selectedInward.job_entry_tests.length > 0 && (
-                  <div className="pt-3 border-t border-slate-200 space-y-2">
+                  <div className="pt-3 border-t border-blue-200/60 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                         <FlaskConical className="w-4 h-4 text-indigo-600" />
                         <span>Allocate to Specific Test Method (Unit Economics)</span>
                       </label>
-                      <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
-                        {selectedInward.job_entry_tests.length} Registered Tests
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {selectedInward.job_entry_tests.some((t: any) => (t.test_master?.category || "Construction") === "Construction") && (
+                          <span className="text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+                            {selectedInward.job_entry_tests.filter((t: any) => (t.test_master?.category || "Construction") === "Construction").length} Construction
+                          </span>
+                        )}
+                        {selectedInward.job_entry_tests.some((t: any) => t.test_master?.category === "Environmental") && (
+                          <span className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
+                            {selectedInward.job_entry_tests.filter((t: any) => t.test_master?.category === "Environmental").length} Environmental
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <select
@@ -594,8 +821,9 @@ export function RecordExpensePageClient({
                       onChange={(e) => {
                         const testId = e.target.value;
                         setField("job_entry_test_id", testId);
-                        const t = selectedInward.job_entry_tests.find((item: any) => item.id === testId);
+                        const t = findMatchingTest(selectedInward, testId);
                         if (t) {
+                          const cat = t.test_master?.category || "Construction";
                           const testName =
                             t.test_master?.specific_test ||
                             t.test_master?.component_parameter ||
@@ -603,8 +831,9 @@ export function RecordExpensePageClient({
                             "Test";
                           setForm((prev) => ({
                             ...prev,
-                            job_entry_test_id: testId,
-                            description: `Direct test expense for: ${testName} (Inward UID: ${selectedInward.uid_label || selectedInward.uid})`,
+                            job_entry_test_id: t.id,
+                            department: `${cat} Department`,
+                            description: `Direct test expense for: [${cat}] ${testName} (Inward UID: ${selectedInward.uid_label || selectedInward.uid})`,
                           }));
                         } else {
                           setForm((prev) => ({
@@ -614,33 +843,210 @@ export function RecordExpensePageClient({
                           }));
                         }
                       }}
-                      className="w-full h-10 px-3 bg-white border border-indigo-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                      className="w-full h-10 px-3 bg-white border border-blue-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
                     >
                       <option value="">— Entire Inward Job (Shared / General Inward Cost) —</option>
-                      {selectedInward.job_entry_tests.map((t: any) => {
-                        const tm = t.test_master;
-                        const testName =
-                          tm?.specific_test ||
-                          tm?.component_parameter ||
-                          t.material_description ||
-                          "Test Parameter";
-                        const mat = tm?.material_product || tm?.discipline_group || "Material";
-                        return (
-                          <option key={t.id} value={t.id}>
-                            {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
-                          </option>
-                        );
-                      })}
-                    </select>
 
-                    <div className="flex items-start gap-2 p-2.5 rounded-lg bg-indigo-50/80 border border-indigo-100 text-[11px] text-indigo-800">
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
-                      <span>
-                        Selecting a specific test parameter links this direct expenditure to the test unit economics report, allowing exact per-test gross profit and profit margin calculation against paid invoices.
-                      </span>
-                    </div>
+                      {/* Construction Tests OptGroup */}
+                      {selectedInward.job_entry_tests.some((t: any) => (t.test_master?.category || "Construction") === "Construction") && (
+                        <optgroup label="🏗️ Construction Tests">
+                          {selectedInward.job_entry_tests
+                            .filter((t: any) => (t.test_master?.category || "Construction") === "Construction")
+                            .map((t: any) => {
+                              const tm = t.test_master;
+                              const testName =
+                                tm?.specific_test ||
+                                tm?.component_parameter ||
+                                t.material_description ||
+                                "Test Parameter";
+                              const mat = tm?.material_product || tm?.discipline_group || "Material";
+                              return (
+                                <option key={t.id} value={t.id}>
+                                  [Construction] {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
+                                </option>
+                              );
+                            })}
+                        </optgroup>
+                      )}
+
+                      {/* Environmental Tests OptGroup */}
+                      {selectedInward.job_entry_tests.some((t: any) => t.test_master?.category === "Environmental") && (
+                        <optgroup label="🌱 Environmental Tests">
+                          {selectedInward.job_entry_tests
+                            .filter((t: any) => t.test_master?.category === "Environmental")
+                            .map((t: any) => {
+                              const tm = t.test_master;
+                              const testName =
+                                tm?.specific_test ||
+                                tm?.component_parameter ||
+                                t.material_description ||
+                                "Test Parameter";
+                              const mat = tm?.material_product || tm?.discipline_group || "Material";
+                              return (
+                                <option key={t.id} value={t.id}>
+                                  [Environmental] {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
+                                </option>
+                              );
+                            })}
+                        </optgroup>
+                      )}
+                    </select>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Scope 2: TEST EXPENSE TAB (User selects Category & Test Name) */}
+            {selectedScope === "test_expense" && (
+              <div className="p-5 rounded-2xl bg-indigo-50/50 border border-indigo-200 space-y-4">
+                {/* 1. Category Selector */}
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-2 uppercase tracking-wider">
+                    1. Select Test Category <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-3 max-w-md">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory("Construction");
+                        setField("department", "Construction Department");
+                      }}
+                      className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                        selectedCategory === "Construction"
+                          ? "bg-white text-blue-700 border-blue-400 ring-2 ring-blue-500/20 shadow-xs"
+                          : "bg-white/60 text-slate-600 border-slate-200 hover:bg-white"
+                      }`}
+                    >
+                      <HardHat className="w-4 h-4 text-blue-600" />
+                      <span>🏗️ Construction</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory("Environmental");
+                        setField("department", "Environmental Department");
+                      }}
+                      className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                        selectedCategory === "Environmental"
+                          ? "bg-white text-teal-700 border-teal-400 ring-2 ring-teal-500/20 shadow-xs"
+                          : "bg-white/60 text-slate-600 border-slate-200 hover:bg-white"
+                      }`}
+                    >
+                      <Leaf className="w-4 h-4 text-teal-600" />
+                      <span>🌱 Environmental</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Select Test Name */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <FlaskConical className="w-4 h-4 text-indigo-600" />
+                      <span>2. Select Test Name ({selectedCategory})</span>
+                      <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full border border-indigo-200">
+                      {categoryTestsList.length} Tests Available
+                    </span>
+                  </div>
+
+                  <select
+                    required
+                    value={form.job_entry_test_id}
+                    onChange={(e) => {
+                      const testId = e.target.value;
+                      setField("job_entry_test_id", testId);
+                      const found = categoryTestsList.find((t) => t.id === testId);
+                      if (found) {
+                        setField("department", `${selectedCategory} Department`);
+                        setField(
+                          "description",
+                          `Direct test expense for: [${selectedCategory}] ${found.name}`
+                        );
+                      }
+                    }}
+                    className="w-full h-11 px-3 bg-white border border-indigo-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                  >
+                    <option value="">— Select a Test Name ({selectedCategory}) —</option>
+                    {categoryTestsList.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        [{selectedCategory}] {t.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Scope 3: IN-HOUSE LAB OPERATIONS */}
+            {selectedScope === "inhouse" && (
+              <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
+                    <FlaskConical className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-emerald-950">In-House Laboratory Operations Expense</div>
+                    <p className="text-[11px] text-emerald-700 mt-0.5">
+                      This expense will be allocated to internal laboratory operational capacity (calibration, chemicals, power, machine maintenance).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-emerald-200/70">
+                  <label className="text-xs font-bold text-emerald-950 block mb-1.5">
+                    Select Target Testing Department <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setField("department", "Construction Department");
+                        if (!form.description || form.description.includes("In-house operational expense")) {
+                          setField("description", "In-house operational expense for Construction Laboratory");
+                        }
+                      }}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                        form.department === "Construction Department" || !form.department
+                          ? "bg-white text-orange-700 border-orange-300 shadow-xs ring-2 ring-orange-500/20"
+                          : "bg-white/60 text-slate-600 border-slate-200 hover:bg-white"
+                      }`}
+                    >
+                      <span>🏗️ Construction Department</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setField("department", "Environmental Department");
+                        if (!form.description || form.description.includes("In-house operational expense")) {
+                          setField("description", "In-house operational expense for Environmental Laboratory");
+                        }
+                      }}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                        form.department === "Environmental Department"
+                          ? "bg-white text-teal-700 border-teal-300 shadow-xs ring-2 ring-teal-500/20"
+                          : "bg-white/60 text-slate-600 border-slate-200 hover:bg-white"
+                      }`}
+                    >
+                      <span>🌱 Environmental Department</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Scope 4: COMPANY OVERHEAD */}
+            {selectedScope === "company" && (
+              <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-200 text-xs text-purple-900 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-purple-600" />
+                  <strong className="font-bold">General Company Overhead Allocation</strong>
+                </div>
+                <p className="text-[11px] text-purple-700 leading-relaxed">
+                  This cost will be classified as company-level overhead and recorded in the Profit & Loss general administration ledger (salaries, office rent, electricity, pantry, audit).
+                </p>
               </div>
             )}
           </div>
@@ -786,151 +1192,6 @@ export function RecordExpensePageClient({
                 />
               </div>
             </div>
-          </div>
-
-          {/* Card 3: Payee, Voucher & Tax Details */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-              <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
-                <FileCheck2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-slate-900">
-                  Step 3: Verification & Documentation
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Staff disbursement tracking, vouchers, and statutory tax breakdown.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-slate-800 block mb-1">
-                  Disbursed By / Handler
-                </label>
-                <Input
-                  placeholder="Staff or technician who paid"
-                  value={form.paid_through_person}
-                  onChange={(e) => setField("paid_through_person", e.target.value)}
-                  className="h-10 rounded-xl text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-800 block mb-1">
-                  Bill / Voucher Ref Number
-                </label>
-                <Input
-                  placeholder="e.g. INV-2024-904, VCH-882"
-                  value={form.bill_number}
-                  onChange={(e) => setField("bill_number", e.target.value)}
-                  className="h-10 rounded-xl text-xs"
-                />
-              </div>
-            </div>
-
-            {/* Checkbox Toggles */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
-                <input
-                  type="checkbox"
-                  checked={form.bill_attached}
-                  onChange={(e) => setField("bill_attached", e.target.checked)}
-                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                />
-                <div>
-                  <span className="text-xs font-bold text-slate-800 block">
-                    Official Bill / Voucher Attached
-                  </span>
-                  <span className="text-[10px] text-slate-400">
-                    Proof document verified and filed
-                  </span>
-                </div>
-              </label>
-
-              <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
-                <input
-                  type="checkbox"
-                  checked={form.is_reimbursement}
-                  onChange={(e) => setField("is_reimbursement", e.target.checked)}
-                  className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
-                />
-                <div>
-                  <span className="text-xs font-bold text-slate-800 block">
-                    Employee Reimbursement Claim
-                  </span>
-                  <span className="text-[10px] text-slate-400">
-                    Paid out-of-pocket by staff member
-                  </span>
-                </div>
-              </label>
-            </div>
-
-            {/* Tax Deductions & Particulars */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div>
-                <label className="text-xs font-bold text-slate-800 block mb-1">
-                  GST Component (₹)
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={form.gst_amount}
-                  onChange={(e) => setField("gst_amount", e.target.value)}
-                  className="h-10 rounded-xl text-xs"
-                />
-                <span className="text-[10px] text-slate-400 mt-1 block">
-                  Eligible for Input Tax Credit (ITC)
-                </span>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-800 block mb-1">
-                  TDS Withheld (₹)
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={form.tds_amount}
-                  onChange={(e) => setField("tds_amount", e.target.value)}
-                  className="h-10 rounded-xl text-xs"
-                />
-                <span className="text-[10px] text-slate-400 mt-1 block">
-                  Withholding tax withheld under Sec 194C/J
-                </span>
-              </div>
-            </div>
-
-            {/* Department / Site for Company Overheads */}
-            {expenseType === "company" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-800 block mb-1">
-                    Department
-                  </label>
-                  <Input
-                    placeholder="e.g. Administration, Testing Lab, Marketing"
-                    value={form.department}
-                    onChange={(e) => setField("department", e.target.value)}
-                    className="h-10 rounded-xl text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-800 block mb-1">
-                    Site / Branch Location
-                  </label>
-                  <Input
-                    placeholder="e.g. Main Lab, Field Office"
-                    value={form.site_name}
-                    onChange={(e) => setField("site_name", e.target.value)}
-                    className="h-10 rounded-xl text-xs"
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Description / Remarks */}
             <div>
@@ -951,49 +1212,51 @@ export function RecordExpensePageClient({
         {/* Right Column: Live Voucher Preview & Action Sidebar (4 cols) */}
         <div className="lg:col-span-4 space-y-5 sticky top-6">
           {/* Live Receipt & Approval Card */}
-          <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-xl border border-slate-800 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="bg-white rounded-2xl p-5 text-slate-900 shadow-xs border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-rose-400" />
-                <span className="text-xs font-bold tracking-wider uppercase text-slate-300">
+                <Receipt className="w-4 h-4 text-rose-500" />
+                <span className="text-xs font-bold tracking-wider uppercase text-slate-700">
                   Voucher Summary
                 </span>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-slate-300">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                 LIVE PREVIEW
               </span>
             </div>
 
             {/* Main Net Amount */}
             <div>
-              <span className="text-xs font-semibold text-slate-400">Total Expenditure</span>
-              <div className="text-3xl font-black tracking-tight text-white mt-0.5">
+              <span className="text-xs font-semibold text-slate-500">Total Expenditure</span>
+              <div className="text-3xl font-black tracking-tight text-slate-900 mt-0.5">
                 ₹{numAmount > 0 ? numAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 }) : "0.00"}
               </div>
               {numTds > 0 && (
-                <div className="text-[11px] text-amber-400 mt-1">
+                <div className="text-[11px] text-amber-700 font-medium mt-1">
                   Net Disbursed: ₹{netPayable.toLocaleString("en-IN", { minimumFractionDigits: 2 })} (TDS: -₹{numTds})
                 </div>
               )}
             </div>
 
             {/* Allocation Details */}
-            <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2 text-xs">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Scope:</span>
-                <span className="font-bold text-white uppercase text-[11px]">
-                  {expenseType === "inward"
-                    ? "Inward Direct Job"
-                    : expenseType === "inhouse"
+                <span className="text-slate-500">Scope:</span>
+                <span className="font-bold text-slate-800 uppercase text-[11px]">
+                  {selectedScope === "inward_cost"
+                    ? "Inward Direct Cost"
+                    : selectedScope === "test_expense"
+                    ? "Test Expense"
+                    : selectedScope === "inhouse"
                     ? "In-House Lab"
                     : "Company Overhead"}
                 </span>
               </div>
 
-              {selectedInward && (
+              {selectedScope === "inward_cost" && selectedInward && (
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Inward UID:</span>
-                  <span className="font-bold text-blue-300">
+                  <span className="text-slate-500">Inward UID:</span>
+                  <span className="font-bold text-blue-600">
                     {selectedInward.uid_label || selectedInward.uid}
                   </span>
                 </div>
@@ -1001,26 +1264,46 @@ export function RecordExpensePageClient({
 
               {selectedTest && (
                 <div className="flex items-start justify-between gap-2">
-                  <span className="text-slate-400">Tagged Test:</span>
-                  <span className="font-bold text-indigo-300 text-right truncate max-w-[170px]">
-                    {selectedTest.test_master?.specific_test ||
-                      selectedTest.test_master?.component_parameter ||
-                      selectedTest.material_description ||
-                      "Test"}
+                  <span className="text-slate-500">Tagged Test:</span>
+                  <div className="text-right max-w-[170px]">
+                    <span
+                      className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded mr-1 ${
+                        (selectedTest.test_master?.category || "Construction") === "Environmental"
+                          ? "bg-teal-50 text-teal-700 border border-teal-200"
+                          : "bg-orange-50 text-orange-700 border border-orange-200"
+                      }`}
+                    >
+                      {selectedTest.test_master?.category || "Construction"}
+                    </span>
+                    <span className="font-bold text-indigo-700 truncate block">
+                      {selectedTest.test_master?.specific_test ||
+                        selectedTest.test_master?.component_parameter ||
+                        selectedTest.material_description ||
+                        "Test"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {form.department && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Department:</span>
+                  <span className="font-bold text-amber-700 text-[11px]">
+                    {form.department}
                   </span>
                 </div>
               )}
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Payment Account:</span>
-                <span className="font-medium text-slate-200 truncate max-w-[170px]">
+                <span className="text-slate-500">Payment Account:</span>
+                <span className="font-semibold text-slate-700 truncate max-w-[170px]">
                   {selectedAccount ? selectedAccount.name : "Direct Cash"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Payment Mode:</span>
-                <span className="font-medium text-slate-200 uppercase text-[10px]">
+                <span className="text-slate-500">Payment Mode:</span>
+                <span className="font-semibold text-slate-700 uppercase text-[10px]">
                   {form.payment_mode}
                 </span>
               </div>
@@ -1028,11 +1311,11 @@ export function RecordExpensePageClient({
 
             {/* Approval Workflow Indicator */}
             {requiresApproval ? (
-              <div className="p-3 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="font-bold block">Approval Workflow Required</strong>
-                  <p className="text-[11px] text-amber-200/90 mt-0.5">
+                  <strong className="font-bold block text-amber-900">Approval Workflow Required</strong>
+                  <p className="text-[11px] text-amber-700 mt-0.5">
                     {numAmount > APPROVAL_THRESHOLD
                       ? "Amount exceeds ₹1,00,000 threshold. Will be queued for management sign-off."
                       : "Unbilled reimbursement of ₹500 or more requires approval."}
@@ -1040,9 +1323,9 @@ export function RecordExpensePageClient({
                 </div>
               </div>
             ) : (
-              <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-[11px] font-semibold">
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="text-[11px] font-semibold text-emerald-700">
                   Auto-Approved: Will be posted immediately to account ledgers.
                 </span>
               </div>
@@ -1053,7 +1336,7 @@ export function RecordExpensePageClient({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-11 text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-600/30 gap-2 cursor-pointer transition-all"
+                className="w-full h-11 text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white rounded-xl shadow-md shadow-rose-600/20 gap-2 cursor-pointer transition-all"
               >
                 {isSubmitting ? (
                   <>
@@ -1073,7 +1356,7 @@ export function RecordExpensePageClient({
                 variant="outline"
                 onClick={() => router.push(returnUrl)}
                 disabled={isSubmitting}
-                className="w-full h-9 text-xs font-semibold bg-white/10 hover:bg-white/15 text-white border-white/20 rounded-xl"
+                className="w-full h-9 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 border-slate-200 rounded-xl"
               >
                 Cancel & Return
               </Button>

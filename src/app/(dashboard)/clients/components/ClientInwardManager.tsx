@@ -125,7 +125,7 @@ export default function ClientInwardManager({
       {editingTest && editingClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
             onClick={onWizardClose}
           />
 

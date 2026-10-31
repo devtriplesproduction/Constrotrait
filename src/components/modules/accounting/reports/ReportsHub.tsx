@@ -275,7 +275,7 @@ export function ReportsHub() {
         "Inward Jobs",
         "Clients",
         "Revenue (INR)",
-        "Tagged Direct Test Cost (INR)",
+        "Direct Cost (INR)",
         "Shared Inward Cost (INR)",
         "In-House Lab Cost (INR)",
         "Total Cost (INR)",
@@ -1095,7 +1095,7 @@ export function ReportsHub() {
                     {fmt(testReportData?.summary?.totalCost)}
                   </div>
                   <div className="text-[11px] text-rose-600 font-medium mt-0.5">
-                    Tagged Direct: {fmt(testReportData?.summary?.totalTaggedExpense || 0)} · Shared/Lab: {fmt((testReportData?.summary?.totalCost || 0) - (testReportData?.summary?.totalTaggedExpense || 0))}
+                    Direct: {fmt(testReportData?.summary?.totalTaggedExpense || 0)} · Shared/Lab: {fmt((testReportData?.summary?.totalCost || 0) - (testReportData?.summary?.totalTaggedExpense || 0))}
                   </div>
                 </div>
 
@@ -1206,7 +1206,7 @@ export function ReportsHub() {
                         <th className="p-3 text-left">Specific Test Parameter</th>
                         <th className="p-3 text-center">Volume</th>
                         <th className="p-3 text-right">Revenue (₹)</th>
-                        <th className="p-3 text-right">Tagged Direct Cost (₹)</th>
+                        <th className="p-3 text-right">Direct Cost (₹)</th>
                         <th className="p-3 text-right">Shared Inward (₹)</th>
                         <th className="p-3 text-right">In-House Lab (₹)</th>
                         <th className="p-3 text-right">Total Cost (₹)</th>

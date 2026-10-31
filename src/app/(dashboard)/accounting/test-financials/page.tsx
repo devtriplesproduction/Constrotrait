@@ -6,7 +6,7 @@ import { getAccountingDashboard } from "@/services/accounting.service";
 
 export const metadata = {
   title: "Test Economics & Expenses | ConstroTrait",
-  description: "Unit economics, realized test revenues from paid invoices, and tagged direct expenses.",
+  description: "Unit economics, realized test revenues from paid invoices, and direct expenses.",
 };
 
 export const dynamic = "force-dynamic";

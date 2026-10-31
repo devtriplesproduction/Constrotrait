@@ -5,6 +5,7 @@ import { JobEntryService } from "@/services/job-entry.service";
 import { ClientWizardValues } from "@/lib/validations/client-wizard";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import * as accounting from "@/services/accounting.service";
 
 const toNull = (v: string | null | undefined) => (v && v.trim() !== "" ? v : null);
 
@@ -88,14 +89,28 @@ export async function submitClientWizard(data: ClientWizardValues) {
       invoice_date: data.jobEntry.invoice_date,
       letter_reference: data.jobEntry.letter_reference,
       payment_status: data.jobEntry.payment_status,
+      quotation_id: (data.jobEntry as any)?.quotation_id || null,
     };
 
     const testInitials = (data.materialDetails as any)?.test_initials || data.materialDetails?.material_initials;
-    const { uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData, data.dummy_is_nabl, data.dummy_scheduled_days, data.non_nabl_month, testInitials);
+    const { jobEntry, uidsIssued } = await JobEntryService.createJobEntryWithTests(jobEntryData, testsData, data.dummy_is_nabl, data.dummy_scheduled_days, data.non_nabl_month, testInitials);
+
+    // If converted from a quotation, link quotation and update status
+    const qId = (data.jobEntry as any)?.quotation_id;
+    if (qId && jobEntry?.id) {
+      try {
+        await accounting.linkQuotationToInward(qId, jobEntry.id);
+        revalidatePath("/accounting");
+        revalidatePath("/accounting/quotations");
+        revalidatePath("/accounting/billing");
+      } catch (linkErr) {
+        console.error("Failed to link quotation to inward:", linkErr);
+      }
+    }
 
     revalidatePath("/dashboard");
     revalidatePath("/clients");
-    return { success: true, uids: uidsIssued || [] };
+    return { success: true, uids: uidsIssued || [], jobEntryId: jobEntry?.id };
   } catch (error) {
     console.error("Wizard submission error:", error);
     return { success: false, error: (error as Error).message };
@@ -326,4 +341,10 @@ export async function createDummyJobCardAction(isNabl: boolean) {
     console.error('Create dummy job card error:', error);
     return { success: false, error: (error as Error).message };
   }
+}
+
+import { createClientAction as createClientFromAccounting } from "./accounting.actions";
+
+export async function createClientAction(payload: any) {
+  return createClientFromAccounting(payload);
 }

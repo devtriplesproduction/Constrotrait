@@ -40,7 +40,7 @@ export function printElement(element: HTMLElement, title: string = "Document") {
         <style>
           @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 6mm 8mm;
           }
           * {
             -webkit-print-color-adjust: exact !important;
@@ -50,12 +50,38 @@ export function printElement(element: HTMLElement, title: string = "Document") {
           html, body {
             background-color: #ffffff !important;
             background: #ffffff !important;
-            color: #000000 !important;
+            color: #0f172a !important;
             margin: 0 !important;
-            padding: 14mm 12mm !important;
+            padding: 0 !important;
             width: 100% !important;
             height: auto !important;
             overflow: visible !important;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            -webkit-font-smoothing: antialiased;
+          }
+          .avoid-break, tr, .avoid-page-break {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          #quotation-printable-area, .quotation-print-body {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 16px !important;
+            padding: 24px 28px !important;
+            background: #ffffff !important;
+            box-sizing: border-box !important;
+            margin: 0 auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          table {
+            border-collapse: collapse !important;
+          }
+          img {
+            max-width: 100%;
           }
         </style>
       </head>
@@ -66,8 +92,7 @@ export function printElement(element: HTMLElement, title: string = "Document") {
   `);
   doc.close();
 
-  // Give stylesheets and fonts a brief moment to apply before opening print dialog
-  setTimeout(() => {
+  const triggerPrint = () => {
     try {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
@@ -78,7 +103,24 @@ export function printElement(element: HTMLElement, title: string = "Document") {
         if (document.body.contains(iframe)) {
           document.body.removeChild(iframe);
         }
-      }, 1000);
+      }, 1500);
     }
-  }, 250);
+  };
+
+  // Ensure all images are fully loaded before opening print preview dialog
+  const images = Array.from(doc.images || []);
+  if (images.length > 0) {
+    const promises = images.map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
+    });
+    Promise.all(promises).then(() => {
+      setTimeout(triggerPrint, 200);
+    });
+  } else {
+    setTimeout(triggerPrint, 250);
+  }
 }

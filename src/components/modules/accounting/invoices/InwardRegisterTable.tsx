@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Search,
   FilePlus2,
@@ -14,13 +14,12 @@ import {
   ArrowRight,
   Plus,
   Receipt,
-  Copy,
-  Check,
   X,
   Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
 
@@ -29,6 +28,8 @@ interface InwardRegisterTableProps {
   onCreateProforma: (inward: any, options?: { isRemainingBalance?: boolean; defaultBalanceAmount?: number; previousInvoice?: any }) => void;
   onViewInvoice?: (invoice: any) => void;
   onRecordExpense?: (inward: any) => void;
+  initialStatusFilter?: "all" | "pending" | "partial" | "invoiced";
+  isUninvoicedView?: boolean;
 }
 
 const fmt = (n: number) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
@@ -38,16 +39,17 @@ export function InwardRegisterTable({
   onCreateProforma,
   onViewInvoice,
   onRecordExpense,
+  initialStatusFilter = "all",
+  isUninvoicedView = false,
 }: InwardRegisterTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "partial" | "invoiced">("all");
-  const [copiedUid, setCopiedUid] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "partial" | "invoiced">(initialStatusFilter);
 
-  const handleCopyUid = (uid: string) => {
-    navigator.clipboard.writeText(uid);
-    setCopiedUid(uid);
-    setTimeout(() => setCopiedUid(null), 2000);
-  };
+  useEffect(() => {
+    setStatusFilter(initialStatusFilter);
+  }, [initialStatusFilter]);
+
+  const showStatusColumn = !isUninvoicedView && statusFilter !== "pending";
 
   const pendingCount = useMemo(() => {
     return inwards.filter((item) => !item.invoices || item.invoices.length === 0).length;
@@ -77,6 +79,9 @@ export function InwardRegisterTable({
       const latestInvoice = hasInvoice ? linkedInvoices[0] : null;
       const isPartial = latestInvoice && (latestInvoice.status === "partial" || (Number(latestInvoice.balance_amount || 0) > 0 && Number(latestInvoice.paid_amount || 0) > 0));
 
+      // In uninvoiced view, strictly exclude inwards that already have an invoice
+      if (isUninvoicedView && hasInvoice) return false;
+
       // Status filter
       if (statusFilter === "pending" && hasInvoice) return false;
       if (statusFilter === "partial" && !isPartial) return false;
@@ -95,14 +100,14 @@ export function InwardRegisterTable({
 
       return uidMatch || clientMatch || projectMatch || testMatch;
     });
-  }, [inwards, searchTerm, statusFilter]);
+  }, [inwards, searchTerm, statusFilter, isUninvoicedView]);
 
   const pagination = usePagination({
     data: filteredInwards,
     initialPageSize: 10,
   });
 
-  const hasActiveFilters = searchTerm.trim() !== "" || statusFilter !== "all";
+  const hasActiveFilters = searchTerm.trim() !== "" || (!isUninvoicedView && statusFilter !== "all");
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden space-y-0">
@@ -128,66 +133,84 @@ export function InwardRegisterTable({
           )}
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2 w-full lg:w-auto justify-start lg:justify-end flex-wrap">
-          <div className="flex bg-slate-200/70 p-1 rounded-xl text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => setStatusFilter("all")}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                statusFilter === "all" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              All Inwards ({inwards.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter("pending")}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                statusFilter === "pending" ? "bg-white text-blue-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              <span>Ready for Proforma</span>
-              <span className="text-[10px] opacity-75">({pendingCount})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter("partial")}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                statusFilter === "partial" ? "bg-white text-amber-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              <span>Partial / Due</span>
-              <span className="text-[10px] opacity-75">({partialCount})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter("invoiced")}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                statusFilter === "invoiced" ? "bg-white text-emerald-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>Invoiced</span>
-              <span className="text-[10px] opacity-75">({invoicedCount})</span>
-            </button>
+        {/* Filter Pills / Status Info */}
+        {isUninvoicedView ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200/90 px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>{filteredInwards.length} Inwards Awaiting Invoice</span>
+            </span>
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer ml-1"
+              >
+                Reset
+              </button>
+            )}
           </div>
+        ) : (
+          <div className="flex items-center gap-2 w-full lg:w-auto justify-start lg:justify-end flex-wrap">
+            <div className="flex bg-slate-200/70 p-1 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setStatusFilter("all")}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  statusFilter === "all" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                All Inwards ({inwards.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("pending")}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  statusFilter === "pending" ? "bg-white text-blue-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <span>Ready for Proforma</span>
+                <span className="text-[10px] opacity-75">({pendingCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("partial")}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  statusFilter === "partial" ? "bg-white text-amber-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                <span>Partial / Due</span>
+                <span className="text-[10px] opacity-75">({partialCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("invoiced")}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  statusFilter === "invoiced" ? "bg-white text-emerald-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Invoiced</span>
+                <span className="text-[10px] opacity-75">({invoicedCount})</span>
+              </button>
+            </div>
 
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchTerm("");
-                setStatusFilter("all");
-              }}
-              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer ml-1"
-            >
-              Reset
-            </button>
-          )}
-        </div>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                }}
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer ml-1"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -199,14 +222,14 @@ export function InwardRegisterTable({
               <th className="py-3 px-4">Customer & Contact</th>
               <th className="py-3 px-4">Project / Site</th>
               <th className="py-3 px-4">Tests & Scope</th>
-              <th className="py-3 px-4">Proforma / Billing Status</th>
+              {showStatusColumn && <th className="py-3 px-4">Proforma / Billing Status</th>}
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredInwards.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-slate-400">
+                <td colSpan={showStatusColumn ? 6 : 5} className="py-12 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <FlaskConical className="w-8 h-8 text-slate-300" />
                     <p className="font-bold text-sm text-slate-700">No inward entries found</p>
@@ -217,7 +240,7 @@ export function InwardRegisterTable({
                         size="sm"
                         onClick={() => {
                           setSearchTerm("");
-                          setStatusFilter("all");
+                          if (!isUninvoicedView) setStatusFilter("all");
                         }}
                         className="mt-2 text-xs h-8 cursor-pointer rounded-xl"
                       >
@@ -255,10 +278,6 @@ export function InwardRegisterTable({
                   latestInvoice && (latestInvoice.status === "paid" || (bal <= 0 && paid > 0))
                 );
 
-                // Has remaining balance to invoice ONLY IF:
-                // 1. Not fully paid
-                // 2. Latest invoice was partially paid (paid > 0 && bal > 0)
-                // 3. This balance has NOT already been invoiced by a newer invoice!
                 const hasRemainingBalance = Boolean(
                   latestInvoice &&
                   !isFullyPaid &&
@@ -273,22 +292,10 @@ export function InwardRegisterTable({
                   <tr key={job.id} className="hover:bg-slate-50/80 transition-colors group">
                     {/* UID & Date */}
                     <td className="py-4 px-4">
-                      <div className="flex items-center gap-1.5">
+                      <div className="inline-flex">
                         <span className="font-mono font-bold text-xs text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/90">
                           {uidStr}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyUid(uidStr)}
-                          title="Copy UID"
-                          className="p-1 hover:bg-slate-200/80 rounded text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-                        >
-                          {copiedUid === uidStr ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5" />
-                          )}
-                        </button>
                       </div>
                       <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
                         <Calendar className="w-3 h-3 text-slate-400" />
@@ -344,116 +351,152 @@ export function InwardRegisterTable({
                     </td>
 
                     {/* Proforma / Invoice Status */}
-                    <td className="py-4 px-4">
-                      {latestInvoice ? (
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wide ${
-                              latestInvoice.invoice_type === "proforma"
-                                ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            }`}>
-                              {latestInvoice.invoice_no}
-                            </span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                              latestInvoice.status === "paid"
-                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                : latestInvoice.status === "partial"
-                                ? "bg-amber-50 text-amber-800 border border-amber-200"
-                                : "bg-rose-50 text-rose-800 border border-rose-200"
-                            }`}>
-                              {latestInvoice.status === "partial" ? "Partial" : latestInvoice.status}
-                            </span>
-                          </div>
-
-                          <div className="text-[11px] text-slate-500 mt-1">
-                            Total: <strong className="font-mono text-slate-900">{fmt(latestInvoice.total_amount)}</strong>
-                            {paid > 0 && (
-                              <span className="text-emerald-700 ml-1.5 font-medium">
-                                · Paid <strong className="font-mono">{fmt(paid)}</strong>
+                    {showStatusColumn && (
+                      <td className="py-4 px-4">
+                        {latestInvoice ? (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wide ${
+                                latestInvoice.invoice_type === "proforma"
+                                  ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              }`}>
+                                {latestInvoice.invoice_no}
                               </span>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                                latestInvoice.status === "paid"
+                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                  : latestInvoice.status === "partial"
+                                  ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                  : "bg-rose-50 text-rose-800 border border-rose-200"
+                              }`}>
+                                {latestInvoice.status === "partial" ? "Partial" : latestInvoice.status}
+                              </span>
+                            </div>
+
+                            <div className="text-[11px] text-slate-500 mt-1">
+                              Total: <strong className="font-mono text-slate-900">{fmt(latestInvoice.total_amount)}</strong>
+                              {paid > 0 && (
+                                <span className="text-emerald-700 ml-1.5 font-medium">
+                                  · Paid <strong className="font-mono">{fmt(paid)}</strong>
+                                </span>
+                              )}
+                            </div>
+
+                            {bal > 0 && (
+                              <div className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                <span>Due: <strong className="font-mono">{fmt(bal)}</strong></span>
+                              </div>
+                            )}
+
+                            {linkedInvoices.length > 1 && (
+                              <div className="text-[10px] text-slate-400 font-medium">
+                                Remaining balance invoice generated
+                              </div>
                             )}
                           </div>
-
-                          {bal > 0 && (
-                            <div className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                              <span>Due: <strong className="font-mono">{fmt(bal)}</strong></span>
-                            </div>
-                          )}
-
-                          {linkedInvoices.length > 1 && (
-                            <div className="text-[10px] text-slate-400 font-medium">
-                              Remaining balance invoice generated
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                          <span>Ready for Proforma</span>
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-4 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                        {onRecordExpense && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onRecordExpense(job)}
-                            className="h-8 px-2.5 text-xs font-semibold gap-1.5 text-rose-700 hover:text-rose-800 border-rose-200 hover:bg-rose-50 rounded-xl cursor-pointer shadow-2xs"
-                            title="Record direct testing or logistics expense for this inward"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Expense</span>
-                          </Button>
-                        )}
-
-                        {latestInvoice && onViewInvoice && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onViewInvoice(latestInvoice)}
-                            className="h-8 px-2.5 text-xs font-semibold gap-1.5 hover:bg-slate-100 text-slate-700 rounded-xl cursor-pointer shadow-2xs"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-slate-500" />
-                            <span>View</span>
-                          </Button>
-                        )}
-
-                        {/* If inward is fully paid */}
-                        {isFullyPaid ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Paid in Full</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            <span>Ready for Proforma</span>
                           </span>
-                        ) : hasRemainingBalance ? (
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              onCreateProforma(job, {
-                                isRemainingBalance: true,
-                                defaultBalanceAmount: bal,
-                                previousInvoice: latestInvoice,
-                              })
+                        )}
+                      </td>
+                    )}
+
+                    {/* Actions Dropdown */}
+                    <td className="py-4 px-4 text-right">
+                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        {isFullyPaid && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Paid</span>
+                          </span>
+                        )}
+                        <div className="w-[110px]" onClick={(e) => e.stopPropagation()}>
+                          <Dropdown
+                            placeholder={
+                              <span className="font-semibold text-slate-700 text-xs tracking-wide">
+                                Actions
+                              </span>
                             }
-                            className="h-8 px-3 text-xs font-bold gap-1.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl shadow-xs transition-all cursor-pointer"
-                          >
-                            <FilePlus2 className="w-3.5 h-3.5" />
-                            <span>Invoice Remaining ({fmt(bal)})</span>
-                          </Button>
-                        ) : !latestInvoice ? (
-                          <Button
-                            size="sm"
-                            onClick={() => onCreateProforma(job)}
-                            className="h-8 px-3.5 text-xs font-bold gap-1.5 rounded-xl transition-all cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 hover:scale-105"
-                          >
-                            <FilePlus2 className="w-3.5 h-3.5" />
-                            <span>Create Proforma</span>
-                          </Button>
-                        ) : null}
+                            options={[
+                              ...(!latestInvoice
+                                ? [
+                                    {
+                                      label: (
+                                        <span className="flex items-center gap-2 text-blue-700 font-semibold">
+                                          <FilePlus2 className="w-3.5 h-3.5 text-blue-600" />
+                                          <span>Create Proforma</span>
+                                        </span>
+                                      ),
+                                      value: "create_proforma",
+                                    },
+                                  ]
+                                : []),
+                              ...(hasRemainingBalance
+                                ? [
+                                    {
+                                      label: (
+                                        <span className="flex items-center gap-2 text-amber-700 font-semibold">
+                                          <FilePlus2 className="w-3.5 h-3.5 text-amber-600" />
+                                          <span>Invoice Remaining ({fmt(bal)})</span>
+                                        </span>
+                                      ),
+                                      value: "invoice_remaining",
+                                    },
+                                  ]
+                                : []),
+                              ...(latestInvoice && onViewInvoice
+                                ? [
+                                    {
+                                      label: (
+                                        <span className="flex items-center gap-2 text-slate-700 font-medium">
+                                          <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                          <span>View Invoice</span>
+                                        </span>
+                                      ),
+                                      value: "view_invoice",
+                                    },
+                                  ]
+                                : []),
+                              ...(onRecordExpense
+                                ? [
+                                    {
+                                      label: (
+                                        <span className="flex items-center gap-2 text-rose-700 font-semibold">
+                                          <Plus className="w-3.5 h-3.5 text-rose-600" />
+                                          <span>Record Expense</span>
+                                        </span>
+                                      ),
+                                      value: "record_expense",
+                                    },
+                                  ]
+                                : []),
+                            ]}
+                            align="right"
+                            menuWidth={180}
+                            buttonClassName="h-8 py-0 px-3 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs rounded-xl transition-all text-slate-700 cursor-pointer group"
+                            iconClassName="text-slate-400 group-hover:text-slate-600 w-3.5 h-3.5"
+                            itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
+                            value=""
+                            onChange={(val) => {
+                              if (val === "create_proforma") {
+                                onCreateProforma(job);
+                              } else if (val === "invoice_remaining") {
+                                onCreateProforma(job, {
+                                  isRemainingBalance: true,
+                                  defaultBalanceAmount: bal,
+                                  previousInvoice: latestInvoice,
+                                });
+                              } else if (val === "view_invoice") {
+                                onViewInvoice?.(latestInvoice);
+                              } else if (val === "record_expense") {
+                                onRecordExpense?.(job);
+                              }
+                            }}
+                          />
+                        </div>
                       </div>
                     </td>
                   </tr>

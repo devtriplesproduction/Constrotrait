@@ -152,14 +152,14 @@ const SWATCH_OPTIONS: CategoryColor[] = ['blue', 'teal', 'emerald', 'orange', 'p
 
 const LOCAL_STORAGE_KEY = 'constrotrait_service_categories_v1';
 
-interface ClauseItem {
+export interface ClauseItem {
   id: string;
   title: string;
   content: string;
   display_order: number;
 }
 
-interface TemplateData {
+export interface TemplateData {
   id?: string;
   name: string;
   category: string;
@@ -167,7 +167,13 @@ interface TemplateData {
   clauses: ClauseItem[];
 }
 
-export function TemplateManager({ initialTemplates }: { initialTemplates?: TemplateData[] }) {
+export function TemplateManager({ 
+  initialTemplates,
+  onRegisterCreate,
+}: { 
+  initialTemplates?: TemplateData[];
+  onRegisterCreate?: (fn: () => void) => void;
+}) {
   const { toast } = useToast();
   const [templates, setTemplates] = useState<TemplateData[]>(initialTemplates || []);
   const [loading, setLoading] = useState(!initialTemplates);

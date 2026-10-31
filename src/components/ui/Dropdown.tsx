@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils/cn";
 import { Select, SelectItem } from "./select";
 
 export interface DropdownOption {
-  label: string;
+  label: React.ReactNode;
   value: string;
 }
 
@@ -107,7 +107,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
             <option value=""></option>
             {options.map((opt) => (
               <option key={opt.value} value={opt.value}>
-                {opt.label}
+                {typeof opt.label === "string" ? opt.label : opt.value}
               </option>
             ))}
           </select>

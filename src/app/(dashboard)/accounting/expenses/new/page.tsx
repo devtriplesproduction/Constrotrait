@@ -42,6 +42,7 @@ export default async function RecordExpensePage({ searchParams }: ExpenseNewPage
     projects: [],
     inwards: [],
     specificInward: null,
+    testMasters: [],
   };
 
   return (
@@ -52,6 +53,9 @@ export default async function RecordExpensePage({ searchParams }: ExpenseNewPage
         accounts={data.accounts || []}
         projects={data.projects || []}
         initialInward={data.specificInward}
+        initialTestId={resolvedParams.test_id}
+        initialType={resolvedParams.type}
+        testMasters={data.testMasters || []}
       />
     </div>
   );

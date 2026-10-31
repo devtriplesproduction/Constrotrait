@@ -112,8 +112,8 @@ export function Topbar({ user, role, roles = [], branchName, onMenuClick, onRole
         <Button
           variant="custom"
           onClick={onMenuClick}
-          aria-label="Open navigation"
-          className="lg:hidden p-2 -ml-2 rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
+          aria-label="Toggle navigation"
+          className="p-2 -ml-2 rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors cursor-pointer"
         >
           <Menu className="w-5 h-5" />
         </Button>

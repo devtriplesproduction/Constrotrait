@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { getAuthenticatedUserWithRoles } from "./auth.service";
-import { canManageClientsAndJobs, isSuperAdmin } from "@/config/roles";
+import { canManageClientsAndJobs, isSuperAdmin, canManageAccountingTransactions } from "@/config/roles";
 
 export class ClientService {
   /**
@@ -102,15 +102,21 @@ export class ClientService {
   static async createClient(clientData: Database["public"]["Tables"]["clients"]["Insert"]) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
-    if (!canManageClientsAndJobs(user.roles)) throw new Error("Unauthorized: You do not have permission to manage clients");
+    if (!canManageClientsAndJobs(user.roles) && !canManageAccountingTransactions(user.roles)) {
+      throw new Error("Unauthorized: You do not have permission to manage clients");
+    }
 
+    const supabase = await createClient();
     const isSuper = isSuperAdmin(user.roles);
-    const branchId = isSuper ? (clientData.branch_id || user.branch_id) : user.branch_id;
+    let branchId = isSuper ? (clientData.branch_id || user.branch_id) : user.branch_id;
+    if (!branchId) {
+      const { data: fallbackBranch } = await supabase.from("branches").select("id").limit(1).maybeSingle();
+      branchId = fallbackBranch?.id || null;
+    }
     if (!branchId) {
       throw new Error("A valid branch must be assigned to create a client.");
     }
 
-    const supabase = await createClient();
     const { data, error } = await supabase
       .from("clients")
       .insert({
@@ -136,7 +142,9 @@ export class ClientService {
   static async updateClient(id: string, clientData: Database["public"]["Tables"]["clients"]["Update"]) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
-    if (!canManageClientsAndJobs(user.roles)) throw new Error("Unauthorized: You do not have permission to manage clients");
+    if (!canManageClientsAndJobs(user.roles) && !canManageAccountingTransactions(user.roles)) {
+      throw new Error("Unauthorized: You do not have permission to manage clients");
+    }
 
     const supabase = await createClient();
     const isSuper = isSuperAdmin(user.roles);

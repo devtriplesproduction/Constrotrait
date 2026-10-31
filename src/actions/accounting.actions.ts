@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
 import { canManageAccountingTransactions, canViewAccounting, canApproveAccounting, canExportAccountingExcel } from "@/config/roles";
 import * as accounting from "@/services/accounting.service";
+import { createClient } from "@/lib/supabase/server";
 
 export async function getAccountingDashboardAction(branchId?: string) {
   const user = await getAuthenticatedUserWithRoles();
@@ -336,6 +337,19 @@ export async function getQuotationVersionsAction(quotationId: string) {
   return accounting.getQuotationVersions(quotationId);
 }
 
+export async function linkQuotationToInwardAction(quotationId: string, jobEntryId: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  const result = await accounting.linkQuotationToInward(quotationId, jobEntryId);
+  if (result.success) {
+    revalidatePath("/accounting");
+    revalidatePath("/accounting/quotations");
+    revalidatePath("/clients");
+    revalidatePath("/dashboard");
+  }
+  return result;
+}
+
 export async function convertQuotationToProformaAction(quotationId: string) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
@@ -371,4 +385,62 @@ export async function getTestWiseProfitabilityReportAction(fromDate?: string, to
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
   return accounting.getTestWiseProfitabilityReport(fromDate, toDate, branchId);
+}
+
+export async function createClientAction(payload: {
+  name: string;
+  company_name?: string;
+  contact_person?: string;
+  mobile?: string;
+  email?: string;
+  gst_no?: string;
+  address?: string;
+  site_name?: string;
+  project_name?: string;
+  branch_id?: string;
+}) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const supabase = await createClient();
+  const insertPayload = {
+    name: payload.name,
+    company_name: payload.company_name || payload.name,
+    contact_person: payload.contact_person || null,
+    mobile: payload.mobile || null,
+    email: payload.email || null,
+    gst_no: payload.gst_no || null,
+    address: payload.address || null,
+    site_name: payload.site_name || null,
+    project_name: payload.project_name || null,
+    branch_id: payload.branch_id || user.branch_id || null,
+    created_by: user.id,
+  };
+
+  const { data: newClient, error: clientErr } = await supabase
+    .from("clients")
+    .insert(insertPayload)
+    .select()
+    .single();
+
+  if (clientErr) {
+    return { success: false, error: clientErr.message };
+  }
+
+  let project = null;
+  if (payload.site_name || payload.project_name) {
+    const projName = (payload.project_name || payload.site_name)!;
+    const { data: newProj } = await supabase
+      .from("accounting_projects")
+      .insert({
+        client_id: newClient.id,
+        name: projName,
+        branch_id: payload.branch_id || user.branch_id || null,
+      })
+      .select()
+      .single();
+    project = newProj;
+  }
+
+  return { success: true, data: { client: newClient, project } };
 }

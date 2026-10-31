@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
 
@@ -251,14 +252,13 @@ export function InvoicesListTable({
                 <th className="py-3.5 px-4 text-right">Total Amount</th>
                 <th className="py-3.5 px-4 text-right">Amount Received</th>
                 <th className="py-3.5 px-4 text-right">Outstanding Balance</th>
-                <th className="py-3.5 px-4 text-center">Payment Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <FileText className="w-8 h-8 text-slate-300" />
                       <p className="font-bold text-sm text-slate-700">No invoices match your filters</p>
@@ -381,89 +381,104 @@ export function InvoicesListTable({
                               {pct}%
                             </span>
                           </div>
-                        </td>
-
-                        {/* Outstanding Balance */}
-                        <td className="py-4 px-4 text-right">
-                          {bal > 0 ? (
-                            <div>
-                              <div className="font-mono font-black text-sm text-amber-700 tracking-tight">
-                                {fmt(bal)}
-                              </div>
-                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80 inline-block mt-0.5 shadow-2xs">
-                                Due
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-end">
-                              <span className="inline-flex items-center gap-1 text-emerald-800 font-bold text-[11px] bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full shadow-2xs">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Settled</span>
-                              </span>
-                            </div>
-                          )}
-                        </td>
-
-                        {/* Payment Status Badge */}
-                        <td className="py-4 px-4 text-center">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-2xs ${
-                              inv.status === "paid"
-                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200/80"
-                                : inv.status === "partial"
-                                ? "bg-amber-50 text-amber-800 border border-amber-200/80"
-                                : "bg-rose-50 text-rose-800 border border-rose-200/80"
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                inv.status === "paid"
-                                  ? "bg-emerald-500"
-                                  : inv.status === "partial"
-                                  ? "bg-amber-500"
-                                  : "bg-rose-500"
-                              }`}
-                            />
-                            <span>{inv.status === "partial" ? "Partially Paid" : inv.status}</span>
-                          </span>
 
                           {/* Quick Payment Count Toggle */}
                           {payments.length > 0 && (
                             <button
                               type="button"
                               onClick={() => setExpandedInvoiceId(isExpanded ? null : inv.id)}
-                              className="text-[10px] text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-0.5 rounded-full font-medium mx-auto mt-1.5 flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                              className="text-[10px] text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-full font-medium ml-auto mt-1.5 flex items-center justify-end gap-1 cursor-pointer transition-colors shadow-2xs"
                             >
                               <span>
                                 {payments.length} payment{payments.length !== 1 ? "s" : ""}
                               </span>
                               {isExpanded ? (
-                                <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+                                <ChevronUp className="w-3 h-3 text-slate-500" />
                               ) : (
-                                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                                <ChevronDown className="w-3 h-3 text-slate-500" />
                               )}
                             </button>
                           )}
                         </td>
 
+                        {/* Outstanding Balance */}
+                        <td className="py-4 px-4 text-right">
+                          <div className="font-mono font-black text-sm text-slate-900 tracking-tight">
+                            {fmt(bal)}
+                          </div>
+                          {bal <= 0 ? (
+                            <span className="inline-flex items-center gap-1 mt-0.5 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 bg-emerald-50 rounded-full border border-emerald-200/80 shadow-2xs">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>Paid in Full</span>
+                            </span>
+                          ) : (
+                            <span className="inline-block mt-0.5 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 bg-amber-50 rounded-full border border-amber-200/80 shadow-2xs">
+                              Due
+                            </span>
+                          )}
+                        </td>
+
                         {/* Actions */}
                         <td className="py-4 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onViewInvoice(inv)}
-                              className="h-8 px-3 text-xs font-semibold gap-1.5 text-slate-700 bg-slate-50 hover:bg-slate-100 border-slate-200 rounded-xl cursor-pointer shadow-2xs hover:scale-[1.02] transition-all"
-                            >
-                              <Eye className="w-3.5 h-3.5 text-slate-500" />
-                              <span>View / Print</span>
-                            </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            {hasChildRemainingInvoice && (
+                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/80 shadow-2xs">
+                                Bal Invoiced
+                              </span>
+                            )}
 
-                            {canInvoiceBal && (
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  onCreateRemainingInvoice(
+                            <Dropdown
+                              placeholder="Actions"
+                              options={[
+                                {
+                                  label: (
+                                    <span className="flex items-center gap-2 text-slate-700 font-medium">
+                                      <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                      <span>View / Print</span>
+                                    </span>
+                                  ),
+                                  value: "view",
+                                },
+                                ...(bal > 0
+                                  ? [
+                                      {
+                                        label: (
+                                          <span className="flex items-center gap-2 text-emerald-700 font-semibold">
+                                            <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
+                                            <span>Record Payment</span>
+                                          </span>
+                                        ),
+                                        value: "record_pay",
+                                      },
+                                    ]
+                                  : []),
+                                ...(canInvoiceBal
+                                  ? [
+                                      {
+                                        label: (
+                                          <span className="flex items-center gap-2 text-amber-700 font-semibold">
+                                            <FilePlus2 className="w-3.5 h-3.5 text-amber-600" />
+                                            <span>Invoice Bal ({fmt(bal)})</span>
+                                          </span>
+                                        ),
+                                        value: "invoice_bal",
+                                      },
+                                    ]
+                                  : []),
+                              ]}
+                              align="right"
+                              menuWidth={180}
+                              buttonClassName="h-8 py-0 px-3 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs rounded-xl transition-all text-slate-700 cursor-pointer group"
+                              iconClassName="text-slate-400 group-hover:text-slate-600 w-3.5 h-3.5"
+                              itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
+                              value=""
+                              onChange={(val) => {
+                                if (val === "view") {
+                                  onViewInvoice(inv);
+                                } else if (val === "record_pay") {
+                                  onRecordPayment(inv);
+                                } else if (val === "invoice_bal") {
+                                  onCreateRemainingInvoice?.(
                                     inv.job_entries || {
                                       id: inv.inward_id,
                                       client_id: inv.client_id,
@@ -474,32 +489,10 @@ export function InvoicesListTable({
                                       defaultBalanceAmount: bal,
                                       previousInvoice: inv,
                                     }
-                                  )
+                                  );
                                 }
-                                className="h-8 px-3 text-xs font-bold gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl shadow-xs hover:scale-105 transition-all cursor-pointer"
-                                title="Create new invoice for remaining unpaid balance of this inward"
-                              >
-                                <FilePlus2 className="w-3.5 h-3.5" />
-                                <span>Invoice Bal</span>
-                              </Button>
-                            )}
-
-                            {hasChildRemainingInvoice && (
-                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/80 shadow-2xs">
-                                Bal Invoiced
-                              </span>
-                            )}
-
-                            {bal > 0 && (
-                              <Button
-                                size="sm"
-                                onClick={() => onRecordPayment(inv)}
-                                className="h-8 px-3 text-xs font-bold gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl shadow-xs hover:scale-105 transition-all cursor-pointer"
-                              >
-                                <CreditCard className="w-3.5 h-3.5" />
-                                <span>Record Pay</span>
-                              </Button>
-                            )}
+                              }}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -507,7 +500,7 @@ export function InvoicesListTable({
                       {/* Expandable Payment History Accordion */}
                       {isExpanded && payments.length > 0 && (
                         <tr className="bg-slate-50/90 border-b border-slate-200">
-                          <td colSpan={7} className="p-4 pl-12">
+                          <td colSpan={6} className="p-4 pl-12">
                             <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 space-y-2 shadow-xs">
                               <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                                 <span className="flex items-center gap-1.5">

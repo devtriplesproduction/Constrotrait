@@ -414,7 +414,7 @@ export function CreateProformaInvoiceModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200" onClick={onClose} />
 
       {/* Modal Dialog */}
       <div className="relative z-10 w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
@@ -547,11 +547,14 @@ export function CreateProformaInvoiceModal({
                   className="h-9 px-3 bg-white border border-blue-300 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">— Select an Inward UID (Optional) —</option>
-                  {filteredInwards.map((inv) => (
-                    <option key={inv.id} value={inv.id}>
-                      UID: {inv.uid_label || inv.uid} — {inv.clients?.name || "Client"} ({inv.project_name || "Project"}) [{(inv.job_entry_tests || []).length} Tests]
-                    </option>
-                  ))}
+                  {filteredInwards.map((inv) => {
+                    const hasInv = Array.isArray(inv.invoices) && inv.invoices.length > 0;
+                    return (
+                      <option key={inv.id} value={inv.id}>
+                        {hasInv ? "✓" : "⚡"} UID: {inv.uid_label || inv.uid} — {inv.clients?.name || "Client"} ({inv.project_name || "Project"}) [{(inv.job_entry_tests || []).length} Tests]{!hasInv ? " [Awaiting Invoice]" : ""}
+                      </option>
+                    );
+                  })}
                 </select>
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />

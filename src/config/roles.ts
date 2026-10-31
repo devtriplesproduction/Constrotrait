@@ -153,7 +153,7 @@ export function canApproveAccounting(roles?: string[] | null): boolean {
 /** View accounting module (transactions or audit) */
 export function canViewAccounting(roles?: string[] | null): boolean {
   if (!roles) return false;
-  return isSuperAdmin(roles) || isAccountant(roles) || isBranchManager(roles);
+  return isSuperAdmin(roles) || isAccountant(roles) || isBranchManager(roles) || isDeveloper(roles);
 }
 
 /** Excel export restricted to Super Admin */

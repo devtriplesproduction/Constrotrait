@@ -11,7 +11,6 @@ import {
   CreditCard,
   Banknote,
   Smartphone,
-  CheckCircle2,
   XCircle,
   FileText,
   AlertCircle,
@@ -29,6 +28,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
 
@@ -137,25 +137,6 @@ export function ReceiptsListTable({
   const activeReceipts = filteredReceipts.filter((r) => r.status !== "cancelled");
   const totalAmount = activeReceipts.reduce((s, r) => s + Number(r.amount || 0), 0);
 
-  const bankAmount = activeReceipts
-    .filter((r) => ["bank", "neft", "rtgs"].includes((r.payment_mode || "").toLowerCase()))
-    .reduce((s, r) => s + Number(r.amount || 0), 0);
-
-  const cashAmount = activeReceipts
-    .filter((r) => (r.payment_mode || "").toLowerCase() === "cash")
-    .reduce((s, r) => s + Number(r.amount || 0), 0);
-
-  const upiAmount = activeReceipts
-    .filter((r) => (r.payment_mode || "").toLowerCase() === "upi")
-    .reduce((s, r) => s + Number(r.amount || 0), 0);
-
-  const chequeAmount = activeReceipts
-    .filter((r) => (r.payment_mode || "").toLowerCase() === "cheque")
-    .reduce((s, r) => s + Number(r.amount || 0), 0);
-
-  const bankPercent = totalAmount > 0 ? Math.min(100, Math.round((bankAmount / totalAmount) * 100)) : 0;
-  const upiPercent = totalAmount > 0 ? Math.min(100, Math.round((upiAmount / totalAmount) * 100)) : 0;
-
   const isFiltered = searchTerm.trim() !== "" || modeFilter !== "all" || statusFilter !== "all";
 
   const getModeBadge = (mode: string) => {
@@ -194,106 +175,6 @@ export function ReceiptsListTable({
 
   return (
     <div className="space-y-4">
-      {/* Receipts Summary Channel Breakdown Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Realized Collections */}
-        <div className="p-4.5 bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 border border-emerald-200/80 rounded-2xl shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 group">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Total Inward Collection
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-100/80 border border-emerald-200 text-emerald-700 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-              <CheckCircle2 className="w-4.5 h-4.5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-emerald-950 tracking-tight mt-2 font-mono">
-            {fmt(totalAmount)}
-          </div>
-          <div className="flex items-center justify-between text-xs text-emerald-700 mt-2 pt-2 border-t border-emerald-100/80">
-            <span>{activeReceipts.length} verified vouchers</span>
-            <span className="text-[10px] font-bold bg-emerald-100/90 text-emerald-800 px-2 py-0.5 rounded-full">
-              Realized
-            </span>
-          </div>
-        </div>
-
-        {/* Card 2: Bank Transfers */}
-        <div className="p-4.5 bg-gradient-to-br from-blue-50/50 via-white to-sky-50/30 border border-blue-200/80 rounded-2xl shadow-xs hover:shadow-md hover:border-blue-300 transition-all duration-300 group">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider">
-              Bank / NEFT / RTGS
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-blue-100/80 border border-blue-200 text-blue-700 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-              <Landmark className="w-4.5 h-4.5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-blue-950 tracking-tight mt-2 font-mono">
-            {fmt(bankAmount)}
-          </div>
-          <div className="mt-2 pt-2 border-t border-blue-100/80">
-            <div className="flex items-center justify-between text-[11px] text-blue-700 font-semibold mb-1">
-              <span>Channel Share</span>
-              <span className="font-mono">{bankPercent}%</span>
-            </div>
-            <div className="w-full bg-blue-100/80 h-1 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                style={{ width: `${bankPercent}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: UPI / Digital */}
-        <div className="p-4.5 bg-gradient-to-br from-purple-50/50 via-white to-indigo-50/30 border border-purple-200/80 rounded-2xl shadow-xs hover:shadow-md hover:border-purple-300 transition-all duration-300 group">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-purple-800 uppercase tracking-wider">
-              UPI & QR Codes
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-purple-100/80 border border-purple-200 text-purple-700 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-              <Smartphone className="w-4.5 h-4.5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-purple-950 tracking-tight mt-2 font-mono">
-            {fmt(upiAmount)}
-          </div>
-          <div className="mt-2 pt-2 border-t border-purple-100/80">
-            <div className="flex items-center justify-between text-[11px] text-purple-700 font-semibold mb-1">
-              <span>Channel Share</span>
-              <span className="font-mono">{upiPercent}%</span>
-            </div>
-            <div className="w-full bg-purple-100/80 h-1 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-purple-600 rounded-full transition-all duration-500"
-                style={{ width: `${upiPercent}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Liquid Cash & Cheques */}
-        <div className="p-4.5 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30 border border-amber-200/80 rounded-2xl shadow-xs hover:shadow-md hover:border-amber-300 transition-all duration-300 group">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">
-              Cash & Cheques
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-amber-100/80 border border-amber-200 text-amber-700 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-              <Banknote className="w-4.5 h-4.5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-amber-950 tracking-tight mt-2 font-mono">
-            {fmt(cashAmount + chequeAmount)}
-          </div>
-          <div className="flex items-center justify-between text-xs text-amber-800 mt-2 pt-2 border-t border-amber-100/80">
-            <span>Cash: {fmt(cashAmount)}</span>
-            <span className="font-semibold text-amber-900 bg-amber-100/90 px-2 py-0.5 rounded-full text-[10px]">
-              Cheque: {fmt(chequeAmount)}
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Filter and Search Bar */}
       <div className="p-4 bg-white border border-slate-200/90 rounded-2xl space-y-3.5 shadow-xs">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -642,32 +523,56 @@ export function ReceiptsListTable({
 
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onViewReceipt(r)}
-                            className="h-7 px-2.5 text-xs font-bold gap-1 rounded-lg border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer shadow-2xs"
-                          >
-                            <Printer className="w-3 h-3 text-slate-500" />
-                            <span>View</span>
-                          </Button>
-
-                          {!isCancelled && onCancelReceipt && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const reason = prompt(`Reason for cancelling receipt ${r.receipt_no}?`);
-                                if (reason && reason.trim()) {
-                                  onCancelReceipt(r.id, reason.trim());
+                        <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
+                          <div className="w-[110px]" onClick={(e) => e.stopPropagation()}>
+                            <Dropdown
+                              placeholder={
+                                <span className="font-semibold text-slate-700 text-xs tracking-wide">
+                                  Actions
+                                </span>
+                              }
+                              options={[
+                                {
+                                  label: (
+                                    <span className="flex items-center gap-2 text-slate-700 font-medium">
+                                      <Printer className="w-3.5 h-3.5 text-slate-500" />
+                                      <span>View</span>
+                                    </span>
+                                  ),
+                                  value: "view",
+                                },
+                                ...(!isCancelled && onCancelReceipt
+                                  ? [
+                                      {
+                                        label: (
+                                          <span className="flex items-center gap-2 text-rose-600 font-semibold">
+                                            <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                                            <span>Cancel</span>
+                                          </span>
+                                        ),
+                                        value: "cancel",
+                                      },
+                                    ]
+                                  : []),
+                              ]}
+                              align="right"
+                              menuWidth={150}
+                              buttonClassName="h-8 py-0 px-3 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs rounded-xl transition-all text-slate-700 cursor-pointer group"
+                              iconClassName="text-slate-400 group-hover:text-slate-600 w-3.5 h-3.5"
+                              itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
+                              value=""
+                              onChange={(val) => {
+                                if (val === "view") {
+                                  onViewReceipt(r);
+                                } else if (val === "cancel") {
+                                  const reason = prompt(`Reason for cancelling receipt ${r.receipt_no}?`);
+                                  if (reason && reason.trim()) {
+                                    onCancelReceipt?.(r.id, reason.trim());
+                                  }
                                 }
                               }}
-                              className="h-7 px-2 text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
-                            >
-                              Cancel
-                            </Button>
-                          )}
+                            />
+                          </div>
                         </div>
                       </td>
                     </tr>

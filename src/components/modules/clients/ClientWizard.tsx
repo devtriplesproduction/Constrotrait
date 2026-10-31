@@ -144,23 +144,33 @@ export interface ClientWizardProps {
     jobEntryTest?: any;
     jobEntryTests?: any[];
   };
+  fromQuotation?: any;
   branches?: any[];
   userBranchId?: string | null;
   isSuperAdmin?: boolean;
-  onSuccess?: () => void;
+  initialAvailableTests?: TestMaster[];
+  initialSelectedTestIds?: string[];
+  initialJobTests?: any[];
+  onSuccess?: (result?: any) => void;
   onClose?: () => void;
 }
 
 export function ClientWizard({
   mode = "create",
   initialData,
+  fromQuotation,
   branches = [],
   userBranchId,
   isSuperAdmin = false,
+  initialAvailableTests = [],
+  initialSelectedTestIds = [],
+  initialJobTests: propsInitialJobTests = [],
   onSuccess,
   onClose,
 }: ClientWizardProps) {
-  const initialJobTests: any[] = (initialData?.jobEntryTests && initialData.jobEntryTests.length > 0)
+  const initialJobTests: any[] = (propsInitialJobTests && propsInitialJobTests.length > 0)
+    ? propsInitialJobTests
+    : (initialData?.jobEntryTests && initialData.jobEntryTests.length > 0)
     ? initialData.jobEntryTests
     : (initialData?.jobEntryTest ? [initialData.jobEntryTest] : []);
 
@@ -171,6 +181,9 @@ export function ClientWizard({
     primaryJob?.branch_id ||
     (primaryTest as any)?.job_entries?.branch_id ||
     initialData?.client?.branch_id ||
+    fromQuotation?.branch_id ||
+    fromQuotation?.clients?.branch_id ||
+    initialJobTests?.[0]?.test_master?.branch_id ||
     (isSuperAdmin ? (branches[0]?.id || "") : (userBranchId || ""));
 
   const [selectedBranchId, setSelectedBranchId] = useState<string>(initialBranchId);
@@ -190,10 +203,20 @@ export function ClientWizard({
   const [isFetchingProjects, setIsFetchingProjects] = useState(false);
 
   // Test master data
-  const [availableTests, setAvailableTests] = useState<TestMaster[]>([]);
+  const [availableTests, setAvailableTests] = useState<TestMaster[]>(
+    initialAvailableTests && initialAvailableTests.length > 0 ? initialAvailableTests : []
+  );
   const [testSearchQuery, setTestSearchQuery] = useState("");
-  const [testNablFilter, setTestNablFilter] = useState<"all" | "nabl" | "non-nabl">("all");
-  const [testCategoryFilter, setTestCategoryFilter] = useState<"all" | "Construction" | "Environmental">("all");
+  const [testNablFilter, setTestNablFilter] = useState<"all" | "nabl" | "non-nabl">(
+    fromQuotation?.category === "Non-NABL" ? "non-nabl" : fromQuotation?.category === "NABL" ? "nabl" : "all"
+  );
+  const [testCategoryFilter, setTestCategoryFilter] = useState<"all" | "Construction" | "Environmental">(
+    fromQuotation?.department === "Environment" || fromQuotation?.category === "Environmental"
+      ? "Environmental"
+      : fromQuotation?.department === "Construction" || fromQuotation?.category === "Construction"
+      ? "Construction"
+      : "all"
+  );
   const [testCurrentPage, setTestCurrentPage] = useState(1);
   const testPageSize = 10;
   const [isLoadingTests, setIsLoadingTests] = useState(false);
@@ -291,6 +314,49 @@ export function ClientWizard({
       })) : [],
       non_nabl_month: primaryJob?.uid_label?.split('-')[0] || (primaryTest as any)?.job_entries?.uid_label?.split('-')[0] || new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase(),
       dummy_is_nabl: true,
+    } as ClientWizardValues : fromQuotation ? {
+      client: {
+        id: fromQuotation.client_id || fromQuotation.clients?.id || "",
+        name: fromQuotation.clients?.name || "",
+        company_name: fromQuotation.clients?.company_name || fromQuotation.clients?.name || "",
+        address: fromQuotation.clients?.address || "",
+        mobile: fromQuotation.clients?.mobile || "",
+        email: fromQuotation.clients?.email || "",
+        gst_no: fromQuotation.clients?.gst_no || "",
+        branch_id: fromQuotation.branch_id || initialBranchId,
+      },
+      jobEntry: {
+        branch_id: fromQuotation.branch_id || initialBranchId,
+        division: fromQuotation.clients?.division || "",
+        site_name: fromQuotation.clients?.site_name || fromQuotation.remarks || fromQuotation.accounting_projects?.name || "",
+        agency_name: fromQuotation.clients?.agency_name || "",
+        project_name: fromQuotation.accounting_projects?.name || fromQuotation.clients?.project_name || fromQuotation.remarks || "",
+        dispatch_name: fromQuotation.clients?.dispatch_name || fromQuotation.clients?.name || "",
+        dispatch_address: fromQuotation.clients?.dispatch_address || fromQuotation.clients?.address || "",
+        contact_person: fromQuotation.clients?.contact_person || "",
+        collected_by: fromQuotation.clients?.collected_by || "",
+        letter_reference: fromQuotation.quotation_no ? `Quotation: ${fromQuotation.quotation_no}` : "",
+        payment_status: "pending",
+        quotation_id: fromQuotation.id || "",
+      },
+      materialDetails: {
+        material_initials: initialJobTests?.[0]?.additional_details_values?.material_initials || deriveMaterialInitials(initialJobTests?.[0]?.material_description || fromQuotation.items?.[0]?.description || "") || "",
+        material_details_location: "",
+        sample_quantity: String(fromQuotation.items?.[0]?.quantity || fromQuotation.items?.[0]?.qty || "1"),
+        testing_day: "",
+        grade: "",
+        date_of_casting: "",
+        date_of_testing: "",
+        date_of_receiving: new Date().toISOString().slice(0, 10),
+      },
+      selectedTestIds: initialSelectedTestIds && initialSelectedTestIds.length > 0
+        ? initialSelectedTestIds
+        : (initialJobTests.length > 0 ? initialJobTests.map(t => t.test_master_id).filter(Boolean) : []),
+      jobEntryTests: initialJobTests && initialJobTests.length > 0
+        ? initialJobTests
+        : [],
+      non_nabl_month: new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+      dummy_is_nabl: true,
     } as ClientWizardValues : {
       jobEntry: {
         branch_id: initialBranchId,
@@ -317,10 +383,53 @@ export function ClientWizard({
     } as ClientWizardValues,
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove, update, replace } = useFieldArray({
     control,
     name: "jobEntryTests"
   });
+
+  // Explicitly sync form values from quotation when provided
+  useEffect(() => {
+    if (fromQuotation) {
+      const c = fromQuotation.clients;
+      if (c || fromQuotation.client_id) {
+        setValue("client.id", fromQuotation.client_id || c?.id || "", { shouldDirty: true });
+        setValue("client.name", c?.name || "", { shouldValidate: true, shouldDirty: true });
+        setValue("client.company_name", c?.company_name || c?.name || "", { shouldDirty: true });
+        setValue("client.address", c?.address || "", { shouldDirty: true });
+        setValue("client.mobile", c?.mobile || "", { shouldDirty: true });
+        setValue("client.email", c?.email || "", { shouldDirty: true });
+        setValue("client.gst_no", c?.gst_no || "", { shouldDirty: true });
+        if (c?.site_name || fromQuotation.remarks || fromQuotation.accounting_projects?.name) {
+          setValue("jobEntry.site_name", c?.site_name || fromQuotation.remarks || fromQuotation.accounting_projects?.name || "", { shouldDirty: true });
+        }
+        if (fromQuotation.accounting_projects?.name || c?.project_name || fromQuotation.remarks) {
+          setValue("jobEntry.project_name", fromQuotation.accounting_projects?.name || c?.project_name || fromQuotation.remarks || "", { shouldDirty: true });
+        }
+        if (c?.division) setValue("jobEntry.division", c.division, { shouldDirty: true });
+        if (c?.agency_name) setValue("jobEntry.agency_name", c.agency_name, { shouldDirty: true });
+        if (c?.dispatch_name || c?.name) setValue("jobEntry.dispatch_name", c?.dispatch_name || c?.name || "", { shouldDirty: true });
+        if (c?.dispatch_address || c?.address) setValue("jobEntry.dispatch_address", c?.dispatch_address || c?.address || "", { shouldDirty: true });
+        if (c?.contact_person) setValue("jobEntry.contact_person", c.contact_person, { shouldDirty: true });
+        if (c?.collected_by) setValue("jobEntry.collected_by", c.collected_by, { shouldDirty: true });
+      }
+      setValue("jobEntry.quotation_id", fromQuotation.id || "", { shouldDirty: true });
+      if (fromQuotation.quotation_no) {
+        setValue("jobEntry.letter_reference", `Quotation: ${fromQuotation.quotation_no}`, { shouldDirty: true });
+      }
+      if (initialBranchId) {
+        setValue("client.branch_id", initialBranchId, { shouldDirty: true });
+        setValue("jobEntry.branch_id", initialBranchId, { shouldDirty: true });
+      }
+      if (initialSelectedTestIds && initialSelectedTestIds.length > 0) {
+        setValue("selectedTestIds", initialSelectedTestIds, { shouldValidate: true, shouldDirty: true });
+      }
+      if (initialJobTests && initialJobTests.length > 0) {
+        replace(initialJobTests);
+        setValue("jobEntryTests", initialJobTests, { shouldValidate: true, shouldDirty: true });
+      }
+    }
+  }, [fromQuotation, setValue, initialBranchId, initialSelectedTestIds, initialJobTests, replace]);
 
   const selectedTestIds = watch("selectedTestIds");
   const jobEntryTests = watch("jobEntryTests");
@@ -430,15 +539,136 @@ export function ClientWizard({
     }
   }, [selectedClientId, clientProjects.length, isFetchingProjects]);
 
-  // Fetch tests when reaching step 2
+  // Fetch tests when reaching step 2 or when fromQuotation is provided
   useEffect(() => {
-    if ((currentStep === 1 || mode === "edit") && availableTests.length === 0) {
+    if ((currentStep >= 1 || mode === "edit" || !!fromQuotation) && availableTests.length === 0) {
       const fetchTests = async () => {
         setIsLoadingTests(true);
-        const result = await getTestsAction(selectedBranchId || undefined);
+        const branchParam = fromQuotation ? "all" : (selectedBranchId || undefined);
+        const result = await getTestsAction(branchParam);
         if (result.success && result.data) {
           const allMasters = result.data as TestMaster[];
           setAvailableTests(allMasters);
+
+          // Auto-populate from quotation if provided
+          if (fromQuotation && Array.isArray(fromQuotation.items) && fromQuotation.items.length > 0) {
+            const currentTests = getValues("jobEntryTests") || [];
+            if (currentTests.length === 0) {
+              const matchedTestIds: string[] = [];
+              const generatedJobTests: any[] = [];
+              const receivingDate = new Date().toISOString().slice(0, 10);
+
+              const matchQuotationItemToTestMaster = (item: any): TestMaster | undefined => {
+                if (item.test_master_id) {
+                  const found = allMasters.find((t) => t.id === item.test_master_id);
+                  if (found) return found;
+                }
+                const textCandidates = [
+                  item.service_name,
+                  item.description,
+                  item.name,
+                  item.item_name,
+                ].filter(Boolean).map((s: string) => s.toLowerCase());
+
+                if (textCandidates.length === 0) return undefined;
+
+                let bestMatch: TestMaster | undefined;
+                let bestScore = 0;
+
+                for (const t of allMasters) {
+                  const param = (t.component_parameter || "").toLowerCase().trim();
+                  const spec = (t.specific_test || "").toLowerCase().trim();
+                  const mat = (t.material_product || "").toLowerCase().trim();
+
+                  let score = 0;
+                  for (const text of textCandidates) {
+                    if (param && text === param) score += 50;
+                    else if (param && param.length >= 5 && text.includes(param)) score += param.length * 2;
+                    else if (param && param.length >= 5 && param.includes(text)) score += text.length;
+
+                    if (spec && text === spec) score += 40;
+                    else if (spec && spec.length >= 5 && text.includes(spec)) score += spec.length * 2;
+
+                    if (mat && text === mat) score += 30;
+                    else if (mat && mat.length >= 5 && text.includes(mat)) score += mat.length;
+
+                    const words = [
+                      ...param.split(/[\s,()/-]+/),
+                      ...spec.split(/[\s,()/-]+/),
+                      ...mat.split(/[\s,()/-]+/)
+                    ].filter(w => w.length >= 4);
+
+                    for (const w of words) {
+                      if (text.includes(w)) score += 3;
+                    }
+                  }
+
+                  if (score > bestScore && score >= 3) {
+                    bestScore = score;
+                    bestMatch = t;
+                  }
+                }
+
+                return bestMatch;
+              };
+
+              fromQuotation.items.forEach((item: any, idx: number) => {
+                const tm = matchQuotationItemToTestMaster(item);
+                const testId = tm ? tm.id : "";
+                if (testId && !matchedTestIds.includes(testId)) {
+                  matchedTestIds.push(testId);
+                }
+
+                const testTitle = tm ? (tm.component_parameter || tm.specific_test || item.service_name || item.description) : (item.service_name || item.description || "Testing Service");
+                const testMethod = tm?.test_method || (tm as any)?.tested_as_per_is || (item.service_name?.match(/\((IS\s*\d+[^)]*)\)/i)?.[1]) || "";
+                const matDesc = tm?.material_product || item.description || item.service_name || "Material";
+                const qtyStr = String(item.quantity || item.qty || 1);
+
+                generatedJobTests.push({
+                  id: `qtn-item-${idx}-${Date.now()}`,
+                  test_master_id: testId,
+                  test_name: testTitle,
+                  test_method: testMethod,
+                  material_description: matDesc,
+                  sample_quantity: qtyStr,
+                  date_of_receiving: receivingDate,
+                  testing_age: "",
+                  date_of_testing: "",
+                  additional_details_values: {},
+                });
+              });
+
+              if (matchedTestIds.length > 0) {
+                setValue("selectedTestIds", matchedTestIds, { shouldDirty: true, shouldValidate: true });
+              }
+              if (generatedJobTests.length > 0) {
+                replace(generatedJobTests);
+                setValue("jobEntryTests", generatedJobTests, { shouldDirty: true, shouldValidate: true });
+                const firstT = generatedJobTests[0];
+                const derived = deriveMaterialInitials(firstT.material_description || firstT.test_name);
+                if (derived) {
+                  setValue("materialDetails.material_initials", derived, { shouldDirty: true });
+                }
+                setValue("materialDetails.sample_quantity", firstT.sample_quantity || "1", { shouldDirty: true });
+                setValue("materialDetails.date_of_receiving", receivingDate, { shouldDirty: true });
+                generatedJobTests.forEach((_, i) => {
+                  if (derived) {
+                    setValue(`jobEntryTests.${i}.additional_details_values.material_initials` as any, derived);
+                    setValue(`jobEntryTests.${i}.additional_details_values.test_initials` as any, derived);
+                  }
+                });
+
+                // In case quotation had no branch_id, infer from matched test master
+                const matchedBranch = allMasters.find(t => matchedTestIds.includes(t.id))?.branch_id;
+                if (matchedBranch && !getValues("client.branch_id")) {
+                  setSelectedBranchId(matchedBranch);
+                  setValue("client.branch_id", matchedBranch);
+                  setValue("jobEntry.branch_id", matchedBranch);
+                }
+              }
+            }
+          }
+
           // If in edit mode, set the test name based on the loaded tests
           if (mode === "edit") {
             const currentTests = getValues("jobEntryTests") || [];
@@ -790,7 +1020,13 @@ export function ClientWizard({
 
   const handlePrev = () => {
     if (currentStep === 0) {
-      onClose?.();
+      if (onClose) {
+        onClose();
+      } else if (fromQuotation) {
+        router.push("/accounting/quotations");
+      } else {
+        router.push("/clients");
+      }
       return;
     }
     setCurrentStep((prev) => prev - 1);
@@ -864,7 +1100,10 @@ export function ClientWizard({
         reset();
         setCurrentStep(0);
         router.refresh();
-        onSuccess?.();
+        onSuccess?.(result);
+        if (fromQuotation?.id) {
+          router.push("/accounting/quotations");
+        }
       } else {
         toast({
           variant: "error",
@@ -943,6 +1182,28 @@ export function ClientWizard({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col bg-white overflow-hidden">
+        {fromQuotation && (
+          <div className="mx-6 mt-4 p-3.5 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between text-xs text-blue-900 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+              <span>
+                <strong>Converting Quotation {fromQuotation.quotation_no} (V{fromQuotation.version_number || 1}):</strong> Customer and test specifications prefilled.
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {fromQuotation.category && (
+                <span className="font-semibold px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 border border-blue-200 text-[11px]">
+                  {fromQuotation.category}
+                </span>
+              )}
+              {fromQuotation.department && (
+                <span className="font-semibold px-2 py-0.5 rounded-md bg-white text-slate-700 border border-slate-200 text-[11px]">
+                  {fromQuotation.department}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         <ScrollArea
           orientation="vertical"
@@ -1511,7 +1772,8 @@ export function ClientWizard({
                               {selectedTestIds.map(id => {
                                 const test = availableTests.find(t => t.id === id) ||
                                   initialJobTests.find(t => t.test_master_id === id)?.test_master ||
-                                  (initialJobTests.find(t => t.test_master_id === id) as any);
+                                  (initialJobTests.find(t => t.test_master_id === id) as any) ||
+                                  jobEntryTests.find(t => t.test_master_id === id || t.id === id);
                                 if (!test) return null;
                                 return (
                                   <div key={id} className="p-3.5 rounded-xl bg-gradient-to-br from-orange-50 to-white border border-orange-200 shadow-sm relative overflow-hidden group transition-all pb-12">
@@ -1534,9 +1796,9 @@ export function ClientWizard({
                                       </div>
                                       <div>
                                         <h4 className="font-bold text-[14px] text-slate-900 pr-20 leading-snug">
-                                          {test.component_parameter || test.specific_test || (test as any).particulars}
+                                          {test.component_parameter || test.specific_test || (test as any).particulars || (test as any).test_name}
                                         </h4>
-                                        {test.is_nabl ? (
+                                        {test.is_nabl !== false ? (
                                           <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold rounded-full uppercase tracking-wider shadow-sm">
                                             <CheckCircle2 className="w-2.5 h-2.5" /> NABL Accredited
                                           </span>
@@ -1556,15 +1818,15 @@ export function ClientWizard({
                                     <div className="flex flex-col gap-1.5 pt-2 border-t border-orange-100/50">
                                       <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/60 border border-orange-100/50 hover:bg-white transition-colors shadow-sm">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Material</span>
-                                        <span className="text-[12px] font-semibold text-slate-700 text-right truncate ml-2" title={test.material_product || (test as any).particulars || ''}>
-                                          {test.material_product || (test as any).particulars || '—'}
+                                        <span className="text-[12px] font-semibold text-slate-700 text-right truncate ml-2" title={test.material_product || (test as any).particulars || (test as any).material_description || ''}>
+                                          {test.material_product || (test as any).particulars || (test as any).material_description || '—'}
                                         </span>
                                       </div>
-                                      {(test.test_method || (test as any).tested_as_per_is) && (
+                                      {(test.test_method || (test as any).tested_as_per_is || (test as any).test_method) && (
                                         <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/60 border border-orange-100/50 hover:bg-white transition-colors shadow-sm">
                                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Method / IS</span>
-                                          <span className="text-[12px] font-semibold text-slate-700 text-right truncate ml-2" title={test.test_method || (test as any).tested_as_per_is || ''}>
-                                            {test.test_method || (test as any).tested_as_per_is}
+                                          <span className="text-[12px] font-semibold text-slate-700 text-right truncate ml-2" title={test.test_method || (test as any).tested_as_per_is || (test as any).test_method || ''}>
+                                            {test.test_method || (test as any).tested_as_per_is || (test as any).test_method}
                                           </span>
                                         </div>
                                       )}
@@ -1790,7 +2052,8 @@ export function ClientWizard({
                       {fields.map((field, index) => {
                         const testMaster = availableTests.find(t => t.id === field.test_master_id) ||
                           initialJobTests.find(t => t.test_master_id === field.test_master_id)?.test_master ||
-                          (initialJobTests.find(t => t.test_master_id === field.test_master_id) as any);
+                          (initialJobTests.find(t => t.test_master_id === field.test_master_id) as any) ||
+                          field;
                         return (
                           <div key={field.id} className="bg-slate-50 rounded-xl p-6 border border-slate-200 shadow-sm relative">
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 rounded-l-xl"></div>
@@ -2000,7 +2263,7 @@ export function ClientWizard({
             type="button"
             variant="outline"
             onClick={handlePrev}
-            disabled={isSubmitting || (currentStep === 0 && !onClose)}
+            disabled={isSubmitting}
             className="text-slate-600 hover:text-slate-900 font-semibold tracking-wide px-8 h-12 rounded-xl bg-white border-slate-200 shadow-sm transition-all"
           >
             &larr; BACK

@@ -36,6 +36,7 @@ interface ExpenseLedgerTableProps {
   onRecordExpense?: () => void;
   onRefresh?: () => void;
   canApprove?: boolean;
+  hideSummaryCards?: boolean;
 }
 
 const fmt = (n: number) => `₹${Number(n || 0).toLocaleString("en-IN")}`;

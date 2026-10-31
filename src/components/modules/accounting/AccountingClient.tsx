@@ -2,8 +2,9 @@
 
 import React, { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { PageHeader } from "@/components/modules/PageHeader";
-import { Plus, Trash2, Check, X, Landmark, Scroll, FileText, Save, ArrowUp, ArrowDown, ArrowUpRight, Clock, Eye, Star, Copy, CreditCard, Receipt, Banknote, BookOpen, FlaskConical, FileSpreadsheet, History, AlertCircle, Edit3, Send, CheckCircle2, XCircle, RefreshCw, Search, Building, Briefcase, Calendar, DollarSign, Filter, ArrowUpDown } from "lucide-react";
+import { Plus, Trash2, Check, X, Landmark, Scroll, FileText, Save, ArrowUp, ArrowDown, ArrowUpRight, Clock, Eye, Star, Copy, CreditCard, Receipt, Banknote, BookOpen, FlaskConical, FileSpreadsheet, History, AlertCircle, Edit3, Send, CheckCircle2, XCircle, RefreshCw, Search, Building, Building2, Briefcase, Calendar, DollarSign, Filter, ArrowUpDown, TrendingDown, Package, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddBankAccountModal } from "./banks/AddBankAccountModal";
 import { BankCards } from "./banks/BankCards";
@@ -124,6 +125,12 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
     }
   };
 
+  useEffect(() => {
+    if (initialSubTab === "receipts" || initialSubTab === "expenses" || initialSubTab === "invoices") {
+      setBillingSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
+
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState("");
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
@@ -153,13 +160,16 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
   // Inward Receipt creation modal state
   const [isInwardReceiptModalOpen, setIsInwardReceiptModalOpen] = useState(false);
 
-  // Quotation creation / revision modal state
+  // Quotation creation / revision page navigation
   const [isCreateQuotationModalOpen, setIsCreateQuotationModalOpen] = useState(false);
   const [revisingQuotation, setRevisingQuotation] = useState<any | null>(null);
 
   const handleOpenCreateQuotation = (qToRevise?: any) => {
-    setRevisingQuotation(qToRevise || null);
-    setIsCreateQuotationModalOpen(true);
+    if (qToRevise?.id) {
+      router.push(`/accounting/quotations/new?revise=${qToRevise.id}`);
+    } else {
+      router.push("/accounting/quotations/new");
+    }
   };
 
   // Record Expense modal state
@@ -186,6 +196,12 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
   const exportTestEconomicsExcelRef = useRef<() => void>(() => {});
   const handleRegisterExportExcel = useCallback((fn: () => void) => {
     exportTestEconomicsExcelRef.current = fn;
+  }, []);
+
+  // Template Manager Create handler ref
+  const openCreateTemplateRef = useRef<() => void>(() => {});
+  const handleRegisterOpenCreateTemplate = useCallback((fn: () => void) => {
+    openCreateTemplateRef.current = fn;
   }, []);
 
   const data = initialData || {};
@@ -261,7 +277,79 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
   const pageTitle = currentTabConfig ? currentTabConfig.label : "Dashboard";
   const pageSubtitle = currentTabConfig?.subtitle || "Overview of balances and activity.";
 
-  const headerActions = currentTab === "billing" ? null : currentTab === "banks" ? (
+  const invoicesList = data.invoices || [];
+  const receiptsList = data.receipts || data.recentReceipts || [];
+  const expensesList = data.expenses || [];
+
+  const headerActions = currentTab === "billing" ? (
+    <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-xl overflow-x-auto no-scrollbar">
+      <button
+        type="button"
+        onClick={() => handleSubTabChange("invoices")}
+        className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+          billingSubTab === "invoices"
+            ? "bg-white text-blue-700 shadow-xs border border-slate-200/80"
+            : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+        }`}
+      >
+        <FileText className="w-4 h-4" />
+        <span>Invoices & Billing</span>
+        <span
+          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            billingSubTab === "invoices"
+              ? "bg-blue-100 text-blue-800"
+              : "bg-slate-200 text-slate-700"
+          }`}
+        >
+          {invoicesList.length}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleSubTabChange("receipts")}
+        className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+          billingSubTab === "receipts"
+            ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
+            : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+        }`}
+      >
+        <Receipt className="w-4 h-4" />
+        <span>Collections & Receipts</span>
+        <span
+          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            billingSubTab === "receipts"
+              ? "bg-emerald-100 text-emerald-800"
+              : "bg-slate-200 text-slate-700"
+          }`}
+        >
+          {receiptsList.length}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleSubTabChange("expenses")}
+        className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+          billingSubTab === "expenses"
+            ? "bg-white text-purple-800 shadow-xs border border-slate-200/80"
+            : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+        }`}
+      >
+        <Banknote className="w-4 h-4" />
+        <span>Outflows & Expenses</span>
+        <span
+          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            billingSubTab === "expenses"
+              ? "bg-purple-100 text-purple-800"
+              : "bg-slate-200 text-slate-700"
+          }`}
+        >
+          {expensesList.length}
+        </span>
+      </button>
+    </div>
+  ) : currentTab === "banks" ? (
     <Button
       variant="custom"
       size="none"
@@ -280,6 +368,16 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
     >
       <Plus className="w-4 h-4" />
       New Quotation
+    </Button>
+  ) : currentTab === "templates" ? (
+    <Button
+      variant="custom"
+      size="none"
+      onClick={() => openCreateTemplateRef.current()}
+      className="h-[42px] px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 transition-all hover:scale-105 flex items-center gap-2 text-sm cursor-pointer"
+    >
+      <Plus className="w-4 h-4" />
+      New Template
     </Button>
   ) : currentTab === "dashboard" || currentTab === "invoices" ? (
     <Button
@@ -414,9 +512,15 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
           onOpenViewInvoice={handleOpenViewInvoice}
           onOpenCreateQuotation={handleOpenCreateQuotation}
           onReviseQuotation={(q: any) => handleOpenCreateQuotation(q)}
+          onOpenCreateProforma={handleOpenCreateProforma}
         />
       )}
-      {currentTab === "templates" && <TemplateManager initialTemplates={data.templates} />}
+      {currentTab === "templates" && (
+        <TemplateManager
+          initialTemplates={data.templates}
+          onRegisterCreate={handleRegisterOpenCreateTemplate}
+        />
+      )}
       {currentTab === "banks" && (
         <BankCards
           accounts={data.accounts || []}
@@ -722,6 +826,7 @@ function ExpensesTab({ data, run, pending, onOpenRecordExpense }: any) {
         expenses={data.expenses || []}
         onRecordExpense={onOpenRecordExpense}
         onRefresh={() => run(async () => {}, "Refreshed")}
+        hideSummaryCards={true}
       />
     </div>
   );
@@ -729,6 +834,8 @@ function ExpensesTab({ data, run, pending, onOpenRecordExpense }: any) {
 
 function InvoicesTab({
   data,
+  activeViewTab,
+  onViewTabChange,
   onOpenCreateProforma,
   onOpenViewInvoice,
   onOpenRecordPayment,
@@ -736,13 +843,21 @@ function InvoicesTab({
   onOpenRecordExpense,
 }: {
   data: any;
+  activeViewTab?: "invoices" | "uninvoiced" | "inwards";
+  onViewTabChange?: (tab: "invoices" | "uninvoiced" | "inwards") => void;
   onOpenCreateProforma: (inward?: any, options?: any) => void;
   onOpenViewInvoice: (invoice: any) => void;
   onOpenRecordPayment: (invoice: any) => void;
   onOpenViewReceipt?: (receipt: any) => void;
   onOpenRecordExpense?: (inward?: any) => void;
 }) {
-  const [subTab, setSubTab] = useState<"invoices" | "inwards">("invoices");
+  const [internalSubTab, setInternalSubTab] = useState<"invoices" | "uninvoiced" | "inwards">("invoices");
+  const subTab = activeViewTab !== undefined ? activeViewTab : internalSubTab;
+  const setSubTab = (t: "invoices" | "uninvoiced" | "inwards") => {
+    if (onViewTabChange) onViewTabChange(t);
+    setInternalSubTab(t);
+  };
+
   const invoicesCount = (data.invoices || []).length;
   const inwardsCount = (data.recentInwards || []).length;
   const unbilledInwards = (data.recentInwards || []).filter((j: any) => !j.invoices || j.invoices.length === 0).length;
@@ -751,11 +866,12 @@ function InvoicesTab({
     <div className="space-y-6">
       {/* Sub-navigation bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-xs">
-        <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-xl">
+        <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-xl overflow-x-auto no-scrollbar">
+          {/* Tab 1: All Invoices */}
           <button
             type="button"
             onClick={() => setSubTab("invoices")}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               subTab === "invoices"
                 ? "bg-white text-blue-700 shadow-xs border border-slate-200/80"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
@@ -772,17 +888,46 @@ function InvoicesTab({
             </span>
           </button>
 
+          {/* Tab 2: Uninvoiced Inwards (Awaiting Invoices) */}
+          <button
+            type="button"
+            onClick={() => setSubTab("uninvoiced")}
+            className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              subTab === "uninvoiced"
+                ? "bg-white text-amber-800 shadow-xs border border-amber-300 ring-1 ring-amber-300/40"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+            }`}
+          >
+            <Clock className={`w-3.5 h-3.5 ${unbilledInwards > 0 ? "text-amber-600" : "text-slate-400"}`} />
+            <span>Uninvoiced Inwards</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 ${
+                subTab === "uninvoiced"
+                  ? "bg-amber-100 text-amber-900 font-mono"
+                  : unbilledInwards > 0
+                  ? "bg-amber-100/90 text-amber-800 font-mono"
+                  : "bg-slate-200 text-slate-700 font-mono"
+              }`}
+            >
+              {unbilledInwards > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              )}
+              <span>{unbilledInwards}</span>
+            </span>
+          </button>
+
+          {/* Tab 3: All Inward Register */}
           <button
             type="button"
             onClick={() => setSubTab("inwards")}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               subTab === "inwards"
                 ? "bg-white text-indigo-700 shadow-xs border border-slate-200/80"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
             }`}
           >
             <FlaskConical className="w-3.5 h-3.5" />
-            <span>Inward Register (Ready for Billing)</span>
+            <span>Inward Register (All)</span>
             <span
               className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                 subTab === "inwards" ? "bg-indigo-100 text-indigo-800" : "bg-slate-200 text-slate-700"
@@ -790,38 +935,23 @@ function InvoicesTab({
             >
               {inwardsCount}
             </span>
-            {unbilledInwards > 0 && (
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title={`${unbilledInwards} unbilled inwards`} />
-            )}
           </button>
         </div>
 
         <div className="flex items-center gap-2">
-          {subTab === "inwards" ? (
-            <div className="text-[11px] text-slate-500 hidden sm:block">
-              {unbilledInwards > 0 ? (
-                <span className="text-amber-800 font-bold bg-amber-50 border border-amber-200/80 px-3 py-1 rounded-xl shadow-2xs inline-flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                  <span>{unbilledInwards} inwards awaiting billing</span>
-                </span>
-              ) : (
-                <span className="text-emerald-800 font-bold bg-emerald-50 border border-emerald-200/80 px-3 py-1 rounded-xl shadow-2xs inline-flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>All inwards invoiced</span>
-                </span>
-              )}
-            </div>
-          ) : (
-            <div className="text-[11px] font-medium text-slate-400 bg-slate-50 px-3 py-1 rounded-xl border border-slate-200/60 hidden sm:flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              <span>Proforma and Tax Invoices with realtime payment tracking</span>
-            </div>
-          )}
+          <Button
+            size="sm"
+            onClick={() => onOpenCreateProforma()}
+            className="h-10 px-4.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl cursor-pointer shadow-md shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create Proforma Invoice</span>
+          </Button>
         </div>
       </div>
 
       {/* Subtab View */}
-      {subTab === "invoices" ? (
+      {subTab === "invoices" && (
         <InvoicesListTable
           invoices={data.invoices || []}
           onViewInvoice={onOpenViewInvoice}
@@ -829,12 +959,27 @@ function InvoicesTab({
           onViewReceipt={onOpenViewReceipt}
           onCreateRemainingInvoice={onOpenCreateProforma}
         />
-      ) : (
+      )}
+
+      {subTab === "uninvoiced" && (
         <InwardRegisterTable
+          key="uninvoiced"
           inwards={data.recentInwards || []}
           onCreateProforma={onOpenCreateProforma}
           onViewInvoice={onOpenViewInvoice}
           onRecordExpense={onOpenRecordExpense}
+          initialStatusFilter="pending"
+        />
+      )}
+
+      {subTab === "inwards" && (
+        <InwardRegisterTable
+          key="all-inwards"
+          inwards={data.recentInwards || []}
+          onCreateProforma={onOpenCreateProforma}
+          onViewInvoice={onOpenViewInvoice}
+          onRecordExpense={onOpenRecordExpense}
+          initialStatusFilter="all"
         />
       )}
     </div>
@@ -866,250 +1011,476 @@ function BillingAndCollectionTab({
   onOpenCreateReceipt: () => void;
   onOpenRecordExpense?: (inward?: any) => void;
 }) {
+  const [invoicesViewTab, setInvoicesViewTab] = useState<"invoices" | "uninvoiced" | "inwards">("invoices");
+
   const invoices = data.invoices || [];
   const receipts = data.receipts || data.recentReceipts || [];
   const expenses = data.expenses || [];
   const inwards = data.recentInwards || [];
 
+  // ================= Invoices & General Billing Metrics =================
   const totalBilled = invoices.reduce((s: number, i: any) => s + Number(i.total_amount || 0), 0);
-  const totalCollections = receipts
-    .filter((r: any) => r.status !== "cancelled")
-    .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  const activeReceipts = receipts.filter((r: any) => r.status !== "cancelled");
+  const totalCollections = activeReceipts.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
   const totalOutstanding = invoices.reduce((s: number, i: any) => s + Number(i.balance_amount || 0), 0);
-  const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-
   const collectionRate = totalBilled > 0 ? Math.min(100, Math.round((totalCollections / totalBilled) * 100)) : 0;
-  const netCashFlow = totalCollections - totalExpenses;
   const unpaidCount = invoices.filter((i: any) => Number(i.balance_amount || 0) > 0).length;
   const proformaCount = invoices.filter((i: any) => i.invoice_type === "proforma").length;
   const taxCount = invoices.filter((i: any) => i.invoice_type !== "proforma").length;
-  const verifiedReceiptsCount = receipts.filter((r: any) => r.status !== "cancelled").length;
+  const verifiedReceiptsCount = activeReceipts.length;
+  const unbilledInwards = inwards.filter((j: any) => !j.invoices || j.invoices.length === 0).length;
+  const invoicedInwardsCount = Math.max(0, inwards.length - unbilledInwards);
+  const inwardBillingRate = inwards.length > 0 ? Math.round((invoicedInwardsCount / inwards.length) * 100) : 100;
+
+  // ================= Receipts Breakdown Metrics =================
+  const bankReceipts = activeReceipts.filter((r: any) => {
+    const m = String(r.payment_mode || "").toLowerCase();
+    return m.includes("bank") || m.includes("neft") || m.includes("rtgs") || m.includes("transfer") || m.includes("online");
+  });
+  const bankAmount = bankReceipts.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  const bankPercent = totalCollections > 0 ? Math.round((bankAmount / totalCollections) * 100) : 0;
+
+  const upiReceipts = activeReceipts.filter((r: any) => {
+    const m = String(r.payment_mode || "").toLowerCase();
+    return m.includes("upi") || m.includes("qr");
+  });
+  const upiAmount = upiReceipts.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  const upiPercent = totalCollections > 0 ? Math.round((upiAmount / totalCollections) * 100) : 0;
+
+  const cashChequeReceipts = activeReceipts.filter((r: any) => {
+    const m = String(r.payment_mode || "").toLowerCase();
+    return !bankReceipts.includes(r) && !upiReceipts.includes(r);
+  });
+  const cashAmount = cashChequeReceipts
+    .filter((r: any) => String(r.payment_mode || "").toLowerCase().includes("cash"))
+    .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  const chequeAmount = cashChequeReceipts
+    .filter((r: any) => !String(r.payment_mode || "").toLowerCase().includes("cash"))
+    .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  const cashChequeTotal = cashAmount + chequeAmount;
+  const cashChequePercent = totalCollections > 0 ? Math.round((cashChequeTotal / totalCollections) * 100) : 0;
+
+  // ================= Expenses Breakdown Metrics =================
+  const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const inwardExpensesList = expenses.filter((e: any) => e.expense_type === "inward" || e.job_entry_id);
+  const inwardExpensesAmount = inwardExpensesList.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const inwardExpensesPercent = totalExpenses > 0 ? Math.round((inwardExpensesAmount / totalExpenses) * 100) : 0;
+
+  const inhouseExpensesAmount = expenses
+    .filter((e: any) => e.expense_type === "inhouse" && !e.job_entry_id)
+    .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const companyExpensesAmount = expenses
+    .filter((e: any) => (e.expense_type === "company" || !e.expense_type) && !e.job_entry_id)
+    .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const overheadExpensesAmount = inhouseExpensesAmount + companyExpensesAmount;
+  const overheadExpensesList = expenses.filter((e: any) => e.expense_type !== "inward" && !e.job_entry_id);
+  const overheadExpensesPercent = totalExpenses > 0 ? Math.round((overheadExpensesAmount / totalExpenses) * 100) : 0;
+
+  const netCashFlow = totalCollections - totalExpenses;
+  const netMarginPercent = totalCollections > 0 ? Math.round((netCashFlow / totalCollections) * 100) : 0;
 
   return (
     <div className="space-y-6">
-      {/* ================= Master Financial Intelligence Hero ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Invoiced / Billed */}
-        <div className="p-5 bg-gradient-to-br from-white via-slate-50/50 to-blue-50/30 border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-blue-300 transition-all duration-300 group">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Total Invoiced (Billed)
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-2xs group-hover:scale-105 transition-transform">
-              <FileText className="w-4 h-4" />
+      {/* ================= Invoices & Billing Dynamic KPI Hero ================= */}
+      {activeSubTab === "invoices" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+          {/* Card 1: Total Invoiced / Billed */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-blue-50/30 via-white to-white border border-slate-200/80 hover:border-blue-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  Total Invoiced (Billed)
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <FileText className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+                {fmt(totalBilled)}
+              </div>
             </div>
-          </div>
-          <div className="text-2xl lg:text-[28px] font-black text-slate-900 tracking-tight mt-2 font-mono">
-            {fmt(totalBilled)}
-          </div>
-          <div className="flex items-center justify-between text-xs text-slate-500 mt-2.5 pt-2 border-t border-slate-100">
-            <span>{invoices.length} invoices issued</span>
-            <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full text-[10px]">
-              {proformaCount} PI · {taxCount} Tax
-            </span>
-          </div>
-        </div>
-
-        {/* Card 2: Realized Collections */}
-        <div className="p-5 bg-gradient-to-br from-emerald-50/40 via-white to-teal-50/30 border border-emerald-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-emerald-400 transition-all duration-300 group">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Realized Collections
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-100/80 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-2xs group-hover:scale-105 transition-transform">
-              <Receipt className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl lg:text-[28px] font-black text-emerald-950 tracking-tight mt-2 font-mono">
-            {fmt(totalCollections)}
-          </div>
-
-          {/* Efficiency Progress Track */}
-          <div className="mt-2.5">
-            <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800 mb-1">
-              <span>Collection Realization</span>
-              <span className="font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded text-[10px]">
-                {collectionRate}%
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{invoices.length} invoices issued</span>
+              <span className="font-semibold text-blue-700 bg-blue-50/80 border border-blue-100/80 px-2 py-0.5 rounded-full text-[10px] shrink-0 whitespace-nowrap">
+                {proformaCount} PI · {taxCount} Tax
               </span>
             </div>
-            <div className="w-full bg-emerald-100/80 h-2 rounded-full overflow-hidden">
+          </div>
+
+          {/* Card 2: Realized Collections */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-emerald-50/30 via-white to-white border border-slate-200/80 hover:border-emerald-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="truncate">Realized Collections</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <Receipt className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+                {fmt(totalCollections)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{verifiedReceiptsCount} vouchers</span>
+              <div className="flex items-center gap-1.5 bg-emerald-50/90 border border-emerald-200/60 px-2 py-0.5 rounded-full text-[10px] font-semibold text-emerald-800 shrink-0 whitespace-nowrap">
+                <div className="w-8 sm:w-10 h-1.5 bg-emerald-200/80 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-600 rounded-full transition-all duration-500"
+                    style={{ width: `${collectionRate}%` }}
+                  />
+                </div>
+                <span>{collectionRate}%</span>
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-100/70">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 rounded-full transition-all duration-700"
+                className="h-full bg-emerald-500 transition-all duration-500"
                 style={{ width: `${collectionRate}%` }}
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-emerald-700 mt-2.5 pt-2 border-t border-emerald-100/80">
-            <span>{verifiedReceiptsCount} verified vouchers</span>
-            <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-full flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-              <span>Realized</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Card 3: Receivables Pending (Outstanding Due) */}
-        <div className="p-5 bg-gradient-to-br from-amber-50/40 via-white to-orange-50/30 border border-amber-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-amber-400 transition-all duration-300 group">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-amber-600" />
-              Outstanding Due
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-amber-100/80 border border-amber-200 flex items-center justify-center text-amber-700 shadow-2xs group-hover:scale-105 transition-transform">
-              <ArrowUpRight className="w-4 h-4" />
+          {/* Card 3: Receivables Pending (Outstanding Due) */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-amber-50/30 via-white to-white border border-slate-200/80 hover:border-amber-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span className="truncate">Outstanding Due</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+                {fmt(totalOutstanding)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{unpaidCount} unpaid/partial</span>
+              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50/80 border border-amber-200/60 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                Pending Clearance
+              </span>
             </div>
           </div>
-          <div className="text-2xl lg:text-[28px] font-black text-amber-950 tracking-tight mt-2 font-mono">
-            {fmt(totalOutstanding)}
-          </div>
-          <div className="flex items-center justify-between text-xs text-amber-700 mt-2.5 pt-2 border-t border-amber-100/80">
-            <span>{unpaidCount} unpaid/partial invoices</span>
-            <span className="text-[10px] font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-full">
-              Pending Clearance
-            </span>
-          </div>
-        </div>
 
-        {/* Card 4: Outflows & Net Spread */}
-        <div className="p-5 bg-gradient-to-br from-purple-50/40 via-white to-slate-50/50 border border-purple-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-purple-400 transition-all duration-300 group">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-purple-800 uppercase tracking-wider">
-              Outflows & Net Cash
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-purple-100/80 border border-purple-200 flex items-center justify-center text-purple-700 shadow-2xs group-hover:scale-105 transition-transform">
-              <Banknote className="w-4 h-4" />
+          {/* Card 4: Inward Register Pipeline */}
+          <div
+            onClick={() => {
+              onSubTabChange("invoices");
+              setInvoicesViewTab("uninvoiced");
+            }}
+            className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-indigo-50/30 via-white to-white border border-slate-200/80 hover:border-amber-400 hover:ring-2 hover:ring-amber-400/25 rounded-xl shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between relative overflow-hidden cursor-pointer"
+            title="Click to view all inwards awaiting invoice creation"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <FlaskConical className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  <span className="truncate">Inward Jobs To Bill</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-indigo-600 shrink-0 group-hover:scale-110 group-hover:bg-amber-100 group-hover:text-amber-800 transition-all">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans flex items-baseline gap-1.5 truncate">
+                <span>{unbilledInwards}</span>
+                <span className="text-xs font-semibold text-slate-500">Jobs To Bill</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{inwards.length} inward entries</span>
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap ${
+                unbilledInwards > 0
+                  ? "bg-amber-50/80 text-amber-800 border-amber-200/60 group-hover:bg-amber-100 group-hover:text-amber-900 group-hover:border-amber-300"
+                  : "bg-emerald-50/80 text-emerald-800 border-emerald-200/60"
+              }`}>
+                {unbilledInwards > 0 ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span>{unbilledInwards} Awaiting · View →</span>
+                  </>
+                ) : (
+                  "All Invoiced"
+                )}
+              </span>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-100/70">
+              <div
+                className="h-full bg-indigo-500 transition-all duration-500"
+                style={{ width: `${inwardBillingRate}%` }}
+              />
             </div>
           </div>
-          <div className="text-2xl lg:text-[28px] font-black text-slate-900 tracking-tight mt-2 font-mono">
-            {fmt(totalExpenses)}
+        </div>
+      )}
+
+      {/* ================= Collections & Receipts Dynamic KPI Hero ================= */}
+      {activeSubTab === "receipts" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+          {/* Card 1: Total Inward Collections */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-emerald-50/30 via-white to-white border border-slate-200/80 hover:border-emerald-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="truncate">Total Inward Collections</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+                {fmt(totalCollections)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{activeReceipts.length} verified vouchers</span>
+              <span className="font-semibold text-emerald-800 bg-emerald-50/80 border border-emerald-200/60 px-2 py-0.5 rounded-full text-[10px] shrink-0 whitespace-nowrap">
+                Realized
+              </span>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-100/70">
+              <div className="h-full bg-emerald-500 w-full" />
+            </div>
           </div>
-          <div className="flex items-center justify-between text-xs text-slate-600 mt-2.5 pt-2 border-t border-slate-100">
-            <span>Net Operating Margin</span>
-            <span
-              className={`font-mono font-bold px-2 py-0.5 rounded-full text-[10px] ${
+
+          {/* Card 2: Bank / NEFT / RTGS */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-blue-50/30 via-white to-white border border-slate-200/80 hover:border-blue-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <Landmark className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span className="truncate">Bank / NEFT / RTGS</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <Landmark className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+                {fmt(bankAmount)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{bankReceipts.length} bank vouchers</span>
+              <div className="flex items-center gap-1.5 bg-blue-50/90 border border-blue-200/60 px-2 py-0.5 rounded-full text-[10px] font-semibold text-blue-800 shrink-0 whitespace-nowrap">
+                <div className="w-8 sm:w-10 h-1.5 bg-blue-200/80 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                    style={{ width: `${bankPercent}%` }}
+                  />
+                </div>
+                <span>{bankPercent}%</span>
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-100/70">
+              <div
+                className="h-full bg-blue-500 transition-all duration-500"
+                style={{ width: `${bankPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Card 3: UPI & QR Codes */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-purple-50/30 via-white to-white border border-slate-200/80 hover:border-purple-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-purple-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <Smartphone className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                  <span className="truncate">UPI & QR Codes</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-purple-50 border border-purple-100/80 flex items-center justify-center text-purple-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <Smartphone className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+                {fmt(upiAmount)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{upiReceipts.length} UPI vouchers</span>
+              <div className="flex items-center gap-1.5 bg-purple-50/90 border border-purple-200/60 px-2 py-0.5 rounded-full text-[10px] font-semibold text-purple-800 shrink-0 whitespace-nowrap">
+                <div className="w-8 sm:w-10 h-1.5 bg-purple-200/80 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-purple-600 rounded-full transition-all duration-500"
+                    style={{ width: `${upiPercent}%` }}
+                  />
+                </div>
+                <span>{upiPercent}%</span>
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-100/70">
+              <div
+                className="h-full bg-purple-500 transition-all duration-500"
+                style={{ width: `${upiPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Card 4: Liquid Cash & Cheques */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-amber-50/30 via-white to-white border border-slate-200/80 hover:border-amber-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <Banknote className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span className="truncate">Cash & Cheques</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <Banknote className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+                {fmt(cashChequeTotal)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">Cash: {fmt(cashAmount)}</span>
+              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50/80 border border-amber-200/60 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                Cheque: {fmt(chequeAmount)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= Outflows & Expenses Dynamic KPI Hero ================= */}
+      {activeSubTab === "expenses" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+          {/* Card 1: Total Outflows (Expenses) */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-rose-50/30 via-white to-white border border-slate-200/80 hover:border-rose-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <TrendingDown className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                  <span className="truncate">Total Outflows (Expenses)</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-rose-50 border border-rose-100/80 flex items-center justify-center text-rose-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <TrendingDown className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+                {fmt(totalExpenses)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{expenses.length} cleared debits</span>
+              <span className="text-[10px] font-semibold text-rose-800 bg-rose-50/80 border border-rose-200/60 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                All Outflows
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2: Inward Job Direct Costs */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-blue-50/30 via-white to-white border border-slate-200/80 hover:border-blue-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <Package className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span className="truncate">Inward Direct Costs</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <Package className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+                {fmt(inwardExpensesAmount)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{inwardExpensesList.length} job-tagged</span>
+              <div className="flex items-center gap-1.5 bg-blue-50/90 border border-blue-200/60 px-2 py-0.5 rounded-full text-[10px] font-semibold text-blue-800 shrink-0 whitespace-nowrap">
+                <div className="w-8 sm:w-10 h-1.5 bg-blue-200/80 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                    style={{ width: `${inwardExpensesPercent}%` }}
+                  />
+                </div>
+                <span>{inwardExpensesPercent}%</span>
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-100/70">
+              <div
+                className="h-full bg-blue-500 transition-all duration-500"
+                style={{ width: `${inwardExpensesPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Card 3: Lab & Admin Overheads */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-purple-50/30 via-white to-white border border-slate-200/80 hover:border-purple-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-purple-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <Building2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                  <span className="truncate">Lab & Admin Overheads</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-purple-50 border border-purple-100/80 flex items-center justify-center text-purple-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <Building2 className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+                {fmt(overheadExpensesAmount)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{overheadExpensesList.length} operational debits</span>
+              <div className="flex items-center gap-1.5 bg-purple-50/90 border border-purple-200/60 px-2 py-0.5 rounded-full text-[10px] font-semibold text-purple-800 shrink-0 whitespace-nowrap">
+                <div className="w-8 sm:w-10 h-1.5 bg-purple-200/80 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-purple-600 rounded-full transition-all duration-500"
+                    style={{ width: `${overheadExpensesPercent}%` }}
+                  />
+                </div>
+                <span>{overheadExpensesPercent}%</span>
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-100/70">
+              <div
+                className="h-full bg-purple-500 transition-all duration-500"
+                style={{ width: `${overheadExpensesPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Card 4: Outflows & Net Spread */}
+          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-emerald-50/30 via-white to-white border border-slate-200/80 hover:border-emerald-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                  <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="truncate">Net Operating Margin</span>
+                </span>
+                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <Banknote className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className={`text-lg sm:text-xl font-bold tracking-tight mt-0.5 font-sans truncate ${netCashFlow >= 0 ? "text-slate-900" : "text-rose-900"}`}>
+                {netCashFlow >= 0 ? "+" : ""}{fmt(netCashFlow)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+              <span className="truncate">{fmt(totalCollections)} in · {fmt(totalExpenses)} out</span>
+              <span className={`font-semibold px-2 py-0.5 rounded-full text-[10px] border shrink-0 whitespace-nowrap ${
                 netCashFlow >= 0
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-rose-100 text-rose-800"
-              }`}
-            >
-              {netCashFlow >= 0 ? "+" : ""}
-              {fmt(netCashFlow)}
-            </span>
+                  ? "bg-emerald-50/80 text-emerald-800 border-emerald-200/60"
+                  : "bg-rose-50/80 text-rose-800 border-rose-200/60"
+              }`}>
+                {netMarginPercent}% Margin
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* ================= Modern Unified Navigation Toolbar ================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-xs">
-        <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-xl overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => onSubTabChange("invoices")}
-            className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
-              activeSubTab === "invoices"
-                ? "bg-white text-blue-700 shadow-xs border border-slate-200/80"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>Invoices & Billing</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                activeSubTab === "invoices"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {invoices.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSubTabChange("receipts")}
-            className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
-              activeSubTab === "receipts"
-                ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-            }`}
-          >
-            <Receipt className="w-4 h-4" />
-            <span>Collections & Receipts</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                activeSubTab === "receipts"
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {receipts.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSubTabChange("expenses")}
-            className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
-              activeSubTab === "expenses"
-                ? "bg-white text-purple-800 shadow-xs border border-slate-200/80"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-            }`}
-          >
-            <Banknote className="w-4 h-4" />
-            <span>Outflows & Expenses</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                activeSubTab === "expenses"
-                  ? "bg-purple-100 text-purple-800"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {expenses.length}
-            </span>
-          </button>
-        </div>
-
-        {/* Primary Action Button corresponding to Sub-Tab */}
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          {activeSubTab === "invoices" && (
-            <Button
-              size="sm"
-              onClick={() => onOpenCreateProforma()}
-              className="h-10 px-4.5 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white gap-2 rounded-xl cursor-pointer shadow-md shadow-blue-500/20 hover:scale-[1.02] transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create Proforma Invoice</span>
-            </Button>
-          )}
-          {activeSubTab === "receipts" && (
-            <Button
-              size="sm"
-              onClick={onOpenCreateReceipt}
-              className="h-10 px-4.5 text-xs font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 hover:from-black hover:to-slate-800 text-white gap-2 rounded-xl cursor-pointer shadow-md shadow-slate-900/20 hover:scale-[1.02] transition-all"
-            >
-              <Plus className="w-4 h-4 text-emerald-400" />
-              <span>New Inward Receipt</span>
-            </Button>
-          )}
-          {activeSubTab === "expenses" && (
-            <Button
-              size="sm"
-              onClick={() => onOpenRecordExpense?.()}
-              className="h-10 px-4.5 text-xs font-bold bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white gap-2 rounded-xl cursor-pointer shadow-md shadow-rose-500/20 hover:scale-[1.02] transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Record Expense</span>
-            </Button>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* ================= Sub-Tab Content ================= */}
       {activeSubTab === "invoices" && (
         <InvoicesTab
           data={data}
+          activeViewTab={invoicesViewTab}
+          onViewTabChange={setInvoicesViewTab}
           onOpenCreateProforma={onOpenCreateProforma}
           onOpenViewInvoice={onOpenViewInvoice}
           onOpenRecordPayment={onOpenRecordPayment}
@@ -1147,7 +1518,9 @@ function QuotationsTab({
   onOpenViewInvoice,
   onOpenCreateQuotation,
   onReviseQuotation,
+  onOpenCreateProforma,
 }: any) {
+  const router = useRouter();
   const [selectedQuotationForView, setSelectedQuotationForView] = useState<any | null>(null);
   const [selectedQuotationForHistory, setSelectedQuotationForHistory] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1238,50 +1611,50 @@ function QuotationsTab({
   return (
     <div className="space-y-6">
       {/* 1. Header Summary Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs transition-all hover:border-slate-300">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="p-3 sm:p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs hover:shadow-xs transition-all hover:border-slate-300">
           <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">Total Quotations</span>
-            <FileText className="w-4 h-4 text-blue-600" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Quotations</span>
+            <FileText className="w-3.5 h-3.5 text-blue-600" />
           </div>
-          <div className="text-xl font-bold text-slate-900">{totalCount}</div>
-          <div className="text-[11px] text-slate-500 mt-0.5">{fmt(totalValue)} total value</div>
+          <div className="text-xl font-bold text-slate-900 tracking-tight">{totalCount}</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">{fmt(totalValue)} total value</div>
         </div>
 
-        <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs transition-all hover:border-emerald-200">
+        <div className="p-3 sm:p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs hover:shadow-xs transition-all hover:border-emerald-200">
           <div className="flex items-center justify-between text-emerald-600 mb-1">
-            <span className="text-xs font-medium text-slate-500">Approved</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">Approved</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           </div>
-          <div className="text-xl font-bold text-emerald-700">{approvedCount}</div>
-          <div className="text-[11px] text-emerald-600 font-medium mt-0.5">{fmt(approvedValue)} converted</div>
+          <div className="text-xl font-bold text-emerald-700 tracking-tight">{approvedCount}</div>
+          <div className="text-[10px] text-emerald-600 font-medium mt-0.5">{fmt(approvedValue)} converted</div>
         </div>
 
-        <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs transition-all hover:border-blue-200">
+        <div className="p-3 sm:p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs hover:shadow-xs transition-all hover:border-blue-200">
           <div className="flex items-center justify-between text-blue-600 mb-1">
-            <span className="text-xs font-medium text-slate-500">Sent to Client</span>
-            <Send className="w-4 h-4 text-blue-600" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-800">Sent to Client</span>
+            <Send className="w-3.5 h-3.5 text-blue-600" />
           </div>
-          <div className="text-xl font-bold text-blue-700">{sentCount}</div>
-          <div className="text-[11px] text-slate-500 mt-0.5">Awaiting client decision</div>
+          <div className="text-xl font-bold text-blue-700 tracking-tight">{sentCount}</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Awaiting decision</div>
         </div>
 
-        <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs transition-all hover:border-amber-200">
+        <div className="p-3 sm:p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs hover:shadow-xs transition-all hover:border-amber-200">
           <div className="flex items-center justify-between text-amber-600 mb-1">
-            <span className="text-xs font-medium text-slate-500">Rework Needed</span>
-            <RefreshCw className="w-4 h-4 text-amber-600" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-800">Rework Needed</span>
+            <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
           </div>
-          <div className="text-xl font-bold text-amber-700">{reworkCount}</div>
-          <div className="text-[11px] text-amber-600 mt-0.5">Requires technical edit</div>
+          <div className="text-xl font-bold text-amber-700 tracking-tight">{reworkCount}</div>
+          <div className="text-[10px] text-amber-600 mt-0.5">Requires edit</div>
         </div>
 
-        <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs transition-all hover:border-slate-300">
+        <div className="p-3 sm:p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs hover:shadow-xs transition-all hover:border-slate-300">
           <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">Drafts</span>
-            <Clock className="w-4 h-4 text-slate-400" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Drafts</span>
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
           </div>
-          <div className="text-xl font-bold text-slate-700">{draftCount}</div>
-          <div className="text-[11px] text-slate-500 mt-0.5">Pending dispatch</div>
+          <div className="text-xl font-bold text-slate-700 tracking-tight">{draftCount}</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Pending dispatch</div>
         </div>
       </div>
 
@@ -1383,7 +1756,7 @@ function QuotationsTab({
               return (
                 <div
                   key={q.id}
-                  onClick={() => setSelectedQuotationForView(q)}
+                  onClick={() => router.push(`/accounting/quotations/${q.id}`)}
                   className="group relative p-5 rounded-2xl border border-slate-200 hover:border-blue-400 bg-white hover:shadow-md transition-all space-y-4 cursor-pointer"
                 >
                   {/* Top Bar: Quotation No, Version, Status, and Total Amount */}
@@ -1396,6 +1769,16 @@ function QuotationsTab({
                       <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
                         V{versionNum}
                       </span>
+                      {q.category && (
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-cyan-100 text-cyan-800 border border-cyan-200">
+                          {q.category}
+                        </span>
+                      )}
+                      {q.department && (
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                          {q.department}
+                        </span>
+                      )}
                       {getStatusBadge(status)}
                     </div>
 
@@ -1490,48 +1873,49 @@ function QuotationsTab({
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center gap-2 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedQuotationForView(q)}
+                      <Link
+                        href={`/accounting/quotations/${q.id}`}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold cursor-pointer transition-all shadow-2xs"
                       >
-                        <Eye className="w-3.5 h-3.5" /> Preview & Details
-                      </button>
+                        <Eye className="w-3.5 h-3.5" /> View Details
+                      </Link>
 
-                      <button
-                        type="button"
-                        onClick={() => setSelectedQuotationForHistory(q)}
+                      <Link
+                        href={`/accounting/quotations/${q.id}?tab=history`}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold cursor-pointer transition-all shadow-2xs"
                       >
                         <History className="w-3.5 h-3.5" /> History (V{versionNum})
-                      </button>
+                      </Link>
 
                       {(status === "rework" || status === "revision_requested" || status === "rejected") && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (onReviseQuotation) onReviseQuotation(q);
-                          }}
+                        <Link
+                          href={`/accounting/quotations/new?revise=${q.id}`}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold cursor-pointer transition-all shadow-2xs"
                         >
                           <Edit3 className="w-3.5 h-3.5" /> Revise (Draft V{versionNum + 1})
+                        </Link>
+                      )}
+
+                      {status === "approved" && !q.inward_id && (
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/clients/new?quotation_id=${q.id}`)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold cursor-pointer transition-all shadow-2xs"
+                        >
+                          <Package className="w-3.5 h-3.5" /> Convert to Inward
                         </button>
                       )}
 
-                      {(status === "approved" || status === "accepted") && (
+                      {(q.inward_id || status === "inward_created" || status === "accepted") && (
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm(`Convert Approved Quotation ${q.quotation_no} to Proforma Invoice?`)) {
-                              run(
-                                () => convertQuotationToProformaAction(q.id),
-                                `Generated Proforma Invoice from ${q.quotation_no}`
-                              );
-                            }
+                            const targetInward = (data.recentInwards || []).find((inv: any) => inv.id === q.inward_id) || { id: q.inward_id, client_id: q.client_id, quotation_id: q.id };
+                            if (onOpenCreateProforma) onOpenCreateProforma(targetInward, { quotationId: q.id });
                           }}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold cursor-pointer transition-all shadow-2xs"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Convert to Proforma
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Create Proforma Invoice
                         </button>
                       )}
                     </div>
@@ -1541,15 +1925,14 @@ function QuotationsTab({
                         quotation={q}
                         onRefresh={onRefresh}
                         onRevise={() => {
-                          if (onReviseQuotation) onReviseQuotation(q);
+                          router.push(`/accounting/quotations/new?revise=${q.id}`);
+                        }}
+                        onConvertToInward={() => {
+                          router.push(`/clients/new?quotation_id=${q.id}`);
                         }}
                         onConvertToProforma={() => {
-                          if (confirm(`Convert Quotation ${q.quotation_no} to Proforma Invoice?`)) {
-                            run(
-                              () => convertQuotationToProformaAction(q.id),
-                              `Generated Proforma Invoice from ${q.quotation_no}`
-                            );
-                          }
+                          const targetInward = (data.recentInwards || []).find((inv: any) => inv.id === q.inward_id) || { id: q.inward_id, client_id: q.client_id, quotation_id: q.id };
+                          if (onOpenCreateProforma) onOpenCreateProforma(targetInward, { quotationId: q.id });
                         }}
                       />
                     </div>
@@ -1588,6 +1971,10 @@ function QuotationsTab({
           setSelectedQuotationForView(null);
           if (onReviseQuotation) onReviseQuotation(q);
         }}
+        onConvertToInward={(q) => {
+          setSelectedQuotationForView(null);
+          router.push(`/clients/new?quotation_id=${q.id}`);
+        }}
       />
 
       {/* Quotation Version History Modal */}
@@ -1604,9 +1991,9 @@ function QuotationsTab({
 
 function Card({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className={`p-4 bg-white border rounded-2xl shadow-xs transition-all ${highlight ? "border-amber-200 bg-amber-50/40" : "border-slate-200"}`}>
-      <div className={`text-xs ${highlight ? "text-amber-700 font-semibold" : "text-slate-500"}`}>{label}</div>
-      <div className={`text-xl font-bold ${highlight ? "text-amber-900" : "text-slate-900"}`}>{value}</div>
+    <div className={`p-3 sm:p-3.5 bg-white border rounded-xl shadow-2xs transition-all hover:shadow-xs ${highlight ? "border-amber-200/80 bg-amber-50/40" : "border-slate-200/80 hover:border-slate-300"}`}>
+      <div className={`text-[11px] font-semibold uppercase tracking-wider ${highlight ? "text-amber-700" : "text-slate-500"}`}>{label}</div>
+      <div className={`text-xl font-bold tracking-tight mt-1 ${highlight ? "text-amber-900" : "text-slate-900"}`}>{value}</div>
     </div>
   );
 }

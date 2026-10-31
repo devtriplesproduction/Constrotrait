@@ -17,6 +17,8 @@ import {
   User,
   Paperclip,
   FlaskConical,
+  HardHat,
+  Leaf,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +55,15 @@ export function RecordExpenseModal({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [expenseType, setExpenseType] = useState<"inward" | "inhouse" | "company">("inhouse");
+  type ExpenseScope = "inward_cost" | "test_expense" | "inhouse" | "company";
+  const [selectedScope, setSelectedScope] = useState<ExpenseScope>(() => {
+    if (defaultExpenseType === "inhouse") return "inhouse";
+    if (defaultExpenseType === "company") return "company";
+    if (initialTestId) return "test_expense";
+    return "inward_cost";
+  });
+  const [selectedCategory, setSelectedCategory] = useState<"Construction" | "Environmental">("Construction");
+  const [expenseType, setExpenseType] = useState<"inward" | "test" | "inhouse" | "company">("inward");
   const [inwardId, setInwardId] = useState("");
   const [inwardSearch, setInwardSearch] = useState("");
 
@@ -70,7 +80,7 @@ export function RecordExpenseModal({
     is_reimbursement: false,
     project_id: "",
     site_name: "",
-    department: "",
+    department: "Construction Department",
     description: "",
     gst_amount: "",
     tds_amount: "",
@@ -79,27 +89,54 @@ export function RecordExpenseModal({
 
   useEffect(() => {
     if (inward) {
-      setExpenseType("inward");
       setInwardId(inward.id);
       const test = initialTestId && inward.job_entry_tests
-        ? inward.job_entry_tests.find((t: any) => t.id === initialTestId)
+        ? (
+            inward.job_entry_tests.find((t: any) => t.id === initialTestId) ||
+            inward.job_entry_tests.find((t: any) => t.test_master_id === initialTestId) ||
+            inward.job_entry_tests.find((t: any) => t.test_master?.id === initialTestId) ||
+            null
+          )
         : null;
+      const cat = (test?.test_master?.category as "Construction" | "Environmental") || "Construction";
       const testName = test
         ? test.test_master?.specific_test || test.test_master?.component_parameter || test.material_description || "Specific Test"
         : "";
 
+      setSelectedCategory(cat);
+      if (initialTestId) {
+        setSelectedScope("test_expense");
+      } else {
+        setSelectedScope("inward_cost");
+      }
+      setExpenseType("inward");
+
       setForm((prev) => ({
         ...prev,
-        job_entry_test_id: initialTestId || "",
+        job_entry_test_id: test ? test.id : initialTestId || "",
+        department: `${cat} Department`,
         site_name: inward.project_name || inward.clients?.site_name || prev.site_name,
         description: testName
-          ? `Direct test expense for: ${testName} (Inward UID: ${inward.uid_label || inward.uid})`
+          ? `Direct test expense for: [${cat}] ${testName} (Inward UID: ${inward.uid_label || inward.uid})`
           : `Direct expense for Inward UID: ${inward.uid_label || inward.uid}`,
       }));
     } else {
-      setExpenseType(defaultExpenseType || "inhouse");
+      if (defaultExpenseType === "inhouse") {
+        setSelectedScope("inhouse");
+        setExpenseType("inhouse");
+      } else if (defaultExpenseType === "company") {
+        setSelectedScope("company");
+        setExpenseType("company");
+      } else {
+        setSelectedScope(initialTestId ? "test_expense" : "inward_cost");
+        setExpenseType("inward");
+      }
       setInwardId("");
-      setForm((prev) => ({ ...prev, job_entry_test_id: initialTestId || "" }));
+      setForm((prev) => ({
+        ...prev,
+        job_entry_test_id: initialTestId || "",
+        department: prev.department || "Construction Department",
+      }));
     }
   }, [inward, initialTestId, defaultExpenseType, isOpen]);
 
@@ -183,7 +220,7 @@ export function RecordExpenseModal({
       return;
     }
 
-    if (expenseType === "inward" && !inwardId) {
+    if (selectedScope === "inward_cost" && !inwardId) {
       toast({
         title: "Inward Selection Required",
         description: "Please select an Inward UID to record an inward expense.",
@@ -192,18 +229,29 @@ export function RecordExpenseModal({
       return;
     }
 
+    if (selectedScope === "test_expense" && !form.job_entry_test_id) {
+      toast({
+        title: "Test Name Required",
+        description: "Please select a test name for this individual test expense.",
+        variant: "error",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      const isTestScope = selectedScope === "test_expense";
       const payload = {
         ...form,
         amount: Number(form.amount),
         gst_amount: Number(form.gst_amount || 0),
         tds_amount: Number(form.tds_amount || 0),
-        expense_type: expenseType,
-        inward_id: expenseType === "inward" ? inwardId : null,
-        job_entry_test_id: expenseType === "inward" ? (form.job_entry_test_id || null) : null,
+        expense_type: isTestScope ? "test" : expenseType,
+        inward_id: isTestScope ? null : (expenseType === "inward" ? inwardId : null),
+        job_entry_test_id: null,
+        test_master_id: isTestScope ? (form.job_entry_test_id || null) : null,
         is_general_expense: expenseType === "company",
-        project_id: form.project_id || null,
+        project_id: isTestScope ? null : (form.project_id || null),
         category_id: form.category_id || null,
         account_id: form.account_id || null,
       };
@@ -216,7 +264,11 @@ export function RecordExpenseModal({
         toast({
           title: "Expense Recorded",
           description: `${
-            expenseType === "inward" ? "Inward-linked" : "Company"
+            isTestScope
+              ? "Individual Test"
+              : expenseType === "inward"
+              ? "Inward-linked"
+              : "Company"
           } expense of ₹${Number(form.amount).toLocaleString(
             "en-IN"
           )} recorded successfully. ${
@@ -255,7 +307,7 @@ export function RecordExpenseModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
       <div
         className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto animate-in fade-in-0 zoom-in-95 duration-200"
         role="dialog"
@@ -305,70 +357,218 @@ export function RecordExpenseModal({
             <label className="text-xs font-bold text-slate-700 block mb-1.5 uppercase tracking-wider">
               Expense Scope & Allocation
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80">
               <button
                 type="button"
-                onClick={() => setExpenseType("inward")}
-                className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  expenseType === "inward"
+                onClick={() => {
+                  setSelectedScope("inward_cost");
+                  setExpenseType("inward");
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  selectedScope === "inward_cost"
                     ? "bg-white text-blue-700 shadow-md shadow-blue-500/10 border border-blue-200"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <Package className="w-4 h-4 text-blue-600" />
-                <span>Inward Direct (Job UID)</span>
+                <Package className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span className="truncate">Inward Cost</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => setExpenseType("inhouse")}
-                className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  expenseType === "inhouse"
+                onClick={() => {
+                  setSelectedScope("test_expense");
+                  setExpenseType("test");
+                  setInwardId("");
+                  setForm((prev) => ({ ...prev, department: `${selectedCategory} Department` }));
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  selectedScope === "test_expense"
+                    ? "bg-white text-indigo-700 shadow-md shadow-indigo-500/10 border border-indigo-200"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <FlaskConical className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span className="truncate">Test Expense</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedScope("inhouse");
+                  setExpenseType("inhouse");
+                  setInwardId("");
+                  setForm((prev) => ({ ...prev, job_entry_test_id: "" }));
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  selectedScope === "inhouse"
                     ? "bg-white text-emerald-700 shadow-md shadow-emerald-500/10 border border-emerald-200"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <FlaskConical className="w-4 h-4 text-emerald-600" />
-                <span>In-House Lab Operations</span>
+                <Layers className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="truncate">In-House Lab</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => setExpenseType("company")}
-                className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  expenseType === "company"
+                onClick={() => {
+                  setSelectedScope("company");
+                  setExpenseType("company");
+                  setInwardId("");
+                  setForm((prev) => ({ ...prev, job_entry_test_id: "" }));
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  selectedScope === "company"
                     ? "bg-white text-purple-700 shadow-md shadow-purple-500/10 border border-purple-200"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <Building2 className="w-4 h-4 text-purple-600" />
-                <span>Company Overhead</span>
+                <Building2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <span className="truncate">Company Overhead</span>
               </button>
             </div>
             <p className="text-[11px] text-slate-500 mt-1.5 px-1">
-              {expenseType === "inward"
+              {selectedScope === "inward_cost"
                 ? "Costs directly linked to sample testing, site inspection, logistics, or lab consumables for a specific job UID."
-                : expenseType === "inhouse"
+                : selectedScope === "test_expense"
+                ? "Direct cost for a specific test method. Select category (Construction / Environmental) and test name."
+                : selectedScope === "inhouse"
                 ? "Internal testing laboratory expenses: calibration (NABL), test consumables/chemicals, PT/ILC charges, machine spares, curing & lab power."
                 : "General overheads such as rent, salaries, electricity, tea/pantry, administration, and branch expenses."}
             </p>
           </div>
 
-          {/* In-House Informational Notice */}
-          {expenseType === "inhouse" && (
-            <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900 flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
-                <FlaskConical className="w-4 h-4" />
-              </div>
+          {/* Scope 2: TEST EXPENSE (Category & Test Name selection) */}
+          {selectedScope === "test_expense" && (
+            <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200 space-y-3.5">
+              {/* Category buttons */}
               <div>
-                <div className="font-bold text-emerald-950">In-House Laboratory Operations Expense</div>
-                <p className="text-[11px] text-emerald-700 mt-0.5">
-                  This expense will be allocated to internal laboratory operational capacity (calibration, chemicals, power, maintenance) and factored into unit economics and test-wise profitability analysis.
-                </p>
+                <label className="text-xs font-bold text-slate-800 block mb-1.5">
+                  1. Select Test Category <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory("Construction");
+                      set("department", "Construction Department");
+                    }}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      selectedCategory === "Construction"
+                        ? "bg-white text-blue-700 border-blue-400 ring-2 ring-blue-500/20 shadow-xs"
+                        : "bg-white/60 text-slate-600 border-slate-200 hover:bg-white"
+                    }`}
+                  >
+                    <HardHat className="w-3.5 h-3.5 text-blue-600" />
+                    <span>🏗️ Construction</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory("Environmental");
+                      set("department", "Environmental Department");
+                    }}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      selectedCategory === "Environmental"
+                        ? "bg-white text-teal-700 border-teal-400 ring-2 ring-teal-500/20 shadow-xs"
+                        : "bg-white/60 text-slate-600 border-slate-200 hover:bg-white"
+                    }`}
+                  >
+                    <Leaf className="w-3.5 h-3.5 text-teal-600" />
+                    <span>🌱 Environmental</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Test Name select */}
+              <div>
+                <label className="text-xs font-bold text-slate-800 block mb-1">
+                  2. Select Test Name ({selectedCategory}) <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  required
+                  value={form.job_entry_test_id}
+                  onChange={(e) => {
+                    const testId = e.target.value;
+                    set("job_entry_test_id", testId);
+                    const matching = (selectedInward?.job_entry_tests || []).find((t: any) =>
+                      t.id === testId || t.test_master_id === testId || t.test_master?.id === testId
+                    );
+                    if (matching) {
+                      const tName = matching.test_master?.specific_test || matching.test_master?.component_parameter || matching.material_description || "Test";
+                      set("description", `Direct test expense for: [${selectedCategory}] ${tName}`);
+                    }
+                  }}
+                  className="w-full h-10 px-3 bg-white border border-indigo-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                >
+                  <option value="">— Select a Test Name ({selectedCategory}) —</option>
+                  {(selectedInward?.job_entry_tests || [])
+                    .filter((t: any) => (t.test_master?.category || "Construction") === selectedCategory)
+                    .map((t: any) => {
+                      const tm = t.test_master;
+                      const testName = tm?.specific_test || tm?.component_parameter || t.material_description || "Test Parameter";
+                      const mat = tm?.material_product || tm?.discipline_group || "";
+                      return (
+                        <option key={t.id} value={t.id}>
+                          [{selectedCategory}] {testName} {mat ? `[${mat}]` : ""}
+                        </option>
+                      );
+                    })}
+                </select>
               </div>
             </div>
           )}
 
-          {/* Inward Selector (if inward expense) */}
-          {expenseType === "inward" && (
+          {/* In-House Informational Notice & Department Selection */}
+          {selectedScope === "inhouse" && (
+            <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
+                  <FlaskConical className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-emerald-950">In-House Laboratory Operations Expense</div>
+                  <p className="text-[11px] text-emerald-700 mt-0.5">
+                    This expense will be allocated to internal laboratory operational capacity (calibration, chemicals, power, machine maintenance).
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-emerald-200/70">
+                <label className="text-xs font-bold text-emerald-950 block mb-1.5">
+                  Select Laboratory Department <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => set("department", "Construction Department")}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      form.department === "Construction Department" || !form.department
+                        ? "bg-white text-orange-700 border-orange-300 shadow-xs ring-1 ring-orange-400"
+                        : "bg-white/60 text-slate-600 border-slate-200 hover:bg-white"
+                    }`}
+                  >
+                    <span>🏗️ Construction Lab</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => set("department", "Environmental Department")}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      form.department === "Environmental Department"
+                        ? "bg-white text-teal-700 border-teal-300 shadow-xs ring-1 ring-teal-400"
+                        : "bg-white/60 text-slate-600 border-slate-200 hover:bg-white"
+                    }`}
+                  >
+                    <span>🌱 Environmental Lab</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Inward Selector (if inward direct cost) */}
+          {selectedScope === "inward_cost" && (
             <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
@@ -450,49 +650,83 @@ export function RecordExpenseModal({
                     </span>
                   </div>
 
-                  <select
-                    value={form.job_entry_test_id}
-                    onChange={(e) => {
-                      const testId = e.target.value;
-                      set("job_entry_test_id", testId);
-                      const t = selectedInward.job_entry_tests.find((item: any) => item.id === testId);
-                      if (t) {
-                        const testName =
-                          t.test_master?.specific_test ||
-                          t.test_master?.component_parameter ||
-                          t.material_description ||
-                          "Test";
-                        setForm((prev) => ({
-                          ...prev,
-                          job_entry_test_id: testId,
-                          description: `Direct test expense for: ${testName} (Inward UID: ${selectedInward.uid_label || selectedInward.uid})`,
-                        }));
-                      } else {
-                        setForm((prev) => ({
-                          ...prev,
-                          job_entry_test_id: "",
-                          description: `Direct expense for Inward UID: ${selectedInward.uid_label || selectedInward.uid}`,
-                        }));
-                      }
-                    }}
-                    className="w-full h-9 px-3 bg-white border border-blue-300 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
-                  >
-                    <option value="">— Entire Inward Job (Shared / General Inward Cost) —</option>
-                    {selectedInward.job_entry_tests.map((t: any) => {
-                      const tm = t.test_master;
-                      const testName =
-                        tm?.specific_test ||
-                        tm?.component_parameter ||
-                        t.material_description ||
-                        "Test Parameter";
-                      const mat = tm?.material_product || tm?.discipline_group || "Material";
-                      return (
-                        <option key={t.id} value={t.id}>
-                          {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
-                        </option>
-                      );
-                    })}
-                  </select>
+                    <select
+                      value={form.job_entry_test_id}
+                      onChange={(e) => {
+                        const testId = e.target.value;
+                        set("job_entry_test_id", testId);
+                        const t = selectedInward.job_entry_tests.find((item: any) =>
+                          item.id === testId || item.test_master_id === testId || item.test_master?.id === testId
+                        );
+                        if (t) {
+                          const cat = t.test_master?.category || "Construction";
+                          const testName =
+                            t.test_master?.specific_test ||
+                            t.test_master?.component_parameter ||
+                            t.material_description ||
+                            "Test";
+                          setForm((prev) => ({
+                            ...prev,
+                            job_entry_test_id: t.id,
+                            department: `${cat} Department`,
+                            description: `Direct test expense for: [${cat}] ${testName} (Inward UID: ${selectedInward.uid_label || selectedInward.uid})`,
+                          }));
+                        } else {
+                          setForm((prev) => ({
+                            ...prev,
+                            job_entry_test_id: "",
+                            description: `Direct expense for Inward UID: ${selectedInward.uid_label || selectedInward.uid}`,
+                          }));
+                        }
+                      }}
+                      className="w-full h-9 px-3 bg-white border border-blue-300 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                    >
+                      <option value="">— Entire Inward Job (Shared / General Inward Cost) —</option>
+
+                      {/* Construction Tests */}
+                      {selectedInward.job_entry_tests.some((t: any) => (t.test_master?.category || "Construction") === "Construction") && (
+                        <optgroup label="🏗️ Construction Tests">
+                          {selectedInward.job_entry_tests
+                            .filter((t: any) => (t.test_master?.category || "Construction") === "Construction")
+                            .map((t: any) => {
+                              const tm = t.test_master;
+                              const testName =
+                                tm?.specific_test ||
+                                tm?.component_parameter ||
+                                t.material_description ||
+                                "Test Parameter";
+                              const mat = tm?.material_product || tm?.discipline_group || "Material";
+                              return (
+                                <option key={t.id} value={t.id}>
+                                  [Construction] {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
+                                </option>
+                              );
+                            })}
+                        </optgroup>
+                      )}
+
+                      {/* Environmental Tests */}
+                      {selectedInward.job_entry_tests.some((t: any) => t.test_master?.category === "Environmental") && (
+                        <optgroup label="🌱 Environmental Tests">
+                          {selectedInward.job_entry_tests
+                            .filter((t: any) => t.test_master?.category === "Environmental")
+                            .map((t: any) => {
+                              const tm = t.test_master;
+                              const testName =
+                                tm?.specific_test ||
+                                tm?.component_parameter ||
+                                t.material_description ||
+                                "Test Parameter";
+                              const mat = tm?.material_product || tm?.discipline_group || "Material";
+                              return (
+                                <option key={t.id} value={t.id}>
+                                  [Environmental] {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
+                                </option>
+                              );
+                            })}
+                        </optgroup>
+                      )}
+                    </select>
                   <p className="text-[10px] text-blue-700/80">
                     Tagging a specific test attributes this cost directly to that test for individual test-wise revenue & profitability tracking.
                   </p>

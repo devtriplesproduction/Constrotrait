@@ -20,6 +20,7 @@ interface QuotationApprovalPanelProps {
   quotation: any;
   onRefresh?: () => void;
   onRevise?: (quotation: any) => void;
+  onConvertToInward?: (quotation: any) => void;
   onConvertToProforma?: (quotation: any) => void;
 }
 
@@ -29,6 +30,7 @@ export function QuotationApprovalPanel({
   quotation,
   onRefresh,
   onRevise,
+  onConvertToInward,
   onConvertToProforma,
 }: QuotationApprovalPanelProps) {
   const { toast } = useToast();
@@ -202,15 +204,27 @@ export function QuotationApprovalPanel({
           </button>
         )}
 
-        {/* Convert to Proforma Button (if Approved) */}
-        {isApproved && onConvertToProforma && (
+        {/* Convert to Inward Button (if Approved and no Inward yet) */}
+        {isApproved && !quotation.inward_id && onConvertToInward && (
           <button
             type="button"
-            onClick={() => onConvertToProforma(quotation)}
+            onClick={() => onConvertToInward(quotation)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-xs hover:bg-blue-700 transition-all cursor-pointer ml-auto"
           >
             <ArrowRight className="w-3.5 h-3.5" />
-            <span>Convert to Proforma</span>
+            <span>Convert to Inward</span>
+          </button>
+        )}
+
+        {/* Create Proforma Invoice Button (if Inward created or accepted) */}
+        {(quotation.inward_id || currentStatus === "inward_created" || currentStatus === "accepted") && onConvertToProforma && (
+          <button
+            type="button"
+            onClick={() => onConvertToProforma(quotation)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 transition-all cursor-pointer ml-auto"
+          >
+            <ArrowRight className="w-3.5 h-3.5" />
+            <span>Create Proforma Invoice</span>
           </button>
         )}
       </div>

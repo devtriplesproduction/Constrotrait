@@ -19,9 +19,10 @@ interface BaseSidebarProps {
   links: SidebarLink[];
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  hideOnDesktop?: boolean;
 }
 
-export function BaseSidebar({ links, isOpen, setIsOpen }: BaseSidebarProps) {
+export function BaseSidebar({ links, isOpen, setIsOpen, hideOnDesktop = false }: BaseSidebarProps) {
   const pathname = usePathname();
   const [openMenus, setOpenMenus] = React.useState<Record<string, boolean>>({});
 
@@ -46,10 +47,13 @@ export function BaseSidebar({ links, isOpen, setIsOpen }: BaseSidebarProps) {
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Overlay when sidebar is open */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-40 lg:hidden"
+          className={cn(
+            "fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-40",
+            hideOnDesktop ? "block" : "lg:hidden"
+          )}
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -58,8 +62,18 @@ export function BaseSidebar({ links, isOpen, setIsOpen }: BaseSidebarProps) {
         className={cn(
           "fixed top-0 left-0 z-50 h-screen flex flex-col w-[260px]",
           "bg-white border-r border-zinc-200",
-          "transition-transform duration-300 ease-in-out lg:relative",
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          "transition-all duration-300 ease-in-out",
+          hideOnDesktop
+            ? cn(
+                "fixed top-0 left-0 z-50 shadow-2xl",
+                isOpen
+                  ? "translate-x-0 w-[260px] opacity-100"
+                  : "-translate-x-full w-0 overflow-hidden opacity-0 pointer-events-none border-r-0"
+              )
+            : cn(
+                "lg:relative",
+                isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+              )
         )}
       >
         {/* Logo / Brand */}

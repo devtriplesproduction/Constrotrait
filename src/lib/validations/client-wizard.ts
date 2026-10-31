@@ -27,6 +27,7 @@ export const jobEntryDetailsSchema = z.object({
   invoice_date: z.string().optional(),
   letter_reference: z.string().optional(),
   payment_status: z.string().optional(),
+  quotation_id: z.string().optional(),
 });
 
 export type JobEntryDetailsValues = z.infer<typeof jobEntryDetailsSchema>;

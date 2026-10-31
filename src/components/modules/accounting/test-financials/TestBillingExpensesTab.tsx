@@ -29,6 +29,17 @@ import {
   AlertCircle,
   Building,
   Sparkles,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  PieChart,
+  BarChart2,
+  ShieldCheck,
+  Tag,
+  Info,
+  Check,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -49,11 +60,27 @@ interface TestBillingExpensesTabProps {
   onRegisterExportExcel?: (fn: () => void) => void;
 }
 
-const fmt = (n: number | string | undefined | null) =>
-  `₹${Number(n || 0).toLocaleString("en-IN", {
+// Clean Indian Rupee formatting with proper negative sign placement (-₹2,000.00 instead of ₹-2,000.00)
+const fmt = (n: number | string | undefined | null) => {
+  const val = Number(n || 0);
+  const isNeg = val < 0;
+  const abs = Math.abs(val).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`;
+  });
+  return isNeg ? `-₹${abs}` : `₹${abs}`;
+};
+
+type SortField =
+  | "testName"
+  | "volume"
+  | "revenue"
+  | "taggedExpense"
+  | "totalCost"
+  | "grossProfit"
+  | "grossMargin";
+
+type QuickFilter = "all" | "profitable" | "loss" | "tagged";
 
 export function TestBillingExpensesTab({
   data,
@@ -95,6 +122,11 @@ export function TestBillingExpensesTab({
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [branchFilter, setBranchFilter] = useState<string>("all");
 
+  // Sorting & Quick Filter
+  const [sortField, setSortField] = useState<SortField>("revenue");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
+
   // Date picker dropdown popover state
   const [isDateOpen, setIsDateOpen] = useState(false);
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -122,16 +154,6 @@ export function TestBillingExpensesTab({
     if (fromDate && toDate) return `${fromDate} – ${toDate}`;
     return "Select Dates";
   }, [selectedPeriod, fromDate, toDate]);
-
-  // Expanded row IDs for details dropdown
-  const [expandedRowIds, setExpandedRowIds] = useState<Record<string, boolean>>({});
-
-  const toggleRow = (testId: string) => {
-    setExpandedRowIds((prev) => ({
-      ...prev,
-      [testId]: !prev[testId],
-    }));
-  };
 
   const fetchEconomics = useCallback((from?: string, to?: string) => {
     setLoadingReport(true);
@@ -229,7 +251,7 @@ export function TestBillingExpensesTab({
         "Clients",
         "Realized Revenue from Paid Invoices (INR)",
         "Paid Invoice References",
-        "Tagged Direct Test Cost (INR)",
+        "Direct Cost (INR)",
         "Shared Inward Cost (INR)",
         "In-House Lab Cost (INR)",
         "Total Cost (INR)",
@@ -291,10 +313,11 @@ export function TestBillingExpensesTab({
       if (t.category && typeof t.category === "string" && t.category.trim()) {
         list.add(t.category.trim());
       }
-      if (t.discipline && typeof t.discipline === "string" && t.discipline.trim()) {
-        list.add(t.discipline.trim());
-      }
     });
+    if (list.size === 0) {
+      list.add("Construction");
+      list.add("Environmental");
+    }
     return Array.from(list).sort();
   }, [reportData?.testBreakdown]);
 
@@ -309,7 +332,7 @@ export function TestBillingExpensesTab({
     return [];
   }, [reportData?.branches, data?.branches]);
 
-  // Filtered unit economics tests based on Search, NABL, Category, and Branch
+  // Filtered unit economics tests based on Search, NABL, Category, Branch, and Quick Filter
   const filteredTests = useMemo(() => {
     const list = reportData?.testBreakdown || [];
     return list.filter((t: any) => {
@@ -332,8 +355,7 @@ export function TestBillingExpensesTab({
       // 3. Category filter
       if (categoryFilter !== "all") {
         const catMatch =
-          t.category?.toLowerCase() === categoryFilter.toLowerCase() ||
-          t.discipline?.toLowerCase() === categoryFilter.toLowerCase();
+          t.category?.toLowerCase() === categoryFilter.toLowerCase();
         if (!catMatch) return false;
       }
 
@@ -342,9 +364,108 @@ export function TestBillingExpensesTab({
         if (t.branchId && t.branchId !== branchFilter) return false;
       }
 
+      // 5. Quick filter tabs
+      if (quickFilter === "profitable" && t.grossProfit <= 0) return false;
+      if (quickFilter === "loss" && t.grossProfit >= 0) return false;
+      if (quickFilter === "tagged" && (!t.taggedExpense || t.taggedExpense <= 0)) return false;
+
       return true;
     });
-  }, [reportData?.testBreakdown, searchQuery, nablFilter, categoryFilter, branchFilter]);
+  }, [reportData?.testBreakdown, searchQuery, nablFilter, categoryFilter, branchFilter, quickFilter]);
+
+  // Sorted list of tests
+  const sortedTests = useMemo(() => {
+    const list = [...filteredTests];
+    list.sort((a: any, b: any) => {
+      let valA: any = 0;
+      let valB: any = 0;
+
+      switch (sortField) {
+        case "testName":
+          valA = (a.testName || "").toLowerCase();
+          valB = (b.testName || "").toLowerCase();
+          if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+          if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+          return 0;
+        case "volume":
+          valA = Number(a.testCount || 0);
+          valB = Number(b.testCount || 0);
+          break;
+        case "revenue":
+          valA = Number(a.revenue || 0);
+          valB = Number(b.revenue || 0);
+          break;
+        case "taggedExpense":
+          valA = Number(a.taggedExpense || 0);
+          valB = Number(b.taggedExpense || 0);
+          break;
+        case "totalCost":
+          valA = Number(a.totalCost || 0);
+          valB = Number(b.totalCost || 0);
+          break;
+        case "grossProfit":
+          valA = Number(a.grossProfit || 0);
+          valB = Number(b.grossProfit || 0);
+          break;
+        case "grossMargin":
+          valA = Number(a.grossMargin || 0);
+          valB = Number(b.grossMargin || 0);
+          break;
+      }
+
+      return sortDirection === "asc" ? valA - valB : valB - valA;
+    });
+    return list;
+  }, [filteredTests, sortField, sortDirection]);
+
+  // Quick filter counts
+  const quickCounts = useMemo(() => {
+    const list = reportData?.testBreakdown || [];
+    let profitable = 0;
+    let loss = 0;
+    let tagged = 0;
+
+    list.forEach((t: any) => {
+      if (t.grossProfit > 0) profitable++;
+      if (t.grossProfit < 0) loss++;
+      if (t.taggedExpense > 0) tagged++;
+    });
+
+    return {
+      all: list.length,
+      profitable,
+      loss,
+      tagged,
+    };
+  }, [reportData?.testBreakdown]);
+
+  // Aggregate summary totals for currently filtered tests
+  const tableSummary = useMemo(() => {
+    let totalTests = 0;
+    let totalRevenue = 0;
+    let totalTaggedExpense = 0;
+    let totalCost = 0;
+    let grossProfit = 0;
+
+    filteredTests.forEach((t: any) => {
+      totalTests += Number(t.testCount || 0);
+      totalRevenue += Number(t.revenue || 0);
+      totalTaggedExpense += Number(t.taggedExpense || 0);
+      totalCost += Number(t.totalCost || 0);
+      grossProfit += Number(t.grossProfit || 0);
+    });
+
+    const overallMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+
+    return {
+      totalTests,
+      totalRevenue,
+      totalTaggedExpense,
+      totalCost,
+      grossProfit,
+      overallMargin,
+    };
+  }, [filteredTests]);
 
   // Expenses tagged to a specific test
   const taggedExpenses = useMemo(() => {
@@ -354,57 +475,54 @@ export function TestBillingExpensesTab({
     });
   }, [data.expenses]);
 
-  // Handler to record an expense for a specific test
+  // Handler to record an expense for a specific test (Individual, independent of Inward/Job card)
   const handleAddExpenseForTest = (t: any) => {
-    const inwards = data.recentInwards || [];
-    const matchingInward = inwards.find((inv: any) =>
-      (inv.job_entry_tests || []).some((jet: any) => {
-        const tm = jet.test_master;
-        const name = tm?.component_parameter || tm?.specific_test || jet.material_description || "";
-        const mat = tm?.material_product || tm?.discipline_group || "";
-        return (
-          (tm?.id && tm.id === t.testId) ||
-          (jet.id === t.testId) ||
-          (name.toLowerCase() === t.testName.toLowerCase() && mat.toLowerCase() === t.materialGroup.toLowerCase())
-        );
-      })
+    const isEnvironmental =
+      t.materialGroup?.toLowerCase().includes("env") ||
+      t.materialGroup?.toLowerCase().includes("water") ||
+      t.materialGroup?.toLowerCase().includes("air") ||
+      t.testName?.toLowerCase().includes("water") ||
+      t.testName?.toLowerCase().includes("air");
+    const testCategory = isEnvironmental ? "Environmental" : "Construction";
+
+    // Test expenses are strictly individual - NEVER connect to inward or job card
+    router.push(
+      `/accounting/expenses/new?test_id=${t.testId}&type=test&category=${testCategory}&return_url=/accounting/test-financials`
     );
+  };
 
-    if (matchingInward) {
-      const matchingTest = (matchingInward.job_entry_tests || []).find((jet: any) => {
-        const tm = jet.test_master;
-        const name = tm?.component_parameter || tm?.specific_test || jet.material_description || "";
-        const mat = tm?.material_product || tm?.discipline_group || "";
-        return (
-          (tm?.id && tm.id === t.testId) ||
-          (jet.id === t.testId) ||
-          (name.toLowerCase() === t.testName.toLowerCase() && mat.toLowerCase() === t.materialGroup.toLowerCase())
-        );
-      });
-
-      router.push(
-        `/accounting/expenses/new?inward_id=${matchingInward.id}&test_id=${matchingTest?.id || ""}&type=inward&return_url=/accounting/test-financials`
-      );
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
-      router.push(`/accounting/expenses/new?type=inward&return_url=/accounting/test-financials`);
+      setSortField(field);
+      setSortDirection(field === "testName" ? "asc" : "desc");
     }
   };
+
+  const isFilterActive =
+    searchQuery ||
+    nablFilter !== "all" ||
+    categoryFilter !== "all" ||
+    branchFilter !== "all" ||
+    selectedPeriod !== "this_month" ||
+    quickFilter !== "all";
 
   return (
     <div className="space-y-6">
       {/* ================= Master KPI Analytics Cards ================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Card 1: Tests Conducted */}
-        <div className="p-5 bg-gradient-to-br from-white via-slate-50/50 to-blue-50/30 border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-blue-300 transition-all duration-300 group">
+        <div className="p-4.5 bg-gradient-to-br from-white via-slate-50/50 to-blue-50/20 border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-blue-300 transition-all duration-200 group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Tests Conducted
             </span>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-2xs group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-2xs group-hover:scale-105 transition-transform">
               <FlaskConical className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl lg:text-[26px] font-black text-slate-900 tracking-tight mt-2 font-mono">
+          <div className="text-2xl lg:text-[25px] font-black text-slate-900 tracking-tight mt-2 font-mono">
             {Number(reportData?.summary?.totalTests || 0).toLocaleString("en-IN")}
           </div>
           <div className="flex items-center justify-between text-xs text-slate-500 mt-2.5 pt-2 border-t border-slate-100">
@@ -416,20 +534,20 @@ export function TestBillingExpensesTab({
         </div>
 
         {/* Card 2: Paid Test Revenue */}
-        <div className="p-5 bg-gradient-to-br from-blue-50/40 via-white to-sky-50/30 border border-blue-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-blue-400 transition-all duration-300 group">
+        <div className="p-4.5 bg-gradient-to-br from-emerald-50/30 via-white to-sky-50/20 border border-emerald-200/80 rounded-2xl shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-200 group">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               Paid Test Revenue
             </span>
-            <div className="w-9 h-9 rounded-xl bg-blue-100/80 border border-blue-200 flex items-center justify-center text-blue-700 shadow-2xs group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-2xs group-hover:scale-105 transition-transform">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl lg:text-[26px] font-black text-blue-950 tracking-tight mt-2 font-mono">
+          <div className="text-2xl lg:text-[25px] font-black text-emerald-950 tracking-tight mt-2 font-mono">
             {fmt(reportData?.summary?.totalRevenue)}
           </div>
-          <div className="flex items-center justify-between text-xs text-blue-700 mt-2.5 pt-2 border-t border-blue-100/80">
+          <div className="flex items-center justify-between text-xs text-emerald-700 mt-2.5 pt-2 border-t border-emerald-100/80">
             <span>Settled invoices</span>
             <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-full flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
@@ -438,17 +556,17 @@ export function TestBillingExpensesTab({
           </div>
         </div>
 
-        {/* Card 3: Direct Tagged Costs */}
-        <div className="p-5 bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/30 border border-indigo-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-indigo-400 transition-all duration-300 group">
+        {/* Card 3: Direct Costs */}
+        <div className="p-4.5 bg-gradient-to-br from-indigo-50/30 via-white to-purple-50/20 border border-indigo-200/80 rounded-2xl shadow-xs hover:shadow-md hover:border-indigo-300 transition-all duration-200 group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider">
-              Direct Tagged Costs
+              Direct Costs
             </span>
-            <div className="w-9 h-9 rounded-xl bg-indigo-100/80 border border-indigo-200 flex items-center justify-center text-indigo-700 shadow-2xs group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 shadow-2xs group-hover:scale-105 transition-transform">
               <Receipt className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl lg:text-[26px] font-black text-indigo-950 tracking-tight mt-2 font-mono">
+          <div className="text-2xl lg:text-[25px] font-black text-indigo-950 tracking-tight mt-2 font-mono">
             {fmt(reportData?.summary?.totalTaggedExpense)}
           </div>
           <div className="flex items-center justify-between text-xs text-indigo-700 mt-2.5 pt-2 border-t border-indigo-100/80">
@@ -460,32 +578,32 @@ export function TestBillingExpensesTab({
         </div>
 
         {/* Card 4: Total Testing Costs */}
-        <div className="p-5 bg-gradient-to-br from-rose-50/40 via-white to-red-50/30 border border-rose-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-rose-400 transition-all duration-300 group">
+        <div className="p-4.5 bg-gradient-to-br from-rose-50/30 via-white to-orange-50/20 border border-rose-200/80 rounded-2xl shadow-xs hover:shadow-md hover:border-rose-300 transition-all duration-200 group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider">
               Total Testing Costs
             </span>
-            <div className="w-9 h-9 rounded-xl bg-rose-100/80 border border-rose-200 flex items-center justify-center text-rose-700 shadow-2xs group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-700 shadow-2xs group-hover:scale-105 transition-transform">
               <ArrowDownRight className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl lg:text-[26px] font-black text-rose-950 tracking-tight mt-2 font-mono">
+          <div className="text-2xl lg:text-[25px] font-black text-rose-950 tracking-tight mt-2 font-mono">
             {fmt(reportData?.summary?.totalCost)}
           </div>
           <div className="flex items-center justify-between text-xs text-rose-700 mt-2.5 pt-2 border-t border-rose-100/80">
             <span>Direct + Overheads</span>
             <span className="text-[10px] font-semibold text-rose-800 bg-rose-100/70 px-2 py-0.5 rounded-full">
-              Tagged + Lab
+              Direct + Lab
             </span>
           </div>
         </div>
 
         {/* Card 5: Gross Profit & Margin */}
         <div
-          className={`p-5 rounded-2xl border shadow-xs hover:shadow-md transition-all duration-300 group ${
+          className={`p-4.5 rounded-2xl border shadow-xs hover:shadow-md transition-all duration-200 group ${
             (reportData?.summary?.grossProfit || 0) >= 0
-              ? "bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 border-emerald-200/90 hover:border-emerald-400 text-emerald-950"
-              : "bg-gradient-to-br from-rose-50/50 via-white to-orange-50/30 border-rose-200/90 hover:border-rose-400 text-rose-950"
+              ? "bg-gradient-to-br from-emerald-50/40 via-white to-teal-50/20 border-emerald-200/90 hover:border-emerald-300 text-emerald-950"
+              : "bg-gradient-to-br from-rose-50/40 via-white to-orange-50/20 border-rose-200/90 hover:border-rose-300 text-rose-950"
           }`}
         >
           <div className="flex items-center justify-between">
@@ -497,16 +615,16 @@ export function TestBillingExpensesTab({
               Gross Profit & Margin
             </span>
             <div
-              className={`w-9 h-9 rounded-xl border flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform ${
+              className={`w-8 h-8 rounded-xl border flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform ${
                 (reportData?.summary?.grossProfit || 0) >= 0
-                  ? "bg-emerald-100/80 border-emerald-200 text-emerald-700"
-                  : "bg-rose-100/80 border-rose-200 text-rose-700"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                  : "bg-rose-50 border-rose-200 text-rose-700"
               }`}
             >
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl lg:text-[26px] font-black tracking-tight mt-2 font-mono">
+          <div className="text-2xl lg:text-[25px] font-black tracking-tight mt-2 font-mono">
             {fmt(reportData?.summary?.grossProfit)}
           </div>
           <div
@@ -518,10 +636,10 @@ export function TestBillingExpensesTab({
           >
             <span>Realized Return</span>
             <span
-              className={`font-mono font-bold px-2.5 py-0.5 rounded-full text-[10px] ${
+              className={`font-mono font-bold px-2 py-0.5 rounded-full text-[10px] ${
                 (reportData?.summary?.grossProfit || 0) >= 0
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-rose-100 text-rose-800"
+                  ? "bg-emerald-100/80 text-emerald-800"
+                  : "bg-rose-100/80 text-rose-800"
               }`}
             >
               {Number(reportData?.summary?.overallMargin || 0).toFixed(1)}% Margin
@@ -533,40 +651,64 @@ export function TestBillingExpensesTab({
       {/* ================= Test Economics & Profitability Hub ================= */}
       <div className="space-y-4">
         {/* Filter Tests Section */}
-        <div className="bg-white rounded-2xl shadow-xs border border-slate-200/90 p-5 space-y-4">
+        <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-4 sm:p-5 space-y-3.5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-50 to-amber-100 border border-orange-200/80 flex items-center justify-center shadow-2xs">
-                <SlidersHorizontal className="w-4 h-4 text-orange-600" />
+              <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-200/70 flex items-center justify-center shadow-2xs text-orange-600">
+                <SlidersHorizontal className="w-4 h-4" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-900 text-sm tracking-tight">Filter Tests</h3>
-                  <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/60">
-                    {filteredTests.length} tests found
+                  <h3 className="font-bold text-slate-900 text-sm tracking-tight">Filter & Slice Economics</h3>
+                  <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/60">
+                    {filteredTests.length} tests matching
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">Refine by parameters, discipline, branches, or date range</p>
+                <p className="text-[11px] text-slate-400">Refine by parameters, discipline, branch, or custom date</p>
               </div>
             </div>
 
-            {(searchQuery || nablFilter !== "all" || categoryFilter !== "all" || branchFilter !== "all" || selectedPeriod !== "this_month") && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setNablFilter("all");
-                  setCategoryFilter("all");
-                  setBranchFilter("all");
-                  setPresetRange("this_month");
-                  setSelectedPeriod("this_month");
-                }}
-                className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100/80 border border-orange-200/70 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:scale-105"
+            {/* Shifted Filter Dropdown to that position (clean neutral styling) */}
+            <div className="w-full sm:w-52 shrink-0">
+              <Select
+                value={quickFilter}
+                onValueChange={(val) => setQuickFilter(val as QuickFilter)}
+                buttonClassName="h-9.5 bg-white hover:bg-slate-50 focus:bg-white rounded-xl border-slate-200 text-xs font-medium text-slate-700 transition-colors shadow-2xs"
               >
-                <RefreshCcw className="w-3.5 h-3.5" />
-                <span>Reset Filters</span>
-              </button>
-            )}
+                <SelectItem value="all">
+                  <span className="flex items-center justify-between w-full gap-2 pr-1 text-slate-700">
+                    <span>All Tests</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/60">
+                      {quickCounts.all}
+                    </span>
+                  </span>
+                </SelectItem>
+                <SelectItem value="profitable">
+                  <span className="flex items-center justify-between w-full gap-2 pr-1 text-slate-700">
+                    <span>Profitable</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/60">
+                      {quickCounts.profitable}
+                    </span>
+                  </span>
+                </SelectItem>
+                <SelectItem value="loss">
+                  <span className="flex items-center justify-between w-full gap-2 pr-1 text-slate-700">
+                    <span>Loss-Making</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/60">
+                      {quickCounts.loss}
+                    </span>
+                  </span>
+                </SelectItem>
+                <SelectItem value="tagged">
+                  <span className="flex items-center justify-between w-full gap-2 pr-1 text-slate-700">
+                    <span>Direct Costs</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/60">
+                      {quickCounts.tagged}
+                    </span>
+                  </span>
+                </SelectItem>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
@@ -598,7 +740,10 @@ export function TestBillingExpensesTab({
 
             {/* NABL STATUS */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">NABL Status</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-slate-400" />
+                <span>NABL Status</span>
+              </label>
               <Select
                 value={nablFilter}
                 onValueChange={(val) => setNablFilter(val as any)}
@@ -612,7 +757,10 @@ export function TestBillingExpensesTab({
 
             {/* CATEGORY */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <Layers className="w-3 h-3 text-slate-400" />
+                <span>Category</span>
+              </label>
               <Select
                 value={categoryFilter}
                 onValueChange={(val) => setCategoryFilter(val)}
@@ -627,7 +775,10 @@ export function TestBillingExpensesTab({
 
             {/* BRANCH */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Branch</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <Building className="w-3 h-3 text-slate-400" />
+                <span>Branch</span>
+              </label>
               <Select
                 value={branchFilter}
                 onValueChange={(val) => setBranchFilter(val)}
@@ -642,8 +793,9 @@ export function TestBillingExpensesTab({
 
             {/* DATE RANGE */}
             <div className="space-y-1.5 relative" ref={datePickerRef}>
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                Date Range
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-slate-400" />
+                <span>Date Range</span>
               </label>
               <button
                 type="button"
@@ -748,112 +900,261 @@ export function TestBillingExpensesTab({
           </div>
         </div>
 
-        {/* ================= Test Economics Table ================= */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+        {/* ================= Enhanced Table Container ================= */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all">
+          {/* Table Toolbar Header */}
+          <div className="px-5 py-3.5 bg-gradient-to-r from-slate-50/90 via-slate-50/50 to-white border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="font-bold text-slate-900 text-sm tracking-tight">Test Unit Economics & Parameter Breakdown</span>
+              {quickFilter !== "all" && (
+                <span className="inline-flex items-center text-[11px] font-medium px-2.5 py-0.5 rounded-full border bg-slate-100 text-slate-700 border-slate-200">
+                  Filtered: {quickFilter === "tagged" ? "Direct Costs" : quickFilter === "loss" ? "Loss-Making" : "Profitable"}
+                </span>
+              )}
+            </div>
+
+            {/* Right: Active Count Indicator */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">
+                Showing <strong className="text-slate-900 font-bold">{sortedTests.length}</strong> of <strong className="text-slate-700">{quickCounts.all}</strong> parameters
+              </span>
+            </div>
+          </div>
+
+          {/* Table Grid */}
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-slate-50/90 text-slate-600 font-bold text-[10.5px] uppercase sticky top-0 z-10 border-b border-slate-200/80 backdrop-blur-xs">
+            <table className="w-full text-xs border-collapse">
+              {/* Table Header */}
+              <thead className="bg-slate-50/95 text-slate-600 font-bold text-[10.5px] uppercase tracking-wider sticky top-0 z-10 border-b border-slate-200/90 backdrop-blur-md select-none">
                 <tr>
-                  <th className="py-3.5 px-4 text-left">Test Parameter & Material</th>
-                  <th className="py-3.5 px-4 text-center">Volume</th>
-                  <th className="py-3.5 px-4 text-right">
-                    Paid Revenue (₹)
-                    <span className="block text-[9px] font-normal text-slate-400">Settled Invoices</span>
+                  {/* Column 1: Test Parameter & Material */}
+                  <th
+                    onClick={() => handleSort("testName")}
+                    className="py-3.5 px-4 text-left cursor-pointer hover:bg-slate-100/70 transition-colors group/th"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <FlaskConical className="w-3.5 h-3.5 text-slate-400 group-hover/th:text-orange-500" />
+                      <span>Test Parameter & Material</span>
+                      {sortField === "testName" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="w-3 h-3 text-orange-600 ml-1" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3 text-orange-600 ml-1" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover/th:text-slate-400 ml-1 opacity-0 group-hover/th:opacity-100 transition-opacity" />
+                      )}
+                    </div>
                   </th>
-                  <th className="py-3.5 px-4 text-right">
-                    Total Cost (₹)
-                    <span className="block text-[9px] font-normal text-slate-400">Direct + Shared</span>
+
+                  {/* Column 2: Volume */}
+                  <th
+                    onClick={() => handleSort("volume")}
+                    className="py-3.5 px-4 text-center w-28 cursor-pointer hover:bg-slate-100/70 transition-colors group/th"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span>Volume</span>
+                      {sortField === "volume" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="w-3 h-3 text-orange-600" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3 text-orange-600" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover/th:text-slate-400 opacity-0 group-hover/th:opacity-100 transition-opacity" />
+                      )}
+                    </div>
                   </th>
-                  <th className="py-3.5 px-4 text-right">
-                    Gross Profit & Margin
-                    <span className="block text-[9px] font-normal text-slate-400">Realized Profit</span>
+
+                  {/* Column 3: Paid Revenue */}
+                  <th
+                    onClick={() => handleSort("revenue")}
+                    className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100/70 transition-colors group/th"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Paid Revenue (₹)</span>
+                      {sortField === "revenue" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="w-3 h-3 text-orange-600" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3 text-orange-600" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover/th:text-slate-400 opacity-0 group-hover/th:opacity-100 transition-opacity" />
+                      )}
+                    </div>
                   </th>
-                  <th className="py-3.5 px-4 text-center">Actions</th>
+
+                  {/* Column 4: Expense */}
+                  <th
+                    onClick={() => handleSort("taggedExpense")}
+                    className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100/70 transition-colors group/th"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Expense (₹)</span>
+                      {sortField === "taggedExpense" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="w-3 h-3 text-orange-600" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3 text-orange-600" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover/th:text-slate-400 opacity-0 group-hover/th:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+
+                  {/* Column 5: Total Cost */}
+                  <th
+                    onClick={() => handleSort("totalCost")}
+                    className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100/70 transition-colors group/th"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Total Cost (₹)</span>
+                      {sortField === "totalCost" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="w-3 h-3 text-orange-600" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3 text-orange-600" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover/th:text-slate-400 opacity-0 group-hover/th:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+
+                  {/* Column 6: Gross Profit */}
+                  <th
+                    onClick={() => handleSort("grossProfit")}
+                    className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100/70 transition-colors group/th"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Gross Profit (₹)</span>
+                      {sortField === "grossProfit" || sortField === "grossMargin" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="w-3 h-3 text-orange-600" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3 text-orange-600" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover/th:text-slate-400 opacity-0 group-hover/th:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+
+                  {/* Column 7: Actions */}
+                  <th className="py-3.5 px-4 text-center w-32">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+
+              {/* Table Body */}
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {loadingReport && !reportData ? (
                   <tr>
-                    <td colSpan={6} className="p-12 text-center text-slate-500">
-                      <RefreshCw className="w-7 h-7 text-orange-500 animate-spin mx-auto mb-2" />
-                      <span className="font-semibold text-slate-700">Aggregating test unit economics...</span>
-                      <p className="text-xs text-slate-400 mt-1">Calculating realized revenue and direct cost allocations</p>
+                    <td colSpan={7} className="p-14 text-center text-slate-500">
+                      <RefreshCw className="w-8 h-8 text-orange-500 animate-spin mx-auto mb-3" />
+                      <span className="font-bold text-slate-800 text-sm">Aggregating test unit economics...</span>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Reconciling settled invoices, direct expense tags, and shared lab overheads
+                      </p>
                     </td>
                   </tr>
-                ) : filteredTests.length === 0 ? (
+                ) : sortedTests.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-12 text-center text-slate-400 font-medium">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <FlaskConical className="w-8 h-8 text-slate-300" />
-                        <span className="text-sm font-bold text-slate-700">No test records match the selected filters</span>
-                        <p className="text-xs text-slate-400">Try broadening your search term or selecting &quot;All Time&quot;.</p>
+                    <td colSpan={7} className="p-14 text-center text-slate-400 font-medium">
+                      <div className="flex flex-col items-center justify-center gap-2.5">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                          <FlaskConical className="w-6 h-6" />
+                        </div>
+                        <span className="text-sm font-bold text-slate-700">No test records match your filter criteria</span>
+                        <p className="text-xs text-slate-400 max-w-sm">
+                          Try resetting the filters, selecting &quot;All Time&quot;, or removing search terms.
+                        </p>
+                        {isFilterActive && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSearchQuery("");
+                              setNablFilter("all");
+                              setCategoryFilter("all");
+                              setBranchFilter("all");
+                              setPresetRange("this_month");
+                              setSelectedPeriod("this_month");
+                              setQuickFilter("all");
+                            }}
+                            className="mt-2 text-xs font-bold text-orange-600 bg-orange-50 border-orange-200 hover:bg-orange-100 rounded-xl"
+                          >
+                            Reset All Filters
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  filteredTests.map((t: any) => {
+                  sortedTests.map((t: any) => {
+                    const isProfit = t.grossProfit > 0;
+                    const isLoss = t.grossProfit < 0;
                     const margin = Number(t.grossMargin || 0);
-                    const marginClass =
-                      margin >= 50
-                        ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                        : margin >= 20
-                        ? "bg-blue-50 text-blue-800 border-blue-300"
-                        : margin >= 0
-                        ? "bg-amber-50 text-amber-800 border-amber-300"
-                        : "bg-rose-50 text-rose-800 border-rose-300";
-
-                    const isExpanded = !!expandedRowIds[t.testId];
 
                     return (
                       <React.Fragment key={t.testId}>
-                        <tr className="hover:bg-slate-50/80 transition-colors group">
+                        <tr className="hover:bg-orange-50/25 transition-colors group">
                           {/* 1. Test Parameter & Material */}
                           <td className="py-4 px-4">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[11px] font-bold border border-slate-200/80">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold border border-slate-200/80">
                                 {t.materialGroup}
                               </span>
                               {t.isNabl && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-300">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                   NABL
                                 </span>
                               )}
                             </div>
+
                             <div className="font-bold text-slate-900 text-sm mt-1 tracking-tight group-hover:text-orange-600 transition-colors">
                               {t.testName}
                             </div>
-                            <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
-                              <span>Discipline: <strong className="font-semibold text-slate-700">{t.discipline}</strong></span>
-                              <span>·</span>
-                              <span>Linked to <strong className="font-semibold text-slate-700">{t.inwardCount}</strong> Inward Jobs</span>
+
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              <span>
+                                Discipline:{" "}
+                                <strong className="font-semibold text-slate-700">{t.discipline}</strong>
+                              </span>
                             </div>
                           </td>
 
                           {/* 2. Volume */}
                           <td className="py-4 px-4 text-center">
-                            <span className="inline-block px-3 py-1 rounded-xl bg-slate-100 text-slate-800 font-mono font-black text-xs border border-slate-200/80 shadow-2xs">
-                              {t.testCount}
-                            </span>
+                            <div className="inline-flex flex-col items-center">
+                              <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-800 font-mono font-bold text-xs border border-slate-200/80 shadow-2xs">
+                                {t.testCount}
+                              </span>
+                              <span className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                                {t.inwardCount} {t.inwardCount === 1 ? "Job" : "Jobs"}
+                              </span>
+                            </div>
                           </td>
 
                           {/* 3. Paid Revenue */}
                           <td className="py-4 px-4 text-right">
                             {t.revenue > 0 ? (
                               <div>
-                                <div className="font-mono font-bold text-blue-950 text-sm tracking-tight">
+                                <div className="font-mono font-bold text-slate-900 text-sm tracking-tight tabular-nums">
                                   {fmt(t.revenue)}
                                 </div>
                                 {t.paidInvoices && t.paidInvoices.length > 0 && (
                                   <div
-                                    className="text-[10px] text-emerald-700 font-semibold flex items-center justify-end gap-1 mt-1"
+                                    className="text-[10px] text-emerald-700 font-medium flex items-center justify-end gap-1 mt-0.5"
                                     title={t.paidInvoices
                                       .map((p: any) => `${p.invoiceNo}: ${fmt(p.testRevenue)} (${p.status})`)
                                       .join(" | ")}
                                   >
-                                    <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 rounded-md">
+                                    <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-1.5 py-0.2 rounded text-[10px] font-mono">
                                       <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
-                                      <span className="truncate max-w-[140px] font-mono">
+                                      <span className="truncate max-w-[120px]">
                                         {t.paidInvoices.map((p: any) => p.invoiceNo).join(", ")}
                                       </span>
                                     </span>
@@ -861,91 +1162,150 @@ export function TestBillingExpensesTab({
                                 )}
                               </div>
                             ) : (
-                              <div>
-                                <span className="text-slate-400 font-mono text-xs">₹0.00</span>
-                                <span className="text-[10px] text-slate-400 block mt-0.5">Pending collection</span>
-                              </div>
+                              <span className="font-mono text-slate-400 text-xs tabular-nums">₹0.00</span>
                             )}
                           </td>
 
-                          {/* 4. Total Testing Cost */}
+                          {/* 4. Expense (Direct Tagged Cost) */}
                           <td className="py-4 px-4 text-right">
-                            <div className="font-mono font-bold text-rose-700 text-sm tracking-tight">
-                              {fmt(t.totalCost)}
-                            </div>
                             {t.taggedExpense > 0 ? (
-                              <span className="inline-block text-[10px] text-indigo-700 font-semibold bg-indigo-50 border border-indigo-200/70 px-2 py-0.5 rounded-md mt-1">
-                                Tagged: {fmt(t.taggedExpense)}
-                              </span>
+                              <div>
+                                <div className="font-mono font-bold text-indigo-950 text-sm tracking-tight tabular-nums">
+                                  {fmt(t.taggedExpense)}
+                                </div>
+                                <span className="inline-block text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200/70 px-1.5 py-0.2 rounded mt-0.5 font-medium">
+                                  Tagged
+                                </span>
+                              </div>
                             ) : (
-                              <span className="text-[10px] text-slate-400 block mt-0.5">
-                                Shared / Lab
-                              </span>
+                              <span className="font-mono text-slate-400 text-xs tabular-nums">₹0.00</span>
                             )}
                           </td>
 
-                          {/* 5. Gross Profit & Margin */}
+                          {/* 5. Total Testing Cost */}
                           <td className="py-4 px-4 text-right">
-                            <div
-                              className={`font-mono font-bold text-sm tracking-tight ${
-                                t.grossProfit >= 0 ? "text-emerald-700" : "text-rose-700"
-                              }`}
-                            >
-                              {fmt(t.grossProfit)}
-                            </div>
-                            <div className="mt-1 flex justify-end">
-                              <span
-                                className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-2xs ${marginClass}`}
+                            {t.totalCost > 0 ? (
+                              <div>
+                                <div className="font-mono font-bold text-slate-800 text-sm tracking-tight tabular-nums">
+                                  {fmt(t.totalCost)}
+                                </div>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">
+                                  Direct + Lab
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="font-mono text-slate-400 text-xs tabular-nums">₹0.00</span>
+                            )}
+                          </td>
+
+                          {/* 6. Gross Profit */}
+                          <td className="py-4 px-4 text-right">
+                            <div>
+                              <div
+                                className={`font-mono font-bold text-sm tracking-tight tabular-nums ${
+                                  isProfit ? "text-emerald-700" : isLoss ? "text-rose-700" : "text-slate-600"
+                                }`}
                               >
-                                {margin.toFixed(1)}% Margin
-                              </span>
+                                {fmt(t.grossProfit)}
+                              </div>
+                              {(t.revenue > 0 || t.totalCost > 0) && (
+                                <div className="mt-1 flex justify-end">
+                                  <span
+                                    className={`inline-block px-2 py-0.2 rounded-full text-[10px] font-bold font-mono border shadow-2xs ${
+                                      margin >= 50
+                                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                        : margin >= 20
+                                        ? "bg-blue-50 text-blue-800 border-blue-200"
+                                        : margin >= 0
+                                        ? "bg-slate-100 text-slate-700 border-slate-200"
+                                        : "bg-rose-50 text-rose-800 border-rose-200"
+                                    }`}
+                                  >
+                                    {margin.toFixed(1)}% Margin
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </td>
 
-                          {/* 6. Actions & Details Dropdown Toggle */}
+                          {/* 7. Actions */}
                           <td className="py-4 px-4 text-center whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => toggleRow(t.testId)}
-                                className={`h-8 px-3 text-xs font-bold rounded-xl gap-1.5 cursor-pointer transition-all shadow-2xs ${
-                                  isExpanded
-                                    ? "bg-indigo-100 text-indigo-900 border border-indigo-200"
-                                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                                }`}
-                                title="View complete cost breakdown and paid invoice details"
-                              >
-                                <span>Details</span>
-                                <ChevronDown
-                                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                                    isExpanded ? "rotate-180 text-indigo-600" : "text-slate-500"
-                                  }`}
-                                />
-                              </Button>
-
+                            <div className="flex items-center justify-center">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleAddExpenseForTest(t)}
-                                className="h-8 px-3 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-200 rounded-xl gap-1.5 cursor-pointer shadow-2xs hover:scale-105 transition-all"
+                                className="h-8 px-3 text-xs font-semibold text-slate-700 hover:text-orange-600 bg-white hover:bg-orange-50/60 border-slate-200 hover:border-orange-200 rounded-xl gap-1.5 cursor-pointer shadow-2xs hover:scale-105 transition-all"
                                 title={`Allocate direct test cost for ${t.testName}`}
                               >
-                                <Plus className="w-3.5 h-3.5 text-rose-600" />
+                                <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-600" />
                                 <span>Add Cost</span>
                               </Button>
                             </div>
                           </td>
                         </tr>
-                        </React.Fragment>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                      </React.Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+
+              {/* Table Footer: Sticky Summary Totals */}
+              {sortedTests.length > 0 && (
+                <tfoot className="bg-slate-50/95 border-t-2 border-slate-300 text-xs font-bold text-slate-900 sticky bottom-0 z-10 backdrop-blur-md">
+                  <tr>
+                    <td className="py-4 px-4 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs uppercase tracking-wider text-slate-600">
+                          Summary Totals
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded-full">
+                          {sortedTests.length} Parameters
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className="font-mono font-bold text-slate-900 text-xs px-2.5 py-1 rounded-lg bg-white border border-slate-200 shadow-2xs">
+                        {tableSummary.totalTests} tests
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div className="font-mono font-bold text-slate-900 text-sm tabular-nums">
+                        {fmt(tableSummary.totalRevenue)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div className="font-mono font-bold text-indigo-950 text-sm tabular-nums">
+                        {fmt(tableSummary.totalTaggedExpense)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div className="font-mono font-bold text-rose-700 text-sm tabular-nums">
+                        {fmt(tableSummary.totalCost)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div
+                        className={`font-mono font-black text-sm tabular-nums ${
+                          tableSummary.grossProfit >= 0 ? "text-emerald-700" : "text-rose-700"
+                        }`}
+                      >
+                        {fmt(tableSummary.grossProfit)}
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-mono">
+                        {Number(tableSummary.overallMargin || 0).toFixed(1)}% Margin
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className="text-[10px] text-slate-400 font-medium">Auto-aggregated</span>
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}

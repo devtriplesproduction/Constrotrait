@@ -302,7 +302,7 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Scale className="w-5 h-5 text-blue-600" />
+              <Scale className="w-5 h-5 text-orange-600" />
               <span>Bank Statement Reconciliation</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -313,7 +313,7 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
           {/* Quick Actions */}
           <div className="flex items-center gap-2">
             <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer transition-all shadow-xs">
-              <Upload className="w-3.5 h-3.5 text-blue-600" />
+              <Upload className="w-3.5 h-3.5 text-orange-600" />
               <span>Import Statement (CSV)</span>
               <input
                 type="file"
@@ -343,7 +343,7 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
               Select Financial Account
             </label>
             <select
-              className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-medium focus:border-blue-500 outline-none"
+              className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-medium focus:border-orange-500 outline-none"
               value={selectedAccountId}
               onChange={(e) => setSelectedAccountId(e.target.value)}
             >
@@ -361,7 +361,7 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
             </label>
             <input
               type="date"
-              className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-medium focus:border-blue-500 outline-none"
+              className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-medium focus:border-orange-500 outline-none"
               value={statementDate}
               onChange={(e) => setStatementDate(e.target.value)}
             />
@@ -375,7 +375,7 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
               type="number"
               step="0.01"
               placeholder="e.g. 250450.00"
-              className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:border-blue-500 outline-none"
+              className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:border-orange-500 outline-none"
               value={statementBalance}
               onChange={(e) => setStatementBalance(e.target.value)}
             />
@@ -388,7 +388,7 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
             <input
               type="text"
               placeholder="e.g. Month-end statement match"
-              className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-medium focus:border-blue-500 outline-none"
+              className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-medium focus:border-orange-500 outline-none"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -411,14 +411,14 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
           </div>
 
           {/* ERP Calculated Ledger Balance Card */}
-          <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/30 space-y-1">
-            <span className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider">
+          <div className="p-4 rounded-xl border border-orange-200 bg-orange-50/40 space-y-1">
+            <span className="text-[11px] font-semibold text-orange-700 uppercase tracking-wider">
               ERP Calculated Ledger Balance
             </span>
-            <div className="text-xl font-bold text-blue-900">
+            <div className="text-xl font-bold text-orange-950">
               {fmt(effectiveErpBalance)}
             </div>
-            <div className="text-[11px] text-blue-600 flex items-center justify-between">
+            <div className="text-[11px] text-orange-700/80 flex items-center justify-between">
               <span>Opening: {fmt(erpCalc?.openingBalance || 0)}</span>
               <span>Inflows: +{fmt(erpCalc?.totalInflows || 0)}</span>
               <span>Outflows: -{fmt(erpCalc?.totalOutflows || 0)}</span>
@@ -485,7 +485,7 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
           <div>
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <span>Transaction Clearance Checklist</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
                 {clearedIds.size} of {transactions.length} Cleared
               </span>
             </h4>
@@ -498,7 +498,7 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
             <button
               type="button"
               onClick={handleSelectAll}
-              className="px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer"
+              className="px-2.5 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-50 rounded-lg cursor-pointer"
             >
               Select All
             </button>
@@ -593,7 +593,7 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
                           type="checkbox"
                           checked={isCleared}
                           onChange={() => {}} // handled by row click
-                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
                         />
                       </td>
                       <td className="p-3 font-medium text-slate-600 whitespace-nowrap">
@@ -687,7 +687,7 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
                       <td className="p-2.5 text-right font-semibold text-slate-800">
                         {fmt(h.statement_balance)}
                       </td>
-                      <td className="p-2.5 text-right font-semibold text-blue-700">
+                      <td className="p-2.5 text-right font-semibold text-slate-800">
                         {fmt(h.erp_balance)}
                       </td>
                       <td className="p-2.5 text-right">

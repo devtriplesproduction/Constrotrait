@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserWithRoles } from "./auth.service";
-import { canManageAccountingTransactions, canViewAccounting, canApproveAccounting, isSuperAdmin } from "@/config/roles";
+import { canManageAccountingTransactions, canViewAccounting, canApproveAccounting, isSuperAdmin, canManageClientsAndJobs, isBranchManager } from "@/config/roles";
 
 const APPROVAL_THRESHOLD = 100000;
 
@@ -115,8 +115,10 @@ export async function getAccountingDashboard(branchId?: string) {
 
   let quotationsQuery = supabase.from("quotations").select(`
     *,
-    clients ( id, name, email, mobile, address, gst_no, contact_person ),
-    accounting_projects ( id, name )
+    clients ( id, name, company_name, email, mobile, address, gst_no, contact_person ),
+    branches ( id, name ),
+    accounting_projects ( id, name ),
+    inward:job_entries!quotations_inward_id_fkey ( id, uid, uid_label, inward_on, project_name )
   `).order("created_at", { ascending: false }).limit(50);
   if (effectiveBranch) quotationsQuery = quotationsQuery.eq("branch_id", effectiveBranch);
   const { data: quotations } = await quotationsQuery;
@@ -147,7 +149,7 @@ export async function getAccountingDashboard(branchId?: string) {
         material_description,
         sample_quantity,
         date_of_receiving,
-        test_master ( id, component_parameter, specific_test, discipline_group, material_product, unit )
+        test_master ( id, component_parameter, specific_test, discipline_group, material_product, unit, category )
       ),
       invoices (
         id,
@@ -192,6 +194,12 @@ export async function getAccountingDashboard(branchId?: string) {
   if (effectiveBranch) clientsQuery = clientsQuery.eq("branch_id", effectiveBranch);
   const { data: clients } = await clientsQuery;
 
+  const { data: testMasters } = await (supabase as any)
+    .from("test_master")
+    .select("id, specific_test, component_parameter, test_method, category, is_nabl, unit, material_product, particulars, tested_as_per_is, sample_size")
+    .order("component_parameter", { ascending: true })
+    .limit(1000);
+
   return {
     success: true,
     data: {
@@ -210,6 +218,7 @@ export async function getAccountingDashboard(branchId?: string) {
       clients: clients || [],
       templates: templates || [],
       categories: categories || [],
+      testMasters: testMasters || [],
     },
   };
 }
@@ -244,7 +253,8 @@ export async function createExpense(payload: any) {
   if (Number(payload.amount) > APPROVAL_THRESHOLD) requires_approval = true;
   else if (payload.is_reimbursement && !payload.bill_attached && Number(payload.amount) >= 500) requires_approval = true;
 
-  const resolvedExpenseType = payload.expense_type || (payload.inward_id ? "inward" : "company");
+  const isTest = payload.expense_type === "test" || Boolean(payload.test_master_id);
+  const resolvedExpenseType = isTest ? "test" : (payload.expense_type || (payload.inward_id ? "inward" : "company"));
   const isCompany = (resolvedExpenseType === "company" || resolvedExpenseType === "inhouse") && !payload.inward_id && !payload.project_id;
 
   const supabase = await createClient();
@@ -252,6 +262,10 @@ export async function createExpense(payload: any) {
     branch_id: user.branch_id,
     ...payload,
     expense_type: resolvedExpenseType,
+    inward_id: isTest ? null : payload.inward_id,
+    project_id: isTest ? null : payload.project_id,
+    job_entry_test_id: isTest ? null : payload.job_entry_test_id,
+    test_master_id: isTest ? (payload.test_master_id || payload.job_entry_test_id || null) : (payload.test_master_id || null),
     is_general_expense: isCompany,
     requires_approval,
     approval_status: requires_approval ? "pending" : "approved",
@@ -267,7 +281,7 @@ export async function createExpense(payload: any) {
       financial_accounts ( id, name, account_type, bank_name ),
       accounting_projects ( id, name ),
       job_entries ( id, uid, uid_label, inward_on, project_name, clients ( id, name ) ),
-      job_entry_tests ( id, material_description, test_master ( id, specific_test, component_parameter, material_product ) )
+      job_entry_tests ( id, material_description, test_master ( id, specific_test, component_parameter, material_product, category ) )
     `)
     .single();
 
@@ -315,7 +329,7 @@ export async function approveExpense(expenseId: string, approve: boolean, remark
       financial_accounts ( id, name, account_type, bank_name ),
       accounting_projects ( id, name ),
       job_entries ( id, uid, uid_label, inward_on, project_name, clients ( id, name ) ),
-      job_entry_tests ( id, material_description, test_master ( id, specific_test, component_parameter, material_product ) )
+      job_entry_tests ( id, material_description, test_master ( id, specific_test, component_parameter, material_product, category ) )
     `)
     .single();
 
@@ -924,14 +938,124 @@ export async function getQuotations(branchId?: string) {
     .from("quotations")
     .select(`
       *,
-      clients ( id, name, email, mobile, address, gst_no, contact_person ),
-      accounting_projects ( id, name )
+      clients ( id, name, company_name, email, mobile, address, gst_no, contact_person ),
+      branches ( id, name ),
+      accounting_projects ( id, name ),
+      inward:job_entries!quotations_inward_id_fkey ( id, uid, uid_label, inward_on, project_name )
     `)
     .order("created_at", { ascending: false });
   if (effectiveBranch) q = q.eq("branch_id", effectiveBranch);
   const { data, error } = await q;
   if (error) return { success: false, error: error.message };
   return { success: true, data };
+}
+
+export async function getQuotationById(quotationId: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canViewAccounting(user.roles)) return { success: false, error: "Unauthorized" };
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("quotations")
+    .select(`
+      *,
+      clients ( id, name, company_name, email, mobile, gst_no, address, contact_person ),
+      branches ( id, name, address, phone, email, gst_no ),
+      accounting_projects ( id, name ),
+      inward:job_entries!quotations_inward_id_fkey ( id, uid, uid_label, inward_on, project_name )
+    `)
+    .eq("id", quotationId)
+    .single();
+
+  if (error) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("quotations")
+      .select(`
+        *,
+        clients ( id, name, company_name, email, mobile, gst_no, address, contact_person ),
+        accounting_projects ( id, name ),
+        inward:job_entries!quotations_inward_id_fkey ( id, uid, uid_label, inward_on, project_name )
+      `)
+      .eq("id", quotationId)
+      .single();
+
+    if (fallbackError) return { success: false, error: fallbackError.message };
+    return { success: true, data: fallbackData };
+  }
+
+  return { success: true, data };
+}
+
+export async function getQuotationFormData(branchId?: string, quotationId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || (!canViewAccounting(user.roles) && !canManageAccountingTransactions(user.roles))) {
+    return { success: false, error: "Unauthorized" };
+  }
+  const supabase = await createClient();
+  const effectiveBranch = branchScope(user, branchId);
+
+  try {
+    let clientsQuery = supabase
+      .from("clients")
+      .select("id, name, company_name, contact_person, email, mobile, gst_no, address, branch_id")
+      .order("name", { ascending: true });
+    if (effectiveBranch) {
+      clientsQuery = clientsQuery.or(`branch_id.eq.${effectiveBranch},branch_id.is.null`);
+    }
+
+    let projectsQuery = supabase
+      .from("accounting_projects")
+      .select("id, name, client_id, branch_id")
+      .order("name", { ascending: true });
+    if (effectiveBranch) {
+      projectsQuery = projectsQuery.or(`branch_id.eq.${effectiveBranch},branch_id.is.null`);
+    }
+
+    let templatesQuery = supabase
+      .from("quotation_templates")
+      .select("*")
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (effectiveBranch) {
+      templatesQuery = templatesQuery.or(`branch_id.eq.${effectiveBranch},branch_id.is.null`);
+    }
+
+    const testMastersQuery = (supabase as any)
+      .from("test_master")
+      .select("id, specific_test, component_parameter, test_method, category, is_nabl, unit, material_product, particulars, tested_as_per_is, sample_size")
+      .order("specific_test", { ascending: true })
+      .limit(1000);
+
+    const quotationPromise = quotationId ? getQuotationById(quotationId) : Promise.resolve({ success: true, data: null });
+
+    const [
+      { data: clients },
+      { data: projects },
+      { data: templates },
+      { data: testMasters },
+      quotationRes,
+    ] = await Promise.all([
+      clientsQuery,
+      projectsQuery,
+      templatesQuery,
+      testMastersQuery,
+      quotationPromise,
+    ]);
+
+    return {
+      success: true,
+      data: {
+        clients: clients || [],
+        projects: projects || [],
+        templates: templates || [],
+        quotation: quotationRes?.success ? quotationRes.data : null,
+        testMasters: testMasters || [],
+      },
+    };
+  } catch (error: any) {
+    console.error("Error fetching quotation form data:", error);
+    return { success: false, error: error.message || "Failed to fetch quotation form data" };
+  }
 }
 
 export async function updateQuotationStatus(
@@ -1047,6 +1171,8 @@ export async function reviseQuotation(quotationId: string, payload: any) {
       remarks: payload.remarks || current.remarks,
       rework_notes: payload.rework_notes || null,
       status: payload.status || "draft",
+      department: payload.department !== undefined ? payload.department : current.department,
+      category: payload.category !== undefined ? payload.category : current.category,
     })
     .eq("id", quotationId)
     .select(`
@@ -1070,9 +1196,80 @@ export async function reviseQuotation(quotationId: string, payload: any) {
     terms: data.terms,
     clauses: data.clauses,
     remarks: data.remarks,
+    department: payload.department !== undefined ? payload.department : current.department,
+    category: payload.category !== undefined ? payload.category : current.category,
     status: data.status,
     action_type: "revised",
     action_reason: payload.revision_reason || `Revised to Version ${nextVersion}`,
+    performed_by: user.id,
+  });
+
+  return { success: true, data };
+}
+
+export async function linkQuotationToInward(quotationId: string, jobEntryId: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || (!canManageAccountingTransactions(user.roles) && !canManageClientsAndJobs(user.roles))) {
+    return { success: false, error: "Unauthorized" };
+  }
+  const supabase = await createClient();
+
+  const { data: quotation, error: qErr } = await supabase
+    .from("quotations")
+    .select("*")
+    .eq("id", quotationId)
+    .single();
+
+  if (qErr || !quotation) {
+    return { success: false, error: "Quotation not found" };
+  }
+
+  // Update quotations table
+  const { data, error } = await supabase
+    .from("quotations")
+    .update({
+      inward_id: jobEntryId,
+      status: "inward_created",
+    })
+    .eq("id", quotationId)
+    .select()
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  // Update job_entries table
+  await (supabase as any)
+    .from("job_entries")
+    .update({ quotation_id: quotationId })
+    .eq("id", jobEntryId);
+
+  // Record audit log and version record
+  await (supabase as any).from("quotation_versions").insert({
+    quotation_id: quotationId,
+    version_number: quotation.version_number || 1,
+    items: quotation.items || [],
+    subtotal: quotation.subtotal,
+    discount_amount: quotation.discount_amount,
+    gst_rate: quotation.gst_rate,
+    gst_amount: quotation.gst_amount,
+    total_amount: quotation.total_amount,
+    terms: quotation.terms || "",
+    clauses: quotation.clauses || [],
+    remarks: quotation.remarks || "",
+    department: quotation.department,
+    category: quotation.category,
+    status: "inward_created",
+    action_type: "converted_to_inward",
+    action_reason: `Quotation converted to Inward job entry ${jobEntryId}`,
+    performed_by: user.id,
+  });
+
+  await supabase.from("accounting_audit_log").insert({
+    branch_id: user.branch_id || quotation.branch_id,
+    table_name: "quotations",
+    record_id: quotationId,
+    action: "converted_to_inward",
+    new_data: { quotationId, jobEntryId },
     performed_by: user.id,
   });
 
@@ -1222,6 +1419,8 @@ export async function createQuotationWithItems(payload: any) {
     terms: payload.terms || (payload.clauses && payload.clauses.length > 0 ? payload.clauses.map((c: any) => `${c.title || ''}:\n${c.content || ''}`).join('\n\n') : null),
     clauses: payload.clauses || [],
     remarks: payload.remarks || null,
+    department: payload.department || null,
+    category: payload.category || null,
     status: "draft",
     version_number: 1,
     created_by: user.id,
@@ -1240,6 +1439,8 @@ export async function createQuotationWithItems(payload: any) {
     terms: data.terms || "",
     clauses: data.clauses || [],
     remarks: data.remarks || "",
+    department: payload.department || null,
+    category: payload.category || null,
     status: "draft",
     action_type: "created",
     action_reason: "Initial quotation drafted",
@@ -1284,6 +1485,43 @@ export async function createInvoiceWithItems(payload: any) {
     created_by: user.id,
   }).select().single();
   if (error) return { success: false, error: error.message };
+
+  // If quotation_id was provided, update quotation status to accepted and log version
+  if (payload.quotation_id) {
+    await supabase
+      .from("quotations")
+      .update({ status: "accepted" })
+      .eq("id", payload.quotation_id);
+
+    const { data: qData } = await supabase
+      .from("quotations")
+      .select("*")
+      .eq("id", payload.quotation_id)
+      .single();
+
+    if (qData) {
+      await (supabase as any).from("quotation_versions").insert({
+        quotation_id: qData.id,
+        version_number: qData.version_number || 1,
+        items: qData.items || [],
+        subtotal: qData.subtotal,
+        discount_amount: qData.discount_amount,
+        gst_rate: qData.gst_rate,
+        gst_amount: qData.gst_amount,
+        total_amount: qData.total_amount,
+        terms: qData.terms || "",
+        clauses: qData.clauses || [],
+        remarks: qData.remarks || "",
+        department: qData.department,
+        category: qData.category,
+        status: "accepted",
+        action_type: "proforma_created",
+        action_reason: `Proforma Invoice ${data.invoice_no} generated`,
+        performed_by: user.id,
+      });
+    }
+  }
+
   return { success: true, data };
 }
 
@@ -1313,7 +1551,7 @@ export async function getInwardsForAccounting(branchId?: string) {
         material_description,
         sample_quantity,
         date_of_receiving,
-        test_master ( id, component_parameter, specific_test, discipline_group, material_product, unit )
+        test_master ( id, component_parameter, specific_test, discipline_group, material_product, unit, category )
       ),
       invoices (
         id,
@@ -1805,7 +2043,7 @@ export async function getQuotationTemplates(branchId?: string) {
 
 export async function saveQuotationTemplate(payload: any) {
   const user = await getAuthenticatedUserWithRoles();
-  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  if (!user || (!canManageAccountingTransactions(user.roles) && !isBranchManager(user.roles))) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
 
   // If setting default, unset previous default in the branch
@@ -1850,7 +2088,7 @@ export async function saveQuotationTemplate(payload: any) {
 
 export async function deleteQuotationTemplate(id: string) {
   const user = await getAuthenticatedUserWithRoles();
-  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  if (!user || (!canManageAccountingTransactions(user.roles) && !isBranchManager(user.roles))) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
   const { error } = await supabase.from("quotation_templates").delete().eq("id", id);
   if (error) return { success: false, error: error.message };
@@ -1859,7 +2097,7 @@ export async function deleteQuotationTemplate(id: string) {
 
 export async function duplicateQuotationTemplate(id: string) {
   const user = await getAuthenticatedUserWithRoles();
-  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  if (!user || (!canManageAccountingTransactions(user.roles) && !isBranchManager(user.roles))) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
   const { data: original, error: fetchErr } = await supabase.from("quotation_templates").select("*").eq("id", id).single();
   if (fetchErr || !original) return { success: false, error: "Template not found" };
@@ -1890,7 +2128,7 @@ export async function duplicateQuotationTemplate(id: string) {
 
 export async function setDefaultQuotationTemplate(id: string) {
   const user = await getAuthenticatedUserWithRoles();
-  if (!user || !canManageAccountingTransactions(user.roles)) return { success: false, error: "Unauthorized" };
+  if (!user || (!canManageAccountingTransactions(user.roles) && !isBranchManager(user.roles))) return { success: false, error: "Unauthorized" };
   const supabase = await createClient();
 
   // Reset defaults
@@ -2052,7 +2290,7 @@ export async function getLedgersData(filters?: {
       financial_accounts ( id, name, account_type, bank_name ),
       accounting_projects ( id, name ),
       job_entries ( id, uid, uid_label, inward_on, project_name, clients ( id, name ) ),
-      job_entry_tests ( id, material_description, test_master ( id, specific_test, component_parameter, material_product ) )
+      job_entry_tests ( id, material_description, test_master ( id, specific_test, component_parameter, material_product, category ) )
     `)
     .eq("status", "recorded")
     .order("expense_date", { ascending: false });
@@ -2210,6 +2448,7 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
     .select(`
       id,
       amount,
+      expense_date,
       expense_type,
       inward_id,
       job_entry_test_id,
@@ -2246,12 +2485,33 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
 
   // Separate expenses into direct test-tagged vs general inward expenses
   const testSpecificExpensesMap: Record<string, number> = {};
+  const testSpecificExpensesListMap: Record<
+    string,
+    Array<{
+      id: string;
+      amount: number;
+      description: string;
+      category: string;
+      expense_date?: string;
+    }>
+  > = {};
   const inwardGeneralExpensesMap: Record<string, number> = {};
 
-  (expensesData || []).filter((e: any) => e.expense_type === "inward").forEach((e: any) => {
+  (expensesData || []).filter((e: any) => e.expense_type === "inward" || e.expense_type === "test").forEach((e: any) => {
     const amt = Number(e.amount || 0);
-    if (e.job_entry_test_id) {
-      testSpecificExpensesMap[e.job_entry_test_id] = (testSpecificExpensesMap[e.job_entry_test_id] || 0) + amt;
+    const targetKey = e.test_master_id || e.job_entry_test_id;
+    if (targetKey) {
+      testSpecificExpensesMap[targetKey] = (testSpecificExpensesMap[targetKey] || 0) + amt;
+      if (!testSpecificExpensesListMap[targetKey]) {
+        testSpecificExpensesListMap[targetKey] = [];
+      }
+      testSpecificExpensesListMap[targetKey].push({
+        id: e.id,
+        amount: amt,
+        description: e.description || "Direct test expense",
+        category: (e.expense_categories as any)?.name || "Direct Testing",
+        expense_date: e.expense_date,
+      });
     } else if (e.inward_id) {
       inwardGeneralExpensesMap[e.inward_id] = (inwardGeneralExpensesMap[e.inward_id] || 0) + amt;
     }
@@ -2272,6 +2532,7 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
   const totalTestsCount = (testsData || []).length;
 
   interface TestPaidInvoiceItem {
+    invoiceId?: string;
     invoiceNo: string;
     paidAmount: number;
     totalAmount: number;
@@ -2291,10 +2552,23 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
     testCount: number;
     inwardCount: number;
     inwardIds: Set<string>;
+    inwardJobs: Array<{
+      id: string;
+      uidLabel: string;
+      projectName?: string;
+      clientName?: string;
+    }>;
     clientNames: Set<string>;
     revenue: number;
     paidInvoices: TestPaidInvoiceItem[];
     taggedExpense: number;
+    taggedExpensesList: Array<{
+      id: string;
+      amount: number;
+      description: string;
+      category: string;
+      expense_date?: string;
+    }>;
     sharedInwardExpense: number;
     inhouseExpense: number;
     totalCost: number;
@@ -2336,10 +2610,12 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
         testCount: 0,
         inwardCount: 0,
         inwardIds: new Set<string>(),
+        inwardJobs: [],
         clientNames: new Set<string>(),
         revenue: 0,
         paidInvoices: [],
         taggedExpense: 0,
+        taggedExpensesList: [],
         sharedInwardExpense: 0,
         inhouseExpense: 0,
         totalCost: 0,
@@ -2354,6 +2630,14 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
     agg.testCount += 1;
     if (jobEntryId) {
       agg.inwardIds.add(jobEntryId);
+      if (!agg.inwardJobs.some((j) => j.id === jobEntryId)) {
+        agg.inwardJobs.push({
+          id: jobEntryId,
+          uidLabel: (je?.uid_label as string) || (je?.uid as string) || `INW-${jobEntryId.slice(0, 8)}`,
+          projectName: (je?.project_name as string) || undefined,
+          clientName: (clientObj?.name as string) || undefined,
+        });
+      }
     }
     const clientName = clientObj?.name as string | undefined;
     if (clientName) agg.clientNames.add(clientName);
@@ -2427,6 +2711,7 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
             exists.testRevenue = Math.round((exists.testRevenue + recognizedForTest) * 100) / 100;
           } else {
             agg.paidInvoices.push({
+              invoiceId: inv.id,
               invoiceNo: inv.invoice_no,
               paidAmount: paidAmt,
               totalAmount: totalAmt,
@@ -2440,15 +2725,27 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
 
     agg.revenue += testRevenue;
 
-    // Direct tagged expense specifically linked to this test instance
-    const tagged = testSpecificExpensesMap[testInstanceId] || 0;
+    // Direct tagged expense specifically linked to this test instance or test master
+    const testMasterExpenses = testMasterId ? (testSpecificExpensesMap[testMasterId] || 0) : 0;
+    const tagged = (testSpecificExpensesMap[testInstanceId] || 0) + testMasterExpenses;
     agg.taggedExpense += tagged;
-
-    // General inward expenses apportioned to this test
-    if (jobEntryId && inwardGeneralExpensesMap[jobEntryId]) {
-      const countInInward = testsPerInward[jobEntryId] || 1;
-      agg.sharedInwardExpense += inwardGeneralExpensesMap[jobEntryId] / countInInward;
+    if (testSpecificExpensesListMap[testInstanceId]) {
+      testSpecificExpensesListMap[testInstanceId].forEach((expItem) => {
+        if (!agg.taggedExpensesList.some((e) => e.id === expItem.id)) {
+          agg.taggedExpensesList.push(expItem);
+        }
+      });
     }
+    if (testMasterId && testSpecificExpensesListMap[testMasterId]) {
+      testSpecificExpensesListMap[testMasterId].forEach((expItem) => {
+        if (!agg.taggedExpensesList.some((e) => e.id === expItem.id)) {
+          agg.taggedExpensesList.push(expItem);
+        }
+      });
+    }
+
+    // Inward expenses (food/travel/site) are NOT apportioned across individual tests
+    agg.sharedInwardExpense = 0;
 
     // Allocate inhouse lab expense proportionally
     if (totalTestsCount > 0 && totalInhouseExpenses > 0) {
@@ -2476,9 +2773,12 @@ export async function getTestWiseProfitabilityReport(fromDate?: string, toDate?:
       testCount: a.testCount,
       inwardCount: a.inwardIds.size,
       clientCount: a.clientNames.size,
+      clientNames: Array.from(a.clientNames),
+      inwardJobs: a.inwardJobs || [],
       revenue: Math.round(a.revenue * 100) / 100,
       paidInvoices: a.paidInvoices || [],
       taggedExpense: Math.round(a.taggedExpense * 100) / 100,
+      taggedExpensesList: a.taggedExpensesList || [],
       sharedInwardExpense: Math.round(a.sharedInwardExpense * 100) / 100,
       directExpense: Math.round(directExpense * 100) / 100,
       inhouseExpense: Math.round(a.inhouseExpense * 100) / 100,
@@ -2580,7 +2880,7 @@ export async function getExpenseFormData(branchId?: string, inwardId?: string) {
         test_master_id,
         material_description,
         sample_quantity,
-        test_master ( id, component_parameter, specific_test, discipline_group, material_product, unit )
+        test_master ( id, component_parameter, specific_test, discipline_group, material_product, category, unit )
       )
     `)
     .order("created_at", { ascending: false })
@@ -2612,7 +2912,7 @@ export async function getExpenseFormData(branchId?: string, inwardId?: string) {
             test_master_id,
             material_description,
             sample_quantity,
-            test_master ( id, component_parameter, specific_test, discipline_group, material_product, unit )
+            test_master ( id, component_parameter, specific_test, discipline_group, material_product, category, unit )
           )
         `)
         .eq("id", inwardId)
@@ -2622,6 +2922,12 @@ export async function getExpenseFormData(branchId?: string, inwardId?: string) {
       specificInward = found;
     }
   }
+
+  // 6. Test Masters for Test Expense selection
+  const { data: testMasters } = await (supabase as any)
+    .from("test_master")
+    .select("id, specific_test, component_parameter, material_product, discipline_group, category, unit")
+    .order("specific_test", { ascending: true });
 
   return {
     success: true,
@@ -2633,6 +2939,7 @@ export async function getExpenseFormData(branchId?: string, inwardId?: string) {
         ? [specificInward, ...(inwards || [])]
         : (inwards || []),
       specificInward,
+      testMasters: testMasters || [],
     },
   };
 }

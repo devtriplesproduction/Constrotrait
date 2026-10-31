@@ -1056,6 +1056,9 @@ export type Database = {
           sent_at?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          department: string | null
+          category: string | null
+          inward_id: string | null
         }
         Insert: {
           amount?: number
@@ -1085,6 +1088,9 @@ export type Database = {
           sent_at?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          department?: string | null
+          category?: string | null
+          inward_id?: string | null
         }
         Update: {
           amount?: number
@@ -1114,6 +1120,9 @@ export type Database = {
           sent_at?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          department?: string | null
+          category?: string | null
+          inward_id?: string | null
         }
         Relationships: [
           {
@@ -1962,6 +1971,7 @@ export type Database = {
           uid_label: string | null
           updated_at: string
           updated_by: string | null
+          quotation_id?: string | null
         }
         Insert: {
           agency?: string | null
@@ -1987,6 +1997,7 @@ export type Database = {
           uid_label?: string | null
           updated_at?: string
           updated_by?: string | null
+          quotation_id?: string | null
         }
         Update: {
           agency?: string | null
@@ -2012,6 +2023,7 @@ export type Database = {
           uid_label?: string | null
           updated_at?: string
           updated_by?: string | null
+          quotation_id?: string | null
         }
         Relationships: [
           {

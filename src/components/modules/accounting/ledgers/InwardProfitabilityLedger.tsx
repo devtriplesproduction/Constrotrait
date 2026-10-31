@@ -154,67 +154,84 @@ export function InwardProfitabilityLedger({
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4.5 bg-white rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Total Invoiced Revenue
-            </span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-              <FileText className="w-4 h-4" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-blue-50/30 via-white to-white rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Total Invoiced Revenue
+              </span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 border border-blue-100/80 text-blue-600 flex items-center justify-center">
+                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-1 font-sans">
+              {fmt(summary.totalInvoiced)}
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-2">
-            {fmt(summary.totalInvoiced)}
+          <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+            Across all inward jobs
           </div>
-          <span className="text-[11px] text-slate-500">Across all inward jobs</span>
         </div>
 
-        <div className="p-4.5 bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
-              Income Realized
-            </span>
-            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
-              <TrendingUp className="w-4 h-4" />
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-emerald-50/30 via-white to-white rounded-xl border border-slate-200/80 hover:border-emerald-300 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                Income Realized
+              </span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 border border-emerald-100/80 text-emerald-700 flex items-center justify-center">
+                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-1 font-sans">
+              {fmt(summary.totalIncome)}
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-900 mt-2">
-            {fmt(summary.totalIncome)}
+          <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-emerald-700 font-medium">
+            Collections & advances
           </div>
-          <span className="text-[11px] text-emerald-600 font-medium">Collections & advances</span>
         </div>
 
-        <div className="p-4.5 bg-white rounded-2xl border border-rose-200 bg-rose-50/20 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-rose-700 uppercase tracking-wider">
-              Direct Inward Costs
-            </span>
-            <div className="p-2 rounded-xl bg-rose-100 text-rose-700">
-              <TrendingDown className="w-4 h-4" />
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-rose-50/30 via-white to-white rounded-xl border border-slate-200/80 hover:border-rose-300 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider">
+                Direct Inward Costs
+              </span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 border border-rose-100/80 text-rose-700 flex items-center justify-center">
+                <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-1 font-sans">
+              {fmt(summary.totalExpenses)}
             </div>
           </div>
-          <div className="text-2xl font-black text-rose-900 mt-2">
-            {fmt(summary.totalExpenses)}
+          <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-rose-700 font-medium truncate">
+            Job testing, freight & site
           </div>
-          <span className="text-[11px] text-rose-600 font-medium">Job testing, freight & site costs</span>
         </div>
 
-        <div className="p-4.5 bg-white rounded-2xl border border-indigo-200 bg-indigo-50/20 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider">
-              Net Inward Margin
-            </span>
-            <div className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
-              <DollarSign className="w-4 h-4" />
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-indigo-50/30 via-white to-white rounded-xl border border-slate-200/80 hover:border-indigo-300 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider">
+                Net Inward Margin
+              </span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 border border-indigo-100/80 text-indigo-700 flex items-center justify-center">
+                <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-1 font-sans">
+              {fmt(summary.netProfit)}
             </div>
           </div>
-          <div className="text-2xl font-black text-indigo-900 mt-2">
-            {fmt(summary.netProfit)}
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+            <span className="text-slate-500">Margin</span>
+            <span className="font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-full text-[10px]">
+              {summary.marginPct.toFixed(1)}% Operating
+            </span>
           </div>
-          <span className="text-[11px] text-indigo-700 font-bold">
-            {summary.marginPct.toFixed(1)}% Operating Profit Margin
-          </span>
         </div>
       </div>
 

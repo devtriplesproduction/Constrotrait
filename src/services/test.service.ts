@@ -131,7 +131,11 @@ export const testService = {
           query = query.eq("branch_id", branchId);
         }
       } else {
-        if (user.branch_id) {
+        if (branchId === "all") {
+          // Allow fetching all tests when explicitly requested (e.g. from quotation conversion)
+        } else if (branchId) {
+          query = query.eq("branch_id", branchId);
+        } else if (user.branch_id) {
           query = query.eq("branch_id", user.branch_id);
         } else {
           return { success: true, data: [] };

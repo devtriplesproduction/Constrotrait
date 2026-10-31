@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useRef } from "react";
 import { X, Printer, Share2, CreditCard, ArrowRight, CheckCircle2, Clock, Building2, Landmark, Check, Copy, Scroll, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { convertProformaToTaxInvoiceAction } from "@/actions/accounting.actions";
+import { printElement } from "@/lib/print";
 
 interface InvoiceViewModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export function InvoiceViewModal({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const printableRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen || !invoice) return null;
 
@@ -71,7 +73,11 @@ export function InvoiceViewModal({
   );
 
   const handlePrint = () => {
-    window.print();
+    if (printableRef.current) {
+      printElement(printableRef.current, `${isProforma ? "Proforma" : "Invoice"}_${String(invoice?.invoice_no || "").replace(/[/\\?%*:|"<>]/g, "_")}`);
+    } else {
+      window.print();
+    }
   };
 
   const handleCopySummary = () => {
@@ -124,7 +130,7 @@ export function InvoiceViewModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity no-print" onClick={onClose} />
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200 no-print" onClick={onClose} />
 
       {/* Modal Dialog */}
       <div className="relative z-10 w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-4 flex flex-col max-h-[94vh]">
@@ -226,16 +232,18 @@ export function InvoiceViewModal({
         </div>
 
         {/* Printable Invoice Document Body */}
-        <div id="invoice-printable-area" className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-6 text-slate-800 bg-white">
+        <div ref={printableRef} id="invoice-printable-area" className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-6 text-slate-800 bg-white">
           {/* Document Header */}
           <div className="flex justify-between items-start pb-6 border-b border-slate-200">
             <div>
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-slate-900 text-white font-bold flex items-center justify-center text-base">
-                  CT
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold tracking-tight text-slate-950">CONSTROTRAIT</h1>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/constrotrait-logo.png"
+                  alt="ConstroTrait Logo"
+                  className="h-12 w-auto max-w-[190px] object-contain"
+                />
+                <div className="border-l border-slate-300 pl-3">
+                  <h1 className="text-sm font-bold tracking-tight text-slate-950">CONSTROTRAIT</h1>
                   <p className="text-[10px] text-slate-500 font-medium tracking-wide">TESTING LAB & QUALITY CONSULTANCY</p>
                 </div>
               </div>

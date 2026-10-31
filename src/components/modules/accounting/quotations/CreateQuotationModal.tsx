@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   X,
   FileText,
@@ -17,12 +17,21 @@ import {
   Building,
   Briefcase,
   DollarSign,
+  FlaskConical,
+  ShieldCheck,
+  ShieldAlert,
+  Building2,
+  Trees,
 } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 import {
   createQuotationWithItemsAction,
   reviseQuotationAction,
   saveQuotationTemplateAction,
+  getQuotationTemplatesAction,
 } from "@/actions/accounting.actions";
+import { SelectTestModal, formatTestCatalogLabel, TestCatalogItem } from "./SelectTestModal";
+import { QUOTATION_CATEGORIES, QUOTATION_DEPARTMENTS } from "./QuotationFormPageClient";
 
 interface CreateQuotationModalProps {
   isOpen: boolean;
@@ -57,10 +66,80 @@ export function CreateQuotationModal({
     discount_amount: "",
     gst_rate: "18",
     remarks: "",
+    category: "NABL" as "NABL" | "Non-NABL",
+    department: "Construction" as "Construction" | "Environment",
   });
 
-  const templates: any[] = data?.templates || [];
+  const [isSelectTestModalOpen, setIsSelectTestModalOpen] = useState(false);
+  const testMasters: TestCatalogItem[] = data?.testMasters || [];
+
+  const filteredTestMasters = useMemo(() => {
+    if (!Array.isArray(testMasters)) return [];
+    return testMasters.filter((t: any) => {
+      const isNabl = Boolean(t.is_nabl);
+      if (form.category === "NABL" && !isNabl) return false;
+      if (form.category === "Non-NABL" && isNabl) return false;
+
+      const testCat = (t.category || "").toLowerCase();
+      if (form.department === "Construction" && !testCat.includes("construction")) return false;
+      if (form.department === "Environment" && !testCat.includes("environ")) return false;
+
+      return true;
+    });
+  }, [testMasters, form.category, form.department]);
+
+  const handleSelectTestsFromCatalog = (selected: TestCatalogItem[]) => {
+    if (!selected || selected.length === 0) return;
+    setItems((prev) => {
+      const isFirstRowEmpty =
+        prev.length === 1 && (!prev[0].description || prev[0].description.trim() === "");
+
+      const newRows = selected.map((t) => ({
+        test_master_id: t.id,
+        description: formatTestCatalogLabel(t),
+        qty: t.sample_size ? Number(t.sample_size) || 1 : 1,
+        rate: Number(t.rate) || 0,
+      }));
+
+      if (isFirstRowEmpty) {
+        return newRows;
+      }
+      return [...prev, ...newRows];
+    });
+  };
+
+  const handleQuickAddTest = (testId: string) => {
+    if (!testId) return;
+    const matched = filteredTestMasters.find((t: any) => t.id === testId);
+    if (matched) {
+      handleSelectTestsFromCatalog([matched]);
+    }
+  };
+
+  const [templates, setTemplates] = useState<any[]>(data?.templates || []);
+  const [isRefreshingTemplates, setIsRefreshingTemplates] = useState(false);
+
+  useEffect(() => {
+    if (data?.templates) {
+      setTemplates(data.templates);
+    }
+  }, [data?.templates]);
+
   const defaultTemplate = templates.find((t) => t.is_default) || templates[0];
+
+  const refreshTemplatesList = async () => {
+    setIsRefreshingTemplates(true);
+    try {
+      const res = await getQuotationTemplatesAction();
+      if (res.success && 'data' in res && Array.isArray((res as any).data)) {
+        setTemplates((res as any).data);
+      }
+    } catch (err) {
+      console.error("Failed to refresh templates", err);
+    } finally {
+      setIsRefreshingTemplates(false);
+    }
+  };
 
   const [activeClauses, setActiveClauses] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
@@ -80,6 +159,8 @@ export function CreateQuotationModal({
         gst_rate: revisingQuotation.gst_rate ? String(revisingQuotation.gst_rate) : "18",
         valid_until: revisingQuotation.valid_until || "",
         remarks: revisingQuotation.remarks || "",
+        category: (revisingQuotation.category === "Non-NABL" ? "Non-NABL" : "NABL") as "NABL" | "Non-NABL",
+        department: (revisingQuotation.department?.toLowerCase().includes("environ") ? "Environment" : "Construction") as "Construction" | "Environment",
       });
 
       if (Array.isArray(revisingQuotation.items) && revisingQuotation.items.length > 0) {
@@ -106,6 +187,8 @@ export function CreateQuotationModal({
         discount_amount: "",
         gst_rate: "18",
         remarks: "",
+        category: "NABL",
+        department: "Construction",
       });
       setItems([{ description: "Concrete Cube Compressive Strength Testing (IS 516)", qty: 3, rate: 450 }]);
       loadDefaultClauses();
@@ -221,15 +304,25 @@ export function CreateQuotationModal({
     const templateName = window.prompt("Enter a title for the new T&C template:");
     if (!templateName || !templateName.trim()) return;
 
+    const categoryName =
+      form.department === "Environment"
+        ? "Soil Investigation"
+        : form.category === "NABL"
+        ? "Concrete Testing"
+        : "Material Testing";
+
     const res = await saveQuotationTemplateAction({
       name: templateName.trim(),
-      category: "Material Testing",
+      category: categoryName,
       is_default: false,
       clauses: activeClauses,
     });
 
-    if (res.success) {
-      alert("T&C Template saved successfully!");
+    if (res.success && 'data' in res && (res as any).data) {
+      const newTemplate = (res as any).data;
+      setTemplates((prev) => [newTemplate, ...prev.filter((t) => t.id !== newTemplate.id)]);
+      setSelectedTemplateId(newTemplate.id);
+      alert(`T&C Template "${newTemplate.name}" saved successfully!`);
       if (onRefresh) onRefresh();
     } else {
       alert("Failed to save template: " + (res.error || "Unknown error"));
@@ -305,7 +398,7 @@ export function CreateQuotationModal({
     "w-full text-xs border border-slate-200 rounded-xl px-3 py-2.5 bg-white text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
       <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 my-8 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
@@ -404,18 +497,120 @@ export function CreateQuotationModal({
             </div>
           </div>
 
+          {/* Section: Category & Department */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-cyan-500"></span> Testing Category <span className="text-rose-500">*</span>
+                </label>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    form.category === "NABL"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200"
+                  }`}
+                >
+                  {form.category}
+                </span>
+              </div>
+              <select
+                className={inputCls}
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value as any })}
+              >
+                {QUOTATION_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat === "NABL" ? "NABL (Accredited Testing)" : "Non-NABL (Standard Testing)"}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-purple-500"></span> Department <span className="text-rose-500">*</span>
+                </label>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  {form.department} Lab
+                </span>
+              </div>
+              <select
+                className={inputCls}
+                value={form.department}
+                onChange={(e) => setForm({ ...form, department: e.target.value as any })}
+              >
+                {QUOTATION_DEPARTMENTS.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept === "Construction" ? "Construction (Civil Materials)" : "Environment (Pollution & Environmental)"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Datalist for fast autocomplete */}
+          <datalist id="modal-test-masters-list">
+            {filteredTestMasters.map((tm: any) => (
+              <option key={tm.id} value={formatTestCatalogLabel(tm)}>
+                {tm.material_product ? `[${tm.material_product}] ` : ""}
+                {tm.component_parameter || tm.specific_test || tm.particulars}
+              </option>
+            ))}
+          </datalist>
+
           {/* Section: Line Items & Testing Parameters */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-800">Line Items & Testing Parameters</label>
-              <button
-                type="button"
-                onClick={addItem}
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add Line Item
-              </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="text-xs font-bold text-slate-800">Line Items & Testing Parameters</label>
+                <p className="text-[11px] text-slate-400">
+                  Scope: {form.category} • {form.department} ({filteredTestMasters.length} tests available)
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSelectTestModalOpen(true)}
+                  className="text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-1 cursor-pointer px-3 py-1.5 rounded-lg shadow-xs"
+                >
+                  <FlaskConical className="w-3.5 h-3.5" /> Select from Test Catalog
+                </button>
+
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Blank Row
+                </button>
+              </div>
             </div>
+
+            {/* Quick Picker Dropdown */}
+            {filteredTestMasters.length > 0 && (
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">⚡ Quick Add:</span>
+                <select
+                  className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 focus:border-blue-500 outline-none cursor-pointer flex-1"
+                  value=""
+                  onChange={(e) => {
+                    handleQuickAddTest(e.target.value);
+                    e.target.value = "";
+                  }}
+                >
+                  <option value="">-- Quick pick a test from {form.category} {form.department}... --</option>
+                  {filteredTestMasters.map((tm: any) => (
+                    <option key={tm.id} value={tm.id}>
+                      {tm.component_parameter || tm.specific_test || tm.particulars}
+                      {tm.test_method ? ` (${tm.test_method})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
               <div className="grid grid-cols-12 gap-2 bg-slate-50 p-2.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
@@ -429,14 +624,23 @@ export function CreateQuotationModal({
                 const rowAmt = (Number(it.qty) || 0) * (Number(it.rate) || 0);
                 return (
                   <div key={i} className="grid grid-cols-12 gap-2 p-2.5 items-center bg-white hover:bg-slate-50/50">
-                    <div className="col-span-6">
+                    <div className="col-span-6 flex items-center gap-1">
                       <input
                         required
+                        list="modal-test-masters-list"
                         className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:border-blue-500 outline-none"
-                        placeholder="e.g. Compressive Strength Test"
+                        placeholder={`e.g. Test from ${form.category}...`}
                         value={it.description}
                         onChange={(e) => updateItem(i, "description", e.target.value)}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setIsSelectTestModalOpen(true)}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50"
+                        title="Pick from Catalog"
+                      >
+                        <FlaskConical className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                     <div className="col-span-2">
                       <input
@@ -546,9 +750,21 @@ export function CreateQuotationModal({
             {/* Template Selector Bar */}
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex-1">
-                <label className="text-[11px] font-semibold text-slate-500 block mb-1">
-                  Select Pre-authorized T&C Template
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-semibold text-slate-500">
+                    Select Pre-authorized T&C Template
+                  </label>
+                  <button
+                    type="button"
+                    onClick={refreshTemplatesList}
+                    disabled={isRefreshingTemplates}
+                    title="Refresh template list"
+                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={cn("w-3 h-3", isRefreshingTemplates && "animate-spin")} />
+                    <span>{isRefreshingTemplates ? "Refreshing..." : "Refresh"}</span>
+                  </button>
+                </div>
                 <select
                   className="w-full text-xs font-medium border border-slate-200 rounded-lg p-2 bg-white outline-none focus:border-blue-500"
                   value={selectedTemplateId}
@@ -709,6 +925,17 @@ export function CreateQuotationModal({
           </div>
         </form>
       </div>
+
+      <SelectTestModal
+        isOpen={isSelectTestModalOpen}
+        onClose={() => setIsSelectTestModalOpen(false)}
+        category={form.category as any}
+        department={form.department as any}
+        onCategoryChange={(cat) => setForm((prev) => ({ ...prev, category: cat }))}
+        onDepartmentChange={(dept) => setForm((prev) => ({ ...prev, department: dept }))}
+        allTests={testMasters}
+        onSelectTests={handleSelectTestsFromCatalog}
+      />
     </div>
   );
 }

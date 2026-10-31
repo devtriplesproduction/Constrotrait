@@ -160,57 +160,65 @@ export function IncomeLedgerTable({
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4.5 bg-white rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Total Recorded Inflows
-            </span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
-              <TrendingUp className="w-4 h-4" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-blue-50/30 via-white to-white rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Total Recorded Inflows
+              </span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 border border-emerald-100/80 text-emerald-600 flex items-center justify-center">
+                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
             </div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-1 font-sans">{fmt(summary.total)}</div>
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-2">{fmt(summary.total)}</div>
-          <span className="text-[11px] text-slate-500">All cleared credit transactions</span>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-500">All cleared credit transactions</div>
         </div>
 
-        <div className="p-4.5 bg-white rounded-2xl border border-blue-200 bg-blue-50/20 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-              Inward Testing Revenue
-            </span>
-            <div className="p-2 rounded-xl bg-blue-100 text-blue-700">
-              <Package className="w-4 h-4" />
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-blue-50/30 via-white to-white rounded-xl border border-slate-200/80 hover:border-blue-300 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider">
+                Inward Testing Revenue
+              </span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 border border-blue-100/80 text-blue-700 flex items-center justify-center">
+                <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
             </div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-1 font-sans">{fmt(summary.inwardIncome)}</div>
           </div>
-          <div className="text-2xl font-black text-blue-900 mt-2">{fmt(summary.inwardIncome)}</div>
-          <span className="text-[11px] text-blue-600 font-medium">Job advances & invoiced collections</span>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-blue-700 font-medium truncate">Job advances & invoiced collections</div>
         </div>
 
-        <div className="p-4.5 bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
-              Bank & Digital Inflows
-            </span>
-            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
-              <Landmark className="w-4 h-4" />
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-emerald-50/30 via-white to-white rounded-xl border border-slate-200/80 hover:border-emerald-300 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                Bank & Digital Inflows
+              </span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 border border-emerald-100/80 text-emerald-700 flex items-center justify-center">
+                <Landmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
             </div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-1 font-sans">{fmt(summary.bankIncome)}</div>
           </div>
-          <div className="text-2xl font-black text-emerald-900 mt-2">{fmt(summary.bankIncome)}</div>
-          <span className="text-[11px] text-emerald-600 font-medium">NEFT, RTGS, UPI & Cheques</span>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-emerald-700 font-medium truncate">NEFT, RTGS, UPI & Cheques</div>
         </div>
 
-        <div className="p-4.5 bg-white rounded-2xl border border-amber-200 bg-amber-50/20 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">
-              Cash Counter Inflows
-            </span>
-            <div className="p-2 rounded-xl bg-amber-100 text-amber-700">
-              <CreditCard className="w-4 h-4" />
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-amber-50/30 via-white to-white rounded-xl border border-slate-200/80 hover:border-amber-300 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">
+                Cash Counter Inflows
+              </span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-50 border border-amber-100/80 text-amber-700 flex items-center justify-center">
+                <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
             </div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-1 font-sans">{fmt(summary.cashIncome)}</div>
           </div>
-          <div className="text-2xl font-black text-amber-900 mt-2">{fmt(summary.cashIncome)}</div>
-          <span className="text-[11px] text-amber-600 font-medium">Physical cash receipts</span>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-amber-700 font-medium">Physical cash receipts</div>
         </div>
       </div>
 
