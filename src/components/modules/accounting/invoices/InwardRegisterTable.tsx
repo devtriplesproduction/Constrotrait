@@ -114,7 +114,7 @@ export function InwardRegisterTable({
       {/* Header Info & Filter Bar */}
       <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5 bg-slate-50/50">
         {/* Search Input */}
-        <div className="relative w-full lg:w-80">
+        <div className="relative flex-1 min-w-[240px]">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <Input
             placeholder="Search by UID, client, site, or test name..."
@@ -221,7 +221,6 @@ export function InwardRegisterTable({
               <th className="py-3 px-4">UID / Inward Date</th>
               <th className="py-3 px-4">Customer & Contact</th>
               <th className="py-3 px-4">Project / Site</th>
-              <th className="py-3 px-4">Tests & Scope</th>
               {showStatusColumn && <th className="py-3 px-4">Proforma / Billing Status</th>}
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
@@ -229,7 +228,7 @@ export function InwardRegisterTable({
           <tbody className="divide-y divide-slate-100">
             {filteredInwards.length === 0 ? (
               <tr>
-                <td colSpan={showStatusColumn ? 6 : 5} className="py-12 text-center text-slate-400">
+                <td colSpan={showStatusColumn ? 5 : 4} className="py-12 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <FlaskConical className="w-8 h-8 text-slate-300" />
                     <p className="font-bold text-sm text-slate-700">No inward entries found</p>
@@ -258,7 +257,6 @@ export function InwardRegisterTable({
                   return dateB - dateA;
                 });
                 const latestInvoice = linkedInvoices.length > 0 ? linkedInvoices[0] : null;
-                const testCount = job.job_entry_tests?.length || 0;
                 const bal = latestInvoice ? Number(latestInvoice.balance_amount || 0) : 0;
                 const paid = latestInvoice ? Number(latestInvoice.paid_amount || 0) : 0;
 
@@ -336,20 +334,6 @@ export function InwardRegisterTable({
                       )}
                     </td>
 
-                    {/* Tests */}
-                    <td className="py-4 px-4">
-                      <div className="inline-flex items-center gap-1.5 font-bold text-slate-800 text-xs bg-slate-100/80 px-2 py-0.5 rounded-md border border-slate-200/70">
-                        <FlaskConical className="w-3.5 h-3.5 text-blue-600" />
-                        <span>{testCount} Test{testCount !== 1 ? "s" : ""}</span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 truncate max-w-xs mt-1">
-                        {job.job_entry_tests?.slice(0, 2).map((t: any) =>
-                          t.test_master?.specific_test || t.material_description
-                        ).filter(Boolean).join(", ") || "Material Testing"}
-                        {testCount > 2 && ` +${testCount - 2} more`}
-                      </div>
-                    </td>
-
                     {/* Proforma / Invoice Status */}
                     {showStatusColumn && (
                       <td className="py-4 px-4">
@@ -413,10 +397,11 @@ export function InwardRegisterTable({
                             <span>Paid</span>
                           </span>
                         )}
-                        <div className="w-[110px]" onClick={(e) => e.stopPropagation()}>
+                        <div className="w-[84px]" onClick={(e) => e.stopPropagation()}>
                           <Dropdown
+                            className="w-[84px] space-y-0"
                             placeholder={
-                              <span className="font-semibold text-slate-700 text-xs tracking-wide">
+                              <span className="font-semibold text-slate-700 text-xs tracking-tight">
                                 Actions
                               </span>
                             }
@@ -476,8 +461,8 @@ export function InwardRegisterTable({
                             ]}
                             align="right"
                             menuWidth={180}
-                            buttonClassName="h-8 py-0 px-3 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs rounded-xl transition-all text-slate-700 cursor-pointer group"
-                            iconClassName="text-slate-400 group-hover:text-slate-600 w-3.5 h-3.5"
+                            buttonClassName="h-7 py-0 px-2.5 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs rounded-lg transition-all text-slate-700 cursor-pointer group text-xs font-semibold"
+                            iconClassName="text-slate-400 group-hover:text-slate-600 w-3 h-3"
                             itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
                             value=""
                             onChange={(val) => {

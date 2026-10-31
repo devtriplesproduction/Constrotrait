@@ -87,11 +87,6 @@ export function InvoicesListTable({
     initialPageSize: 10,
   });
 
-  // Aggregate stats for filtered set
-  const totalBilled = filteredInvoices.reduce((s, i) => s + Number(i.total_amount || 0), 0);
-  const totalReceived = filteredInvoices.reduce((s, i) => s + Number(i.paid_amount || 0), 0);
-  const totalOutstanding = filteredInvoices.reduce((s, i) => s + Number(i.balance_amount || 0), 0);
-
   // Status counts
   const unpaidCount = invoices.filter((i) => i.status === "unpaid").length;
   const partialCount = invoices.filter((i) => i.status === "partial").length;
@@ -102,10 +97,10 @@ export function InvoicesListTable({
   return (
     <div className="space-y-4">
       {/* Search and Filters Hub */}
-      <div className="p-4.5 bg-white rounded-2xl border border-slate-200/90 shadow-xs space-y-3.5">
+      <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 min-w-[240px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <Input
               placeholder="Search by invoice #, client name, UID, notes..."
@@ -157,86 +152,67 @@ export function InvoicesListTable({
               </button>
             </div>
 
-            {/* Status Filter */}
-            <div className="flex bg-slate-100/80 p-1 rounded-xl text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setStatusFilter("all")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  statusFilter === "all" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter("unpaid")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  statusFilter === "unpaid" ? "bg-white text-rose-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                <span>Unpaid</span>
-                <span className="text-[10px] opacity-70">({unpaidCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter("partial")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  statusFilter === "partial" ? "bg-white text-amber-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                <span>Partial</span>
-                <span className="text-[10px] opacity-70">({partialCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter("paid")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  statusFilter === "paid" ? "bg-white text-emerald-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span>Paid</span>
-                <span className="text-[10px] opacity-70">({paidCount})</span>
-              </button>
+            {/* Status Filter Dropdown */}
+            <div className="w-44 sm:w-48">
+              <Dropdown
+                className="w-full space-y-0"
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(val as any)}
+                placeholder={
+                  <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                    <span>All Statuses</span>
+                  </span>
+                }
+                options={[
+                  {
+                    value: "all",
+                    label: (
+                      <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                        <span>All Statuses</span>
+                        <span className="text-[10px] text-slate-400 font-mono">({invoices.length})</span>
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "unpaid",
+                    label: (
+                      <span className="flex items-center gap-1.5 font-semibold text-rose-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                        <span>Unpaid</span>
+                        <span className="text-[10px] text-rose-500 font-mono">({unpaidCount})</span>
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "partial",
+                    label: (
+                      <span className="flex items-center gap-1.5 font-semibold text-amber-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                        <span>Partial</span>
+                        <span className="text-[10px] text-amber-500 font-mono">({partialCount})</span>
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "paid",
+                    label: (
+                      <span className="flex items-center gap-1.5 font-semibold text-emerald-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span>Paid</span>
+                        <span className="text-[10px] text-emerald-600 font-mono">({paidCount})</span>
+                      </span>
+                    ),
+                  },
+                ]}
+                align="right"
+                menuWidth={180}
+                buttonClassName="h-10 px-3 bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs rounded-xl text-xs font-semibold text-slate-700 transition-all cursor-pointer group"
+                iconClassName="text-slate-400 group-hover:text-slate-600 w-3.5 h-3.5"
+                itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
+              />
             </div>
-          </div>
-        </div>
-
-        {/* Live Filter Summary Ribbon */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-100 text-xs">
-          <div className="flex items-center gap-2 text-slate-600">
-            <span>
-              Showing <strong className="font-mono text-slate-900">{filteredInvoices.length}</strong> of{" "}
-              <strong className="font-mono text-slate-900">{invoices.length}</strong> invoices
-            </span>
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchTerm("");
-                  setTypeFilter("all");
-                  setStatusFilter("all");
-                }}
-                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer ml-1"
-              >
-                Reset filters
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5 text-xs font-medium">
-            <span className="bg-slate-100 text-slate-800 px-2.5 py-1 rounded-lg border border-slate-200/60 font-semibold shadow-2xs">
-              Filtered Total: <strong className="font-mono text-slate-900 font-bold">{fmt(totalBilled)}</strong>
-            </span>
-            <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-lg border border-emerald-200/70 font-semibold shadow-2xs">
-              Collected: <strong className="font-mono text-emerald-700 font-bold">{fmt(totalReceived)}</strong>
-            </span>
-            <span className="bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200/70 font-semibold shadow-2xs">
-              Balance: <strong className="font-mono text-amber-700 font-bold">{fmt(totalOutstanding)}</strong>
-            </span>
           </div>
         </div>
       </div>
@@ -305,30 +281,19 @@ export function InvoicesListTable({
                       <tr className="hover:bg-slate-50/80 transition-colors group">
                         {/* Invoice # & Date */}
                         <td className="py-4 px-4">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-sm text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
                               {inv.invoice_no}
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(inv.invoice_no)}
-                              title="Copy invoice #"
-                              className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-                            >
-                              {copiedInvoiceNo === inv.invoice_no ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                              ) : (
-                                <Copy className="w-3.5 h-3.5" />
-                              )}
-                            </button>
                             <span
-                              className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-2xs ${
+                              title={isProforma ? "Proforma Invoice" : "Tax Invoice"}
+                              className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider shadow-2xs ${
                                 isProforma
                                   ? "bg-indigo-50 text-indigo-700 border border-indigo-200/80"
                                   : "bg-emerald-50 text-emerald-700 border border-emerald-200/80"
                               }`}
                             >
-                              {isProforma ? "Proforma" : "Tax"}
+                              {isProforma ? "PI" : "TI"}
                             </span>
                           </div>
                           <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
@@ -420,79 +385,80 @@ export function InvoicesListTable({
 
                         {/* Actions */}
                         <td className="py-4 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {hasChildRemainingInvoice && (
-                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/80 shadow-2xs">
-                                Bal Invoiced
-                              </span>
-                            )}
-
-                            <Dropdown
-                              placeholder="Actions"
-                              options={[
-                                {
-                                  label: (
-                                    <span className="flex items-center gap-2 text-slate-700 font-medium">
-                                      <Eye className="w-3.5 h-3.5 text-slate-500" />
-                                      <span>View / Print</span>
-                                    </span>
-                                  ),
-                                  value: "view",
-                                },
-                                ...(bal > 0
-                                  ? [
-                                      {
-                                        label: (
-                                          <span className="flex items-center gap-2 text-emerald-700 font-semibold">
-                                            <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
-                                            <span>Record Payment</span>
-                                          </span>
-                                        ),
-                                        value: "record_pay",
-                                      },
-                                    ]
-                                  : []),
-                                ...(canInvoiceBal
-                                  ? [
-                                      {
-                                        label: (
-                                          <span className="flex items-center gap-2 text-amber-700 font-semibold">
-                                            <FilePlus2 className="w-3.5 h-3.5 text-amber-600" />
-                                            <span>Invoice Bal ({fmt(bal)})</span>
-                                          </span>
-                                        ),
-                                        value: "invoice_bal",
-                                      },
-                                    ]
-                                  : []),
-                              ]}
-                              align="right"
-                              menuWidth={180}
-                              buttonClassName="h-8 py-0 px-3 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs rounded-xl transition-all text-slate-700 cursor-pointer group"
-                              iconClassName="text-slate-400 group-hover:text-slate-600 w-3.5 h-3.5"
-                              itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
-                              value=""
-                              onChange={(val) => {
-                                if (val === "view") {
-                                  onViewInvoice(inv);
-                                } else if (val === "record_pay") {
-                                  onRecordPayment(inv);
-                                } else if (val === "invoice_bal") {
-                                  onCreateRemainingInvoice?.(
-                                    inv.job_entries || {
-                                      id: inv.inward_id,
-                                      client_id: inv.client_id,
-                                      clients: inv.clients,
-                                    },
-                                    {
-                                      isRemainingBalance: true,
-                                      defaultBalanceAmount: bal,
-                                      previousInvoice: inv,
-                                    }
-                                  );
+                          <div className="flex items-center justify-end">
+                            <div className="w-[84px]" onClick={(e) => e.stopPropagation()}>
+                              <Dropdown
+                                className="w-[84px] space-y-0"
+                                placeholder={
+                                  <span className="font-semibold text-slate-700 text-xs tracking-tight">
+                                    Actions
+                                  </span>
                                 }
-                              }}
-                            />
+                                options={[
+                                  {
+                                    label: (
+                                      <span className="flex items-center gap-2 text-slate-700 font-medium">
+                                        <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                        <span>View / Print</span>
+                                      </span>
+                                    ),
+                                    value: "view",
+                                  },
+                                  ...(bal > 0
+                                    ? [
+                                        {
+                                          label: (
+                                            <span className="flex items-center gap-2 text-emerald-700 font-semibold">
+                                              <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
+                                              <span>Record Payment</span>
+                                            </span>
+                                          ),
+                                          value: "record_pay",
+                                        },
+                                      ]
+                                    : []),
+                                  ...(canInvoiceBal
+                                    ? [
+                                        {
+                                          label: (
+                                            <span className="flex items-center gap-2 text-amber-700 font-semibold">
+                                              <FilePlus2 className="w-3.5 h-3.5 text-amber-600" />
+                                              <span>Invoice Bal ({fmt(bal)})</span>
+                                            </span>
+                                          ),
+                                          value: "invoice_bal",
+                                        },
+                                      ]
+                                    : []),
+                                ]}
+                                align="right"
+                                menuWidth={180}
+                                buttonClassName="h-7 py-0 px-2.5 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs rounded-lg transition-all text-slate-700 cursor-pointer group text-xs font-semibold"
+                                iconClassName="text-slate-400 group-hover:text-slate-600 w-3 h-3"
+                                itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
+                                value=""
+                                onChange={(val) => {
+                                  if (val === "view") {
+                                    onViewInvoice(inv);
+                                  } else if (val === "record_pay") {
+                                    onRecordPayment(inv);
+                                  } else if (val === "invoice_bal") {
+                                    onCreateRemainingInvoice?.(
+                                      inv.job_entries || {
+                                        id: inv.inward_id,
+                                        client_id: inv.client_id,
+                                        clients: inv.clients,
+                                      },
+                                      {
+                                        isRemainingBalance: true,
+                                        defaultBalanceAmount: bal,
+                                        previousInvoice: inv,
+                                      }
+                                    );
+                                  }
+                                }}
+                              />
+                            </div>
                           </div>
                         </td>
                       </tr>

@@ -179,7 +179,7 @@ export function ReceiptsListTable({
       <div className="p-4 bg-white border border-slate-200/90 rounded-2xl space-y-3.5 shadow-xs">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 min-w-[240px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <Input
               placeholder="Search receipt #, client, invoice #, account, remarks..."
@@ -524,10 +524,11 @@ export function ReceiptsListTable({
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
-                          <div className="w-[110px]" onClick={(e) => e.stopPropagation()}>
+                          <div className="w-[84px]" onClick={(e) => e.stopPropagation()}>
                             <Dropdown
+                              className="w-[84px] space-y-0"
                               placeholder={
-                                <span className="font-semibold text-slate-700 text-xs tracking-wide">
+                                <span className="font-semibold text-slate-700 text-xs tracking-tight">
                                   Actions
                                 </span>
                               }
@@ -557,8 +558,8 @@ export function ReceiptsListTable({
                               ]}
                               align="right"
                               menuWidth={150}
-                              buttonClassName="h-8 py-0 px-3 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs rounded-xl transition-all text-slate-700 cursor-pointer group"
-                              iconClassName="text-slate-400 group-hover:text-slate-600 w-3.5 h-3.5"
+                              buttonClassName="h-7 py-0 px-2.5 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs rounded-lg transition-all text-slate-700 cursor-pointer group text-xs font-semibold"
+                              iconClassName="text-slate-400 group-hover:text-slate-600 w-3 h-3"
                               itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
                               value=""
                               onChange={(val) => {
