@@ -226,7 +226,15 @@ export function ClientWizard({
   const uniqueMaterials = React.useMemo(() => {
     const materialMap = new Map<string, string>();
     availableTests.forEach(test => {
-      const mat = test.material_product || (!test.is_nabl ? (test as any).particulars : null);
+      // 1. Filter by NABL status
+      if (testNablFilter === "nabl" && !test.is_nabl) return;
+      if (testNablFilter === "non-nabl" && test.is_nabl) return;
+
+      // 2. Filter by category
+      if (testCategoryFilter !== "all" && test.category !== testCategoryFilter) return;
+
+      const rawMat = test.material_product || (!test.is_nabl ? (test as any).particulars : null);
+      const mat = (rawMat || "").trim();
       if (mat) {
         const lower = mat.toLowerCase();
         if (!materialMap.has(lower)) {
@@ -235,7 +243,14 @@ export function ClientWizard({
       }
     });
     return Array.from(materialMap.values()).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-  }, [availableTests]);
+  }, [availableTests, testNablFilter, testCategoryFilter]);
+
+  // Auto-reset selectedMaterial if it no longer matches the current filters
+  useEffect(() => {
+    if (selectedMaterial && uniqueMaterials.length > 0 && !uniqueMaterials.includes(selectedMaterial)) {
+      setSelectedMaterial("");
+    }
+  }, [uniqueMaterials, selectedMaterial]);
 
   useEffect(() => {
     setTestCurrentPage(1);
@@ -544,8 +559,7 @@ export function ClientWizard({
     if ((currentStep >= 1 || mode === "edit" || !!fromQuotation) && availableTests.length === 0) {
       const fetchTests = async () => {
         setIsLoadingTests(true);
-        const branchParam = fromQuotation ? "all" : (selectedBranchId || undefined);
-        const result = await getTestsAction(branchParam);
+        const result = await getTestsAction("all");
         if (result.success && result.data) {
           const allMasters = result.data as TestMaster[];
           setAvailableTests(allMasters);
@@ -1349,7 +1363,6 @@ export function ClientWizard({
                               setSelectedBranchId(val);
                               setValue("client.branch_id", val);
                               setValue("jobEntry.branch_id", val);
-                              setAvailableTests([]); // Reload tests for newly selected branch
                             }}
                             className="h-11 px-4 text-[13px] font-medium bg-slate-50/50 border border-slate-200/80 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                           >

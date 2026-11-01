@@ -81,12 +81,14 @@ export class ClientService {
       .from("clients")
       .select("*, branches ( id, name, code )")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching client:", error);
       throw new Error(error.message);
     }
+
+    if (!data) return null;
 
     const isSuper = isSuperAdmin(user.roles);
     if (!isSuper && data.branch_id && data.branch_id !== user.branch_id) {

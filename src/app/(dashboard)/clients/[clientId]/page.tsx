@@ -1,5 +1,5 @@
 import React from "react";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { ClientService } from "@/services/client.service";
 import ClientDetailsPageContent from "./ClientDetailsPageContent";
 
@@ -13,10 +13,15 @@ export default async function ClientDetailsPage({
   params: Promise<{ clientId: string }>;
 }) {
   const { clientId } = await params;
-  const client = await ClientService.getClientById(clientId);
+  let client = null;
+  try {
+    client = await ClientService.getClientById(clientId);
+  } catch (e) {
+    console.error("Client not found or error:", e);
+  }
 
   if (!client) {
-    notFound();
+    redirect("/clients");
   }
 
   return <ClientDetailsPageContent client={client} />;

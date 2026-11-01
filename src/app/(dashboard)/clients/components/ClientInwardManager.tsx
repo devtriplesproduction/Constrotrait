@@ -19,6 +19,7 @@ type JobEntryTest = Database["public"]["Tables"]["job_entry_tests"]["Row"];
 interface ClientInwardManagerProps {
   initialClients: (Client & { branches?: { id: string; name: string; code: string } | null })[];
   branches?: any[];
+  initialTests?: any[];
   userBranchId?: string | null;
   isSuperAdmin?: boolean;
 }
@@ -26,6 +27,7 @@ interface ClientInwardManagerProps {
 export default function ClientInwardManager({
   initialClients,
   branches = [],
+  initialTests = [],
   userBranchId,
   isSuperAdmin = false,
 }: ClientInwardManagerProps) {
@@ -95,6 +97,7 @@ export default function ClientInwardManager({
               branches={branches}
               userBranchId={userBranchId}
               isSuperAdmin={isSuperAdmin}
+              initialAvailableTests={initialTests}
             />
 
           </div>
@@ -144,6 +147,7 @@ export default function ClientInwardManager({
 
             <ClientWizard
               mode="edit"
+              initialAvailableTests={initialTests}
               initialData={{
                 client: editingClient,
                 jobEntry: (editingTest as any)?.job_entries,

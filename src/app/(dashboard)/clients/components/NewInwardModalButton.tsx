@@ -9,10 +9,12 @@ export default function NewInwardModalButton({
   branches = [],
   userBranchId,
   isSuperAdmin = false,
+  initialAvailableTests = [],
 }: {
   branches?: any[];
   userBranchId?: string | null;
   isSuperAdmin?: boolean;
+  initialAvailableTests?: any[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -50,6 +52,7 @@ export default function NewInwardModalButton({
               branches={branches}
               userBranchId={userBranchId}
               isSuperAdmin={isSuperAdmin}
+              initialAvailableTests={initialAvailableTests}
               onSuccess={() => setIsOpen(false)}
             />
           </div>
