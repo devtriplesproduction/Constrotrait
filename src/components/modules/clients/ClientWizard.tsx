@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -201,6 +201,7 @@ export function ClientWizard({
   // Projects state
   const [clientProjects, setClientProjects] = useState<any[]>([]);
   const [isFetchingProjects, setIsFetchingProjects] = useState(false);
+  const fetchedClientIdRef = useRef<string | null>(null);
 
   // Test master data
   const [availableTests, setAvailableTests] = useState<TestMaster[]>(
@@ -540,19 +541,35 @@ export function ClientWizard({
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
-  // Fetch client's past projects if client ID is present and projects not yet loaded
+  // Fetch client's past projects if client ID is present and not yet fetched
   const selectedClientId = watch("client.id") || initialData?.client?.id;
   useEffect(() => {
-    if (selectedClientId && clientProjects.length === 0 && !isFetchingProjects) {
+    if (selectedClientId) {
+      if (fetchedClientIdRef.current === selectedClientId) {
+        return;
+      }
+      fetchedClientIdRef.current = selectedClientId;
       setIsFetchingProjects(true);
-      getClientProjectsAction(selectedClientId).then(res => {
-        if (res.success && res.data) {
-          setClientProjects(res.data);
-        }
-        setIsFetchingProjects(false);
-      });
+      getClientProjectsAction(selectedClientId)
+        .then((res) => {
+          if (res.success && res.data) {
+            setClientProjects(res.data);
+          } else {
+            setClientProjects([]);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch client projects:", err);
+          setClientProjects([]);
+        })
+        .finally(() => {
+          setIsFetchingProjects(false);
+        });
+    } else {
+      fetchedClientIdRef.current = null;
+      setClientProjects([]);
     }
-  }, [selectedClientId, clientProjects.length, isFetchingProjects]);
+  }, [selectedClientId]);
 
   // Fetch tests when reaching step 2 or when fromQuotation is provided
   useEffect(() => {
@@ -873,13 +890,23 @@ export function ClientWizard({
     setValue("jobEntry.payment_status", "", { shouldDirty: true });
 
     // Fetch projects for this client
+    fetchedClientIdRef.current = client.id;
     setIsFetchingProjects(true);
-    getClientProjectsAction(client.id).then(res => {
-      if (res.success && res.data) {
-        setClientProjects(res.data);
-      }
-      setIsFetchingProjects(false);
-    });
+    getClientProjectsAction(client.id)
+      .then((res) => {
+        if (res.success && res.data) {
+          setClientProjects(res.data);
+        } else {
+          setClientProjects([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch client projects:", err);
+        setClientProjects([]);
+      })
+      .finally(() => {
+        setIsFetchingProjects(false);
+      });
 
     setShowResults(false);
     setSearchQuery("");
