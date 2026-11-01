@@ -92,6 +92,10 @@ export function InvoicesListTable({
   const partialCount = invoices.filter((i) => i.status === "partial").length;
   const paidCount = invoices.filter((i) => i.status === "paid").length;
 
+  // Type counts
+  const proformaCount = invoices.filter((i) => i.invoice_type === "proforma").length;
+  const taxCount = invoices.filter((i) => i.invoice_type !== "proforma").length;
+
   const hasActiveFilters = searchTerm.trim() !== "" || typeFilter !== "all" || statusFilter !== "all";
 
   return (
@@ -122,33 +126,64 @@ export function InvoicesListTable({
           {/* Filter Groups */}
           <div className="flex flex-wrap items-center gap-2.5 justify-start lg:justify-end">
             {/* Type Filter */}
-            <div className="flex bg-slate-100/80 p-1 rounded-xl text-xs font-semibold">
+            <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs font-semibold shadow-2xs">
               <button
                 type="button"
                 onClick={() => setTypeFilter("all")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  typeFilter === "all" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  typeFilter === "all"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                 }`}
               >
-                All Types
+                <span>All Types</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                    typeFilter === "all" ? "bg-slate-100 text-slate-800" : "bg-slate-200/70 text-slate-600"
+                  }`}
+                >
+                  {invoices.length}
+                </span>
               </button>
+
               <button
                 type="button"
                 onClick={() => setTypeFilter("proforma")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  typeFilter === "proforma" ? "bg-white text-indigo-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  typeFilter === "proforma"
+                    ? "bg-white text-indigo-700 shadow-xs border border-indigo-200/80 font-bold"
+                    : "text-slate-600 hover:text-indigo-700 hover:bg-white/60"
                 }`}
               >
-                Proforma
+                <span className={`w-1.5 h-1.5 rounded-full ${typeFilter === "proforma" ? "bg-indigo-600" : "bg-indigo-400"}`} />
+                <span>Proforma</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                    typeFilter === "proforma" ? "bg-indigo-50 text-indigo-700 border border-indigo-200/60" : "bg-slate-200/70 text-slate-600"
+                  }`}
+                >
+                  {proformaCount}
+                </span>
               </button>
+
               <button
                 type="button"
                 onClick={() => setTypeFilter("tax_invoice")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  typeFilter === "tax_invoice" ? "bg-white text-emerald-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  typeFilter === "tax_invoice"
+                    ? "bg-white text-emerald-700 shadow-xs border border-emerald-200/80 font-bold"
+                    : "text-slate-600 hover:text-emerald-700 hover:bg-white/60"
                 }`}
               >
-                Tax Invoices
+                <span className={`w-1.5 h-1.5 rounded-full ${typeFilter === "tax_invoice" ? "bg-emerald-600" : "bg-emerald-400"}`} />
+                <span>Tax Invoices</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                    typeFilter === "tax_invoice" ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60" : "bg-slate-200/70 text-slate-600"
+                  }`}
+                >
+                  {taxCount}
+                </span>
               </button>
             </div>
 

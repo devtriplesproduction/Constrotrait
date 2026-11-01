@@ -9,7 +9,7 @@ import { logoutAction, switchActiveRoleAction } from "@/actions/auth.actions";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/common/NotificationBell";
 import { RoleIcon } from "@/components/common/RoleIcon";
-import { getRoleDisplayName } from "@/config/roles";
+import { getRoleDisplayName, canViewAccounting, canAccessSystemConsole } from "@/config/roles";
 import { SESSION_CONFIG } from "@/config/session";
 import { cn } from "@/lib/utils/cn";
 
@@ -91,6 +91,8 @@ export function Topbar({ user, role, roles = [], branchName, onMenuClick, onRole
         { path: "/hr/payroll", isAllowed: (r: string) => ["SUPER_ADMIN", "HR", "BRANCH_MANAGER_ADMINISTRATIVE"].includes(r) },
         { path: "/clients", isAllowed: (r: string) => ["SUPER_ADMIN", "BRANCH_MANAGER_ADMINISTRATIVE", "ADMIN_INWARD_CRE", "HR"].includes(r) },
         { path: "/tests", isAllowed: (r: string) => ["SUPER_ADMIN", "QUALITY_MANAGER", "TECHNICAL_MANAGER", "BRANCH_MANAGER_ADMINISTRATIVE", "ADMIN_INWARD_CRE"].includes(r) },
+        { path: "/accounting", isAllowed: (r: string) => canViewAccounting([r]) },
+        { path: "/system", isAllowed: (r: string) => canAccessSystemConsole([r]) },
       ];
 
       const isBlocked = restrictedRoutes.some(
