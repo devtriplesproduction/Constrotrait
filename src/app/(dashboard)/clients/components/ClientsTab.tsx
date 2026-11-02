@@ -11,6 +11,7 @@ import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
 import { Database } from "@/types/database";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type JobEntry = Database["public"]["Tables"]["job_entries"]["Row"];
@@ -37,6 +38,16 @@ export default function ClientsTab({
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
+
+  const sortedBranches = React.useMemo(() => {
+    return [...branches].sort((a, b) => {
+      const codeA = (a.code || "").toUpperCase();
+      const codeB = (b.code || "").toUpperCase();
+      if (codeA === "CMTS-01") return -1;
+      if (codeB === "CMTS-01") return 1;
+      return codeA.localeCompare(codeB);
+    });
+  }, [branches]);
 
   const filteredClients = initialClients.filter((client) => {
     if (branchFilter !== "all") {
@@ -85,16 +96,17 @@ export default function ClientsTab({
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:max-w-xl">
             {isSuperAdmin && branches.length > 0 && (
-              <select
-                value={branchFilter}
-                onChange={(e) => setBranchFilter(e.target.value)}
-                className="h-10 px-3 text-xs font-semibold bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-              >
-                <option value="all">All Branches</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
+              <div className="w-full sm:w-56 shrink-0">
+                <Dropdown
+                  options={[
+                    { label: "All Branches", value: "all" },
+                    ...sortedBranches.map((b) => ({ label: `${b.name} (${b.code})`, value: b.id })),
+                  ]}
+                  value={branchFilter}
+                  onChange={(val) => setBranchFilter(val)}
+                  buttonClassName="h-10 text-xs font-semibold bg-slate-50/50 border-slate-200 rounded-xl"
+                />
+              </div>
             )}
 
             <Input

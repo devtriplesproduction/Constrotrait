@@ -67,6 +67,16 @@ export default function AllJobsTab({
   const [filterJobType, setFilterJobType] = useState<"all" | "dummy" | "active">("all");
   const [filterNabl, setFilterNabl] = useState<"all" | "nabl" | "non_nabl">("all");
   const [filterBranch, setFilterBranch] = useState("all");
+
+  const sortedBranches = useMemo(() => {
+    return [...branches].sort((a, b) => {
+      const codeA = (a.code || "").toUpperCase();
+      const codeB = (b.code || "").toUpperCase();
+      if (codeA === "CMTS-01") return -1;
+      if (codeB === "CMTS-01") return 1;
+      return codeA.localeCompare(codeB);
+    });
+  }, [branches]);
   
   const { toast } = useToast();
 
@@ -214,7 +224,7 @@ export default function AllJobsTab({
                 label="Branch"
                 options={[
                   { label: "All Branches", value: "all" },
-                  ...branches.map((b) => ({ label: b.name, value: b.id })),
+                  ...sortedBranches.map((b) => ({ label: `${b.name} (${b.code})`, value: b.id })),
                 ]}
                 value={filterBranch}
                 onChange={(val) => setFilterBranch(val)}

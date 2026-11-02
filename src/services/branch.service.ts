@@ -15,7 +15,7 @@ export async function getActiveBranches() {
       .from("branches")
       .select("id, name, code, is_active")
       .eq("is_active", true)
-      .order("name", { ascending: true });
+      .order("code", { ascending: true });
 
     if (error) {
       console.error("Failed to fetch active branches:", error);

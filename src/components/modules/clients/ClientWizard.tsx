@@ -177,6 +177,21 @@ export function ClientWizard({
   const primaryTest = initialJobTests[0] || initialData?.jobEntryTest;
   const primaryJob = initialData?.jobEntry || primaryTest?.job_entries;
 
+  const sortedBranches = React.useMemo(() => {
+    return [...branches].sort((a, b) => {
+      const codeA = (a.code || "").toUpperCase();
+      const codeB = (b.code || "").toUpperCase();
+      if (codeA === "CMTS-01") return -1;
+      if (codeB === "CMTS-01") return 1;
+      return codeA.localeCompare(codeB);
+    });
+  }, [branches]);
+
+  const cmts01Branch = branches.find(
+    (b) => b.code?.toUpperCase() === "CMTS-01" || b.name?.toLowerCase().includes("wai")
+  );
+  const defaultBranch = cmts01Branch || sortedBranches[0] || branches[0];
+
   const initialBranchId =
     primaryJob?.branch_id ||
     (primaryTest as any)?.job_entries?.branch_id ||
@@ -184,7 +199,7 @@ export function ClientWizard({
     fromQuotation?.branch_id ||
     fromQuotation?.clients?.branch_id ||
     initialJobTests?.[0]?.test_master?.branch_id ||
-    (isSuperAdmin ? (branches[0]?.id || "") : (userBranchId || ""));
+    (isSuperAdmin ? (defaultBranch?.id || "") : (userBranchId || defaultBranch?.id || ""));
 
   const [selectedBranchId, setSelectedBranchId] = useState<string>(initialBranchId);
   const [currentStep, setCurrentStep] = useState(mode === "edit" ? 4 : 0);
@@ -1407,21 +1422,21 @@ export function ClientWizard({
                           <label className="text-[13px] font-semibold text-slate-700 mb-0.5">
                             Branch <span className="text-red-500">*</span>
                           </label>
-                          <select
-                            value={selectedBranchId}
-                            onChange={(e) => {
-                              const val = e.target.value;
+                          <Dropdown
+                            options={sortedBranches.map((b) => ({
+                              label: `${b.name} (${b.code})`,
+                              value: b.id,
+                            }))}
+                            value={selectedBranchId || defaultBranch?.id || ""}
+                            onChange={(val) => {
                               setSelectedBranchId(val);
                               setNextUidPreview(null);
-                              setValue("client.branch_id", val);
-                              setValue("jobEntry.branch_id", val);
+                              setValue("client.branch_id", val, { shouldValidate: true, shouldDirty: true });
+                              setValue("jobEntry.branch_id", val, { shouldValidate: true, shouldDirty: true });
                             }}
-                            className="h-11 px-4 text-[13px] font-medium bg-slate-50/50 border border-slate-200/80 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                          >
-                            {branches.map((b) => (
-                              <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
-                            ))}
-                          </select>
+                            placeholder="Select Branch"
+                            buttonClassName="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 text-[13px] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:bg-white text-slate-800"
+                          />
                         </div>
                       ) : (
                         <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/70">
