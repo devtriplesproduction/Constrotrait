@@ -3349,6 +3349,10 @@ export type Database = {
             }
             Returns: undefined
           }
+      advance_uid_seq: {
+        Args: { p_name: string; p_year: number; p_val: number }
+        Returns: number
+      }
       next_receipt_no: {
         Args: {
           p_branch_id: string | null
@@ -3358,6 +3362,10 @@ export type Database = {
       next_report_seq: { Args: { p_year: number }; Returns: number }
       next_seq: { Args: { p_fy: string; p_kind: string }; Returns: number }
       next_uid_seq: {
+        Args: { p_name: string; p_year: number }
+        Returns: number
+      }
+      peek_uid_seq: {
         Args: { p_name: string; p_year: number }
         Returns: number
       }
