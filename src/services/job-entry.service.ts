@@ -138,6 +138,8 @@ export class JobEntryService {
     let firstUidLabel: string | null = null;
     let firstUid: number | null = null;
 
+    const counterName = isNabl ? "UID_NABL" : `UID_${nonNablMonth}`;
+
     if (isNabl) {
       const { data, error } = await supabase.rpc("next_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
       if (error) throw new Error("UID Generation failed: " + error.message);
@@ -146,7 +148,6 @@ export class JobEntryService {
     } else {
       if (!nonNablMonth) throw new Error("A valid month must be provided for non-NABL tests.");
       const month = nonNablMonth;
-      const counterName = `UID_${month}`;
       const { data, error } = await supabase.rpc("next_uid_seq", { p_name: counterName, p_year: jobYear });
       if (error) throw new Error("UID Generation failed: " + error.message);
       firstUidLabel = `${month}-${data.toString().padStart(2, '0')}`;
@@ -200,6 +201,9 @@ export class JobEntryService {
         .select();
       if (testsError) {
         await supabase.from("job_entries").delete().eq("id", jobEntry.id);
+        if (firstUid) {
+          await supabase.from("lab_uid_counters").update({ counter_value: firstUid - 1 }).eq("counter_name", counterName).eq("counter_year", jobYear).eq("counter_value", firstUid);
+        }
         throw new Error(testsError.message);
       }
       jobEntryTests = insertedTests;
@@ -207,6 +211,9 @@ export class JobEntryService {
       const { error: qErr } = await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: jobEntry.id });
       if (qErr) {
         await supabase.from("job_entries").delete().eq("id", jobEntry.id);
+        if (firstUid) {
+          await supabase.from("lab_uid_counters").update({ counter_value: firstUid - 1 }).eq("counter_name", counterName).eq("counter_year", jobYear).eq("counter_value", firstUid);
+        }
         throw new Error(qErr.message || "Failed to enqueue job");
       }
     } else {
