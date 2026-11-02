@@ -2146,15 +2146,18 @@ export function ClientWizard({
                           <label className="text-[13px] font-semibold text-slate-700 mb-2 block">
                             Billing Month for Non-NABL Tests <span className="text-red-500">*</span>
                           </label>
-                          <select
-                            {...register("non_nabl_month")}
-                            className="w-full md:w-1/3 h-11 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer"
-                            required
-                          >
-                            {["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"].map((m) => (
-                              <option key={m} value={m}>{m}</option>
-                            ))}
-                          </select>
+                          <Dropdown
+                            options={["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"].map((m) => ({
+                              label: m,
+                              value: m,
+                            }))}
+                            value={watch("non_nabl_month") || new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase()}
+                            onChange={(val) => {
+                              setValue("non_nabl_month", val, { shouldValidate: true, shouldDirty: true });
+                            }}
+                            className="w-full md:w-1/3"
+                            buttonClassName="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:border-orange-500"
+                          />
                         </div>
                       )}
 
