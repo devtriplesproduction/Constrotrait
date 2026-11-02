@@ -22,7 +22,6 @@ export async function submitClientWizard(data: ClientWizardValues) {
         email: data.client.email,
         gst_no: data.client.gst_no,
         company_name: data.client.company_name,
-        branch_id: branchId,
         division: data.jobEntry.division,
         site_name: data.jobEntry.site_name,
         agency_name: data.jobEntry.agency_name,

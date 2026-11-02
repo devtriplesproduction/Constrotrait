@@ -92,7 +92,21 @@ export class ClientService {
 
     const isSuper = isSuperAdmin(user.roles);
     if (!isSuper && data.branch_id && data.branch_id !== user.branch_id) {
-      throw new Error("Unauthorized: Cross-branch client access is not permitted");
+      if (!user.branch_id) {
+        throw new Error("Unauthorized: Cross-branch client access is not permitted");
+      }
+      // Check if this client has any job entries at the user's branch
+      const { data: jobAtBranch } = await supabase
+        .from("job_entries")
+        .select("id")
+        .eq("client_id", id)
+        .eq("branch_id", user.branch_id)
+        .limit(1)
+        .maybeSingle();
+
+      if (!jobAtBranch) {
+        throw new Error("Unauthorized: Cross-branch client access is not permitted");
+      }
     }
 
     return data;
@@ -184,32 +198,58 @@ export class ClientService {
     if (!user) throw new Error("Unauthorized");
 
     const supabase = await createClient();
-    let query = supabase
-      .from("clients")
-      .select("*, branches ( id, name, code )")
-      .order("name", { ascending: true });
-
     const isSuper = isSuperAdmin(user.roles);
+
     if (isSuper) {
+      let query = supabase
+        .from("clients")
+        .select("*, branches ( id, name, code )")
+        .order("name", { ascending: true });
+
       if (branchId && branchId !== "all") {
         query = query.eq("branch_id", branchId);
       }
-    } else {
-      if (user.branch_id) {
-        query = query.eq("branch_id", user.branch_id);
-      } else {
-        return [];
+      const { data, error } = await query;
+      if (error) {
+        console.error("Error fetching clients:", error);
+        throw new Error(error.message);
       }
+      return data || [];
     }
 
-    const { data, error } = await query;
+    if (!user.branch_id) return [];
 
-    if (error) {
-      console.error("Error fetching clients:", error);
-      throw new Error(error.message);
+    // For branch users: return clients registered at user's branch OR clients with job entries at user's branch
+    const { data: branchClients, error: cErr } = await supabase
+      .from("clients")
+      .select("*, branches ( id, name, code )")
+      .eq("branch_id", user.branch_id)
+      .order("name", { ascending: true });
+
+    if (cErr) {
+      console.error("Error fetching branch clients:", cErr);
+      throw new Error(cErr.message);
     }
 
-    return data;
+    const { data: jobClients, error: jErr } = await supabase
+      .from("job_entries")
+      .select("client_id, clients (*, branches ( id, name, code ))")
+      .eq("branch_id", user.branch_id);
+
+    if (jErr) {
+      console.error("Error fetching job clients:", jErr);
+      throw new Error(jErr.message);
+    }
+
+    const clientMap = new Map<string, any>();
+    (branchClients || []).forEach((c) => clientMap.set(c.id, c));
+    (jobClients || []).forEach((j: any) => {
+      if (j.clients && !clientMap.has(j.clients.id)) {
+        clientMap.set(j.clients.id, j.clients);
+      }
+    });
+
+    return Array.from(clientMap.values()).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   }
 
   /**
