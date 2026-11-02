@@ -106,9 +106,11 @@ const formatDate = (dateStr: string | null | undefined) => {
 const formatSampleCode = (code: string) => {
   if (!code) return '';
   // On the Job Card, only show the base batch code (e.g. CMTS/CON/CC/26-27/11) without individual sample suffixes (-I, -II, etc.)
-  const first = code.split(',')[0].trim();
-  const base = first.replace(/-[IVXLCDM\d]+$/i, '');
-  return base.replace(/([/])/g, '$1\u200B');
+  let first = code.split(',')[0].trim();
+  first = first.replace(/-[IVXLCDM\d]+$/i, '');
+  // Self-heal corrupted double-initial codes like CMTS/CC/CC/26-27/860 -> CMTS/CON/CC/26-27/860
+  first = first.replace(/^CMTS\/(?!CON|ENV)([^\/]+)\/\1\//i, 'CMTS/CON/$1/');
+  return first.replace(/([/])/g, '$1\u200B');
 };
 
 export const JobCardPDF = ({ data }: { data: JobCardData }) => {
@@ -133,6 +135,16 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
     primaryJob?.additional_details_values?.['Date of Casting'] ||
     primaryJob?.additional_details_values?.['Casting Date'] ||
     primaryJob?.additional_details_values?.casting_date;
+
+  const customerReferenceNo =
+    data.jobEntry?.letter_reference ||
+    (data.jobEntry as any)?.customer_reference ||
+    primaryJob?.additional_details_values?.customer_reference_no ||
+    primaryJob?.additional_details_values?.['Customer Reference No'] ||
+    primaryJob?.additional_details_values?.['customer_reference'] ||
+    primaryJob?.customer_reference ||
+    targetJobs.find(j => (j?.additional_details_values as any)?.customer_reference_no)?.additional_details_values?.customer_reference_no ||
+    'NA';
 
   const receivingDate = primaryJob?.date_of_receiving || data.jobEntry?.inward_on;
 
@@ -323,7 +335,7 @@ export const JobCardPDF = ({ data }: { data: JobCardData }) => {
               <Text>CUSTOMER REFERENCE NO :</Text>
             </View>
             <View style={[styles.lastCell, { width: '43%', justifyContent: 'center' }]}>
-              <Text style={styles.bold}>{data.jobEntry?.letter_reference || 'NA'}</Text>
+              <Text style={styles.bold}>{customerReferenceNo || 'NA'}</Text>
             </View>
           </View>
         </View>

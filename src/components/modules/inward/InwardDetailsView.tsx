@@ -123,6 +123,12 @@ export function InwardDetailsView({
   const receivingDateRaw =
     primaryTest?.date_of_receiving || jobEntry?.inward_on || jobEntry?.created_at;
 
+  const customerRef =
+    jobEntry?.letter_reference ||
+    addVals?.customer_reference_no ||
+    addVals?.["Customer Reference No"] ||
+    "-";
+
   const formatDateSafe = (dateStr?: string | null, formatStr: string = "dd MMM yyyy") => {
     if (!dateStr) return "-";
     try {
@@ -375,11 +381,11 @@ export function InwardDetailsView({
                   </div>
                 )}
 
-                {jobEntry?.letter_reference && (
+                {(jobEntry?.letter_reference || customerRef !== "-") && (
                   <div className="flex items-center gap-2">
                     <span className="text-slate-300 hidden sm:inline">•</span>
                     <FileText className="w-4 h-4 text-emerald-600" />
-                    <span>Ref: <strong className="font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80">{jobEntry.letter_reference}</strong></span>
+                    <span>Customer Ref: <strong className="font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80">{jobEntry?.letter_reference || customerRef}</strong></span>
                   </div>
                 )}
               </div>
@@ -658,10 +664,10 @@ export function InwardDetailsView({
 
             <div className="space-y-3 pt-1">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Customer Letter Reference</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">CUSTOMER REFERENCE NO</p>
                 <div className="bg-emerald-50/50 p-2.5 rounded-xl border border-emerald-200/80 flex items-center justify-between">
                   <p className="text-xs font-mono font-black text-emerald-900 truncate">
-                    {jobEntry?.letter_reference || "No Letter Reference Provided"}
+                    {jobEntry?.letter_reference || (customerRef !== "-" ? customerRef : "No Customer Reference Provided")}
                   </p>
                 </div>
               </div>
@@ -742,7 +748,7 @@ export function InwardDetailsView({
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3.5 pt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3.5 pt-1">
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Material ID</p>
             <p className="text-sm font-extrabold text-slate-900 truncate">{materialId}</p>
@@ -776,6 +782,11 @@ export function InwardDetailsView({
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date of Receiving</p>
             <p className="text-sm font-extrabold text-slate-900 truncate">{formatDateSafe(receivingDateRaw)}</p>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Customer Ref No</p>
+            <p className="text-sm font-extrabold text-slate-900 truncate" title={customerRef}>{customerRef}</p>
           </div>
         </div>
       </div>

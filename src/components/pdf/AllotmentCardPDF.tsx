@@ -414,7 +414,11 @@ export const AllotmentCardPDF = ({ data }: { data: AllotmentCardData }) => {
       const t = assignment.job_entry_tests || assignment;
       const codeNo = t?.additional_details_values?.sample_code_no || t?.sample_code_no || '';
       if (codeNo) {
-        const splitCodes = codeNo.split(/,\s*(?=CMTS\/)|,\s*/).map((c: string) => c.trim()).filter(Boolean);
+        const splitCodes = codeNo.split(/,\s*(?=CMTS\/)|,\s*/).map((c: string) => {
+          let cleaned = c.trim();
+          cleaned = cleaned.replace(/^CMTS\/(?!CON|ENV)([^\/]+)\/\1\//i, 'CMTS/CON/$1/');
+          return cleaned;
+        }).filter(Boolean);
         splitCodes.forEach((c: string) => allCodesSet.add(c));
       }
     });

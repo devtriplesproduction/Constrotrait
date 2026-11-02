@@ -63,6 +63,7 @@ export const materialDetailsSchema = z.object({
   date_of_casting: z.string().optional(),
   date_of_testing: z.string().optional(),
   date_of_receiving: z.string().optional(),
+  customer_reference: z.string().optional(),
 });
 export type MaterialDetailsValues = z.infer<typeof materialDetailsSchema>;
 

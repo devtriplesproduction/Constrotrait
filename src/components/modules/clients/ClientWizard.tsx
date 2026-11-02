@@ -309,6 +309,7 @@ export function ClientWizard({
         date_of_casting: primaryTest?.date_of_casting || "",
         date_of_testing: primaryTest?.date_of_testing || calculateTestingDate(primaryTest?.date_of_casting, primaryTest?.testing_day) || "",
         date_of_receiving: primaryTest?.date_of_receiving || "",
+        customer_reference: primaryJob?.letter_reference || (primaryTest?.additional_details_values as any)?.customer_reference_no || "",
       },
       selectedTestIds: initialJobTests.map(t => t.test_master_id).filter(Boolean) as string[],
       jobEntryTests: initialJobTests.length > 0 ? initialJobTests.map((t: any) => ({
@@ -364,6 +365,7 @@ export function ClientWizard({
         date_of_casting: "",
         date_of_testing: "",
         date_of_receiving: new Date().toISOString().slice(0, 10),
+        customer_reference: fromQuotation.quotation_no ? `Quotation: ${fromQuotation.quotation_no}` : "",
       },
       selectedTestIds: initialSelectedTestIds && initialSelectedTestIds.length > 0
         ? initialSelectedTestIds
@@ -382,6 +384,7 @@ export function ClientWizard({
         testing_day: "",
         date_of_casting: "",
         date_of_testing: "",
+        customer_reference: "",
       },
       client: {
         name: "",
@@ -432,6 +435,7 @@ export function ClientWizard({
       setValue("jobEntry.quotation_id", fromQuotation.id || "", { shouldDirty: true });
       if (fromQuotation.quotation_no) {
         setValue("jobEntry.letter_reference", `Quotation: ${fromQuotation.quotation_no}`, { shouldDirty: true });
+        setValue("materialDetails.customer_reference", `Quotation: ${fromQuotation.quotation_no}`, { shouldDirty: true });
       }
       if (initialBranchId) {
         setValue("client.branch_id", initialBranchId, { shouldDirty: true });
@@ -887,6 +891,7 @@ export function ClientWizard({
     setValue("jobEntry.invoice_no", "", { shouldDirty: true });
     setValue("jobEntry.invoice_date", "", { shouldDirty: true });
     setValue("jobEntry.letter_reference", "", { shouldDirty: true });
+    setValue("materialDetails.customer_reference", "", { shouldDirty: true });
     setValue("jobEntry.payment_status", "", { shouldDirty: true });
 
     // Fetch projects for this client
@@ -967,6 +972,10 @@ export function ClientWizard({
           initialAdditionalDetails[detail] = "";
         });
       }
+      const globalCustRef = getValues("materialDetails.customer_reference") || getValues("jobEntry.letter_reference") || "";
+      if (globalCustRef) {
+        initialAdditionalDetails.customer_reference_no = globalCustRef;
+      }
 
       const globalCasting = getValues("materialDetails.date_of_casting") || "";
       const globalTestingDay = getValues("materialDetails.testing_day") || "";
@@ -1004,6 +1013,10 @@ export function ClientWizard({
 
     if (currentStep === 0 || currentStep === 1) {
       isValid = await trigger("client");
+      const ref = getValues("jobEntry.letter_reference");
+      if (ref && !getValues("materialDetails.customer_reference")) {
+        setValue("materialDetails.customer_reference", ref, { shouldDirty: true });
+      }
     } else if (currentStep === 2) {
       isValid = true;
     } else if (currentStep === 3) {
@@ -1011,6 +1024,14 @@ export function ClientWizard({
       const mat = getValues("materialDetails");
       let initials = mat?.material_initials?.trim() || "";
       const currentTests = getValues("jobEntryTests") || [];
+      const custRef = mat?.customer_reference || getValues("jobEntry.letter_reference") || "";
+      if (custRef) {
+        setValue("materialDetails.customer_reference", custRef, { shouldValidate: true, shouldDirty: true });
+        setValue("jobEntry.letter_reference", custRef, { shouldValidate: true, shouldDirty: true });
+        currentTests.forEach((_, idx) => {
+          setValue(`jobEntryTests.${idx}.additional_details_values.customer_reference_no` as any, custRef);
+        });
+      }
       if (!initials) {
         const matName = selectedMaterial ||
           currentTests[0]?.material_description ||
@@ -1500,6 +1521,7 @@ export function ClientWizard({
                               setValue("jobEntry.invoice_no", "", { shouldDirty: true, shouldValidate: true });
                               setValue("jobEntry.invoice_date", "", { shouldDirty: true, shouldValidate: true });
                               setValue("jobEntry.letter_reference", "", { shouldDirty: true, shouldValidate: true });
+                              setValue("materialDetails.customer_reference", "", { shouldDirty: true, shouldValidate: true });
                               setValue("jobEntry.payment_status", "", { shouldDirty: true, shouldValidate: true });
                             } else {
                               const proj = clientProjects.find(
@@ -1517,6 +1539,7 @@ export function ClientWizard({
                                 setValue("jobEntry.invoice_no", proj.invoice_no || "", { shouldDirty: true, shouldValidate: true });
                                 setValue("jobEntry.invoice_date", proj.invoice_date ? String(proj.invoice_date).split("T")[0] : "", { shouldDirty: true, shouldValidate: true });
                                 setValue("jobEntry.letter_reference", proj.letter_reference || "", { shouldDirty: true, shouldValidate: true });
+                                setValue("materialDetails.customer_reference", proj.letter_reference || "", { shouldDirty: true, shouldValidate: true });
                                 setValue("jobEntry.payment_status", proj.payment_status || "", { shouldDirty: true, shouldValidate: true });
                                 toast({
                                   title: "Project Auto-filled",
@@ -1604,8 +1627,17 @@ export function ClientWizard({
                           />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Reference</label>
-                          <Input {...register("jobEntry.letter_reference")} placeholder="Ref" className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white" />
+                          <label className="text-[13px] font-semibold text-slate-700 mb-0.5">CUSTOMER REFERENCE NO</label>
+                          <Input
+                            {...register("jobEntry.letter_reference")}
+                            placeholder="e.g. CR-001 / Ref No"
+                            className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setValue("jobEntry.letter_reference", val, { shouldDirty: true, shouldValidate: true });
+                              setValue("materialDetails.customer_reference", val, { shouldDirty: true, shouldValidate: true });
+                            }}
+                          />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[13px] font-semibold text-slate-700 mb-0.5">Status</label>
@@ -2018,6 +2050,24 @@ export function ClientWizard({
                               side="left"
                               triggerClassName="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all hover:border-orange-500/50 group-hover:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 w-full"
                             />
+                          </div>
+                          <div className="flex flex-col gap-1.5 col-span-1 md:col-span-2">
+                            <label className="text-[13px] font-semibold text-slate-700 mb-0.5">CUSTOMER REFERENCE NO</label>
+                            <Input
+                              {...register(`materialDetails.customer_reference`)}
+                              placeholder="e.g. CR-001 / Letter Ref / PO Number"
+                              className="text-[13px] h-11 rounded-xl bg-slate-50/50 border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-500/20 group-hover:bg-white"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setValue("materialDetails.customer_reference", val, { shouldValidate: true, shouldDirty: true });
+                                setValue("jobEntry.letter_reference", val, { shouldValidate: true, shouldDirty: true });
+                                const currentTests = getValues("jobEntryTests") || [];
+                                currentTests.forEach((_, idx) => {
+                                  setValue(`jobEntryTests.${idx}.additional_details_values.customer_reference_no` as any, val);
+                                });
+                              }}
+                            />
+                            <span className="text-[11px] text-slate-400 font-medium">Customer&#39;s letter or purchase order reference printed on the Job Card</span>
                           </div>
                         </div>
                       </div>

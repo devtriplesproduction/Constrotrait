@@ -113,7 +113,7 @@ function UnifiedJobCard({
 
       {/* Sample Specification Summary */}
       <div className="p-4 sm:px-6 sm:py-4 bg-slate-50/70 border-b border-slate-100">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           <div>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Material / Sample</p>
             <p className="text-sm font-semibold text-slate-800 truncate" title={primaryMaterial}>{primaryMaterial}</p>
@@ -131,6 +131,10 @@ function UnifiedJobCard({
           <div>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Testing Date</p>
             <p className="text-sm font-medium text-slate-700">{testDate ? new Date(testDate).toLocaleDateString() : "-"}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Customer Ref No</p>
+            <p className="text-sm font-semibold text-emerald-800 truncate" title={job.letter_reference || "-"}>{job.letter_reference || "-"}</p>
           </div>
         </div>
       </div>

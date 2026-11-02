@@ -55,6 +55,8 @@ export async function submitClientWizard(data: ClientWizardValues) {
 
     if (!clientId) throw new Error("Failed to resolve client ID.");
 
+    const customerReference = data.materialDetails?.customer_reference || data.jobEntry?.letter_reference || null;
+
     const testsData: any[] =
       data.jobEntryTests && data.jobEntryTests.length > 0
         ? data.jobEntryTests.map((test: any) => ({
@@ -68,7 +70,10 @@ export async function submitClientWizard(data: ClientWizardValues) {
             sample_quantity: data.materialDetails?.sample_quantity || null,
             testing_day: test.testing_day || data.materialDetails?.testing_day || null,
             date_of_casting: toNull(test.date_of_casting || data.materialDetails?.date_of_casting),
-            additional_details_values: test.additional_details_values || {},
+            additional_details_values: {
+              ...(test.additional_details_values || {}),
+              ...(customerReference ? { customer_reference_no: customerReference } : {}),
+            },
             test_method: test.test_method || null,
             grade: data.materialDetails?.grade || test.grade || test.additional_details_values?.Grade || test.additional_details_values?.grade || null,
           }))
@@ -87,7 +92,7 @@ export async function submitClientWizard(data: ClientWizardValues) {
       collected_by: data.jobEntry.collected_by,
       invoice_no: data.jobEntry.invoice_no,
       invoice_date: data.jobEntry.invoice_date,
-      letter_reference: data.jobEntry.letter_reference,
+      letter_reference: customerReference,
       payment_status: data.jobEntry.payment_status,
       quotation_id: (data.jobEntry as any)?.quotation_id || null,
     };
@@ -176,7 +181,7 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
         collected_by: toNull(data.jobEntry?.collected_by),
         invoice_no: toNull(data.jobEntry?.invoice_no),
         invoice_date: toNull(data.jobEntry?.invoice_date),
-        letter_reference: toNull(data.jobEntry?.letter_reference),
+        letter_reference: toNull(data.materialDetails?.customer_reference ?? data.jobEntry?.letter_reference),
         payment_status: toNull(data.jobEntry?.payment_status),
       }).eq("id", jobEntryId);
     }
@@ -189,7 +194,7 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
     const materialInitials = ((data.materialDetails as any)?.test_initials || data.materialDetails?.material_initials)?.trim();
     const cleanInitials = materialInitials ? (materialInitials.replace(/[^A-Za-z0-9]/g, '').toUpperCase() || 'GEN') : undefined;
 
-    const valid5Part = /^CMTS\/(?:CON|ENV)\/([^\/]+)\/(\d{2}-\d{2})\/(\d+)(?:-([IVXLCDM\d]+))?$/i;
+    const parse5Part = /^CMTS\/([^\/]+)\/([^\/]+)\/(\d{2}-\d{2})\/(\d+)(?:-([IVXLCDM\d]+))?$/i;
     let unifiedSampleCode: string | null = null;
 
     if (existingJobTests && existingJobTests.length > 0) {
@@ -197,7 +202,7 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
         const sc = (t.additional_details_values as any)?.sample_code_no;
         if (sc) {
           const firstCode = String(sc).split(/,\s*(?=CMTS\/)|,\s*/)[0]?.trim();
-          if (firstCode && valid5Part.test(firstCode)) {
+          if (firstCode && parse5Part.test(firstCode)) {
             unifiedSampleCode = sc;
             break;
           }
@@ -215,16 +220,18 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
     }
     if (isNaN(qty) || qty <= 0) qty = 1;
 
-    if (unifiedSampleCode && cleanInitials) {
+    if (unifiedSampleCode) {
       const firstCode = String(unifiedSampleCode).split(/,\s*(?=CMTS\/)|,\s*/)[0]?.trim();
-      const match = firstCode?.match(valid5Part);
+      const match = firstCode?.match(parse5Part);
       if (match) {
-        const category = match[1].toUpperCase();
-        const yearSegment = match[2];
-        const sampleNo = match[3];
+        const category = match[1].toUpperCase() === 'ENV' ? 'ENV' : 'CON';
+        const existingInitials = match[2];
+        const effectiveInitials = cleanInitials || (existingInitials ? existingInitials.replace(/[^A-Za-z0-9]/g, '').toUpperCase() : 'GEN');
+        const yearSegment = match[3];
+        const sampleNo = match[4];
         const codes: string[] = [];
         for (let i = 1; i <= qty; i++) {
-          codes.push(`CMTS/${category}/${cleanInitials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
+          codes.push(`CMTS/${category}/${effectiveInitials}/${yearSegment}/${sampleNo}-${JobEntryService.toRoman(i)}`);
         }
         unifiedSampleCode = codes.join(', ');
       }
@@ -242,6 +249,10 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
       }
       if (unifiedSampleCode) {
         rawAddVals.sample_code_no = unifiedSampleCode;
+      }
+      const effectiveCustRef = data.materialDetails?.customer_reference ?? data.jobEntry?.letter_reference;
+      if (effectiveCustRef) {
+        rawAddVals.customer_reference_no = effectiveCustRef;
       }
 
       let matchedExisting = (t as any).id
