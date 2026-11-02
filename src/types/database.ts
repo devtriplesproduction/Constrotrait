@@ -2257,18 +2257,21 @@ export type Database = {
       }
       lab_uid_counters: {
         Row: {
+          branch_id: string | null
           counter_name: string
           counter_value: number
           counter_year: number
           id: string
         }
         Insert: {
+          branch_id?: string | null
           counter_name: string
           counter_value?: number
           counter_year: number
           id?: string
         }
         Update: {
+          branch_id?: string | null
           counter_name?: string
           counter_value?: number
           counter_year?: number
@@ -3350,7 +3353,7 @@ export type Database = {
             Returns: undefined
           }
       advance_uid_seq: {
-        Args: { p_name: string; p_year: number; p_val: number }
+        Args: { p_name: string; p_year: number; p_val: number; p_branch_id?: string | null }
         Returns: number
       }
       next_receipt_no: {
@@ -3362,11 +3365,11 @@ export type Database = {
       next_report_seq: { Args: { p_year: number }; Returns: number }
       next_seq: { Args: { p_fy: string; p_kind: string }; Returns: number }
       next_uid_seq: {
-        Args: { p_name: string; p_year: number }
+        Args: { p_name: string; p_year: number; p_branch_id?: string | null }
         Returns: number
       }
       peek_uid_seq: {
-        Args: { p_name: string; p_year: number }
+        Args: { p_name: string; p_year: number; p_branch_id?: string | null }
         Returns: number
       }
       process_ulr_queue_for_date: { Args: { p_date: string }; Returns: Json }

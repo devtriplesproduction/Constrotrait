@@ -331,9 +331,9 @@ export async function getClientProjectsAction(clientId: string) {
   }
 }
 
-export async function getNextUidAction() {
+export async function getNextUidAction(branchId?: string) {
   try {
-    const nextUid = await JobEntryService.getNextUid();
+    const nextUid = await JobEntryService.getNextUid(branchId);
     return { success: true, nextUid };
   } catch (error) {
     console.error("getNextUidAction error:", error);
@@ -341,9 +341,9 @@ export async function getNextUidAction() {
   }
 }
 
-export async function createDummyJobCardAction(isNabl: boolean) {
+export async function createDummyJobCardAction(isNabl: boolean, branchId?: string) {
   try {
-    const jobEntry = await JobEntryService.createDummyJobCard(isNabl);
+    const jobEntry = await JobEntryService.createDummyJobCard(isNabl, branchId);
     revalidatePath('/dashboard');
     revalidatePath('/clients');
     return { success: true, data: jobEntry };

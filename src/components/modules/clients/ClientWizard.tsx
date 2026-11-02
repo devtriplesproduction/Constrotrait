@@ -508,9 +508,10 @@ export function ClientWizard({
     let timer: NodeJS.Timeout;
     if (currentStep === steps.length - 1) {
       timer = setTimeout(() => setSubmitEnabled(true), 500);
-      // Fetch next UID preview when reaching the last step, only if creating
-      if (mode !== "edit" && nextUidPreview === null) {
-        getNextUidAction().then(res => {
+      // Fetch branch-isolated next UID preview when reaching the last step, only if creating
+      if (mode !== "edit") {
+        const branchToQuery = isSuperAdmin ? selectedBranchId : userBranchId;
+        getNextUidAction(branchToQuery || undefined).then(res => {
           if (res.success && res.nextUid) {
             setNextUidPreview(res.nextUid);
           }
@@ -520,7 +521,7 @@ export function ClientWizard({
       setSubmitEnabled(false);
     }
     return () => clearTimeout(timer);
-  }, [currentStep, nextUidPreview, mode]);
+  }, [currentStep, mode, isSuperAdmin, selectedBranchId, userBranchId]);
 
   // Debounced search for clients strictly within the branch
   useEffect(() => {
@@ -698,6 +699,7 @@ export function ClientWizard({
                 const matchedBranch = allMasters.find(t => matchedTestIds.includes(t.id))?.branch_id;
                 if (matchedBranch && !getValues("client.branch_id")) {
                   setSelectedBranchId(matchedBranch);
+                  setNextUidPreview(null);
                   setValue("client.branch_id", matchedBranch);
                   setValue("jobEntry.branch_id", matchedBranch);
                 }
@@ -1410,6 +1412,7 @@ export function ClientWizard({
                             onChange={(e) => {
                               const val = e.target.value;
                               setSelectedBranchId(val);
+                              setNextUidPreview(null);
                               setValue("client.branch_id", val);
                               setValue("jobEntry.branch_id", val);
                             }}

@@ -41,7 +41,8 @@ export class JobEntryService {
     jobYear: number,
     materialInitials: string | undefined,
     testMasters: any[],
-    testsData: any[]
+    testsData: any[],
+    branchId?: string
   ): Promise<{ sampleCodes: string[]; seqName: string; sampleNo: number }> {
     if (!testsData || testsData.length === 0 || !testMasters || testMasters.length === 0) {
       return { sampleCodes: [], seqName: '', sampleNo: 0 };
@@ -66,7 +67,11 @@ export class JobEntryService {
 
     const seqName = category === 'ENV' ? 'SAMPLE_ENV' : 'SAMPLE_CON';
     // Peek next sample sequence without advancing counter until records are confirmed saved
-    const { data: sampleData, error: sampleError } = await supabase.rpc("peek_uid_seq", { p_name: seqName, p_year: jobYear });
+    const { data: sampleData, error: sampleError } = await supabase.rpc("peek_uid_seq", { 
+      p_name: seqName, 
+      p_year: jobYear,
+      p_branch_id: branchId || null
+    });
     if (sampleError || !sampleData) {
       throw new Error(`Sample Code Generation failed for ${seqName}: ` + (sampleError?.message || "No sequence returned"));
     }
@@ -144,7 +149,11 @@ export class JobEntryService {
 
     if (isNabl) {
       // Peek next sequence without advancing counter until record is confirmed saved
-      const { data, error } = await supabase.rpc("peek_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
+      const { data, error } = await supabase.rpc("peek_uid_seq", { 
+        p_name: "UID_NABL", 
+        p_year: jobYear,
+        p_branch_id: targetBranchId || null
+      });
       if (error || !data) throw new Error("UID Generation failed: " + (error?.message || "No sequence returned"));
       firstUidLabel = data.toString();
       firstUid = parseInt(firstUidLabel as string, 10);
@@ -153,7 +162,11 @@ export class JobEntryService {
       if (!nonNablMonth) throw new Error("A valid month must be provided for non-NABL tests.");
       const month = nonNablMonth;
       // Peek next sequence without advancing counter until record is confirmed saved
-      const { data, error } = await supabase.rpc("peek_uid_seq", { p_name: counterName, p_year: jobYear });
+      const { data, error } = await supabase.rpc("peek_uid_seq", { 
+        p_name: counterName, 
+        p_year: jobYear,
+        p_branch_id: targetBranchId || null
+      });
       if (error || !data) throw new Error("UID Generation failed: " + (error?.message || "No sequence returned"));
       rawUidSeqVal = parseInt(data.toString(), 10);
       firstUidLabel = `${month}-${rawUidSeqVal.toString().padStart(2, '0')}`;
@@ -182,7 +195,8 @@ export class JobEntryService {
       jobYear,
       materialInitials,
       testMasters,
-      testsData
+      testsData,
+      targetBranchId
     );
 
     if (testsData && testsData.length > 0) {
@@ -252,10 +266,20 @@ export class JobEntryService {
 
     // Records saved successfully! Advance the sequence counters only now.
     if (rawUidSeqVal > 0) {
-      await supabase.rpc("advance_uid_seq", { p_name: counterName, p_year: jobYear, p_val: rawUidSeqVal });
+      await supabase.rpc("advance_uid_seq", { 
+        p_name: counterName, 
+        p_year: jobYear, 
+        p_val: rawUidSeqVal,
+        p_branch_id: targetBranchId || null
+      });
     }
     if (sampleSeqName && sampleNo > 0) {
-      await supabase.rpc("advance_uid_seq", { p_name: sampleSeqName, p_year: jobYear, p_val: sampleNo });
+      await supabase.rpc("advance_uid_seq", { 
+        p_name: sampleSeqName, 
+        p_year: jobYear, 
+        p_val: sampleNo,
+        p_branch_id: targetBranchId || null
+      });
     }
 
     return { jobEntry, jobEntryTests, uidsIssued };
@@ -283,7 +307,11 @@ export class JobEntryService {
     const createdDate = new Date();
     const jobYear = createdDate.getFullYear();
 
-    const { data, error } = await supabase.rpc("peek_uid_seq", { p_name: "UID_NABL", p_year: jobYear });
+    const { data, error } = await supabase.rpc("peek_uid_seq", { 
+      p_name: "UID_NABL", 
+      p_year: jobYear,
+      p_branch_id: targetBranchId || null
+    });
     if (error || !data) throw new Error("UID Generation failed: " + (error?.message || "No sequence returned"));
     const currentUidLabel = data.toString();
     const uidInt = parseInt(data.toString(), 10);
@@ -296,7 +324,12 @@ export class JobEntryService {
     if (jobError) throw new Error(jobError.message);
 
     // Advance counter only after record is successfully saved
-    await supabase.rpc("advance_uid_seq", { p_name: "UID_NABL", p_year: jobYear, p_val: uidInt });
+    await supabase.rpc("advance_uid_seq", { 
+      p_name: "UID_NABL", 
+      p_year: jobYear, 
+      p_val: uidInt,
+      p_branch_id: targetBranchId || null
+    });
 
     return jobEntry;
   }
@@ -355,7 +388,14 @@ export class JobEntryService {
     let newSampleNo = 0;
     if (!sampleCodesStr) {
       const jobYear = new Date(jobEntry.created_at).getFullYear();
-      const sampleRes = await JobEntryService.buildSampleCodes(supabase, jobYear, materialInitials, testMasters, testsData);
+      const sampleRes = await JobEntryService.buildSampleCodes(
+        supabase, 
+        jobYear, 
+        materialInitials, 
+        testMasters, 
+        testsData, 
+        jobEntry.branch_id || undefined
+      );
       if (sampleRes.sampleCodes.length > 0) {
         sampleCodesStr = sampleRes.sampleCodes.join(', ');
         newSampleSeqName = sampleRes.seqName;
@@ -393,7 +433,12 @@ export class JobEntryService {
 
     if (newSampleSeqName && newSampleNo > 0) {
       const jobYear = new Date(jobEntry.created_at).getFullYear();
-      await supabase.rpc("advance_uid_seq", { p_name: newSampleSeqName, p_year: jobYear, p_val: newSampleNo });
+      await supabase.rpc("advance_uid_seq", { 
+        p_name: newSampleSeqName, 
+        p_year: jobYear, 
+        p_val: newSampleNo,
+        p_branch_id: jobEntry.branch_id || null
+      });
     }
 
     return { jobEntryTests: insertedTests, uidsIssued };
@@ -581,40 +626,55 @@ export class JobEntryService {
     return null;
   }
 
-  static async getNextUid(): Promise<number> {
+  static async getNextUid(branchId?: string): Promise<number> {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
 
     const supabase = await createClient() as any;
     const currentYear = new Date().getFullYear();
 
-    const { data, error } = await supabase.rpc("peek_uid_seq", { p_name: "UID_NABL", p_year: currentYear });
+    const isSuper = isSuperAdmin(user.roles);
+    const targetBranchId = (isSuper && branchId && branchId !== "all") ? branchId : (branchId || user.branch_id);
+
+    const { data, error } = await supabase.rpc("peek_uid_seq", { 
+      p_name: "UID_NABL", 
+      p_year: currentYear,
+      p_branch_id: targetBranchId || null
+    });
     if (!error && data !== null && data !== undefined) {
       return Number(data);
     }
 
-    const { data: counterData, error: counterError } = await supabase
+    let counterQuery = supabase
       .from("lab_uid_counters")
       .select("counter_value")
       .eq("counter_name", "UID_NABL")
-      .eq("counter_year", currentYear)
-      .maybeSingle();
+      .eq("counter_year", currentYear);
+    if (targetBranchId) {
+      counterQuery = counterQuery.eq("branch_id", targetBranchId);
+    }
+
+    const { data: counterData, error: counterError } = await counterQuery.maybeSingle();
 
     if (!counterError && counterData) {
       return (counterData.counter_value || 0) + 1;
     }
 
-    const { data: testsData } = await supabase
-      .from("job_entry_tests")
-      .select("uid_label")
-      .not("uid_label", "is", null);
+    let jobQuery = supabase
+      .from("job_entries")
+      .select("uid")
+      .not("uid", "is", null);
+    if (targetBranchId) {
+      jobQuery = jobQuery.eq("branch_id", targetBranchId);
+    }
+
+    const { data: jobsData } = await jobQuery;
 
     let maxVal = 0;
-    if (testsData) {
-      for (const t of testsData) {
-        if (t.uid_label && /^\d+$/.test(t.uid_label)) {
-          const val = parseInt(t.uid_label, 10);
-          if (val > maxVal) maxVal = val;
+    if (jobsData) {
+      for (const j of jobsData) {
+        if (j.uid && typeof j.uid === "number" && j.uid > maxVal) {
+          maxVal = j.uid;
         }
       }
     }
