@@ -206,6 +206,7 @@ export function ClientWizard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitEnabled, setSubmitEnabled] = useState(false);
   const [nextUidPreview, setNextUidPreview] = useState<number | null>(null);
+  const [nextNonNablPreview, setNextNonNablPreview] = useState<number | null>(null);
 
   // Search state for clients
   const [searchQuery, setSearchQuery] = useState("");
@@ -477,11 +478,20 @@ export function ClientWizard({
     });
   }, [jobEntryTests, availableTests]);
 
-  const uidPreviews = React.useMemo(() => {
-    if (mode === "edit" || nextUidPreview === null) return [];
+  const hasNablTest = React.useMemo(() => {
+    return jobEntryTests.some(test => {
+      const testMaster = availableTests.find(t => t.id === test.test_master_id);
+      return testMaster ? testMaster.is_nabl : true;
+    });
+  }, [jobEntryTests, availableTests]);
 
-    let currentNablUid = nextUidPreview;
-    let currentNonNablSerial = 1;
+  const uidPreviews = React.useMemo(() => {
+    if (mode === "edit") return [];
+    if (hasNablTest && nextUidPreview === null) return [];
+    if (hasNonNablTest && nextNonNablPreview === null) return [];
+
+    let currentNablUid = nextUidPreview ?? 1;
+    let currentNonNablSerial = nextNonNablPreview ?? 1;
 
     const groupToUid = new Map<string, string>();
     const previews: string[] = [];
@@ -516,27 +526,39 @@ export function ClientWizard({
     });
 
     return previews;
-  }, [jobEntryTests, availableTests, nextUidPreview, mode, nonNablMonth]);
+  }, [jobEntryTests, availableTests, nextUidPreview, nextNonNablPreview, mode, nonNablMonth, hasNablTest, hasNonNablTest]);
 
   // Enable submit button after delay
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (currentStep === steps.length - 1) {
       timer = setTimeout(() => setSubmitEnabled(true), 500);
-      // Fetch branch-isolated next UID preview when reaching the last step, only if creating
-      if (mode !== "edit") {
-        const branchToQuery = isSuperAdmin ? selectedBranchId : userBranchId;
-        getNextUidAction(branchToQuery || undefined).then(res => {
+    } else {
+      setSubmitEnabled(false);
+    }
+    return () => clearTimeout(timer);
+  }, [currentStep, steps.length]);
+
+  // Fetch branch-isolated next UID preview when reaching the last step, or when branch / non-NABL month changes
+  useEffect(() => {
+    if (currentStep === steps.length - 1 && mode !== "edit") {
+      const branchToQuery = isSuperAdmin ? selectedBranchId : userBranchId;
+      if (hasNablTest) {
+        getNextUidAction(branchToQuery || undefined, true).then(res => {
           if (res.success && res.nextUid) {
             setNextUidPreview(res.nextUid);
           }
         });
       }
-    } else {
-      setSubmitEnabled(false);
+      if (hasNonNablTest) {
+        getNextUidAction(branchToQuery || undefined, false, nonNablMonth).then(res => {
+          if (res.success && res.nextUid) {
+            setNextNonNablPreview(res.nextUid);
+          }
+        });
+      }
     }
-    return () => clearTimeout(timer);
-  }, [currentStep, mode, isSuperAdmin, selectedBranchId, userBranchId]);
+  }, [currentStep, steps.length, mode, isSuperAdmin, selectedBranchId, userBranchId, hasNablTest, hasNonNablTest, nonNablMonth]);
 
   // Debounced search for clients strictly within the branch
   useEffect(() => {
@@ -715,6 +737,7 @@ export function ClientWizard({
                 if (matchedBranch && !getValues("client.branch_id")) {
                   setSelectedBranchId(matchedBranch);
                   setNextUidPreview(null);
+                  setNextNonNablPreview(null);
                   setValue("client.branch_id", matchedBranch);
                   setValue("jobEntry.branch_id", matchedBranch);
                 }
@@ -1431,6 +1454,7 @@ export function ClientWizard({
                             onChange={(val) => {
                               setSelectedBranchId(val);
                               setNextUidPreview(null);
+                              setNextNonNablPreview(null);
                               setValue("client.branch_id", val, { shouldValidate: true, shouldDirty: true });
                               setValue("jobEntry.branch_id", val, { shouldValidate: true, shouldDirty: true });
                             }}
@@ -2209,7 +2233,7 @@ export function ClientWizard({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                               <div className="flex flex-col gap-1.5 col-span-full md:col-span-1">
                                 <label className="text-[13px] font-semibold text-slate-700 mb-0.5">{mode === "edit" ? "UID" : "UID Preview (final UID on test date)"}</label>
-                                <Input value={mode === "edit" ? (primaryJob?.uid_label || (primaryTest as any)?.uid_label || (primaryTest as any)?.job_entries?.uid_label || String(primaryJob?.uid || "") || (field as any).uid_label || "") : (nextUidPreview !== null ? uidPreviews[index] || "Loading..." : "Loading...")} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
+                                <Input value={mode === "edit" ? (primaryJob?.uid_label || (primaryTest as any)?.uid_label || (primaryTest as any)?.job_entries?.uid_label || String(primaryJob?.uid || "") || (field as any).uid_label || "") : (uidPreviews[index] || "Loading...")} readOnly className="bg-slate-100 text-slate-500 font-medium text-orange-600 border-orange-200 focus-visible:ring-0" />
                                 {mode !== "edit" && !availableTests.find(t => t.id === field.test_master_id)?.category && (
                                   <p className="text-[11px] text-amber-600 font-semibold mt-1">⚠️ Set test_master.category or preview will merge groups.</p>
                                 )}

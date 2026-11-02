@@ -331,9 +331,9 @@ export async function getClientProjectsAction(clientId: string) {
   }
 }
 
-export async function getNextUidAction(branchId?: string) {
+export async function getNextUidAction(branchId?: string, isNabl: boolean = true, nonNablMonth?: string) {
   try {
-    const nextUid = await JobEntryService.getNextUid(branchId);
+    const nextUid = await JobEntryService.getNextUid(branchId, isNabl, nonNablMonth);
     return { success: true, nextUid };
   } catch (error) {
     console.error("getNextUidAction error:", error);

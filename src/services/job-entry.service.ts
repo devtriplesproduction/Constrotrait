@@ -145,7 +145,8 @@ export class JobEntryService {
     let firstUid: number | null = null;
     let rawUidSeqVal: number = 0;
 
-    const counterName = isNabl ? "UID_NABL" : `UID_${nonNablMonth}`;
+    const normMonth = nonNablMonth ? nonNablMonth.slice(0, 3).toUpperCase() : "";
+    const counterName = isNabl ? "UID_NABL" : `UID_${normMonth}`;
 
     if (isNabl) {
       // Peek next sequence without advancing counter until record is confirmed saved
@@ -159,8 +160,7 @@ export class JobEntryService {
       firstUid = parseInt(firstUidLabel as string, 10);
       rawUidSeqVal = firstUid;
     } else {
-      if (!nonNablMonth) throw new Error("A valid month must be provided for non-NABL tests.");
-      const month = nonNablMonth;
+      if (!normMonth) throw new Error("A valid month must be provided for non-NABL tests.");
       // Peek next sequence without advancing counter until record is confirmed saved
       const { data, error } = await supabase.rpc("peek_uid_seq", { 
         p_name: counterName, 
@@ -169,7 +169,7 @@ export class JobEntryService {
       });
       if (error || !data) throw new Error("UID Generation failed: " + (error?.message || "No sequence returned"));
       rawUidSeqVal = parseInt(data.toString(), 10);
-      firstUidLabel = `${month}-${rawUidSeqVal.toString().padStart(2, '0')}`;
+      firstUidLabel = `${normMonth}-${rawUidSeqVal.toString().padStart(2, '0')}`;
     }
     
     const jobInsertData = { 
@@ -626,7 +626,7 @@ export class JobEntryService {
     return null;
   }
 
-  static async getNextUid(branchId?: string): Promise<number> {
+  static async getNextUid(branchId?: string, isNabl: boolean = true, nonNablMonth?: string): Promise<number> {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
 
@@ -636,8 +636,11 @@ export class JobEntryService {
     const isSuper = isSuperAdmin(user.roles);
     const targetBranchId = (isSuper && branchId && branchId !== "all") ? branchId : (branchId || user.branch_id);
 
+    const normMonth = nonNablMonth ? nonNablMonth.slice(0, 3).toUpperCase() : "";
+    const counterName = isNabl ? "UID_NABL" : (normMonth ? `UID_${normMonth}` : "UID_NABL");
+
     const { data, error } = await supabase.rpc("peek_uid_seq", { 
-      p_name: "UID_NABL", 
+      p_name: counterName, 
       p_year: currentYear,
       p_branch_id: targetBranchId || null
     });
@@ -648,7 +651,7 @@ export class JobEntryService {
     let counterQuery = supabase
       .from("lab_uid_counters")
       .select("counter_value")
-      .eq("counter_name", "UID_NABL")
+      .eq("counter_name", counterName)
       .eq("counter_year", currentYear);
     if (targetBranchId) {
       counterQuery = counterQuery.eq("branch_id", targetBranchId);
@@ -660,25 +663,29 @@ export class JobEntryService {
       return (counterData.counter_value || 0) + 1;
     }
 
-    let jobQuery = supabase
-      .from("job_entries")
-      .select("uid")
-      .not("uid", "is", null);
-    if (targetBranchId) {
-      jobQuery = jobQuery.eq("branch_id", targetBranchId);
-    }
+    if (isNabl) {
+      let jobQuery = supabase
+        .from("job_entries")
+        .select("uid")
+        .not("uid", "is", null);
+      if (targetBranchId) {
+        jobQuery = jobQuery.eq("branch_id", targetBranchId);
+      }
 
-    const { data: jobsData } = await jobQuery;
+      const { data: jobsData } = await jobQuery;
 
-    let maxVal = 0;
-    if (jobsData) {
-      for (const j of jobsData) {
-        if (j.uid && typeof j.uid === "number" && j.uid > maxVal) {
-          maxVal = j.uid;
+      let maxVal = 0;
+      if (jobsData) {
+        for (const j of jobsData) {
+          if (j.uid && typeof j.uid === "number" && j.uid > maxVal) {
+            maxVal = j.uid;
+          }
         }
       }
+      return maxVal + 1;
     }
-    return maxVal + 1;
+
+    return 1;
   }
 
   static async getJobCardDetailsForPdf(jobEntryTestId: string) {
