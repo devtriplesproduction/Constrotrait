@@ -522,13 +522,14 @@ export function ClientWizard({
     return () => clearTimeout(timer);
   }, [currentStep, nextUidPreview, mode]);
 
-  // Debounced search for clients across all branches
+  // Debounced search for clients strictly within the branch
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       const trimmed = searchQuery.trim();
       if (trimmed.length >= 1) {
         setIsSearching(true);
-        const result = await searchClientsAction(trimmed);
+        const branchToSearch = isSuperAdmin ? selectedBranchId : userBranchId;
+        const result = await searchClientsAction(trimmed, branchToSearch || undefined);
         if (result.success && result.data) {
           setSearchResults(result.data);
           setShowResults(true);
@@ -543,7 +544,7 @@ export function ClientWizard({
       }
     }, 250);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [searchQuery, selectedBranchId, userBranchId, isSuperAdmin]);
 
   // Fetch client's past projects if client ID is present and not yet fetched
   const selectedClientId = watch("client.id") || initialData?.client?.id;

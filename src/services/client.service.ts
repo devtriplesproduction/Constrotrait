@@ -27,8 +27,11 @@ export class ClientService {
       .limit(50);
 
     const isSuper = isSuperAdmin(user.roles);
-    if (branchId && branchId !== "all") {
-      dbQuery = dbQuery.eq("branch_id", branchId);
+    const targetBranch = isSuper ? (branchId && branchId !== "all" ? branchId : null) : user.branch_id;
+    if (targetBranch) {
+      dbQuery = dbQuery.eq("branch_id", targetBranch);
+    } else if (!isSuper) {
+      return [];
     }
 
     const { data, error } = await dbQuery;
@@ -51,8 +54,8 @@ export class ClientService {
         .or(`name.ilike.%${firstWord}%,company_name.ilike.%${firstWord}%,email.ilike.%${firstWord}%,mobile.ilike.%${firstWord}%,gst_no.ilike.%${firstWord}%`)
         .limit(50);
 
-      if (branchId && branchId !== "all") {
-        fallbackQuery = fallbackQuery.eq("branch_id", branchId);
+      if (targetBranch) {
+        fallbackQuery = fallbackQuery.eq("branch_id", targetBranch);
       }
 
       const { data: fallbackData, error: fallbackError } = await fallbackQuery;
@@ -70,7 +73,7 @@ export class ClientService {
   }
 
   /**
-   * Get client by ID
+   * Get client by ID (strictly isolated per branch)
    */
   static async getClientById(id: string) {
     const user = await getAuthenticatedUserWithRoles();
@@ -91,22 +94,8 @@ export class ClientService {
     if (!data) return null;
 
     const isSuper = isSuperAdmin(user.roles);
-    if (!isSuper && data.branch_id && data.branch_id !== user.branch_id) {
-      if (!user.branch_id) {
-        throw new Error("Unauthorized: Cross-branch client access is not permitted");
-      }
-      // Check if this client has any job entries at the user's branch
-      const { data: jobAtBranch } = await supabase
-        .from("job_entries")
-        .select("id")
-        .eq("client_id", id)
-        .eq("branch_id", user.branch_id)
-        .limit(1)
-        .maybeSingle();
-
-      if (!jobAtBranch) {
-        throw new Error("Unauthorized: Cross-branch client access is not permitted");
-      }
+    if (!isSuper && data.branch_id !== user.branch_id) {
+      throw new Error("Unauthorized: Cross-branch client access is not permitted");
     }
 
     return data;
@@ -173,6 +162,10 @@ export class ClientService {
 
     if (!isSuper) {
       delete updatePayload.branch_id;
+      const { data: existing } = await supabase.from("clients").select("branch_id").eq("id", id).maybeSingle();
+      if (existing && existing.branch_id !== user.branch_id) {
+        throw new Error("Unauthorized: Cross-branch client editing is not permitted");
+      }
     }
 
     const { data, error } = await supabase
@@ -191,7 +184,7 @@ export class ClientService {
   }
 
   /**
-   * Get all clients with branch scoping
+   * Get all clients with strict branch isolation
    */
   static async getAllClients(branchId?: string) {
     const user = await getAuthenticatedUserWithRoles();
@@ -219,53 +212,42 @@ export class ClientService {
 
     if (!user.branch_id) return [];
 
-    // For branch users: return clients registered at user's branch OR clients with job entries at user's branch
-    const { data: branchClients, error: cErr } = await supabase
+    // Strict branch isolation: return only clients belonging to user's branch
+    const { data, error } = await supabase
       .from("clients")
       .select("*, branches ( id, name, code )")
       .eq("branch_id", user.branch_id)
       .order("name", { ascending: true });
 
-    if (cErr) {
-      console.error("Error fetching branch clients:", cErr);
-      throw new Error(cErr.message);
+    if (error) {
+      console.error("Error fetching branch clients:", error);
+      throw new Error(error.message);
     }
 
-    const { data: jobClients, error: jErr } = await supabase
-      .from("job_entries")
-      .select("client_id, clients (*, branches ( id, name, code ))")
-      .eq("branch_id", user.branch_id);
-
-    if (jErr) {
-      console.error("Error fetching job clients:", jErr);
-      throw new Error(jErr.message);
-    }
-
-    const clientMap = new Map<string, any>();
-    (branchClients || []).forEach((c) => clientMap.set(c.id, c));
-    (jobClients || []).forEach((j: any) => {
-      if (j.clients && !clientMap.has(j.clients.id)) {
-        clientMap.set(j.clients.id, j.clients);
-      }
-    });
-
-    return Array.from(clientMap.values()).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    return data || [];
   }
 
   /**
-   * Fetch unique projects for a given client
+   * Fetch unique projects for a given client (scoped to branch for non-superadmins)
    */
   static async getClientProjects(clientId: string) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
 
     const supabase = await createClient();
-    const { data, error } = await supabase
+    const isSuper = isSuperAdmin(user.roles);
+    let query = supabase
       .from("job_entries")
       .select("project_name, site_name, contact_person, division, agency, dispatch_name, dispatch_address, collected_by, invoice_no, invoice_date, letter_reference, payment_status")
       .eq("client_id", clientId)
       .not("project_name", "is", null)
       .order("created_at", { ascending: false });
+
+    if (!isSuper && user.branch_id) {
+      query = query.eq("branch_id", user.branch_id);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching client projects:", error);

@@ -403,11 +403,18 @@ export class JobEntryService {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from("job_entries")
       .select("*, job_entry_tests!job_entry_tests_job_entry_id_fkey(*, test_master(*))")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false });
+
+    const isSuper = isSuperAdmin(user.roles);
+    if (!isSuper && user.branch_id) {
+      query = query.eq("branch_id", user.branch_id);
+    }
+
+    const { data, error } = await query;
     if (error) throw new Error(error.message);
     return (data || []).sort(compareJobCardsByUidRecentFirst);
   }
