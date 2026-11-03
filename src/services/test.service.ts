@@ -35,6 +35,12 @@ export interface TestMaster {
   updated_by: string | null;
 }
 
+export type GetTestsResponse = {
+  success: boolean;
+  data?: TestMaster[];
+  error?: string;
+};
+
 export const testService = {
   async createTestMaster(data: CreateTestInput & { branch_id?: string }) {
     try {
@@ -108,10 +114,10 @@ export const testService = {
     }
   },
 
-  async getTests(branchId?: string) {
+  async getTests(branchId?: string): Promise<GetTestsResponse> {
     try {
       const user = await getAuthenticatedUserWithRoles();
-      if (!user) return { success: false, error: "Unauthorized" };
+      if (!user) return { success: false, data: [], error: "Unauthorized" };
 
       const supabase = await createClient();
       let query = supabase
@@ -146,13 +152,13 @@ export const testService = {
 
       if (error) {
         console.error("Error fetching tests:", error);
-        return { success: false, error: error.message };
+        return { success: false, data: [], error: error.message };
       }
 
       return { success: true, data: (data || []) as unknown as TestMaster[] };
     } catch (error) {
       console.error("Error fetching tests:", error);
-      return { success: false, error: "An unexpected error occurred" };
+      return { success: false, data: [], error: "An unexpected error occurred" };
     }
   },
 

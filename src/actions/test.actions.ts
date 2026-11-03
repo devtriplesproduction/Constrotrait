@@ -29,7 +29,7 @@ export async function createTestMasterAction(data: CreateTestInput) {
 
 export async function getTestsAction(branchId?: string) {
   const user = await getAuthenticatedUserWithRoles();
-  if (!user) return { success: false, error: "Unauthorized" };
+  if (!user) return { success: false, data: [], error: "Unauthorized" };
   return await testService.getTests(branchId);
 }
 
