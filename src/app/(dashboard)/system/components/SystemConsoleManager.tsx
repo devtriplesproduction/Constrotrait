@@ -468,14 +468,9 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
               </div>
             </div>
             <Badge
-              className={cn(
-                "px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider border shadow-2xs shrink-0",
-                currentUser.roles.includes("SUPER_ADMIN")
-                  ? "bg-orange-50 text-orange-700 border-orange-200"
-                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
-              )}
+              className="px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider border shadow-2xs shrink-0 bg-orange-50 text-orange-700 border-orange-200"
             >
-              {currentUser.roles.includes("SUPER_ADMIN") ? "SUPER ADMIN" : "DEVELOPER"}
+              SUPER ADMIN
             </Badge>
           </div>
         </div>

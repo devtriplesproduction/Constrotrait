@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const allRoles = user.allRoles || user.roles || [];
     if (!canAccessSystemConsole(allRoles)) {
       return NextResponse.json(
-        { error: "Forbidden: Access restricted to Super Admin and Developer." },
+        { error: "Forbidden: Access restricted to Super Admin." },
         { status: 403 }
       );
     }
