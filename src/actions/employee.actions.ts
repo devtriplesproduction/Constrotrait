@@ -50,6 +50,25 @@ export async function getAllEmployeesAction(options?: { compact?: boolean }) {
   return JSON.parse(JSON.stringify(result));
 }
 
+export async function previewEmployeeIdAction(branchId?: string) {
+  const user = await getAuthenticatedUserWithRoles();
+  if (!user || !canManageEmployees(user.roles)) {
+    return { success: false, error: "Unauthorized" };
+  }
+  const isSuper = user.roles.includes("SUPER_ADMIN");
+  const targetBranchId = isSuper ? (branchId || user.branch_id || "") : (user.branch_id || "");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("generate_employee_id", {
+    p_branch_id: targetBranchId,
+    p_is_preview: true,
+  });
+  if (error) {
+    console.error("Failed to generate preview employee ID:", error);
+    return { success: false, error: "Failed to generate employee ID" };
+  }
+  return { success: true, data };
+}
+
 export async function uploadEmployeeFileAction(formData: FormData) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageEmployees(user.roles)) {

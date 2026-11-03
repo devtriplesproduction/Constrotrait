@@ -253,7 +253,7 @@ export async function resetEmployeePassword(userId: string, newPassword: string)
   try {
     const currentUser = await getAuthenticatedUser();
     if (!currentUser) return { success: false, error: "Unauthorized" };
-    if (!newPassword || newPassword.length < 6) return { success: false, error: 'Password must be at least 6 characters.' };
+    if (!newPassword || newPassword.length < 8) return { success: false, error: 'Password must be at least 8 characters long.' };
 
     const supabaseAdmin = createAdminClient();
     

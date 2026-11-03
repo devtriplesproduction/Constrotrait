@@ -6,13 +6,24 @@ import { ClientWizardValues } from "@/lib/validations/client-wizard";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import * as accounting from "@/services/accounting.service";
+import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
+import { canManageClientsAndJobs, isSuperAdmin } from "@/config/roles";
 
 const toNull = (v: string | null | undefined) => (v && v.trim() !== "" ? v : null);
 
 export async function submitClientWizard(data: ClientWizardValues) {
   try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user || !canManageClientsAndJobs(user.roles)) {
+      return { success: false, error: "Unauthorized: Insufficient permissions to submit client wizard" };
+    }
+
+    const isSuper = isSuperAdmin(user.roles);
+    const branchId = isSuper
+      ? (data.jobEntry?.branch_id || data.client?.branch_id || user.branch_id)
+      : (user.branch_id || data.client?.branch_id);
+
     let clientId = data.client.id;
-    const branchId = data.jobEntry?.branch_id || data.client?.branch_id;
 
     if (clientId) {
       await ClientService.updateClient(clientId, {
@@ -123,6 +134,11 @@ export async function submitClientWizard(data: ClientWizardValues) {
 
 export async function updateClientWizardAction(data: ClientWizardValues, targetId: string) {
   try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user || !canManageClientsAndJobs(user.roles)) {
+      return { success: false, error: "Unauthorized: Insufficient permissions to update client wizard" };
+    }
+
     const clientId = data.client.id;
     if (!clientId) throw new Error("Client ID is required for updating");
     await ClientService.updateClient(clientId, {
@@ -298,10 +314,6 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
       }
     }
 
-    if (jobEntryId) {
-      await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: jobEntryId });
-    }
-
     revalidatePath("/dashboard");
     revalidatePath("/clients");
     revalidatePath("/", "layout");
@@ -314,15 +326,22 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
 
 export async function searchClientsAction(query: string, branchId?: string) {
   try {
-    const clients = await ClientService.searchClients(query, branchId);
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+    const isSuper = isSuperAdmin(user.roles);
+    const effectiveBranchId = isSuper ? branchId : (user.branch_id || undefined);
+    const clients = await ClientService.searchClients(query, effectiveBranchId);
     return { success: true, data: clients };
   } catch (error) {
-    return { success: false, error: (error as Error).message };
+    console.error("searchClientsAction error:", error);
+    return { success: false, error: "Failed to search clients" };
   }
 }
 
 export async function getClientProjectsAction(clientId: string) {
   try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
     const data = await ClientService.getClientProjects(clientId);
     return { success: true, data };
   } catch (error) {
@@ -333,7 +352,11 @@ export async function getClientProjectsAction(clientId: string) {
 
 export async function getNextUidAction(branchId?: string, isNabl: boolean = true, nonNablMonth?: string) {
   try {
-    const nextUid = await JobEntryService.getNextUid(branchId, isNabl, nonNablMonth);
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+    const isSuper = isSuperAdmin(user.roles);
+    const effectiveBranchId = isSuper ? branchId : (user.branch_id || undefined);
+    const nextUid = await JobEntryService.getNextUid(effectiveBranchId, isNabl, nonNablMonth);
     return { success: true, nextUid };
   } catch (error) {
     console.error("getNextUidAction error:", error);
@@ -343,13 +366,19 @@ export async function getNextUidAction(branchId?: string, isNabl: boolean = true
 
 export async function createDummyJobCardAction(isNabl: boolean, branchId?: string) {
   try {
-    const jobEntry = await JobEntryService.createDummyJobCard(isNabl, branchId);
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user || !canManageClientsAndJobs(user.roles)) {
+      return { success: false, error: "Unauthorized: Insufficient permissions to create dummy job cards" };
+    }
+    const isSuper = isSuperAdmin(user.roles);
+    const effectiveBranchId = isSuper ? branchId : (user.branch_id || undefined);
+    const jobEntry = await JobEntryService.createDummyJobCard(isNabl, effectiveBranchId);
     revalidatePath('/dashboard');
     revalidatePath('/clients');
     return { success: true, data: jobEntry };
   } catch (error) {
     console.error('Create dummy job card error:', error);
-    return { success: false, error: (error as Error).message };
+    return { success: false, error: "Failed to create dummy job card" };
   }
 }
 

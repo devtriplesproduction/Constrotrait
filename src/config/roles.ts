@@ -2,7 +2,9 @@ import { Database } from "@/types/database";
 
 export type AppRole = Database["public"]["Enums"]["user_role"];
 
-export const APP_ROLES: Record<AppRole, string> = {
+export type OfficialRole = Exclude<AppRole, "DEVELOPER">;
+
+export const APP_ROLES: Record<OfficialRole, string> = {
   SUPER_ADMIN: 'Super Admin',
   BRANCH_MANAGER_ADMINISTRATIVE: 'Branch Manager (Administrative)',
   HR: 'HR',
@@ -16,7 +18,6 @@ export const APP_ROLES: Record<AppRole, string> = {
   SAMPLER: 'Sampler',
   MARKETING_EXECUTIVE: 'Marketing Executive',
   DIGITAL_MARKETING: 'Digital Marketing',
-  DEVELOPER: 'Developer',
 } as const;
 
 export const ONBOARDING_ROLES = Object.entries(APP_ROLES)
@@ -31,13 +32,12 @@ export function isSuperAdmin(roles?: string[] | null): boolean {
   return roles.includes("SUPER_ADMIN");
 }
 
-export function isDeveloper(roles?: string[] | null): boolean {
-  if (!roles) return false;
-  return roles.includes("DEVELOPER");
+export function isDeveloper(_roles?: string[] | null): boolean {
+  return false;
 }
 
 export function canAccessSystemConsole(roles?: string[] | null): boolean {
-  return isSuperAdmin(roles) || isDeveloper(roles);
+  return isSuperAdmin(roles);
 }
 
 export function isBranchManager(roles?: string[] | null): boolean {
@@ -112,15 +112,6 @@ export function canManageJobAssignments(roles?: string[] | null): boolean {
   );
 }
 
-export function canIssueLabReport(roles?: string[] | null): boolean {
-  if (!roles) return false;
-  return roles.includes("SUPER_ADMIN")
-    || roles.includes("QUALITY_MANAGER")
-    || roles.includes("TECHNICAL_MANAGER")
-    || roles.includes("TEST_ENGINEER")
-    || roles.includes("BRANCH_MANAGER_ADMINISTRATIVE");
-}
-
 export function canManageTestResults(roles?: string[] | null): boolean {
   if (!roles) return false;
   return (
@@ -153,7 +144,7 @@ export function canApproveAccounting(roles?: string[] | null): boolean {
 /** View accounting module (transactions or audit) */
 export function canViewAccounting(roles?: string[] | null): boolean {
   if (!roles) return false;
-  return isSuperAdmin(roles) || isAccountant(roles) || isBranchManager(roles) || isDeveloper(roles);
+  return isSuperAdmin(roles) || isAccountant(roles) || isBranchManager(roles);
 }
 
 /** Excel export restricted to Super Admin */

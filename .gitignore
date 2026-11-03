@@ -39,6 +39,9 @@ yarn-error.log*
 
 # generated / local tooling
 /scratch/
+scratch_*
+scratch.*
+*.scratch.*
 /supabase/.temp/
 
 # typescript

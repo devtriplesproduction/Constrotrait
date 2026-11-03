@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
-import { canManageAccountingTransactions, canViewAccounting, canApproveAccounting, canExportAccountingExcel } from "@/config/roles";
+import { canManageAccountingTransactions, canViewAccounting, canApproveAccounting, canExportAccountingExcel, canManageClientsAndJobs, isSuperAdmin } from "@/config/roles";
 import * as accounting from "@/services/accounting.service";
 import { createClient } from "@/lib/supabase/server";
 
@@ -400,12 +400,21 @@ export async function createClientAction(payload: {
   branch_id?: string;
 }) {
   const user = await getAuthenticatedUserWithRoles();
-  if (!user) return { success: false, error: "Unauthorized" };
+  if (!user || (!canManageClientsAndJobs(user.roles) && !canManageAccountingTransactions(user.roles))) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  if (!payload.name || payload.name.trim().length === 0) {
+    return { success: false, error: "Client name is required." };
+  }
+
+  const isSuper = isSuperAdmin(user.roles);
+  const effectiveBranchId = isSuper ? (payload.branch_id || user.branch_id || null) : (user.branch_id || null);
 
   const supabase = await createClient();
   const insertPayload = {
-    name: payload.name,
-    company_name: payload.company_name || payload.name,
+    name: payload.name.trim(),
+    company_name: (payload.company_name || payload.name).trim(),
     contact_person: payload.contact_person || null,
     mobile: payload.mobile || null,
     email: payload.email || null,
@@ -413,7 +422,7 @@ export async function createClientAction(payload: {
     address: payload.address || null,
     site_name: payload.site_name || null,
     project_name: payload.project_name || null,
-    branch_id: payload.branch_id || user.branch_id || null,
+    branch_id: effectiveBranchId,
     created_by: user.id,
   };
 
@@ -435,7 +444,7 @@ export async function createClientAction(payload: {
       .insert({
         client_id: newClient.id,
         name: projName,
-        branch_id: payload.branch_id || user.branch_id || null,
+        branch_id: effectiveBranchId,
       })
       .select()
       .single();

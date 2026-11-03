@@ -52,7 +52,7 @@ export async function loginWithEmailPassword(
         .maybeSingle();
 
       const userRoles = (profile?.roles || authData.user.app_metadata?.roles || []) as string[];
-      const primaryRole = userRoles[0] || "User";
+      const loggedRoles = userRoles.length > 0 ? userRoles.join(", ") : "User";
       const resolvedName = profile?.first_name
         ? `${profile.first_name} ${profile.last_name || ""}`.trim()
         : fullName;
@@ -61,7 +61,7 @@ export async function loginWithEmailPassword(
         userId: authData.user.id,
         email: data.email,
         fullName: resolvedName,
-        role: primaryRole,
+        role: loggedRoles,
         status: "SUCCESS",
         headers: headerList,
         clientTelemetry,
@@ -134,7 +134,7 @@ export const getAuthenticatedUserWithRoles = cache(async () => {
   return {
     ...user,
     allRoles,
-    roles: [activeRole],
+    roles: allRoles,
     activeRole,
     branch_id: profile?.branch_id || null,
   };

@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { onboardSchema, type OnboardFormData } from "@/lib/validations/onboard";
 import { DEPARTMENTS, getDesignationsForDepartment, getSystemRoleForDesignation } from "@/config/departments";
 import Image from "next/image";
-import { onboardEmployeeAction, getCurrentUserProfileAction, getAllEmployeesAction } from "@/actions/employee.actions";
+import { onboardEmployeeAction, getCurrentUserProfileAction, getAllEmployeesAction, previewEmployeeIdAction } from "@/actions/employee.actions";
 import { getActiveBranchesAction } from "@/actions/branch.actions";
 import { Button } from "@/components/ui/button";
 
@@ -184,15 +184,10 @@ export function OnboardForm({ onSuccess }: OnboardFormProps) {
     if (step === 4) {
       async function fetchPreview() {
         try {
-          const supabase = createClient();
           const branchIdToPass = isSuperAdmin ? watchedBranchId : undefined;
-          const { data, error } = await supabase.rpc('generate_employee_id', {
-            p_branch_id: (branchIdToPass || "") as string,
-            p_is_preview: true
-          });
-          
-          if (!error && data) {
-            setValue("employee_id", data as string, { shouldValidate: true });
+          const res = await previewEmployeeIdAction(branchIdToPass || undefined);
+          if (res.success && res.data) {
+            setValue("employee_id", res.data as string, { shouldValidate: true });
           }
         } catch (e) {
           console.error("Failed to preview employee ID", e);

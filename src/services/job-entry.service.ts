@@ -230,38 +230,6 @@ export class JobEntryService {
         throw new Error(testsError.message);
       }
       jobEntryTests = insertedTests;
-
-      const { error: qErr } = await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: jobEntry.id });
-      if (qErr) {
-        await supabase.from("job_entries").delete().eq("id", jobEntry.id);
-        throw new Error(qErr.message || "Failed to enqueue job");
-      }
-    } else {
-      // It's a dummy job card, enqueue it with the scheduled date
-      if (dummyScheduledDays) {
-        const scheduledDate = new Date();
-        const days = parseInt(dummyScheduledDays, 10);
-        if (!isNaN(days) && days > 0) {
-          scheduledDate.setDate(scheduledDate.getDate() + days);
-        }
-        const formattedDate = scheduledDate.toISOString().split('T')[0];
-        
-        const { error: qErr } = await supabase.from('ulr_generation_queue').insert({
-          job_entry_id: jobEntry.id,
-          scheduled_on: formattedDate,
-          status: 'queued'
-        });
-        if (qErr) {
-          console.error("Failed to enqueue dummy job card:", qErr);
-        }
-      } else {
-        // Enqueue immediately if no schedule provided
-        await supabase.from('ulr_generation_queue').insert({
-          job_entry_id: jobEntry.id,
-          scheduled_on: new Date().toISOString().split('T')[0],
-          status: 'queued'
-        });
-      }
     }
 
     // Records saved successfully! Advance the sequence counters only now.
@@ -429,8 +397,6 @@ export class JobEntryService {
       
     if (testsError) throw new Error(testsError.message);
 
-    await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: jobEntry.id });
-
     if (newSampleSeqName && newSampleNo > 0) {
       const jobYear = new Date(jobEntry.created_at).getFullYear();
       await supabase.rpc("advance_uid_seq", { 
@@ -476,9 +442,6 @@ export class JobEntryService {
     const supabase = await createClient() as any;
     const { data, error } = await supabase.from("job_entry_tests").update(testData).eq("id", id).select().single();
     if (error) throw new Error(error.message);
-    if (data?.job_entry_id) {
-      await supabase.rpc("enqueue_ulr_for_job", { p_job_entry_id: data.job_entry_id });
-    }
     return data;
   }
 
@@ -540,6 +503,25 @@ export class JobEntryService {
     const { data, error } = await query;
     if (error) throw new Error(error.message);
     return (data || []).sort(compareJobCardsByUidRecentFirst);
+  }
+
+  static async getJobEntryTestsByJobEntryId(jobEntryId: string) {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) throw new Error("Unauthorized");
+    const supabase = await createClient();
+    let query = supabase
+      .from("job_entry_tests")
+      .select("*, test_master(*), job_entries(*)")
+      .eq("job_entry_id", jobEntryId);
+
+    const isSuper = isSuperAdmin(user.roles);
+    if (!isSuper && user.branch_id) {
+      query = query.eq("job_entries.branch_id", user.branch_id);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return data;
   }
 
   static async getJobEntryByUidOrId(identifier: string) {

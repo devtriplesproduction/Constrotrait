@@ -1,6 +1,12 @@
 const { Client } = require('pg');
 
-const client = new Client({ connectionString: 'postgresql://postgres.nxvghafschdniemrpqkn:cg9r3yUmPaR0DMXD@aws-0-ap-south-1.pooler.supabase.com:6543/postgres' });
+const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+if (!connectionString) {
+  console.error('DATABASE_URL or SUPABASE_DB_URL environment variable must be set.');
+  process.exit(1);
+}
+
+const client = new Client({ connectionString });
 
 async function verify() {
   await client.connect();

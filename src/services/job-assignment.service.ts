@@ -215,9 +215,15 @@ export class JobAssignmentService {
     };
   }
 
-  static async getTestsDueToday(userId: string) {
+  static async getTestsDueToday(requestedUserId?: string) {
     const supabase = await createClient();
-    const { data: userTeams } = await supabase.from("team_members").select("team_id").eq("employee_id", userId);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error("Unauthorized");
+    const { data: profile } = await supabase.from("profiles").select("roles").eq("id", user.id).single();
+    const isSuper = isSuperAdmin(profile?.roles);
+    const targetUserId = (isSuper && requestedUserId) ? requestedUserId : user.id;
+
+    const { data: userTeams } = await supabase.from("team_members").select("team_id").eq("employee_id", targetUserId);
     const teamIds = (userTeams || []).map((t: { team_id: string }) => t.team_id).filter(Boolean);
 
     const todayStr = new Date().toISOString().split("T")[0];
@@ -244,9 +250,9 @@ export class JobAssignmentService {
       .not("status", "in", '("approved","completed")');
 
     if (teamIds.length > 0) {
-      query = query.or(`assigned_to.eq.${userId},team_id.in.(${teamIds.join(",")})`);
+      query = query.or(`assigned_to.eq.${targetUserId},team_id.in.(${teamIds.join(",")})`);
     } else {
-      query = query.eq("assigned_to", userId);
+      query = query.eq("assigned_to", targetUserId);
     }
 
     const { data, error } = await query;

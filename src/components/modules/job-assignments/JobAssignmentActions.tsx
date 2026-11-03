@@ -3,8 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
-import { createClient } from "@/lib/supabase/client";
+import { updateAssignmentStatusAction, uploadTestDocumentAction } from "@/actions/job-assignment.actions";
 import { Loader2, Check, X, Download, Play, Upload, Eye, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -66,16 +65,17 @@ export function JobAssignmentActions({ assignment, currentUserId, allAssignments
     if (!file) return;
     setLoading(true);
     try {
-      const supabase = createClient();
-      const fileName = `${assignment.id}_${Date.now()}_${file.name}`;
-      const { error } = await supabase.storage.from("reports").upload(fileName, file);
-      if (error) throw error;
-      const { data: urlData } = supabase.storage.from("reports").getPublicUrl(fileName);
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await uploadTestDocumentAction(formData);
+      if (!uploadRes.success || !uploadRes.url) {
+        throw new Error(uploadRes.error || "Failed to upload document");
+      }
       
       const updatableAssignments = allAssignments.filter(a => ['in_testing', 'report_uploaded', 'rejected'].includes(a.status));
       const results = await Promise.all(
         updatableAssignments.map(a => 
-          updateAssignmentStatusAction(a.id, "report_uploaded", { report_url: urlData.publicUrl })
+          updateAssignmentStatusAction(a.id, "report_uploaded", { report_url: uploadRes.url })
         )
       );
       

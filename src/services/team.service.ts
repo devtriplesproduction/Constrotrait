@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { canManageJobAssignments } from "@/config/roles";
+import { canManageJobAssignments, isSuperAdmin } from "@/config/roles";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -13,7 +13,7 @@ export class TeamService {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("roles")
+      .select("roles, branch_id")
       .eq("id", user.id)
       .single();
 
@@ -23,7 +23,7 @@ export class TeamService {
       throw new Error("Insufficient permissions to manage teams");
     }
 
-    return user;
+    return { user, profile };
   }
 
   static async getTeams() {
@@ -55,7 +55,9 @@ export class TeamService {
 
   static async createTeam(data: { name: string; description?: string; branch_id?: string }) {
     const supabase = await createClient();
-    const user = await this.checkPermission(supabase);
+    const { user, profile } = await this.checkPermission(supabase);
+    const isSuper = isSuperAdmin(profile?.roles);
+    const effectiveBranchId = isSuper ? data.branch_id : profile?.branch_id;
 
     const { data: team, error } = await supabase
       .from("teams")
@@ -63,7 +65,7 @@ export class TeamService {
         {
           name: data.name,
           description: data.description,
-          branch_id: data.branch_id,
+          branch_id: effectiveBranchId || null,
           created_by: user.id,
         },
       ])
@@ -79,14 +81,15 @@ export class TeamService {
 
   static async updateTeam(id: string, data: { name?: string; description?: string; is_active?: boolean }) {
     const supabase = await createClient();
-    await this.checkPermission(supabase);
+    const { profile } = await this.checkPermission(supabase);
+    const isSuper = isSuperAdmin(profile?.roles);
 
-    const { data: team, error } = await supabase
-      .from("teams")
-      .update(data)
-      .eq("id", id)
-      .select()
-      .single();
+    let query = supabase.from("teams").update(data).eq("id", id);
+    if (!isSuper && profile?.branch_id) {
+      query = query.eq("branch_id", profile.branch_id);
+    }
+
+    const { data: team, error } = await query.select().single();
 
     if (error) {
       console.error("Error updating team:", error);

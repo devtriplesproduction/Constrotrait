@@ -21,8 +21,9 @@ export async function onboardEmployee(data: OnboardFormData) {
     const isBranchManagerUser = isBranchManager(currentUser.roles);
     const isHRUser = isHR(currentUser.roles);
 
+    const allRequestedRoles = [...(data.roles || []), ...(data.additional_roles || [])];
     if (!isSuperAdminUser) {
-      if (data.roles.includes("SUPER_ADMIN") || data.roles.includes("BRANCH_MANAGER_ADMINISTRATIVE")) {
+      if (allRequestedRoles.includes("SUPER_ADMIN") || allRequestedRoles.includes("BRANCH_MANAGER_ADMINISTRATIVE")) {
         return { success: false, error: "Insufficient permissions to assign privileged roles." };
       }
     }

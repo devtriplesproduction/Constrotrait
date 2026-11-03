@@ -38,7 +38,7 @@ export async function offboardEmployeeAction(userId: string) {
   return result;
 }
 
-export async function onboardEmployeeAction(userId: string) {
+export async function activateEmployeeAction(userId: string) {
   const user = await getAuthenticatedUserWithRoles();
   if (!user || !canManageEmployees(user.roles)) {
     return { success: false, error: "Unauthorized" };
@@ -49,6 +49,8 @@ export async function onboardEmployeeAction(userId: string) {
   }
   return result;
 }
+
+export const onboardEmployeeAction = activateEmployeeAction;
 
 export async function deleteEmployeeAction(userId: string) {
   const user = await getAuthenticatedUserWithRoles();
