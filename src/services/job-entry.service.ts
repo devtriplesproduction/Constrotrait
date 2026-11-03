@@ -649,21 +649,15 @@ export class JobEntryService {
       let jobQuery = supabase
         .from("job_entries")
         .select("uid")
-        .not("uid", "is", null);
+        .not("uid", "is", null)
+        .order("uid", { ascending: false })
+        .limit(1);
       if (targetBranchId) {
         jobQuery = jobQuery.eq("branch_id", targetBranchId);
       }
 
-      const { data: jobsData } = await jobQuery;
-
-      let maxVal = 0;
-      if (jobsData) {
-        for (const j of jobsData) {
-          if (j.uid && typeof j.uid === "number" && j.uid > maxVal) {
-            maxVal = j.uid;
-          }
-        }
-      }
+      const { data: topJob } = await jobQuery.maybeSingle();
+      const maxVal = topJob?.uid && typeof topJob.uid === "number" ? topJob.uid : 0;
       return maxVal + 1;
     }
 
