@@ -12,8 +12,9 @@ SET branch_id = (SELECT id FROM public.branches WHERE name = 'Main Branch Wai' O
 WHERE branch_id IS NULL;
 
 -- 2. Drop existing unique constraint/index and enforce unique per branch
-DROP INDEX IF EXISTS lab_uid_counters_counter_name_counter_year_key;
+ALTER TABLE public.lab_uid_counters DROP CONSTRAINT IF EXISTS lab_uid_counters_pkey;
 ALTER TABLE public.lab_uid_counters DROP CONSTRAINT IF EXISTS lab_uid_counters_counter_name_counter_year_key;
+DROP INDEX IF EXISTS lab_uid_counters_counter_name_counter_year_key;
 DROP INDEX IF EXISTS lab_uid_counters_branch_scoped_idx;
 CREATE UNIQUE INDEX IF NOT EXISTS lab_uid_counters_branch_scoped_idx 
   ON public.lab_uid_counters (counter_name, counter_year, COALESCE(branch_id, '00000000-0000-0000-0000-000000000000'::uuid));
@@ -36,6 +37,8 @@ BEGIN
 END $$;
 
 -- 4. Branch-scoped peek_uid_seq
+DROP FUNCTION IF EXISTS public.peek_uid_seq(text, int);
+DROP FUNCTION IF EXISTS public.peek_uid_seq(text, int, uuid);
 CREATE OR REPLACE FUNCTION public.peek_uid_seq(p_name text, p_year int, p_branch_id uuid DEFAULT NULL)
 RETURNS int
 LANGUAGE plpgsql
@@ -104,6 +107,8 @@ END;
 $$;
 
 -- 5. Branch-scoped advance_uid_seq
+DROP FUNCTION IF EXISTS public.advance_uid_seq(text, int, int);
+DROP FUNCTION IF EXISTS public.advance_uid_seq(text, int, int, uuid);
 CREATE OR REPLACE FUNCTION public.advance_uid_seq(p_name text, p_year int, p_val int, p_branch_id uuid DEFAULT NULL)
 RETURNS int
 LANGUAGE plpgsql
@@ -123,6 +128,8 @@ END;
 $$;
 
 -- 6. Branch-scoped next_uid_seq
+DROP FUNCTION IF EXISTS public.next_uid_seq(text, int);
+DROP FUNCTION IF EXISTS public.next_uid_seq(text, int, uuid);
 CREATE OR REPLACE FUNCTION public.next_uid_seq(p_name text, p_year int, p_branch_id uuid DEFAULT NULL)
 RETURNS int
 LANGUAGE plpgsql

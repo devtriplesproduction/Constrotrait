@@ -89,8 +89,8 @@ export function TemplateDetailPage({
 
           <div className="h-7 w-px bg-slate-200 hidden sm:block" />
 
-          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0">
-            <Scroll className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold shrink-0">
+            <Scroll className="w-5 h-5 text-orange-600" />
           </div>
 
           <div className="min-w-0">
@@ -178,7 +178,7 @@ export function TemplateDetailPage({
           <Button
             size="sm"
             onClick={() => onEdit(template)}
-            className="h-9 px-4 text-xs gap-1.5 rounded-xl cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-500/20"
+            className="h-9 px-4 text-xs gap-1.5 rounded-xl cursor-pointer bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-md shadow-orange-500/20"
           >
             <Edit3 className="w-4 h-4" />
             <span>Edit Template</span>
@@ -192,7 +192,7 @@ export function TemplateDetailPage({
         <div className="flex flex-col sm:flex-row justify-between items-start pb-6 border-b-2 border-slate-900 gap-4">
           <div>
             <div className="text-2xl font-black tracking-tight text-slate-900">
-              CONSTROTRAIT<span className="text-blue-600">.</span>
+              CONSTROTRAIT<span className="text-orange-500">.</span>
             </div>
             <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">
               Civil Engineering & Materials Testing Laboratory
@@ -203,7 +203,7 @@ export function TemplateDetailPage({
           </div>
 
           <div className="text-left sm:text-right">
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-800 border border-blue-200 mb-2">
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-orange-50 text-orange-800 border border-orange-200 mb-2">
               T&C Specification
             </span>
             <div className="text-base font-bold text-slate-900">{template.name}</div>
@@ -216,7 +216,7 @@ export function TemplateDetailPage({
         {/* Quick Specs Overview Banner (Grid of 4 cards) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 p-4 bg-slate-50/75 border border-slate-200 rounded-xl text-xs">
           <div className="flex items-center gap-2.5">
-            <Layers className="w-4 h-4 text-blue-600 shrink-0" />
+            <Layers className="w-4 h-4 text-orange-600 shrink-0" />
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Service Discipline</span>
               <strong className="font-bold text-slate-800">{template.category || "General Testing"}</strong>
@@ -252,7 +252,7 @@ export function TemplateDetailPage({
         {/* Clauses Section */}
         <div className="space-y-4 pt-2">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-            <Scroll className="w-4 h-4 text-blue-600" />
+            <Scroll className="w-4 h-4 text-orange-600" />
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Contractual Terms & Conditions
             </h3>
@@ -270,7 +270,7 @@ export function TemplateDetailPage({
                   className="p-5 rounded-xl border border-slate-200/90 bg-white shadow-2xs space-y-2 hover:border-slate-300 transition-colors"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="w-7 h-7 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                       {idx + 1}
                     </span>
                     <div className="flex-1 min-w-0">
@@ -321,7 +321,7 @@ export function TemplateDetailPage({
           <Button
             size="sm"
             onClick={() => onEdit(template)}
-            className="h-9 px-4 text-xs gap-1.5 rounded-xl cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-500/20"
+            className="h-9 px-4 text-xs gap-1.5 rounded-xl cursor-pointer bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-md shadow-orange-500/20"
           >
             <Edit3 className="w-4 h-4" />
             <span>Edit Template</span>

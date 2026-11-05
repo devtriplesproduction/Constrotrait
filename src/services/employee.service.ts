@@ -349,14 +349,27 @@ export async function getCurrentUserProfile() {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("profiles")
       .select("id, email, first_name, last_name, designation, roles, department, dob, branch_id, branches(name)")
       .eq("id", currentUser.id)
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      console.error("Failed to fetch user profile:", error);
+    // Fallback: match by email if profile ID differs from auth user ID (e.g. after backup restore)
+    if (!data && currentUser.email) {
+      const fallback = await supabase
+        .from("profiles")
+        .select("id, email, first_name, last_name, designation, roles, department, dob, branch_id, branches(name)")
+        .eq("email", currentUser.email)
+        .maybeSingle();
+      if (fallback.data) {
+        data = fallback.data;
+        error = null;
+      }
+    }
+
+    if (error || !data) {
+      console.error("Failed to fetch user profile:", error || "Profile not found");
       return { success: false, error: "Failed to fetch user profile" };
     }
     return { success: true, data, user: currentUser };

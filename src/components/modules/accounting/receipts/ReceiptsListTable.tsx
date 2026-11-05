@@ -133,6 +133,73 @@ export function ReceiptsListTable({
     };
   }, [receipts]);
 
+  // Channel dropdown options
+  const channelOptions = useMemo(
+    () => [
+      {
+        value: "all",
+        label: (
+          <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+            <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span>All Channels</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-slate-200/80 text-slate-700 font-bold ml-1">
+              {countsByMode.all}
+            </span>
+          </span>
+        ),
+      },
+      {
+        value: "bank",
+        label: (
+          <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+            <Landmark className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            <span>Bank / NEFT / RTGS</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-blue-100 text-blue-800 font-bold ml-1">
+              {countsByMode.bank}
+            </span>
+          </span>
+        ),
+      },
+      {
+        value: "upi",
+        label: (
+          <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+            <Smartphone className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+            <span>UPI / QR</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-purple-100 text-purple-800 font-bold ml-1">
+              {countsByMode.upi}
+            </span>
+          </span>
+        ),
+      },
+      {
+        value: "cash",
+        label: (
+          <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+            <Banknote className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span>Cash</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-emerald-100 text-emerald-800 font-bold ml-1">
+              {countsByMode.cash}
+            </span>
+          </span>
+        ),
+      },
+      {
+        value: "cheque",
+        label: (
+          <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+            <FileText className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+            <span>Cheque</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-amber-100 text-amber-800 font-bold ml-1">
+              {countsByMode.cheque}
+            </span>
+          </span>
+        ),
+      },
+    ],
+    [countsByMode]
+  );
+
   // Aggregate stats based on active filtered data
   const activeReceipts = filteredReceipts.filter((r) => r.status !== "cancelled");
   const totalAmount = activeReceipts.reduce((s, r) => s + Number(r.amount || 0), 0);
@@ -176,16 +243,16 @@ export function ReceiptsListTable({
   return (
     <div className="space-y-4">
       {/* Filter and Search Bar */}
-      <div className="p-4 bg-white border border-slate-200/90 rounded-2xl space-y-3.5 shadow-xs">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="p-4 bg-white border border-slate-200/80 rounded-2xl space-y-3 shadow-2xs">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative flex-1 min-w-[240px]">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <Input
               placeholder="Search receipt #, client, invoice #, account, remarks..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-8 h-9 text-xs border-slate-200 bg-slate-50/50 rounded-xl focus:bg-white transition-colors w-full"
+              className="pl-9.5 pr-8 h-10 text-xs border-slate-200/90 bg-slate-50/70 rounded-xl focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all w-full"
             />
             {searchTerm && (
               <button
@@ -199,13 +266,33 @@ export function ReceiptsListTable({
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Channel Filter Dropdown */}
+            <div className="w-full sm:w-56">
+              <Dropdown
+                className="w-full space-y-0"
+                value={modeFilter}
+                onChange={(val) => setModeFilter(val)}
+                placeholder={
+                  <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+                    <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>All Channels</span>
+                  </span>
+                }
+                options={channelOptions}
+                menuWidth={240}
+                buttonClassName="h-10 px-3 bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs rounded-xl text-xs font-semibold text-slate-700 transition-all cursor-pointer group"
+                iconClassName="text-slate-400 group-hover:text-slate-600 w-3.5 h-3.5"
+                itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
+              />
+            </div>
+
             {/* Status Segmented Buttons */}
-            <div className="flex items-center bg-slate-100/90 p-1 rounded-xl text-xs font-bold border border-slate-200/50">
+            <div className="flex items-center bg-slate-100/90 p-1 rounded-xl text-xs font-bold border border-slate-200/60">
               <button
                 type="button"
                 onClick={() => setStatusFilter("all")}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === "all"
                     ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
                     : "text-slate-600 hover:text-slate-900"
@@ -219,7 +306,7 @@ export function ReceiptsListTable({
               <button
                 type="button"
                 onClick={() => setStatusFilter("received")}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === "received"
                     ? "bg-white text-emerald-800 shadow-xs border border-emerald-200/80"
                     : "text-slate-600 hover:text-slate-900"
@@ -234,7 +321,7 @@ export function ReceiptsListTable({
               <button
                 type="button"
                 onClick={() => setStatusFilter("cancelled")}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === "cancelled"
                     ? "bg-white text-rose-800 shadow-xs border border-rose-200/80"
                     : "text-slate-600 hover:text-slate-900"
@@ -251,54 +338,16 @@ export function ReceiptsListTable({
             {/* Create Receipt Primary Button */}
             {onOpenCreateReceipt && (
               <Button
-                size="sm"
+                variant="custom"
+                size="none"
                 onClick={onOpenCreateReceipt}
-                className="h-9 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold gap-1.5 cursor-pointer shadow-xs hover:shadow-sm transition-all"
+                className="h-10 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-xs font-bold gap-1.5 cursor-pointer shadow-md shadow-orange-500/25 hover:shadow-orange-500/35 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>New Receipt</span>
               </Button>
             )}
           </div>
-        </div>
-
-        {/* Mode Filter Pills */}
-        <div className="flex items-center gap-1.5 flex-wrap pt-2.5 border-t border-slate-100">
-          <span className="text-[11px] font-bold text-slate-400 mr-1.5 flex items-center gap-1">
-            <Filter className="w-3 h-3 text-slate-400" /> Channel:
-          </span>
-          {[
-            { id: "all", label: "All Channels", count: countsByMode.all, icon: null },
-            { id: "bank", label: "Bank / NEFT / RTGS", count: countsByMode.bank, icon: Landmark },
-            { id: "upi", label: "UPI / QR", count: countsByMode.upi, icon: Smartphone },
-            { id: "cash", label: "Cash", count: countsByMode.cash, icon: Banknote },
-            { id: "cheque", label: "Cheque", count: countsByMode.cheque, icon: FileText },
-          ].map((m) => {
-            const Icon = m.icon;
-            const isSelected = modeFilter === m.id;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => setModeFilter(m.id)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  isSelected
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/80"
-                }`}
-              >
-                {Icon && <Icon className="w-3 h-3 opacity-75" />}
-                <span>{m.label}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                    isSelected ? "bg-white/20 text-white" : "bg-slate-200/80 text-slate-600"
-                  }`}
-                >
-                  {m.count}
-                </span>
-              </button>
-            );
-          })}
         </div>
 
         {/* Dynamic Filter Feedback Ribbon */}
@@ -337,31 +386,33 @@ export function ReceiptsListTable({
       <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+            <thead className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
               <tr>
-                <th className="py-3 px-4">Receipt # & Date</th>
-                <th className="py-3 px-4">Customer / Received From</th>
-                <th className="py-3 px-4">Reference / Against Invoice</th>
-                <th className="py-3 px-4">Payment Channel & Account</th>
-                <th className="py-3 px-4 text-right">Amount Received</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4 text-right">Action</th>
+                <th className="py-3.5 px-4">Receipt # & Date</th>
+                <th className="py-3.5 px-4">Customer / Received From</th>
+                <th className="py-3.5 px-4">Reference / Against Invoice</th>
+                <th className="py-3.5 px-4">Payment Channel & Account</th>
+                <th className="py-3.5 px-4 text-right">Amount Received</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredReceipts.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-14 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2.5 max-w-sm mx-auto">
-                      <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
-                        <Receipt className="w-6 h-6" />
+                    <div className="flex flex-col items-center justify-center gap-3 max-w-sm mx-auto py-4">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600 shadow-xs mb-0.5">
+                        <Receipt className="w-7 h-7 text-emerald-600" />
                       </div>
-                      <p className="font-bold text-slate-800 text-sm">No payment receipts found</p>
-                      <p className="text-xs text-slate-500 leading-relaxed">
-                        {isFiltered
-                          ? "No receipts match the selected filters or keyword search. Try clearing filters to see all vouchers."
-                          : "Payments recorded against customer invoices or direct inward receipts will be recorded here automatically."}
-                      </p>
+                      <div className="text-center space-y-1">
+                        <p className="font-bold text-slate-800 text-sm sm:text-base">No payment receipts found</p>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          {isFiltered
+                            ? "No receipts match the selected filters or keyword search. Try clearing filters to see all vouchers."
+                            : "Payments recorded against customer invoices or direct inward receipts will be recorded here automatically."}
+                        </p>
+                      </div>
                       {isFiltered && (
                         <Button
                           variant="outline"
@@ -371,9 +422,9 @@ export function ReceiptsListTable({
                             setModeFilter("all");
                             setStatusFilter("all");
                           }}
-                          className="mt-2 text-xs h-8 rounded-xl font-bold gap-1 cursor-pointer"
+                          className="mt-1 text-xs h-8.5 px-3.5 rounded-xl font-semibold gap-1.5 cursor-pointer border-slate-200 hover:border-orange-300 hover:text-orange-600 transition-all shadow-2xs"
                         >
-                          <RotateCcw className="w-3 h-3" />
+                          <RotateCcw className="w-3.5 h-3.5" />
                           <span>Clear Filters</span>
                         </Button>
                       )}
@@ -430,16 +481,6 @@ export function ReceiptsListTable({
                             <div className="font-bold text-slate-900 text-sm">
                               {r.party_name || r.clients?.name || "Customer"}
                             </div>
-                            {r.clients?.contact_person && (
-                              <div className="text-[11px] text-slate-500">
-                                Attn: {r.clients.contact_person}
-                              </div>
-                            )}
-                            {r.clients?.mobile && (
-                              <div className="text-[11px] text-slate-400 font-mono">
-                                {r.clients.mobile}
-                              </div>
-                            )}
                             {!r.clients && r.party_type && (
                               <span className="inline-block mt-0.5 text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
                                 {r.party_type.toUpperCase()}

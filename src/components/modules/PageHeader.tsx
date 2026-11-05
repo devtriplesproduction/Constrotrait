@@ -53,7 +53,7 @@ export function PageHeader({
 
   const renderTitle = () => {
     if (typeof title === 'string') {
-      const words = title.split(' ');
+      const words = title.trim().split(/\s+/);
       if (words.length > 1) {
         const isJobFirst = words[0].toLowerCase() === 'job';
         return (

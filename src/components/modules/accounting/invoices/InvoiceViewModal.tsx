@@ -139,7 +139,7 @@ export function InvoiceViewModal({
           <div className="flex items-center gap-2">
             <span className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
               isProforma
-                ? "bg-blue-100 text-blue-800 border border-blue-200"
+                ? "bg-orange-100 text-orange-800 border border-orange-200"
                 : "bg-emerald-100 text-emerald-800 border border-emerald-200"
             }`}>
               {isProforma ? "Proforma Invoice" : "Tax Invoice"}
@@ -263,7 +263,7 @@ export function InvoiceViewModal({
                 <div>Date: <strong>{invoice.invoice_date || "N/A"}</strong></div>
                 {invoice.due_date && <div>Due Date: <strong>{invoice.due_date}</strong></div>}
                 {jobEntry?.uid_label && (
-                  <div className="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold mt-1">
+                  <div className="inline-block bg-orange-50 text-orange-700 px-2 py-0.5 rounded text-xs font-semibold mt-1">
                     Inward UID: {jobEntry.uid_label}
                   </div>
                 )}
@@ -538,10 +538,10 @@ export function InvoiceViewModal({
           {((invoice.clauses && invoice.clauses.length > 0) || invoice.notes) && (
             <div className="border-t border-slate-200 pt-5 space-y-2.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wider">
-                <Scroll className="w-3.5 h-3.5 text-blue-600" />
+                <Scroll className="w-3.5 h-3.5 text-orange-600" />
                 <span>Terms & Conditions</span>
               </div>
-              <div className="space-y-1.5 pl-3 border-l-2 border-blue-500">
+              <div className="space-y-1.5 pl-3 border-l-2 border-orange-500">
                 {invoice.clauses && invoice.clauses.length > 0 ? (
                   invoice.clauses.map((clause: any, index: number) => (
                     <div key={index} className="text-xs text-slate-600 leading-relaxed">

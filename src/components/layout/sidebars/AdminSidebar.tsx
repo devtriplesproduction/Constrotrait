@@ -10,9 +10,14 @@ import {
   CalendarDays,
   Banknote,
   UserSquare,
+  Truck,
 } from "lucide-react";
 import { BaseSidebar, SidebarLink } from "./BaseSidebar";
-import { canManageTestMaster, canManageClientsAndJobs, canManageEmployees } from "@/config/roles";
+import {
+  canManageTestMaster,
+  canManageClientsAndJobs,
+  canManageEmployees,
+} from "@/config/roles";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -47,7 +52,8 @@ export function AdminSidebar({ isOpen, setIsOpen, role, roles, hideOnDesktop = f
   adminLinks.push(
     { title: "Leave", href: "/leave", icon: CalendarDays },
     { title: "Holidays", href: "/holidays", icon: Calendar },
-    { title: "Applications", href: "/applications", icon: ClipboardList }
+    { title: "Applications", href: "/applications", icon: ClipboardList },
+    { title: "Delivery Voucher", href: "/delivery-challan", icon: Truck }
   );
 
   if (canManageTestMaster(roleArray)) {

@@ -19,19 +19,9 @@ export async function getAccountingDashboard(branchId?: string) {
   if (effectiveBranch) {
     accountsQuery = accountsQuery.or(`branch_id.eq.${effectiveBranch},branch_id.is.null`);
   }
-  const { data: accounts } = await accountsQuery;
 
   let projectsQuery = supabase.from("accounting_projects").select("id, name, status");
   if (effectiveBranch) projectsQuery = projectsQuery.eq("branch_id", effectiveBranch);
-  const { data: projects } = await projectsQuery;
-
-  const projectBalances: { id: string; name: string; balance: number }[] = [];
-  if (projects) {
-    for (const p of projects) {
-      const { data: bal } = await supabase.rpc("get_project_financial_balance", { p_project_id: p.id });
-      projectBalances.push({ id: p.id, name: p.name, balance: Number(bal) || 0 });
-    }
-  }
 
   let receiptsQuery = supabase
     .from("inward_receipts")
@@ -57,11 +47,11 @@ export async function getAccountingDashboard(branchId?: string) {
         )
       )
     `)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(50);
   if (effectiveBranch) {
     receiptsQuery = receiptsQuery.or(`branch_id.eq.${effectiveBranch},branch_id.is.null`);
   }
-  const { data: receipts } = await receiptsQuery;
 
   let expensesQuery = supabase
     .from("accounting_expenses")
@@ -75,7 +65,6 @@ export async function getAccountingDashboard(branchId?: string) {
     .order("created_at", { ascending: false })
     .limit(50);
   if (effectiveBranch) expensesQuery = expensesQuery.eq("branch_id", effectiveBranch);
-  const { data: expenses } = await expensesQuery;
 
   let pendingQuery = supabase
     .from("accounting_expenses")
@@ -86,9 +75,9 @@ export async function getAccountingDashboard(branchId?: string) {
       accounting_projects ( id, name ),
       job_entries ( id, uid, uid_label, inward_on, project_name, clients ( id, name ) )
     `)
-    .eq("approval_status", "pending");
+    .eq("approval_status", "pending")
+    .limit(50);
   if (effectiveBranch) pendingQuery = pendingQuery.eq("branch_id", effectiveBranch);
-  const { data: pending } = await pendingQuery;
 
   let invoicesQuery = supabase
     .from("invoices")
@@ -111,7 +100,6 @@ export async function getAccountingDashboard(branchId?: string) {
     .order("created_at", { ascending: false })
     .limit(50);
   if (effectiveBranch) invoicesQuery = invoicesQuery.eq("branch_id", effectiveBranch);
-  const { data: invoices } = await invoicesQuery;
 
   let quotationsQuery = supabase.from("quotations").select(`
     *,
@@ -121,13 +109,11 @@ export async function getAccountingDashboard(branchId?: string) {
     inward:job_entries!quotations_inward_id_fkey ( id, uid, uid_label, inward_on, project_name )
   `).order("created_at", { ascending: false }).limit(50);
   if (effectiveBranch) quotationsQuery = quotationsQuery.eq("branch_id", effectiveBranch);
-  const { data: quotations } = await quotationsQuery;
 
   let templatesQuery = supabase.from("quotation_templates").select("*").order("is_default", { ascending: false }).order("created_at", { ascending: false });
   if (effectiveBranch) {
     templatesQuery = templatesQuery.or(`branch_id.eq.${effectiveBranch},branch_id.is.null`);
   }
-  const { data: templates } = await templatesQuery;
 
   let inwardsQuery = supabase
     .from("job_entries")
@@ -182,23 +168,72 @@ export async function getAccountingDashboard(branchId?: string) {
     .order("created_at", { ascending: false })
     .limit(50);
   if (effectiveBranch) inwardsQuery = inwardsQuery.eq("branch_id", effectiveBranch);
-  const { data: inwards } = await inwardsQuery;
 
   let categoriesQuery = supabase.from("expense_categories").select("*").order("name");
   if (effectiveBranch) {
     categoriesQuery = categoriesQuery.or(`branch_id.eq.${effectiveBranch},branch_id.is.null`);
   }
-  const { data: categories } = await categoriesQuery;
 
-  let clientsQuery = supabase.from("clients").select("id, name, email, mobile, address, gst_no, contact_person").order("name");
+  let clientsQuery = supabase.from("clients").select("id, name, email, mobile, address, gst_no, contact_person").order("name").limit(100);
   if (effectiveBranch) clientsQuery = clientsQuery.eq("branch_id", effectiveBranch);
-  const { data: clients } = await clientsQuery;
 
-  const { data: testMasters } = await (supabase as any)
+  const testMastersQuery = (supabase as any)
     .from("test_master")
     .select("id, specific_test, component_parameter, test_method, category, is_nabl, unit, material_product, particulars, tested_as_per_is, sample_size")
     .order("component_parameter", { ascending: true })
     .limit(1000);
+
+  // Execute all independent queries in parallel
+  const [
+    accountsRes,
+    projectsRes,
+    receiptsRes,
+    expensesRes,
+    pendingRes,
+    invoicesRes,
+    quotationsRes,
+    templatesRes,
+    inwardsRes,
+    categoriesRes,
+    clientsRes,
+    testMastersRes,
+  ] = await Promise.all([
+    accountsQuery,
+    projectsQuery,
+    receiptsQuery,
+    expensesQuery,
+    pendingQuery,
+    invoicesQuery,
+    quotationsQuery,
+    templatesQuery,
+    inwardsQuery,
+    categoriesQuery,
+    clientsQuery,
+    testMastersQuery,
+  ]);
+
+  const accounts = accountsRes.data;
+  const projects = projectsRes.data;
+  const receipts = receiptsRes.data;
+  const expenses = expensesRes.data;
+  const pending = pendingRes.data;
+  const invoices = invoicesRes.data;
+  const quotations = quotationsRes.data;
+  const templates = templatesRes.data;
+  const inwards = inwardsRes.data;
+  const categories = categoriesRes.data;
+  const clients = clientsRes.data;
+  const testMasters = testMastersRes.data;
+
+  // Resolve project balances in parallel
+  const projectBalances = projects && projects.length > 0
+    ? await Promise.all(
+        projects.map(async (p) => {
+          const { data: bal } = await supabase.rpc("get_project_financial_balance", { p_project_id: p.id });
+          return { id: p.id, name: p.name, balance: Number(bal) || 0 };
+        })
+      )
+    : [];
 
   return {
     success: true,

@@ -6,7 +6,7 @@ import path from 'path';
 import { renderToBuffer, DocumentProps } from '@react-pdf/renderer';
 import { JobEntryService } from "@/services/job-entry.service";
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
-import { canManageClientsAndJobs, isTestEngineer, isSuperAdmin, isBranchManager } from "@/config/roles";
+import { canManageClientsAndJobs, canViewJobCardDetails, isTestEngineer, isSuperAdmin, isBranchManager } from "@/config/roles";
 import { JobCardPDF } from "@/components/pdf/JobCardPDF";
 
 function getBase64Asset(filename: string): string {
@@ -56,16 +56,7 @@ export async function getJobCardPdfAction(jobEntryTestId: string) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
 
-    const canView =
-      canManageClientsAndJobs(user.roles) ||
-      isTestEngineer(user.roles) ||
-      user.roles.includes("LAB_ANALYST") ||
-      user.roles.includes("QUALITY_MANAGER") ||
-      user.roles.includes("TECHNICAL_MANAGER") ||
-      isSuperAdmin(user.roles) ||
-      isBranchManager(user.roles);
-
-    if (!canView) {
+    if (!canViewJobCardDetails(user.roles)) {
       return { success: false, error: "Unauthorized: You do not have permission to view job cards" };
     }
 
@@ -87,11 +78,12 @@ export async function downloadJobCardAction(jobEntryTestId: string) {
     if (!user) throw new Error("Unauthorized");
 
     // Strictly disallow test engineers from downloading job cards
-    if (isTestEngineer(user.roles) && !isSuperAdmin(user.roles) && !isBranchManager(user.roles)) {
+    const rolesToCheck = user.roles && user.roles.length > 0 ? user.roles : [user.activeRole];
+    if ((isTestEngineer(rolesToCheck) || user.activeRole === "TEST_ENGINEER") && !isSuperAdmin(rolesToCheck) && !isBranchManager(rolesToCheck)) {
       return { success: false, error: "Unauthorized: Test engineers are only permitted to view job cards, not download." };
     }
 
-    if (!canManageClientsAndJobs(user.roles)) {
+    if (!canViewJobCardDetails(user.roles)) {
       return { success: false, error: "Unauthorized: You do not have permission to download job cards" };
     }
 

@@ -4,7 +4,7 @@ const password = process.env.SUPABASE_DB_PASSWORD;
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const projectIdMatch = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/);
 const projectId = projectIdMatch ? projectIdMatch[1] : 'nxvghafschdniemrpqkn';
-const dbUrl = `postgresql://postgres:${password}@db.${projectId}.supabase.co:5432/postgres`;
+const dbUrl = process.env.DATABASE_URL || `postgresql://postgres:${password}@db.${projectId}.supabase.co:5432/postgres`;
 
 const client = new Client({ connectionString: dbUrl });
 

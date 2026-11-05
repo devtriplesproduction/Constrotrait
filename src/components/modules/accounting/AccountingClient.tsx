@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useEffect, useRef, useCallback } from "react";
+import React, { useState, useTransition, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/modules/PageHeader";
@@ -282,14 +282,14 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
   const expensesList = data.expenses || [];
 
   const headerActions = currentTab === "billing" ? (
-    <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-xl overflow-x-auto no-scrollbar">
+    <div className="flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs overflow-x-auto no-scrollbar">
       <button
         type="button"
         onClick={() => handleSubTabChange("invoices")}
-        className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
           billingSubTab === "invoices"
-            ? "bg-white text-blue-700 shadow-xs border border-slate-200/80"
-            : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+            ? "bg-white text-orange-600 shadow-sm border border-orange-200/70 ring-1 ring-orange-500/10"
+            : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
         }`}
       >
         <FileText className="w-4 h-4" />
@@ -297,7 +297,7 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
         <span
           className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
             billingSubTab === "invoices"
-              ? "bg-blue-100 text-blue-800"
+              ? "bg-orange-100 text-orange-800"
               : "bg-slate-200 text-slate-700"
           }`}
         >
@@ -308,10 +308,10 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
       <button
         type="button"
         onClick={() => handleSubTabChange("receipts")}
-        className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
           billingSubTab === "receipts"
-            ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
-            : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+            ? "bg-white text-emerald-800 shadow-sm border border-emerald-200/70 ring-1 ring-emerald-500/10"
+            : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
         }`}
       >
         <Receipt className="w-4 h-4" />
@@ -330,10 +330,10 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
       <button
         type="button"
         onClick={() => handleSubTabChange("expenses")}
-        className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
           billingSubTab === "expenses"
-            ? "bg-white text-purple-800 shadow-xs border border-slate-200/80"
-            : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+            ? "bg-white text-purple-800 shadow-sm border border-purple-200/70 ring-1 ring-purple-500/10"
+            : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
         }`}
       >
         <Banknote className="w-4 h-4" />
@@ -759,74 +759,26 @@ function ReceiptsTab({ data, run, onOpenViewReceipt, onOpenCreateReceipt }: any)
   );
 }
 
-function ExpensesTab({ data, run, pending, onOpenRecordExpense }: any) {
-  const [catName, setCatName] = useState("");
-  const [showAddCat, setShowAddCat] = useState(false);
-
+function ExpensesTab({
+  data,
+  run,
+  onOpenRecordExpense,
+  fromDate,
+  toDate,
+  selectedPeriod,
+  onDateRangeChange,
+}: any) {
   return (
     <div className="space-y-6">
-      {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <h3 className="text-sm font-bold text-slate-900">Expense Management & Outflow Ledgers</h3>
-          <p className="text-xs text-slate-500">
-            Record direct inward job expenses (testing consumables, courier, external lab tests) & general company operational overheads.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowAddCat(!showAddCat)}
-            className="h-9 px-3 text-xs font-semibold rounded-xl cursor-pointer"
-          >
-            {showAddCat ? "Close Form" : "+ New Category"}
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => onOpenRecordExpense?.()}
-            className="h-9 px-4 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white gap-1.5 rounded-xl cursor-pointer shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Record Expense</span>
-          </Button>
-        </div>
-      </div>
-
-      {showAddCat && (
-        <form
-          className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-wrap items-center gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (catName.trim()) {
-              run(() => createExpenseCategoryAction(catName.trim()), "Category added");
-              setCatName("");
-              setShowAddCat(false);
-            }
-          }}
-        >
-          <input
-            className="flex-1 min-w-[220px] border border-slate-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="New category name (e.g. Courier Logistics, Lab Consumables, Office Rent)"
-            value={catName}
-            onChange={(e) => setCatName(e.target.value)}
-          />
-          <button
-            type="submit"
-            disabled={!catName.trim() || pending}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl text-xs cursor-pointer disabled:opacity-50"
-          >
-            Save Category
-          </button>
-        </form>
-      )}
-
-      {/* Full Expense Ledger Table */}
       <ExpenseLedgerTable
         expenses={data.expenses || []}
         onRecordExpense={onOpenRecordExpense}
         onRefresh={() => run(async () => {}, "Refreshed")}
         hideSummaryCards={true}
+        fromDate={fromDate}
+        toDate={toDate}
+        selectedPeriod={selectedPeriod}
+        onDateRangeChange={onDateRangeChange}
       />
     </div>
   );
@@ -865,23 +817,23 @@ function InvoicesTab({
   return (
     <div className="space-y-6">
       {/* Sub-navigation bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-xs">
-        <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-xl overflow-x-auto no-scrollbar">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/60 overflow-x-auto no-scrollbar">
           {/* Tab 1: All Invoices */}
           <button
             type="button"
             onClick={() => setSubTab("invoices")}
             className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               subTab === "invoices"
-                ? "bg-white text-blue-700 shadow-xs border border-slate-200/80"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                ? "bg-white text-orange-600 shadow-xs border border-orange-200/70 font-bold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60 font-semibold"
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
             <span>All Invoices</span>
             <span
               className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                subTab === "invoices" ? "bg-blue-100 text-blue-800" : "bg-slate-200 text-slate-700"
+                subTab === "invoices" ? "bg-orange-100 text-orange-800" : "bg-slate-200 text-slate-700"
               }`}
             >
               {invoicesCount}
@@ -894,8 +846,8 @@ function InvoicesTab({
             onClick={() => setSubTab("uninvoiced")}
             className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               subTab === "uninvoiced"
-                ? "bg-white text-amber-800 shadow-xs border border-amber-300 ring-1 ring-amber-300/40"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                ? "bg-white text-amber-800 shadow-xs border border-amber-300 ring-1 ring-amber-300/40 font-bold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60 font-semibold"
             }`}
           >
             <Clock className={`w-3.5 h-3.5 ${unbilledInwards > 0 ? "text-amber-600" : "text-slate-400"}`} />
@@ -922,8 +874,8 @@ function InvoicesTab({
             onClick={() => setSubTab("inwards")}
             className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               subTab === "inwards"
-                ? "bg-white text-indigo-700 shadow-xs border border-slate-200/80"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                ? "bg-white text-indigo-700 shadow-xs border border-indigo-200/80 font-bold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60 font-semibold"
             }`}
           >
             <FlaskConical className="w-3.5 h-3.5" />
@@ -940,11 +892,12 @@ function InvoicesTab({
 
         <div className="flex items-center gap-2">
           <Button
-            size="sm"
+            variant="custom"
+            size="none"
             onClick={() => onOpenCreateProforma()}
-            className="h-10 px-4.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl cursor-pointer shadow-md shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center"
+            className="h-10 px-5 text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white gap-2 rounded-xl cursor-pointer shadow-md shadow-orange-500/25 hover:shadow-lg hover:shadow-orange-500/35 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center shrink-0"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Create Proforma Invoice</span>
           </Button>
         </div>
@@ -1012,11 +965,26 @@ function BillingAndCollectionTab({
   onOpenRecordExpense?: (inward?: any) => void;
 }) {
   const [invoicesViewTab, setInvoicesViewTab] = useState<"invoices" | "uninvoiced" | "inwards">("invoices");
+  const [expensePeriod, setExpensePeriod] = useState<string>("all");
+  const [expenseFromDate, setExpenseFromDate] = useState<string>("");
+  const [expenseToDate, setExpenseToDate] = useState<string>("");
 
   const invoices = data.invoices || [];
   const receipts = data.receipts || data.recentReceipts || [];
   const expenses = data.expenses || [];
   const inwards = data.recentInwards || [];
+
+  // Filtered expenses based on selected date range
+  const filteredExpensesByDate = useMemo(() => {
+    if (!expenseFromDate && !expenseToDate) return expenses;
+    return expenses.filter((e: any) => {
+      const d = e.expense_date || (e.created_at ? e.created_at.slice(0, 10) : "");
+      if (!d) return true;
+      if (expenseFromDate && d < expenseFromDate) return false;
+      if (expenseToDate && d > expenseToDate) return false;
+      return true;
+    });
+  }, [expenses, expenseFromDate, expenseToDate]);
 
   // ================= Invoices & General Billing Metrics =================
   const totalBilled = invoices.reduce((s: number, i: any) => s + Number(i.total_amount || 0), 0);
@@ -1060,73 +1028,87 @@ function BillingAndCollectionTab({
   const cashChequeTotal = cashAmount + chequeAmount;
   const cashChequePercent = totalCollections > 0 ? Math.round((cashChequeTotal / totalCollections) * 100) : 0;
 
-  // ================= Expenses Breakdown Metrics =================
-  const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const inwardExpensesList = expenses.filter((e: any) => e.expense_type === "inward" || e.job_entry_id);
+  // ================= Expenses Breakdown Metrics (Updated based on selected Date Range) =================
+  const totalExpenses = filteredExpensesByDate.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const inwardExpensesList = filteredExpensesByDate.filter((e: any) => e.expense_type === "inward" || e.job_entry_id);
   const inwardExpensesAmount = inwardExpensesList.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
   const inwardExpensesPercent = totalExpenses > 0 ? Math.round((inwardExpensesAmount / totalExpenses) * 100) : 0;
 
-  const inhouseExpensesAmount = expenses
+  const inhouseExpensesAmount = filteredExpensesByDate
     .filter((e: any) => e.expense_type === "inhouse" && !e.job_entry_id)
     .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const companyExpensesAmount = expenses
+  const companyExpensesAmount = filteredExpensesByDate
     .filter((e: any) => (e.expense_type === "company" || !e.expense_type) && !e.job_entry_id)
     .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
   const overheadExpensesAmount = inhouseExpensesAmount + companyExpensesAmount;
-  const overheadExpensesList = expenses.filter((e: any) => e.expense_type !== "inward" && !e.job_entry_id);
+  const overheadExpensesList = filteredExpensesByDate.filter((e: any) => e.expense_type !== "inward" && !e.job_entry_id);
   const overheadExpensesPercent = totalExpenses > 0 ? Math.round((overheadExpensesAmount / totalExpenses) * 100) : 0;
 
-  const netCashFlow = totalCollections - totalExpenses;
-  const netMarginPercent = totalCollections > 0 ? Math.round((netCashFlow / totalCollections) * 100) : 0;
+  // Active receipts matching selected date range for net spread
+  const activeReceiptsInDate = useMemo(() => {
+    if (!expenseFromDate && !expenseToDate) return activeReceipts;
+    return activeReceipts.filter((r: any) => {
+      const d = r.receipt_date || (r.created_at ? r.created_at.slice(0, 10) : "");
+      if (!d) return true;
+      if (expenseFromDate && d < expenseFromDate) return false;
+      if (expenseToDate && d > expenseToDate) return false;
+      return true;
+    });
+  }, [activeReceipts, expenseFromDate, expenseToDate]);
+
+  const collectionsInDate = activeReceiptsInDate.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  const netCashFlow = collectionsInDate - totalExpenses;
+  const netMarginPercent = collectionsInDate > 0 ? Math.round((netCashFlow / collectionsInDate) * 100) : 0;
 
   return (
     <div className="space-y-6">
       {/* ================= Invoices & Billing Dynamic KPI Hero ================= */}
       {activeSubTab === "invoices" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
           {/* Card 1: Total Invoiced / Billed */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-blue-50/30 via-white to-white border border-slate-200/80 hover:border-blue-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-orange-50/25 via-white to-white border border-slate-200/90 hover:border-orange-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                   Total Invoiced (Billed)
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <FileText className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200/70 flex items-center justify-center text-orange-600 shrink-0 group-hover:scale-105 group-hover:bg-orange-100 transition-all shadow-2xs">
+                  <FileText className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans truncate tabular-nums">
                 {fmt(totalBilled)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{invoices.length} invoices issued</span>
-              <span className="font-semibold text-blue-700 bg-blue-50/80 border border-blue-100/80 px-2 py-0.5 rounded-full text-[10px] shrink-0 whitespace-nowrap">
+              <span className="font-semibold text-orange-800 bg-orange-50 border border-orange-200/70 px-2.5 py-0.5 rounded-full text-[10px] shrink-0 whitespace-nowrap shadow-2xs">
                 {proformaCount} PI · {taxCount} Tax
               </span>
             </div>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-amber-500 opacity-80" />
           </div>
 
           {/* Card 2: Realized Collections */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-emerald-50/30 via-white to-white border border-slate-200/80 hover:border-emerald-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-emerald-50/25 via-white to-white border border-slate-200/90 hover:border-emerald-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                   <span className="truncate">Realized Collections</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <Receipt className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/70 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 group-hover:bg-emerald-100 transition-all shadow-2xs">
+                  <Receipt className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans truncate tabular-nums">
                 {fmt(totalCollections)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{verifiedReceiptsCount} vouchers</span>
-              <div className="flex items-center gap-1.5 bg-emerald-50/90 border border-emerald-200/60 px-2 py-0.5 rounded-full text-[10px] font-semibold text-emerald-800 shrink-0 whitespace-nowrap">
-                <div className="w-8 sm:w-10 h-1.5 bg-emerald-200/80 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200/70 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-emerald-800 shrink-0 whitespace-nowrap shadow-2xs">
+                <div className="w-10 sm:w-12 h-1.5 bg-emerald-200/80 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-emerald-600 rounded-full transition-all duration-500"
                     style={{ width: `${collectionRate}%` }}
@@ -1135,7 +1117,7 @@ function BillingAndCollectionTab({
                 <span>{collectionRate}%</span>
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-100/70">
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-100/70">
               <div
                 className="h-full bg-emerald-500 transition-all duration-500"
                 style={{ width: `${collectionRate}%` }}
@@ -1144,27 +1126,28 @@ function BillingAndCollectionTab({
           </div>
 
           {/* Card 3: Receivables Pending (Outstanding Due) */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-amber-50/30 via-white to-white border border-slate-200/80 hover:border-amber-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-amber-50/25 via-white to-white border border-slate-200/90 hover:border-amber-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
                   <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <span className="truncate">Outstanding Due</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200/70 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 group-hover:bg-amber-100 transition-all shadow-2xs">
+                  <ArrowUpRight className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans truncate tabular-nums">
                 {fmt(totalOutstanding)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{unpaidCount} unpaid/partial</span>
-              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50/80 border border-amber-200/60 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/70 px-2.5 py-0.5 rounded-full shrink-0 whitespace-nowrap shadow-2xs">
                 Pending Clearance
               </span>
             </div>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-400" />
           </div>
 
           {/* Card 4: Inward Register Pipeline */}
@@ -1173,30 +1156,30 @@ function BillingAndCollectionTab({
               onSubTabChange("invoices");
               setInvoicesViewTab("uninvoiced");
             }}
-            className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-indigo-50/30 via-white to-white border border-slate-200/80 hover:border-amber-400 hover:ring-2 hover:ring-amber-400/25 rounded-xl shadow-2xs hover:shadow-md transition-all duration-200 group flex flex-col justify-between relative overflow-hidden cursor-pointer"
+            className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-indigo-50/25 via-white to-white border border-slate-200/90 hover:border-orange-400 hover:ring-2 hover:ring-orange-400/20 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden cursor-pointer"
             title="Click to view all inwards awaiting invoice creation"
           >
             <div>
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5 truncate">
                   <FlaskConical className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                   <span className="truncate">Inward Jobs To Bill</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-indigo-600 shrink-0 group-hover:scale-110 group-hover:bg-amber-100 group-hover:text-amber-800 transition-all">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200/70 flex items-center justify-center text-indigo-600 shrink-0 group-hover:scale-110 group-hover:bg-orange-100 group-hover:text-orange-800 group-hover:border-orange-300 transition-all shadow-2xs">
+                  <ArrowUpRight className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans flex items-baseline gap-1.5 truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans flex items-baseline gap-2 truncate tabular-nums">
                 <span>{unbilledInwards}</span>
-                <span className="text-xs font-semibold text-slate-500">Jobs To Bill</span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-normal">Jobs To Bill</span>
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{inwards.length} inward entries</span>
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap ${
+              <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap shadow-2xs ${
                 unbilledInwards > 0
-                  ? "bg-amber-50/80 text-amber-800 border-amber-200/60 group-hover:bg-amber-100 group-hover:text-amber-900 group-hover:border-amber-300"
-                  : "bg-emerald-50/80 text-emerald-800 border-emerald-200/60"
+                  ? "bg-amber-50 text-amber-900 border-amber-200/80 group-hover:bg-amber-100 group-hover:text-amber-950 group-hover:border-amber-300"
+                  : "bg-emerald-50 text-emerald-800 border-emerald-200/70"
               }`}>
                 {unbilledInwards > 0 ? (
                   <>
@@ -1208,7 +1191,7 @@ function BillingAndCollectionTab({
                 )}
               </span>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-100/70">
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-100/70">
               <div
                 className="h-full bg-indigo-500 transition-all duration-500"
                 style={{ width: `${inwardBillingRate}%` }}
@@ -1220,54 +1203,52 @@ function BillingAndCollectionTab({
 
       {/* ================= Collections & Receipts Dynamic KPI Hero ================= */}
       {activeSubTab === "receipts" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
           {/* Card 1: Total Inward Collections */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-emerald-50/30 via-white to-white border border-slate-200/80 hover:border-emerald-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-emerald-50/25 via-white to-white border border-slate-200/90 hover:border-emerald-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                   <span className="truncate">Total Inward Collections</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/70 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 group-hover:bg-emerald-100 transition-all shadow-2xs">
+                  <CheckCircle2 className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans truncate tabular-nums">
                 {fmt(totalCollections)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{activeReceipts.length} verified vouchers</span>
-              <span className="font-semibold text-emerald-800 bg-emerald-50/80 border border-emerald-200/60 px-2 py-0.5 rounded-full text-[10px] shrink-0 whitespace-nowrap">
+              <span className="font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/70 px-2.5 py-0.5 rounded-full text-[10px] shrink-0 whitespace-nowrap shadow-2xs">
                 Realized
               </span>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-100/70">
-              <div className="h-full bg-emerald-500 w-full" />
-            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500" />
           </div>
 
           {/* Card 2: Bank / NEFT / RTGS */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-blue-50/30 via-white to-white border border-slate-200/80 hover:border-blue-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-blue-50/25 via-white to-white border border-slate-200/90 hover:border-blue-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5 truncate">
                   <Landmark className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span className="truncate">Bank / NEFT / RTGS</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <Landmark className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200/70 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 group-hover:bg-blue-100 transition-all shadow-2xs">
+                  <Landmark className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans truncate tabular-nums">
                 {fmt(bankAmount)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{bankReceipts.length} bank vouchers</span>
-              <div className="flex items-center gap-1.5 bg-blue-50/90 border border-blue-200/60 px-2 py-0.5 rounded-full text-[10px] font-semibold text-blue-800 shrink-0 whitespace-nowrap">
-                <div className="w-8 sm:w-10 h-1.5 bg-blue-200/80 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-200/70 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-blue-800 shrink-0 whitespace-nowrap shadow-2xs">
+                <div className="w-10 sm:w-12 h-1.5 bg-blue-200/80 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-600 rounded-full transition-all duration-500"
                     style={{ width: `${bankPercent}%` }}
@@ -1276,7 +1257,7 @@ function BillingAndCollectionTab({
                 <span>{bankPercent}%</span>
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-100/70">
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-100/70">
               <div
                 className="h-full bg-blue-500 transition-all duration-500"
                 style={{ width: `${bankPercent}%` }}
@@ -1285,25 +1266,25 @@ function BillingAndCollectionTab({
           </div>
 
           {/* Card 3: UPI & QR Codes */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-purple-50/30 via-white to-white border border-slate-200/80 hover:border-purple-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-purple-50/25 via-white to-white border border-slate-200/90 hover:border-purple-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold text-purple-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5 truncate">
                   <Smartphone className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                   <span className="truncate">UPI & QR Codes</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-purple-50 border border-purple-100/80 flex items-center justify-center text-purple-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <Smartphone className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200/70 flex items-center justify-center text-purple-600 shrink-0 group-hover:scale-105 group-hover:bg-purple-100 transition-all shadow-2xs">
+                  <Smartphone className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans truncate tabular-nums">
                 {fmt(upiAmount)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{upiReceipts.length} UPI vouchers</span>
-              <div className="flex items-center gap-1.5 bg-purple-50/90 border border-purple-200/60 px-2 py-0.5 rounded-full text-[10px] font-semibold text-purple-800 shrink-0 whitespace-nowrap">
-                <div className="w-8 sm:w-10 h-1.5 bg-purple-200/80 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2 bg-purple-50 border border-purple-200/70 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-purple-800 shrink-0 whitespace-nowrap shadow-2xs">
+                <div className="w-10 sm:w-12 h-1.5 bg-purple-200/80 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-purple-600 rounded-full transition-all duration-500"
                     style={{ width: `${upiPercent}%` }}
@@ -1312,7 +1293,7 @@ function BillingAndCollectionTab({
                 <span>{upiPercent}%</span>
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-100/70">
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-100/70">
               <div
                 className="h-full bg-purple-500 transition-all duration-500"
                 style={{ width: `${upiPercent}%` }}
@@ -1321,78 +1302,90 @@ function BillingAndCollectionTab({
           </div>
 
           {/* Card 4: Liquid Cash & Cheques */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-amber-50/30 via-white to-white border border-slate-200/80 hover:border-amber-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-amber-50/25 via-white to-white border border-slate-200/90 hover:border-amber-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5 truncate">
                   <Banknote className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <span className="truncate">Cash & Cheques</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <Banknote className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200/70 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 group-hover:bg-amber-100 transition-all shadow-2xs">
+                  <Banknote className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans truncate tabular-nums">
                 {fmt(cashChequeTotal)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">Cash: {fmt(cashAmount)}</span>
-              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50/80 border border-amber-200/60 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+              <span className="text-[10px] font-semibold text-amber-900 bg-amber-50 border border-amber-200/70 px-2.5 py-0.5 rounded-full shrink-0 whitespace-nowrap shadow-2xs">
                 Cheque: {fmt(chequeAmount)}
               </span>
             </div>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-400" />
           </div>
         </div>
       )}
 
       {/* ================= Outflows & Expenses Dynamic KPI Hero ================= */}
       {activeSubTab === "expenses" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
           {/* Card 1: Total Outflows (Expenses) */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-rose-50/30 via-white to-white border border-slate-200/80 hover:border-rose-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-rose-50/25 via-white to-white border border-slate-200/90 hover:border-rose-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1.5 truncate">
                   <TrendingDown className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                   <span className="truncate">Total Outflows (Expenses)</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-rose-50 border border-rose-100/80 flex items-center justify-center text-rose-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <TrendingDown className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-200/70 flex items-center justify-center text-rose-600 shrink-0 group-hover:scale-105 group-hover:bg-rose-100 transition-all shadow-2xs">
+                  <TrendingDown className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans truncate tabular-nums">
                 {fmt(totalExpenses)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
-              <span className="truncate">{expenses.length} cleared debits</span>
-              <span className="text-[10px] font-semibold text-rose-800 bg-rose-50/80 border border-rose-200/60 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
-                All Outflows
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
+              <span className="truncate">{filteredExpensesByDate.length} cleared debits</span>
+              <span className="text-[10px] font-semibold text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-0.5 rounded-full shrink-0 whitespace-nowrap shadow-2xs">
+                {expensePeriod === "this_month"
+                  ? "This Month"
+                  : expensePeriod === "last_month"
+                  ? "Last Month"
+                  : expensePeriod === "this_quarter"
+                  ? "This Quarter"
+                  : expensePeriod === "this_fy"
+                  ? "This FY"
+                  : expensePeriod === "custom"
+                  ? "Custom Range"
+                  : "All Outflows"}
               </span>
             </div>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-500" />
           </div>
 
           {/* Card 2: Inward Job Direct Costs */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-blue-50/30 via-white to-white border border-slate-200/80 hover:border-blue-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-blue-50/25 via-white to-white border border-slate-200/90 hover:border-blue-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5 truncate">
                   <Package className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span className="truncate">Inward Direct Costs</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <Package className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200/70 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 group-hover:bg-blue-100 transition-all shadow-2xs">
+                  <Package className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans truncate tabular-nums">
                 {fmt(inwardExpensesAmount)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{inwardExpensesList.length} job-tagged</span>
-              <div className="flex items-center gap-1.5 bg-blue-50/90 border border-blue-200/60 px-2 py-0.5 rounded-full text-[10px] font-semibold text-blue-800 shrink-0 whitespace-nowrap">
-                <div className="w-8 sm:w-10 h-1.5 bg-blue-200/80 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-200/70 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-blue-800 shrink-0 whitespace-nowrap shadow-2xs">
+                <div className="w-10 sm:w-12 h-1.5 bg-blue-200/80 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-600 rounded-full transition-all duration-500"
                     style={{ width: `${inwardExpensesPercent}%` }}
@@ -1401,7 +1394,7 @@ function BillingAndCollectionTab({
                 <span>{inwardExpensesPercent}%</span>
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-100/70">
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-100/70">
               <div
                 className="h-full bg-blue-500 transition-all duration-500"
                 style={{ width: `${inwardExpensesPercent}%` }}
@@ -1410,25 +1403,25 @@ function BillingAndCollectionTab({
           </div>
 
           {/* Card 3: Lab & Admin Overheads */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-purple-50/30 via-white to-white border border-slate-200/80 hover:border-purple-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-purple-50/25 via-white to-white border border-slate-200/90 hover:border-purple-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold text-purple-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5 truncate">
                   <Building2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                   <span className="truncate">Lab & Admin Overheads</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-purple-50 border border-purple-100/80 flex items-center justify-center text-purple-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <Building2 className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200/70 flex items-center justify-center text-purple-600 shrink-0 group-hover:scale-105 group-hover:bg-purple-100 transition-all shadow-2xs">
+                  <Building2 className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-0.5 font-sans truncate">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 font-sans truncate tabular-nums">
                 {fmt(overheadExpensesAmount)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{overheadExpensesList.length} operational debits</span>
-              <div className="flex items-center gap-1.5 bg-purple-50/90 border border-purple-200/60 px-2 py-0.5 rounded-full text-[10px] font-semibold text-purple-800 shrink-0 whitespace-nowrap">
-                <div className="w-8 sm:w-10 h-1.5 bg-purple-200/80 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2 bg-purple-50 border border-purple-200/70 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-purple-800 shrink-0 whitespace-nowrap shadow-2xs">
+                <div className="w-10 sm:w-12 h-1.5 bg-purple-200/80 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-purple-600 rounded-full transition-all duration-500"
                     style={{ width: `${overheadExpensesPercent}%` }}
@@ -1437,7 +1430,7 @@ function BillingAndCollectionTab({
                 <span>{overheadExpensesPercent}%</span>
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-100/70">
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-100/70">
               <div
                 className="h-full bg-purple-500 transition-all duration-500"
                 style={{ width: `${overheadExpensesPercent}%` }}
@@ -1446,31 +1439,32 @@ function BillingAndCollectionTab({
           </div>
 
           {/* Card 4: Outflows & Net Spread */}
-          <div className="h-[108px] p-2.5 sm:p-3 bg-gradient-to-b from-emerald-50/30 via-white to-white border border-slate-200/80 hover:border-emerald-300 rounded-xl shadow-2xs hover:shadow-xs transition-all duration-200 group flex flex-col justify-between relative overflow-hidden">
+          <div className="min-h-[128px] p-4 sm:p-5 bg-gradient-to-b from-emerald-50/25 via-white to-white border border-slate-200/90 hover:border-emerald-300 rounded-2xl shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between relative overflow-hidden">
             <div>
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5 truncate">
                   <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span className="truncate">Net Operating Margin</span>
                 </span>
-                <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <Banknote className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/70 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 group-hover:bg-emerald-100 transition-all shadow-2xs">
+                  <Banknote className="w-4 h-4" />
                 </div>
               </div>
-              <div className={`text-lg sm:text-xl font-bold tracking-tight mt-0.5 font-sans truncate ${netCashFlow >= 0 ? "text-slate-900" : "text-rose-900"}`}>
+              <div className={`text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 font-sans truncate tabular-nums ${netCashFlow >= 0 ? "text-slate-900" : "text-rose-900"}`}>
                 {netCashFlow >= 0 ? "+" : ""}{fmt(netCashFlow)}
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 gap-1 mt-auto">
-              <span className="truncate">{fmt(totalCollections)} in · {fmt(totalExpenses)} out</span>
-              <span className={`font-semibold px-2 py-0.5 rounded-full text-[10px] border shrink-0 whitespace-nowrap ${
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
+              <span className="truncate">{fmt(collectionsInDate)} in · {fmt(totalExpenses)} out</span>
+              <span className={`font-semibold px-2.5 py-0.5 rounded-full text-[10px] border shrink-0 whitespace-nowrap shadow-2xs ${
                 netCashFlow >= 0
-                  ? "bg-emerald-50/80 text-emerald-800 border-emerald-200/60"
-                  : "bg-rose-50/80 text-rose-800 border-rose-200/60"
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200/70"
+                  : "bg-rose-50 text-rose-800 border-rose-200/70"
               }`}>
                 {netMarginPercent}% Margin
               </span>
             </div>
+            <div className={`absolute bottom-0 left-0 right-0 h-1 ${netCashFlow >= 0 ? "bg-emerald-500" : "bg-rose-500"}`} />
           </div>
         </div>
       )}
@@ -1500,10 +1494,18 @@ function BillingAndCollectionTab({
 
       {activeSubTab === "expenses" && (
         <ExpensesTab
-          data={data}
+          data={{ ...data, expenses: filteredExpensesByDate }}
           run={run}
           pending={pending}
           onOpenRecordExpense={onOpenRecordExpense}
+          fromDate={expenseFromDate}
+          toDate={expenseToDate}
+          selectedPeriod={expensePeriod}
+          onDateRangeChange={(s: string, e: string, p: string) => {
+            setExpenseFromDate(s);
+            setExpenseToDate(e);
+            setExpensePeriod(p);
+          }}
         />
       )}
     </div>

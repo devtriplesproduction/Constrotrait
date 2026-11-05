@@ -161,7 +161,7 @@ export function IncomeLedgerTable({
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
-        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-blue-50/30 via-white to-white rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-orange-50/30 via-white to-white rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -176,19 +176,19 @@ export function IncomeLedgerTable({
           <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-500">All cleared credit transactions</div>
         </div>
 
-        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-blue-50/30 via-white to-white rounded-xl border border-slate-200/80 hover:border-blue-300 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-orange-50/30 via-white to-white rounded-xl border border-slate-200/80 hover:border-orange-300 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-orange-800 uppercase tracking-wider">
                 Inward Testing Revenue
               </span>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 border border-blue-100/80 text-blue-700 flex items-center justify-center">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-50 border border-orange-100/80 text-orange-700 flex items-center justify-center">
                 <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
             <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-1 font-sans">{fmt(summary.inwardIncome)}</div>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-blue-700 font-medium truncate">Job advances & invoiced collections</div>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-orange-700 font-medium truncate">Job advances & invoiced collections</div>
         </div>
 
         <div className="p-3.5 sm:p-4 bg-gradient-to-b from-emerald-50/30 via-white to-white rounded-xl border border-slate-200/80 hover:border-emerald-300 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
@@ -241,7 +241,7 @@ export function IncomeLedgerTable({
               onClick={() => setTypeFilter("inward")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 typeFilter === "inward"
-                  ? "bg-white text-blue-700 shadow-xs"
+                  ? "bg-white text-orange-600 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -382,7 +382,7 @@ export function IncomeLedgerTable({
                       </td>
 
                       {/* Voucher No */}
-                      <td className="py-3 px-3.5 whitespace-nowrap font-mono text-[11px] text-blue-700 font-bold">
+                      <td className="py-3 px-3.5 whitespace-nowrap font-mono text-[11px] text-orange-600 font-bold">
                         {r.voucher_no || `REC-${r.id.slice(0, 6).toUpperCase()}`}
                       </td>
 
@@ -390,8 +390,8 @@ export function IncomeLedgerTable({
                       <td className="py-3 px-3.5">
                         {isInward ? (
                           <div className="space-y-0.5">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                              <Package className="w-3 h-3 text-blue-600" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200">
+                              <Package className="w-3 h-3 text-orange-600" />
                               <span>{r.inward_uid || "INWARD"}</span>
                             </span>
                             {r.project_name && (
@@ -450,7 +450,7 @@ export function IncomeLedgerTable({
                             variant="ghost"
                             size="sm"
                             onClick={() => onViewReceipt(r.receipt_id ? { id: r.receipt_id } : r)}
-                            className="h-7 px-2 text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            className="h-7 px-2 text-[11px] font-bold text-orange-600 hover:text-orange-800 hover:bg-orange-50"
                           >
                             <Eye className="w-3.5 h-3.5 mr-1" />
                             View

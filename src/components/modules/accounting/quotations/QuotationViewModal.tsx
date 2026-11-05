@@ -316,8 +316,8 @@ export function QuotationViewModal({
               <div className="text-sm font-bold tracking-tight text-slate-800 uppercase pt-1">
                 Advanced Construction Materials Testing & Geotechnical Laboratory
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs">
-                <Award className="w-3.5 h-3.5 text-blue-600" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200/80 shadow-2xs">
+                <Award className="w-3.5 h-3.5 text-orange-600" />
                 <span>NABL Accredited Laboratory | ISO/IEC 17025:2017 Certified</span>
               </div>
             </div>
@@ -340,7 +340,7 @@ export function QuotationViewModal({
           {/* Horizontal Contact & Regulatory Strip */}
           <div className="pt-3 border-t border-slate-200 grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs text-slate-600">
             <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-2.5 px-3.5 flex items-center gap-3 shadow-2xs">
-              <Receipt className="w-4 h-4 text-blue-600 shrink-0" />
+              <Receipt className="w-4 h-4 text-orange-600 shrink-0" />
               <div>
                 <div className="text-[10px] uppercase font-bold text-slate-400">GSTIN</div>
                 <div className="font-mono font-bold text-slate-900 text-xs sm:text-sm">27AABCS1429B1Z8</div>
@@ -375,7 +375,7 @@ export function QuotationViewModal({
           <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-50/90 to-slate-50/40 border border-slate-200 space-y-2.5 shadow-2xs">
             <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <Building className="w-4 h-4 text-blue-600" /> Quotation Issued To
+                <Building className="w-4 h-4 text-orange-600" /> Quotation Issued To
               </span>
               {(client?.gst_no || client?.gstin) && (
                 <span className="font-mono text-[11px] font-bold text-slate-700 bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
@@ -439,7 +439,7 @@ export function QuotationViewModal({
         <div className="space-y-3 avoid-break">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+              <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
               <div className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 Testing Scope & Rate Breakdown
               </div>
@@ -470,7 +470,7 @@ export function QuotationViewModal({
                   items.map((it: QuotationItem, idx: number) => {
                     const rowTotal = Number(it.qty || 1) * Number(it.rate || 0);
                     return (
-                      <tr key={idx} className={`transition-colors hover:bg-blue-50/40 ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"}`}>
+                      <tr key={idx} className={`transition-colors hover:bg-orange-50/30 ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"}`}>
                         <td className="py-3 px-4 text-center text-slate-500 font-bold text-sm border-r border-slate-100">{idx + 1}</td>
                         <td className="py-3 px-4 font-bold text-slate-900 text-sm sm:text-base border-r border-slate-100">{it.description}</td>
                         <td className="py-3 px-4 text-center text-slate-800 font-bold text-sm border-r border-slate-100">
@@ -491,9 +491,9 @@ export function QuotationViewModal({
 
         {/* Financial Summary & Total in Words */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start avoid-break">
-          <div className="md:col-span-7 p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200 space-y-2 text-xs shadow-2xs">
+          <div className="md:col-span-7 p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-orange-50/30 border border-slate-200 space-y-2 text-xs shadow-2xs">
             <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-blue-600" /> Total Amount in Words
+              <FileText className="w-4 h-4 text-orange-600" /> Total Amount in Words
             </div>
             <div className="font-bold text-slate-900 italic text-base sm:text-lg leading-relaxed pt-1">
               {numberToWordsINR(totalAmount)}
@@ -517,7 +517,7 @@ export function QuotationViewModal({
             </div>
             <div className="flex justify-between items-center pt-3 border-t border-slate-200">
               <span className="text-sm font-bold text-slate-900">Total Quotation:</span>
-              <span className="text-blue-900 font-extrabold text-xl sm:text-2xl font-mono tracking-tight">{fmt(totalAmount)}</span>
+              <span className="text-orange-600 font-extrabold text-xl sm:text-2xl font-mono tracking-tight">{fmt(totalAmount)}</span>
             </div>
           </div>
         </div>
@@ -545,7 +545,7 @@ export function QuotationViewModal({
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 avoid-break shadow-2xs">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center shrink-0">
                   <Scroll className="w-4 h-4" />
                 </div>
                 <div>
@@ -562,7 +562,7 @@ export function QuotationViewModal({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {uniqueClauses.map((c: QuotationClause, idx: number) => (
                 <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-3 text-xs text-slate-600 leading-relaxed avoid-break">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold shrink-0 mt-0.5">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-50 text-orange-700 border border-orange-200 text-xs font-bold shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
                   <div>
@@ -580,7 +580,7 @@ export function QuotationViewModal({
           {/* Left: Declarations & Jurisdiction */}
           <div className="space-y-2 text-xs text-slate-600 max-w-lg">
             <div className="font-bold text-slate-800 flex items-center gap-2 text-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
               <span>This is an official computer-generated commercial quotation.</span>
             </div>
             <div className="flex items-center gap-2 text-slate-600 font-medium">
@@ -643,7 +643,7 @@ export function QuotationViewModal({
                 <span>Back to Quotations</span>
               </Link>
               <div className="h-7 w-px bg-slate-200 hidden sm:block" />
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white flex items-center justify-center font-bold shadow-xs">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
@@ -692,7 +692,7 @@ export function QuotationViewModal({
               <Button
                 size="sm"
                 onClick={handleDownloadPdf}
-                className="h-9 px-4 text-xs gap-2 rounded-xl cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold shadow-xs hover:shadow-sm transition-all"
+                className="h-9 px-4 text-xs gap-2 rounded-xl cursor-pointer bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-orange-500/20 shadow-xs hover:shadow-sm transition-all"
               >
                 <Download className="w-4 h-4" />
                 <span>Download PDF</span>
@@ -783,7 +783,7 @@ export function QuotationViewModal({
           {/* Top Header Actions Bar (Hidden in Print) */}
           <div className="flex items-center justify-between p-4 px-6 border-b border-slate-200 bg-slate-50/70 print:hidden">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+              <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
@@ -832,7 +832,7 @@ export function QuotationViewModal({
               <Button
                 size="sm"
                 onClick={handleDownloadPdf}
-                className="h-8 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-2xs"
+                className="h-8 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-orange-500/20 shadow-2xs"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download PDF</span>

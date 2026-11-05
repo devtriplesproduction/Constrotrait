@@ -14,7 +14,13 @@ export function getPostgresConnectionString(): string {
 
 export function createPgClient(): Client {
   const connectionString = getPostgresConnectionString();
+  const isRemote =
+    connectionString.includes("supabase.co") ||
+    connectionString.includes("supabase.com") ||
+    (!connectionString.includes("127.0.0.1") && !connectionString.includes("localhost"));
+
   return new Client({
     connectionString,
+    ssl: isRemote ? { rejectUnauthorized: false } : undefined,
   });
 }

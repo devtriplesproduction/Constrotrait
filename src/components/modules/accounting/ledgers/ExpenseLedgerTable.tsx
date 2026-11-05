@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Search,
   Download,
@@ -14,16 +14,14 @@ import {
   Layers,
   ArrowDownRight,
   TrendingDown,
-  Printer,
   ChevronDown,
   User,
   CreditCard,
   FileText,
   AlertCircle,
-  FileSpreadsheet,
   FlaskConical,
+  Plus,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { approveExpenseAction } from "@/actions/accounting.actions";
@@ -37,6 +35,10 @@ interface ExpenseLedgerTableProps {
   onRefresh?: () => void;
   canApprove?: boolean;
   hideSummaryCards?: boolean;
+  fromDate?: string;
+  toDate?: string;
+  selectedPeriod?: string;
+  onDateRangeChange?: (fromDate: string, toDate: string, period: string) => void;
 }
 
 const fmt = (n: number) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
@@ -46,14 +48,90 @@ export function ExpenseLedgerTable({
   onRecordExpense,
   onRefresh,
   canApprove = true,
+  hideSummaryCards = false,
+  fromDate,
+  toDate,
+  selectedPeriod,
+  onDateRangeChange,
 }: ExpenseLedgerTableProps) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [scopeFilter, setScopeFilter] = useState<"all" | "inward" | "inhouse" | "company">("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [approvalFilter, setApprovalFilter] = useState("all");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+
+  const [internalFromDate, setInternalFromDate] = useState("");
+  const [internalToDate, setInternalToDate] = useState("");
+  const [internalPeriod, setInternalPeriod] = useState("all");
+  const [isDateOpen, setIsDateOpen] = useState(false);
+  const datePickerRef = useRef<HTMLDivElement>(null);
+
+  const effectiveFromDate = fromDate !== undefined ? fromDate : internalFromDate;
+  const effectiveToDate = toDate !== undefined ? toDate : internalToDate;
+  const effectivePeriod = selectedPeriod !== undefined ? selectedPeriod : internalPeriod;
+
+  const handleDateChange = (s: string, e: string, p: string) => {
+    setInternalFromDate(s);
+    setInternalToDate(e);
+    setInternalPeriod(p);
+    onDateRangeChange?.(s, e, p);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setIsDateOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSetPreset = (preset: "this_month" | "last_month" | "this_quarter" | "this_fy" | "all") => {
+    const today = new Date();
+    let start = new Date();
+    let end = new Date();
+
+    if (preset === "this_month") {
+      start = new Date(today.getFullYear(), today.getMonth(), 1);
+      end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    } else if (preset === "last_month") {
+      start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      end = new Date(today.getFullYear(), today.getMonth(), 0);
+    } else if (preset === "this_quarter") {
+      const qMonth = Math.floor(today.getMonth() / 3) * 3;
+      start = new Date(today.getFullYear(), qMonth, 1);
+      end = new Date(today.getFullYear(), qMonth + 3, 0);
+    } else if (preset === "this_fy") {
+      const fyStartYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+      start = new Date(fyStartYear, 3, 1);
+      end = new Date(fyStartYear + 1, 2, 31);
+    } else if (preset === "all") {
+      handleDateChange("", "", "all");
+      return;
+    }
+
+    const fmtLocal = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+
+    handleDateChange(fmtLocal(start), fmtLocal(end), preset);
+  };
+
+  const periodDisplayLabel = useMemo(() => {
+    if (effectivePeriod === "this_month") return "This Month";
+    if (effectivePeriod === "last_month") return "Last Month";
+    if (effectivePeriod === "this_quarter") return "This Quarter";
+    if (effectivePeriod === "this_fy") return "Financial Year";
+    if (effectivePeriod === "all") return "All Dates";
+    if (effectiveFromDate && effectiveToDate) return `${effectiveFromDate} to ${effectiveToDate}`;
+    if (effectiveFromDate) return `From ${effectiveFromDate}`;
+    if (effectiveToDate) return `Up to ${effectiveToDate}`;
+    return "All Dates";
+  }, [effectivePeriod, effectiveFromDate, effectiveToDate]);
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -63,6 +141,28 @@ export function ExpenseLedgerTable({
       if (name) set.add(name);
     });
     return Array.from(set).sort();
+  }, [expenses]);
+
+  // Scope Counts
+  const countsByScope = useMemo(() => {
+    let inward = 0;
+    let inhouse = 0;
+    let company = 0;
+
+    expenses.forEach((e) => {
+      const isUnderInward = !!(e.inward_id || e.job_entries);
+      const type = e.expense_type || (isUnderInward ? "inward" : "company");
+      if (type === "inward") inward++;
+      else if (type === "inhouse") inhouse++;
+      else company++;
+    });
+
+    return {
+      all: expenses.length,
+      inward,
+      inhouse,
+      company,
+    };
   }, [expenses]);
 
   // Filtered expenses
@@ -86,8 +186,8 @@ export function ExpenseLedgerTable({
 
       // Date range filter
       const date = e.expense_date || (e.created_at ? e.created_at.slice(0, 10) : "");
-      if (fromDate && date < fromDate) return false;
-      if (toDate && date > toDate) return false;
+      if (effectiveFromDate && date && date < effectiveFromDate) return false;
+      if (effectiveToDate && date && date > effectiveToDate) return false;
 
       // Search term
       if (!searchTerm.trim()) return true;
@@ -120,7 +220,7 @@ export function ExpenseLedgerTable({
 
       return descMatch || vendorMatch || billMatch || uidMatch || clientMatch || testMatch;
     });
-  }, [expenses, scopeFilter, categoryFilter, approvalFilter, fromDate, toDate, searchTerm]);
+  }, [expenses, scopeFilter, categoryFilter, approvalFilter, effectiveFromDate, effectiveToDate, searchTerm]);
 
   const pagination = usePagination({
     data: filtered,
@@ -182,224 +282,198 @@ export function ExpenseLedgerTable({
     }
   };
 
-  // Export Excel
-  const handleExportExcel = () => {
-    if (filtered.length === 0) {
-      toast({ title: "No Data", description: "No expense records to export.", variant: "warning" });
-      return;
-    }
-
-    const exportData = filtered.map((e) => {
-      const isUnderInward = !!(e.inward_id || e.job_entries);
-      const type = e.expense_type || (isUnderInward ? "inward" : "company");
-      const inward = e.job_entries;
-      const uid = inward?.uid_label || (inward?.uid ? `UID-${inward.uid}` : e.inward_uid || "");
-      const client = inward?.clients?.name || e.client_name || "";
-      const cat = e.expense_categories?.name || e.category_name || "";
-      const acc = e.financial_accounts?.name || e.account_name || "";
-
-      return {
-        "Date": e.expense_date || e.date || "",
-        "Voucher / Bill No": e.bill_number || e.voucher_no || "",
-        "Type": type.toUpperCase(),
-        "Inward UID": uid,
-        "Client": client,
-        "Category": cat,
-        "Vendor / Payee": e.vendor_name || "",
-        "Account": acc,
-        "Payment Mode": e.payment_mode || "",
-        "GST Amount": Number(e.gst_amount || 0),
-        "TDS Amount": Number(e.tds_amount || 0),
-        "Debit Amount (INR)": Number(e.amount || 0),
-        "Approval Status": e.approval_status || "approved",
-        "Description": e.description || "",
-      };
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    worksheet["!cols"] = [
-      { wch: 14 }, // Date
-      { wch: 20 }, // Voucher / Bill No
-      { wch: 12 }, // Type
-      { wch: 16 }, // Inward UID
-      { wch: 24 }, // Client
-      { wch: 20 }, // Category
-      { wch: 22 }, // Vendor / Payee
-      { wch: 20 }, // Account
-      { wch: 15 }, // Payment Mode
-      { wch: 12 }, // GST Amount
-      { wch: 12 }, // TDS Amount
-      { wch: 18 }, // Debit Amount (INR)
-      { wch: 16 }, // Approval Status
-      { wch: 32 }, // Description
-    ];
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
-    XLSX.writeFile(workbook, `Expense_Ledger_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    toast({ title: "Success", description: "Excel file exported successfully.", variant: "success" });
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Total Outflows
-            </span>
-            <div className="p-1.5 rounded-xl bg-rose-50 text-rose-600">
-              <TrendingDown className="w-4 h-4" />
+      {!hideSummaryCards && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Total Outflows
+              </span>
+              <div className="p-1.5 rounded-xl bg-rose-50 text-rose-600">
+                <TrendingDown className="w-4 h-4" />
+              </div>
             </div>
+            <div className="text-xl font-black text-slate-900 mt-2">{fmt(summary.total)}</div>
+            <span className="text-[10px] text-slate-500">All cleared debit transactions</span>
           </div>
-          <div className="text-xl font-black text-slate-900 mt-2">{fmt(summary.total)}</div>
-          <span className="text-[10px] text-slate-500">All cleared debit transactions</span>
-        </div>
 
-        <div className="p-4 bg-white rounded-2xl border border-blue-200 bg-blue-50/20 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
-              Inward Direct
-            </span>
-            <div className="p-1.5 rounded-xl bg-blue-100 text-blue-700">
-              <Package className="w-4 h-4" />
+          <div className="p-4 bg-white rounded-2xl border border-blue-200 bg-blue-50/20 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
+                Inward Direct
+              </span>
+              <div className="p-1.5 rounded-xl bg-blue-100 text-blue-700">
+                <Package className="w-4 h-4" />
+              </div>
             </div>
+            <div className="text-xl font-black text-blue-900 mt-2">{fmt(summary.inwardTotal)}</div>
+            <span className="text-[10px] text-blue-600 font-medium">Job testing & field costs</span>
           </div>
-          <div className="text-xl font-black text-blue-900 mt-2">{fmt(summary.inwardTotal)}</div>
-          <span className="text-[10px] text-blue-600 font-medium">Job testing & field costs</span>
-        </div>
 
-        <div className="p-4 bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
-              In-House Lab
-            </span>
-            <div className="p-1.5 rounded-xl bg-emerald-100 text-emerald-700">
-              <FlaskConical className="w-4 h-4" />
+          <div className="p-4 bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
+                In-House Lab
+              </span>
+              <div className="p-1.5 rounded-xl bg-emerald-100 text-emerald-700">
+                <FlaskConical className="w-4 h-4" />
+              </div>
             </div>
+            <div className="text-xl font-black text-emerald-900 mt-2">{fmt(summary.inhouseTotal)}</div>
+            <span className="text-[10px] text-emerald-600 font-medium">Calibration, chemicals & PT/ILC</span>
           </div>
-          <div className="text-xl font-black text-emerald-900 mt-2">{fmt(summary.inhouseTotal)}</div>
-          <span className="text-[10px] text-emerald-600 font-medium">Calibration, chemicals & PT/ILC</span>
-        </div>
 
-        <div className="p-4 bg-white rounded-2xl border border-purple-200 bg-purple-50/20 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">
-              Company Overheads
-            </span>
-            <div className="p-1.5 rounded-xl bg-purple-100 text-purple-700">
-              <Building2 className="w-4 h-4" />
+          <div className="p-4 bg-white rounded-2xl border border-purple-200 bg-purple-50/20 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">
+                Company Overheads
+              </span>
+              <div className="p-1.5 rounded-xl bg-purple-100 text-purple-700">
+                <Building2 className="w-4 h-4" />
+              </div>
             </div>
+            <div className="text-xl font-black text-purple-900 mt-2">{fmt(summary.companyTotal)}</div>
+            <span className="text-[10px] text-purple-600 font-medium">Rent, salaries & admin</span>
           </div>
-          <div className="text-xl font-black text-purple-900 mt-2">{fmt(summary.companyTotal)}</div>
-          <span className="text-[10px] text-purple-600 font-medium">Rent, salaries & admin</span>
-        </div>
 
-        <div className="p-4 bg-white rounded-2xl border border-amber-200 bg-amber-50/20 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
-              Pending
-            </span>
-            <div className="p-1.5 rounded-xl bg-amber-100 text-amber-700">
-              <Clock className="w-4 h-4" />
+          <div className="p-4 bg-white rounded-2xl border border-amber-200 bg-amber-50/20 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
+                Pending
+              </span>
+              <div className="p-1.5 rounded-xl bg-amber-100 text-amber-700">
+                <Clock className="w-4 h-4" />
+              </div>
             </div>
+            <div className="text-xl font-black text-amber-900 mt-2">{fmt(summary.pendingAmount)}</div>
+            <span className="text-[10px] text-amber-700 font-bold">
+              {summary.pendingCount} transaction{summary.pendingCount === 1 ? "" : "s"} waiting
+            </span>
           </div>
-          <div className="text-xl font-black text-amber-900 mt-2">{fmt(summary.pendingAmount)}</div>
-          <span className="text-[10px] text-amber-700 font-bold">
-            {summary.pendingCount} transaction{summary.pendingCount === 1 ? "" : "s"} waiting
-          </span>
         </div>
-      </div>
+      )}
 
       {/* Filter and Control Bar */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4">
-        {/* Scope Pill Toggle */}
+      <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
+        {/* Header Action Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
-            <button
-              onClick={() => setScopeFilter("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                scopeFilter === "all"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              All Expenses ({expenses.length})
-            </button>
-            <button
-              onClick={() => setScopeFilter("inward")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                scopeFilter === "inward"
-                  ? "bg-white text-blue-700 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Package className="w-3.5 h-3.5" />
-              <span>Inward Expenses</span>
-            </button>
-            <button
-              onClick={() => setScopeFilter("inhouse")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                scopeFilter === "inhouse"
-                  ? "bg-white text-emerald-700 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <FlaskConical className="w-3.5 h-3.5" />
-              <span>In-House Lab ({expenses.filter((e) => e.expense_type === "inhouse").length})</span>
-            </button>
-            <button
-              onClick={() => setScopeFilter("company")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                scopeFilter === "company"
-                  ? "bg-white text-purple-700 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Company Expenses</span>
-            </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-800">Expense Ledger</span>
+            <span className="text-[11px] text-slate-400 font-mono">
+              ({filtered.length} of {expenses.length} records)
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportExcel}
-              className="h-8.5 px-3 text-xs font-semibold gap-1.5 text-slate-700"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Export Excel</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrint}
-              className="h-8.5 px-3 text-xs font-semibold gap-1.5 text-slate-700"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print</span>
-            </Button>
-            {onRecordExpense && (
-              <Button
-                size="sm"
-                onClick={onRecordExpense}
-                className="h-8.5 px-3.5 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-xs"
+            {/* Date Range Selector Popover */}
+            <div className="relative" ref={datePickerRef}>
+              <button
+                type="button"
+                onClick={() => setIsDateOpen(!isDateOpen)}
+                className="h-9 px-3.5 bg-white hover:bg-slate-50 rounded-xl border border-slate-200/90 text-xs font-semibold text-slate-700 flex items-center gap-2 shadow-2xs hover:border-orange-300 transition-colors cursor-pointer group"
               >
-                + Record Expense
-              </Button>
-            )}
+                <Calendar className="w-3.5 h-3.5 text-orange-500 shrink-0 group-hover:text-orange-600" />
+                <span className="truncate max-w-[180px]">{periodDisplayLabel}</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
+                    isDateOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isDateOpen && (
+                <div className="absolute right-0 top-full mt-2 z-50 w-72 bg-white rounded-2xl border border-slate-200 shadow-xl p-3.5 space-y-3 animate-in fade-in-0 zoom-in-95 duration-150">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                      Quick Presets
+                    </span>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { id: "all", label: "All Time" },
+                        { id: "this_month", label: "This Month" },
+                        { id: "last_month", label: "Last Month" },
+                        { id: "this_quarter", label: "This Quarter" },
+                        { id: "this_fy", label: "This FY" },
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            handleSetPreset(p.id as any);
+                            setIsDateOpen(false);
+                          }}
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold text-left transition-colors cursor-pointer ${
+                            effectivePeriod === p.id
+                              ? "bg-orange-50 text-orange-700 border border-orange-200 font-bold"
+                              : "bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/60"
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-2.5 border-t border-slate-100 space-y-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Custom Date Range
+                    </span>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
+                          From:
+                        </label>
+                        <input
+                          type="date"
+                          value={effectiveFromDate}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleDateChange(val, effectiveToDate, "custom");
+                          }}
+                          className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 outline-none focus:border-orange-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
+                          To:
+                        </label>
+                        <input
+                          type="date"
+                          value={effectiveToDate}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleDateChange(effectiveFromDate, val, "custom");
+                          }}
+                          className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 outline-none focus:border-orange-500"
+                        />
+                      </div>
+                    </div>
+                    {(effectiveFromDate || effectiveToDate) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleSetPreset("all");
+                          setIsDateOpen(false);
+                        }}
+                        className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 transition-colors cursor-pointer block mt-1"
+                      >
+                        Clear date filter
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Secondary Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-1 border-t border-slate-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-2.5 border-t border-slate-100">
           <div className="relative md:col-span-2">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <Input
               placeholder="Search by vendor, description, bill no, UID, client..."
               value={searchTerm}
@@ -410,9 +484,22 @@ export function ExpenseLedgerTable({
 
           <div>
             <select
+              value={scopeFilter}
+              onChange={(e) => setScopeFilter(e.target.value as any)}
+              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none cursor-pointer"
+            >
+              <option value="all">All Expenses ({countsByScope.all})</option>
+              <option value="inward">Inward Expenses ({countsByScope.inward})</option>
+              <option value="inhouse">In-House Lab ({countsByScope.inhouse})</option>
+              <option value="company">Company Expenses ({countsByScope.company})</option>
+            </select>
+          </div>
+
+          <div>
+            <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none"
+              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none cursor-pointer"
             >
               <option value="all">All Categories</option>
               {categories.map((c) => (
@@ -427,31 +514,13 @@ export function ExpenseLedgerTable({
             <select
               value={approvalFilter}
               onChange={(e) => setApprovalFilter(e.target.value)}
-              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none"
+              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none cursor-pointer"
             >
               <option value="all">All Statuses</option>
               <option value="approved">Approved Only</option>
               <option value="pending">Pending Approval</option>
               <option value="rejected">Rejected</option>
             </select>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <Input
-              type="date"
-              placeholder="From"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="h-8.5 text-[11px] px-2 bg-slate-50/50"
-            />
-            <span className="text-slate-400 text-xs">-</span>
-            <Input
-              type="date"
-              placeholder="To"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="h-8.5 text-[11px] px-2 bg-slate-50/50"
-            />
           </div>
         </div>
       </div>
@@ -658,6 +727,23 @@ export function ExpenseLedgerTable({
           onPageSizeChange={pagination.setPageSize}
           itemLabel="expenses"
         />
+
+        {onRecordExpense && (
+          <div className="p-3.5 sm:p-4 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span className="text-xs text-slate-500 font-medium">
+              Need to record a new expenditure or debit voucher?
+            </span>
+            <Button
+              variant="custom"
+              size="none"
+              onClick={onRecordExpense}
+              className="h-9 px-4 text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl shadow-md shadow-orange-500/20 hover:shadow-orange-500/30 transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Record Expense</span>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

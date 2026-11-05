@@ -513,12 +513,12 @@ export function TestBillingExpensesTab({
       {/* ================= Master KPI Analytics Cards ================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Card 1: Tests Conducted */}
-        <div className="p-4.5 bg-gradient-to-br from-white via-slate-50/50 to-blue-50/20 border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-blue-300 transition-all duration-200 group">
+        <div className="p-4.5 bg-gradient-to-br from-white via-slate-50/50 to-orange-50/20 border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md hover:border-orange-300 transition-all duration-200 group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Tests Conducted
             </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-2xs group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-600 shadow-2xs group-hover:scale-105 transition-transform">
               <FlaskConical className="w-4 h-4" />
             </div>
           </div>
@@ -527,7 +527,7 @@ export function TestBillingExpensesTab({
           </div>
           <div className="flex items-center justify-between text-xs text-slate-500 mt-2.5 pt-2 border-t border-slate-100">
             <span className="truncate">Active parameters</span>
-            <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full text-[10px]">
+            <span className="font-semibold text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full text-[10px]">
               {(reportData?.testBreakdown || []).length} registered
             </span>
           </div>

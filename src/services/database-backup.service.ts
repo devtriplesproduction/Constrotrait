@@ -121,17 +121,32 @@ export async function generateFullDatabaseBackup(user: {
     const fileSizeBytes = Buffer.byteLength(jsonString, "utf8");
 
     // Record backup metadata in database_backups
-    const supabase = createAdminClient();
-    await supabase.from("database_backups").insert({
-      file_name: fileName,
-      file_size_bytes: fileSizeBytes,
-      total_tables: payload.total_tables,
-      total_records: totalRecords,
-      created_by: user.id,
-      creator_email: user.email,
-      status: "COMPLETED",
-      summary: tableCounts,
-    });
+    try {
+      const supabase = createAdminClient();
+      const backupRecord = {
+        file_name: fileName,
+        file_size_bytes: fileSizeBytes,
+        total_tables: payload.total_tables,
+        total_records: totalRecords,
+        created_by: user.id || null,
+        creator_email: user.email,
+        status: "COMPLETED",
+        summary: tableCounts,
+      };
+
+      const { error: insertErr } = await supabase
+        .from("database_backups")
+        .insert(backupRecord);
+
+      // If user.id is not present in auth.users, fallback to null while preserving creator_email
+      if (insertErr && insertErr.code === "23503") {
+        await supabase
+          .from("database_backups")
+          .insert({ ...backupRecord, created_by: null });
+      }
+    } catch (dbErr) {
+      console.error("Failed to record database_backups entry:", dbErr);
+    }
 
     return {
       payload,
@@ -280,22 +295,39 @@ export async function repopulateDatabase(
     });
 
     const colTypeRes = await client.query(`
-      SELECT table_name, column_name, data_type, udt_name
+      SELECT table_name, column_name, data_type, udt_name, is_nullable
       FROM information_schema.columns
       WHERE table_schema = 'public';
     `);
-    const colTypes: Record<string, Record<string, { dataType: string; udtName: string }>> = {};
+    const colTypes: Record<
+      string,
+      Record<string, { dataType: string; udtName: string; isNullable: string }>
+    > = {};
     colTypeRes.rows.forEach((r: any) => {
       if (!colTypes[r.table_name]) colTypes[r.table_name] = {};
       colTypes[r.table_name][r.column_name] = {
         dataType: r.data_type,
         udtName: r.udt_name,
+        isNullable: r.is_nullable,
       };
     });
 
     const allowedTables = options.selectedTables && options.selectedTables.length > 0
       ? new Set(options.selectedTables)
       : new Set(Object.keys(payload.tables));
+
+    // 1. If Clean & Restore mode is requested, empty ALL targeted tables UPFRONT in a single command
+    // This prevents subsequent TRUNCATE ... CASCADE statements from wiping out tables restored earlier in the loop
+    if (options.mode === "CLEAN_RESTORE") {
+      const tablesToTruncate = Object.keys(payload.tables)
+        .filter((t) => allowedTables.has(t) && !EXCLUDED_TABLES.has(t) && colTypes[t])
+        .map((t) => `public."${t}"`)
+        .join(", ");
+
+      if (tablesToTruncate.length > 0) {
+        await client.query(`TRUNCATE TABLE ${tablesToTruncate} CASCADE;`);
+      }
+    }
 
     for (const [tableName, rows] of Object.entries(payload.tables)) {
       if (!allowedTables.has(tableName)) continue;
@@ -309,11 +341,6 @@ export async function repopulateDatabase(
       if (!colTypes[tableName]) {
         console.warn(`Skipping table '${tableName}': not found in database schema.`);
         continue;
-      }
-
-      // 1. If Clean & Restore mode is requested, empty table first
-      if (options.mode === "CLEAN_RESTORE") {
-        await client.query(`TRUNCATE TABLE public."${tableName}" CASCADE;`);
       }
 
       // 2. Insert/Upsert rows in chunks of 50
@@ -333,9 +360,60 @@ export async function repopulateDatabase(
           const colList = validCols.map((c) => `"${c}"`).join(", ");
           const valPlaceholders = validCols.map((_, idx) => `$${idx + 1}`).join(", ");
           const values = validCols.map((c) => {
-            const val = row[c];
-            if (val === undefined || val === null) return null;
-            const meta = colTypes[tableName][c];
+            let val = row[c];
+            const meta = colTypes[tableName]?.[c];
+
+            // If column is NOT NULL in the database, provide a resilient fallback if missing/null in historical backup rows
+            if (val === undefined || val === null) {
+              if (meta?.isNullable === "NO") {
+                if (tableName === "job_entry_tests" && c === "material_id") {
+                  val =
+                    row.additional_details_values?.material_initials ||
+                    row.material_description ||
+                    "GEN";
+                } else if (
+                  meta.dataType === "text" ||
+                  meta.dataType === "character varying"
+                ) {
+                  val = "";
+                } else if (
+                  meta.dataType === "integer" ||
+                  meta.dataType === "bigint" ||
+                  meta.dataType === "smallint" ||
+                  meta.dataType === "numeric"
+                ) {
+                  val = 0;
+                } else if (meta.dataType === "boolean") {
+                  val = false;
+                } else if (meta.dataType === "json" || meta.dataType === "jsonb") {
+                  return "{}";
+                } else if (meta.dataType === "ARRAY") {
+                  val = [];
+                } else {
+                  return null;
+                }
+              } else {
+                return null;
+              }
+            }
+
+            // PostgreSQL native ARRAY columns (e.g. profiles.roles, test_master.additional_details)
+            // node-postgres requires raw JavaScript arrays, NOT stringified JSON "[]"
+            if (meta?.dataType === "ARRAY") {
+              if (Array.isArray(val)) {
+                return val;
+              }
+              if (typeof val === "string") {
+                try {
+                  const parsed = JSON.parse(val);
+                  if (Array.isArray(parsed)) return parsed;
+                } catch {
+                  return val;
+                }
+              }
+              return val ? [val] : [];
+            }
+
             if (
               meta?.dataType === "json" ||
               meta?.dataType === "jsonb" ||
@@ -397,16 +475,27 @@ export async function repopulateDatabase(
   // Record operation log in database_restore_logs
   try {
     const supabase = createAdminClient();
-    await supabase.from("database_restore_logs").insert({
+    const restoreRecord = {
       file_name: options.fileName || "manual_upload.json",
-      restored_by: user.id,
+      restored_by: user.id || null,
       restorer_email: user.email,
       restore_mode: options.mode,
       tables_restored: restoredCounts,
       total_records_processed: totalRestored,
       status,
       error_message: errorMessage || null,
-    });
+    };
+
+    const { error: logErr } = await supabase
+      .from("database_restore_logs")
+      .insert(restoreRecord);
+
+    // If user.id is not present in auth.users, fallback to null while preserving restorer_email
+    if (logErr && logErr.code === "23503") {
+      await supabase
+        .from("database_restore_logs")
+        .insert({ ...restoreRecord, restored_by: null });
+    }
   } catch (logErr) {
     console.error("Failed to insert database_restore_logs record:", logErr);
   }

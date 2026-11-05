@@ -91,6 +91,10 @@ export const MODULE_FOLDERS: Record<
     folder: "Accounting & Finance",
     description: "Client cost estimates, proposals, and quotations",
   },
+  quotation_versions: {
+    folder: "Accounting & Finance",
+    description: "Quotation revision histories and version snapshots",
+  },
   quotation_templates: {
     folder: "Accounting & Finance",
     description: "Reusable quotation item and pricing templates",
@@ -172,6 +176,10 @@ export const MODULE_FOLDERS: Record<
   qr_documents: {
     folder: "Lab & Testing",
     description: "QR verification links and public verification records",
+  },
+  delivery_challans: {
+    folder: "Lab & Testing",
+    description: "Sample outward deliveries, vouchers, and dispatched challans",
   },
 
   // 4. Clients & Branches

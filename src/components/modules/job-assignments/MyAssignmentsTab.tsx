@@ -51,8 +51,12 @@ export function MyAssignmentsTab({
 
   const effectiveRoles = userRoles && userRoles.length > 0
     ? userRoles
-    : (assignments.find((a: any) => a.assigned_to === userId)?.assigned_to_profile?.roles || []);
-  const isTestEngineerUser = isTestEngineer(effectiveRoles) && !isSuperAdmin(effectiveRoles) && !isBranchManager(effectiveRoles);
+    : (assignments.find((a: any) => a.assigned_to === userId || a.teams?.team_members?.some((m: any) => m.employee_id === userId))?.assigned_to_profile?.roles || []);
+  const isTestEngineerUser = (
+    isTestEngineer(effectiveRoles) ||
+    effectiveRoles.some((r: string) => String(r).toUpperCase().replace(/\s+/g, '_') === 'TEST_ENGINEER') ||
+    userRoles.some((r: string) => String(r).toUpperCase().replace(/\s+/g, '_') === 'TEST_ENGINEER')
+  ) && !isSuperAdmin(effectiveRoles) && !isBranchManager(effectiveRoles);
 
   const myAssignments = React.useMemo(() => {
     return assignments.filter((a: any) => {
@@ -497,7 +501,21 @@ return (
                           <ClipboardList className="w-4 h-4" />
                         </div>
                         <div className="font-bold text-slate-800 text-[13px] flex items-center gap-1.5 flex-wrap">
-                          <span>{uid ? `UID: ${uid}` : 'UID missing'}</span>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const groupId = a.job_entry_tests?.uid_label || a.job_entry_tests?.job_entries?.uid_label || a.job_entry_tests?.job_entry_id || a.job_entry_test_id;
+                              if (groupId) {
+                                router.push(`/job-cards/${encodeURIComponent(groupId)}?assignmentId=${a.id}&jobEntryId=${a.job_entry_tests?.job_entry_id || ''}`);
+                              } else {
+                                router.push(`/job-assignments/${a.id}`);
+                              }
+                            }}
+                            className="hover:text-orange-600 hover:underline cursor-pointer transition-colors"
+                            title="View Job Card Details"
+                          >
+                            {uid ? `UID: ${uid}` : 'UID missing'}
+                          </span>
                           {isNabl ? (
                             <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                               NABL
@@ -580,13 +598,11 @@ return (
                                 )
                               }
                               options={[
-                                ...(isTestEngineerUser
-                                  ? [{ label: "View Job Card", value: "view" }]
-                                  : [
-                                      { label: "View Job Card", value: "view" },
-                                      { label: "Download Job Card", value: "download" },
-                                    ]
-                                ),
+                                { label: "Job Card Details", value: "details" },
+                                { label: "View Job Card PDF", value: "view" },
+                                ...(!isTestEngineerUser ? [
+                                  { label: "Download Job Card", value: "download" }
+                                ] : []),
                                 ...(getAggregateStatus(a.all_assignments) === 'assigned' ? [
                                   { label: "Accept", value: "accept" },
                                   { label: "Reject", value: "reject" }
@@ -596,13 +612,21 @@ return (
                               buttonClassName="h-8 py-0 px-3 bg-gradient-to-r from-orange-50 to-amber-50 hover:from-orange-100 hover:to-amber-100 border border-orange-200 shadow-sm rounded-full transition-all duration-200 group"
                               value=""
                               onChange={async (val) => {
-                                if (val === "view") {
+                                if (val === "details") {
+                                  const groupId = a.job_entry_tests?.uid_label || a.job_entry_tests?.job_entries?.uid_label || a.job_entry_tests?.job_entry_id || a.job_entry_test_id;
+                                  if (groupId) {
+                                    router.push(`/job-cards/${encodeURIComponent(groupId)}?assignmentId=${a.id}&jobEntryId=${a.job_entry_tests?.job_entry_id || ''}`);
+                                  } else {
+                                    router.push(`/job-assignments/${a.id}`);
+                                  }
+                                } else if (val === "view") {
                                   handleViewPdf(
                                     a.job_entry_test_id,
                                     a.job_entry_tests?.uid_label || 'Unknown',
                                     a.job_entry_tests?.material_description || a.job_entry_tests?.test_master?.material_product || ''
                                   );
                                 } else if (val === "download") {
+                                  if (isTestEngineerUser) return;
                                   handleDownloadPdf(a.job_entry_test_id, a.job_entry_tests?.uid_label || 'Unknown');
                                 } else if (val === "accept") {
                                   setLoadingId(a.id);

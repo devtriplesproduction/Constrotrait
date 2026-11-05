@@ -47,6 +47,7 @@ export interface InwardDetailsViewProps {
   returnUrl?: string | null;
   onClose?: () => void;
   showBackButton?: boolean;
+  canDownload?: boolean;
 }
 
 export function InwardDetailsView({
@@ -58,6 +59,7 @@ export function InwardDetailsView({
   returnUrl,
   onClose,
   showBackButton = true,
+  canDownload = true,
 }: InwardDetailsViewProps) {
   const { toast } = useToast();
   const [copiedUid, setCopiedUid] = useState(false);
@@ -162,6 +164,14 @@ export function InwardDetailsView({
   };
 
   const handleDownloadPdf = async () => {
+    if (!canDownload) {
+      toast({
+        title: "Notice",
+        description: "Test engineers are not permitted to download job cards.",
+        variant: "warning",
+      });
+      return;
+    }
     const testId = primaryTest?.id;
     if (!testId) {
       toast({
@@ -255,7 +265,10 @@ export function InwardDetailsView({
   };
 
   return (
-    <div className="w-full space-y-7 animate-in fade-in duration-300 pb-16">
+    <div
+      className="w-full space-y-7 animate-in fade-in duration-300 pb-16 job-card-calibri-page"
+      style={{ fontFamily: "Calibri, 'Candara', 'Segoe', 'Segoe UI', Optima, Arial, sans-serif" }}
+    >
 
       {/* 1. Top Navigation & Action Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs sticky top-2 z-30">
@@ -291,18 +304,20 @@ export function InwardDetailsView({
             <span>Print Job Card</span>
           </Button>
 
-          <Button
-            onClick={handleDownloadPdf}
-            disabled={isDownloading}
-            className="h-10 px-5 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-orange-500/20 transition-all hover:scale-[1.01]"
-          >
-            {isDownloading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-white" />
-            ) : (
-              <Download className="w-4 h-4 text-white" />
-            )}
-            <span>Download Job Card PDF</span>
-          </Button>
+          {canDownload && (
+            <Button
+              onClick={handleDownloadPdf}
+              disabled={isDownloading}
+              className="h-10 px-5 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-orange-500/20 transition-all hover:scale-[1.01]"
+            >
+              {isDownloading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                <Download className="w-4 h-4 text-white" />
+              )}
+              <span>Download Job Card PDF</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -340,7 +355,7 @@ export function InwardDetailsView({
             {/* Quick Inward Date Badge */}
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-full">
               <Calendar className="w-3.5 h-3.5 text-orange-500" />
-              <span>Inward Date: <strong className="text-slate-900">{formatDateSafe(jobEntry?.inward_on || jobEntry?.created_at)}</strong></span>
+              <span>Inward Date: <strong className="text-slate-900 text-[15px] font-bold">{formatDateSafe(jobEntry?.inward_on || jobEntry?.created_at)}</strong></span>
             </div>
           </div>
 
@@ -354,7 +369,7 @@ export function InwardDetailsView({
 
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl sm:text-3xl font-black text-slate-700 tracking-tight">UID:</span>
-                  <span className="text-3xl sm:text-4xl font-black text-orange-500 font-mono tracking-tight">{uidLabel}</span>
+                  <span className="text-3xl sm:text-4xl font-black text-orange-500 tracking-tight">{uidLabel}</span>
                 </div>
 
                 <button
@@ -370,14 +385,14 @@ export function InwardDetailsView({
               <div className="flex flex-wrap items-center gap-y-2 gap-x-5 text-sm text-slate-600 font-medium pl-1">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-orange-500" />
-                  <span>Customer: <strong className="text-slate-900 font-bold">{client?.name || "Unknown Customer"}</strong></span>
+                  <span>Customer: <strong className="text-slate-900 font-bold text-[15px]">{client?.name || "Unknown Customer"}</strong></span>
                 </div>
 
                 {jobEntry?.project_name && (
                   <div className="flex items-center gap-2">
                     <span className="text-slate-300 hidden sm:inline">•</span>
                     <Building2 className="w-4 h-4 text-blue-500" />
-                    <span>Project: <strong className="text-slate-900 font-bold">{jobEntry.project_name}</strong></span>
+                    <span>Project: <strong className="text-slate-900 font-bold text-[15px]">{jobEntry.project_name}</strong></span>
                   </div>
                 )}
 
@@ -385,7 +400,7 @@ export function InwardDetailsView({
                   <div className="flex items-center gap-2">
                     <span className="text-slate-300 hidden sm:inline">•</span>
                     <FileText className="w-4 h-4 text-emerald-600" />
-                    <span>Customer Ref: <strong className="font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80">{jobEntry?.letter_reference || customerRef}</strong></span>
+                    <span>Customer Ref: <strong className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80 text-[15px] font-bold">{jobEntry?.letter_reference || customerRef}</strong></span>
                   </div>
                 )}
               </div>
@@ -395,7 +410,7 @@ export function InwardDetailsView({
             <div className="flex flex-row md:flex-col items-center md:items-end justify-between gap-1.5 shrink-0 bg-slate-50/80 p-3 rounded-2xl border border-slate-100">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payment Status</span>
               <span
-                className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-2xs border ${jobEntry?.payment_status?.toLowerCase() === "paid"
+                className={`px-4 py-1.5 rounded-xl text-[15px] font-black uppercase tracking-wider shadow-2xs border ${jobEntry?.payment_status?.toLowerCase() === "paid"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : "bg-amber-50 text-amber-700 border-amber-200"
                   }`}
@@ -416,8 +431,8 @@ export function InwardDetailsView({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Customer</p>
-            <p className="text-xs font-extrabold text-slate-900 truncate" title={client?.name}>{client?.name || "-"}</p>
-            <p className="text-[11px] text-slate-500 truncate">{client?.company_name || "Individual Customer"}</p>
+            <p className="text-[15px] font-extrabold text-slate-900 truncate leading-snug" title={client?.name}>{client?.name || "-"}</p>
+            <p className="text-[15px] text-slate-500 truncate leading-snug">{client?.company_name || "Individual Customer"}</p>
           </div>
         </div>
 
@@ -428,8 +443,8 @@ export function InwardDetailsView({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Project & Site</p>
-            <p className="text-xs font-extrabold text-slate-900 truncate" title={jobEntry?.project_name}>{jobEntry?.project_name || "-"}</p>
-            <p className="text-[11px] text-slate-500 truncate">{jobEntry?.site_name || "Site not specified"}</p>
+            <p className="text-[15px] font-extrabold text-slate-900 truncate leading-snug" title={jobEntry?.project_name}>{jobEntry?.project_name || "-"}</p>
+            <p className="text-[15px] text-slate-500 truncate leading-snug">{jobEntry?.site_name || "Site not specified"}</p>
           </div>
         </div>
 
@@ -440,8 +455,8 @@ export function InwardDetailsView({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Material & Grade</p>
-            <p className="text-xs font-extrabold text-slate-900 truncate" title={materialDesc}>{materialDesc}</p>
-            <p className="text-[11px] font-black text-orange-600 truncate">{grade !== "-" ? `Grade: ${grade}` : `Qty: ${sampleQty}`}</p>
+            <p className="text-[15px] font-extrabold text-slate-900 truncate leading-snug" title={materialDesc}>{materialDesc}</p>
+            <p className="text-[15px] font-black text-orange-600 truncate leading-snug">{grade !== "-" ? `Grade: ${grade}` : `Qty: ${sampleQty}`}</p>
           </div>
         </div>
 
@@ -452,10 +467,10 @@ export function InwardDetailsView({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Testing Schedule</p>
-            <p className="text-xs font-extrabold text-slate-900 truncate">
+            <p className="text-[15px] font-extrabold text-slate-900 truncate leading-snug">
               {testingDay !== "-" ? `${testingDay} Testing` : formatDateSafe(primaryTest?.date_of_testing)}
             </p>
-            <p className="text-[11px] text-slate-500 truncate">Cast: {formatDateSafe(castingDateRaw)}</p>
+            <p className="text-[15px] text-slate-500 truncate leading-snug">Cast: {formatDateSafe(castingDateRaw)}</p>
           </div>
         </div>
 
@@ -466,8 +481,8 @@ export function InwardDetailsView({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Tests Booked</p>
-            <p className="text-xs font-extrabold text-slate-900 truncate">{allTests.length} Test Parameter{allTests.length !== 1 ? "s" : ""}</p>
-            <p className="text-[11px] text-emerald-600 font-bold truncate">
+            <p className="text-[15px] font-extrabold text-slate-900 truncate leading-snug">{allTests.length} Test Parameter{allTests.length !== 1 ? "s" : ""}</p>
+            <p className="text-[15px] text-emerald-600 font-bold truncate leading-snug">
               {allTests.some((t: any) => t?.ulr_number) ? "ULR Generated" : "Standard Queue"}
             </p>
           </div>
@@ -499,12 +514,12 @@ export function InwardDetailsView({
             <div className="space-y-3 pt-1">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Customer Name</p>
-                <p className="text-sm font-black text-slate-900 leading-snug">{client?.name || "-"}</p>
+                <p className="text-[15px] font-black text-slate-900 leading-snug">{client?.name || "-"}</p>
               </div>
 
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Company Name</p>
-                <p className="text-xs font-bold text-slate-700 leading-snug">{client?.company_name || "-"}</p>
+                <p className="text-[15px] font-bold text-slate-700 leading-snug">{client?.company_name || "-"}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-1">
@@ -513,11 +528,11 @@ export function InwardDetailsView({
                     <Phone className="w-3 h-3 text-orange-500" /> Mobile
                   </p>
                   {client?.mobile ? (
-                    <a href={`tel:${client.mobile}`} className="text-xs font-bold text-orange-600 hover:underline">
+                    <a href={`tel:${client.mobile}`} className="text-[15px] font-bold text-orange-600 hover:underline">
                       {client.mobile}
                     </a>
                   ) : (
-                    <p className="text-xs text-slate-500 font-medium">-</p>
+                    <p className="text-[15px] text-slate-500 font-medium">-</p>
                   )}
                 </div>
 
@@ -526,11 +541,11 @@ export function InwardDetailsView({
                     <Mail className="w-3 h-3 text-orange-500" /> Email
                   </p>
                   {client?.email ? (
-                    <a href={`mailto:${client.email}`} className="text-xs font-semibold text-slate-700 hover:text-orange-600 truncate block" title={client.email}>
+                    <a href={`mailto:${client.email}`} className="text-[15px] font-semibold text-slate-700 hover:text-orange-600 truncate block" title={client.email}>
                       {client.email}
                     </a>
                   ) : (
-                    <p className="text-xs text-slate-500 font-medium">-</p>
+                    <p className="text-[15px] text-slate-500 font-medium">-</p>
                   )}
                 </div>
               </div>
@@ -539,7 +554,7 @@ export function InwardDetailsView({
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">GST Number</p>
                   <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-mono font-bold text-slate-800 bg-slate-50 px-2 py-1 rounded-md border border-slate-200 inline-block">
+                    <p className="text-[15px] font-bold text-slate-800 bg-slate-50 px-2 py-1 rounded-md border border-slate-200 inline-block">
                       {client?.gst_no || "N/A"}
                     </p>
                     {client?.gst_no && (
@@ -556,7 +571,7 @@ export function InwardDetailsView({
 
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Assigned Branch</p>
-                  <p className="text-xs font-semibold text-slate-700 bg-slate-50 px-2 py-1 rounded-md border border-slate-200 truncate">
+                  <p className="text-[15px] font-semibold text-slate-700 bg-slate-50 px-2 py-1 rounded-md border border-slate-200 truncate">
                     {branch?.name || "Main Testing Lab"}
                   </p>
                 </div>
@@ -566,7 +581,7 @@ export function InwardDetailsView({
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-orange-500" /> Registered Customer Address
                 </p>
-                <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded-2xl border border-slate-200/80 leading-relaxed font-medium">
+                <div className="text-[15px] text-slate-700 bg-slate-50 p-3 rounded-2xl border border-slate-200/80 leading-relaxed font-medium">
                   {client?.address || "No official address registered on client file."}
                 </div>
               </div>
@@ -596,28 +611,28 @@ export function InwardDetailsView({
             <div className="space-y-3 pt-1">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Project Name</p>
-                <p className="text-sm font-black text-slate-900 leading-snug">{jobEntry?.project_name || "-"}</p>
+                <p className="text-[15px] font-black text-slate-900 leading-snug">{jobEntry?.project_name || "-"}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Site Name</p>
-                  <p className="text-xs font-bold text-slate-800 leading-snug">{jobEntry?.site_name || client?.site_name || "-"}</p>
+                  <p className="text-[15px] font-bold text-slate-800 leading-snug">{jobEntry?.site_name || client?.site_name || "-"}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Division</p>
-                  <p className="text-xs font-semibold text-slate-700">{jobEntry?.division || "-"}</p>
+                  <p className="text-[15px] font-semibold text-slate-700">{jobEntry?.division || "-"}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Agency / Contractor</p>
-                  <p className="text-xs font-semibold text-slate-700 leading-snug">{jobEntry?.agency || client?.agency_name || "-"}</p>
+                  <p className="text-[15px] font-semibold text-slate-700 leading-snug">{jobEntry?.agency || client?.agency_name || "-"}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Contact Person</p>
-                  <p className="text-xs font-semibold text-slate-700">{jobEntry?.contact_person || client?.contact_person || "-"}</p>
+                  <p className="text-[15px] font-semibold text-slate-700">{jobEntry?.contact_person || client?.contact_person || "-"}</p>
                 </div>
               </div>
 
@@ -625,7 +640,7 @@ export function InwardDetailsView({
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 flex items-center gap-1">
                   <Truck className="w-3.5 h-3.5 text-blue-500" /> Mode of Report Dispatch
                 </p>
-                <p className="text-xs font-bold text-slate-800 bg-blue-50/60 p-2.5 rounded-xl border border-blue-100">
+                <p className="text-[15px] font-bold text-slate-800 bg-blue-50/60 p-2.5 rounded-xl border border-blue-100">
                   {jobEntry?.collected_by || "Customer Direct / Laboratory Dispatch"}
                 </p>
               </div>
@@ -633,8 +648,8 @@ export function InwardDetailsView({
               <div className="pt-1">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Dispatch Attention & Delivery Address</p>
                 <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
-                  <p className="text-xs font-black text-slate-900">{jobEntry?.dispatch_name || client?.dispatch_name || client?.name || "-"}</p>
-                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                  <p className="text-[15px] font-black text-slate-900">{jobEntry?.dispatch_name || client?.dispatch_name || client?.name || "-"}</p>
+                  <p className="text-[15px] text-slate-700 leading-relaxed font-medium">
                     {jobEntry?.dispatch_address || client?.dispatch_address || client?.address || "Same as customer address."}
                   </p>
                 </div>
@@ -666,7 +681,7 @@ export function InwardDetailsView({
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">CUSTOMER REFERENCE NO</p>
                 <div className="bg-emerald-50/50 p-2.5 rounded-xl border border-emerald-200/80 flex items-center justify-between">
-                  <p className="text-xs font-mono font-black text-emerald-900 truncate">
+                  <p className="text-[15px] font-black text-emerald-900 truncate">
                     {jobEntry?.letter_reference || (customerRef !== "-" ? customerRef : "No Customer Reference Provided")}
                   </p>
                 </div>
@@ -675,13 +690,13 @@ export function InwardDetailsView({
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Invoice Number</p>
-                  <p className="text-xs font-bold text-slate-800 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200/80">
+                  <p className="text-[15px] font-bold text-slate-800 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200/80">
                     {jobEntry?.invoice_no || "-"}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Invoice Date</p>
-                  <p className="text-xs font-semibold text-slate-800 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200/80">
+                  <p className="text-[15px] font-semibold text-slate-800 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200/80">
                     {formatDateSafe(jobEntry?.invoice_date)}
                   </p>
                 </div>
@@ -690,13 +705,13 @@ export function InwardDetailsView({
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Payment Status</p>
-                  <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200">
+                  <span className="inline-block px-2.5 py-1 rounded-lg text-[15px] font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200">
                     {jobEntry?.payment_status || "Pending"}
                   </span>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Inward Registered</p>
-                  <p className="text-xs font-semibold text-slate-700">
+                  <p className="text-[15px] font-semibold text-slate-700">
                     {formatDateSafe(jobEntry?.inward_on || jobEntry?.created_at, "dd MMM yyyy, hh:mm a")}
                   </p>
                 </div>
@@ -707,19 +722,19 @@ export function InwardDetailsView({
                   <Package className="w-3.5 h-3.5 text-orange-500" /> Sample Material Overview
                 </p>
                 <div className="bg-orange-50/50 p-3 rounded-2xl border border-orange-100 space-y-1.5">
-                  <div className="flex justify-between items-center text-xs">
+                  <div className="flex justify-between items-center text-[15px]">
                     <span className="text-slate-500 font-medium">Material:</span>
                     <span className="font-extrabold text-slate-900 text-right truncate max-w-[170px]">{materialDesc}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
+                  <div className="flex justify-between items-center text-[15px]">
                     <span className="text-slate-500 font-medium">Material Initials:</span>
                     <span className="font-extrabold text-orange-600">{materialInitials}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
+                  <div className="flex justify-between items-center text-[15px]">
                     <span className="text-slate-500 font-medium">Grade / Quantity:</span>
                     <span className="font-bold text-orange-600">{grade} • {sampleQty}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
+                  <div className="flex justify-between items-center text-[15px]">
                     <span className="text-slate-500 font-medium">Testing Schedule:</span>
                     <span className="font-semibold text-slate-800">{testingDay}</span>
                   </div>
@@ -751,42 +766,42 @@ export function InwardDetailsView({
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3.5 pt-1">
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Material ID</p>
-            <p className="text-sm font-extrabold text-slate-900 truncate">{materialId}</p>
+            <p className="text-[15px] font-extrabold text-slate-900 truncate">{materialId}</p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Material Initials</p>
-            <p className="text-sm font-extrabold text-orange-600 truncate">{materialInitials}</p>
+            <p className="text-[15px] font-extrabold text-orange-600 truncate">{materialInitials}</p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sampling Location / Code</p>
-            <p className="text-sm font-extrabold text-slate-900 truncate" title={materialLocation}>{materialLocation}</p>
+            <p className="text-[15px] font-extrabold text-slate-900 truncate" title={materialLocation}>{materialLocation}</p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sample Quantity</p>
-            <p className="text-sm font-extrabold text-slate-900 truncate">{sampleQty}</p>
+            <p className="text-[15px] font-extrabold text-slate-900 truncate">{sampleQty}</p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Grade</p>
-            <p className="text-base font-black text-orange-600 truncate">{grade}</p>
+            <p className="text-[15px] font-black text-orange-600 truncate">{grade}</p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Casting Date</p>
-            <p className="text-sm font-extrabold text-slate-900 truncate">{formatDateSafe(castingDateRaw)}</p>
+            <p className="text-[15px] font-extrabold text-slate-900 truncate">{formatDateSafe(castingDateRaw)}</p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date of Receiving</p>
-            <p className="text-sm font-extrabold text-slate-900 truncate">{formatDateSafe(receivingDateRaw)}</p>
+            <p className="text-[15px] font-extrabold text-slate-900 truncate">{formatDateSafe(receivingDateRaw)}</p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 hover:border-orange-200 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Customer Ref No</p>
-            <p className="text-sm font-extrabold text-slate-900 truncate" title={customerRef}>{customerRef}</p>
+            <p className="text-[15px] font-extrabold text-slate-900 truncate" title={customerRef}>{customerRef}</p>
           </div>
         </div>
       </div>
@@ -865,7 +880,7 @@ export function InwardDetailsView({
                       </div>
 
                       {testMaster?.specific_test && (
-                        <p className="text-xs sm:text-sm font-semibold text-slate-500 pl-1">
+                        <p className="text-[15px] font-semibold text-slate-500 pl-1">
                           {testMaster.specific_test}
                         </p>
                       )}
@@ -888,42 +903,42 @@ export function InwardDetailsView({
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 pt-2">
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Standard Method</p>
-                      <p className="text-xs font-extrabold text-slate-900 truncate" title={t?.test_method || testMaster?.test_method || "-"}>
+                      <p className="text-[15px] font-extrabold text-slate-900 truncate" title={t?.test_method || testMaster?.test_method || "-"}>
                         {t?.test_method || testMaster?.test_method || "-"}
                       </p>
                     </div>
 
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Testing Date</p>
-                      <p className="text-xs font-extrabold text-slate-900">
+                      <p className="text-[15px] font-extrabold text-slate-900">
                         {formatDateSafe(t?.date_of_testing)}
                       </p>
                     </div>
 
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Testing Age</p>
-                      <p className="text-xs font-extrabold text-slate-900">
+                      <p className="text-[15px] font-extrabold text-slate-900">
                         {t?.testing_day || t?.testing_age || testingDay || "-"}
                       </p>
                     </div>
 
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">ULR No.</p>
-                      <p className="text-xs font-black text-emerald-700 truncate">
+                      <p className="text-[15px] font-black text-emerald-700 truncate">
                         {t?.ulr_number || (t?.ulr_status === "generated" ? "Generated" : "Awaiting Generation")}
                       </p>
                     </div>
 
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">QC No.</p>
-                      <p className="text-xs font-bold text-blue-700 truncate">
+                      <p className="text-[15px] font-bold text-blue-700 truncate">
                         {t?.qc_number || "-"}
                       </p>
                     </div>
 
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sample Code</p>
-                      <p className="text-xs font-bold text-slate-900 truncate" title={t?.sample_code_no || t?.material_details_location || "-"}>
+                      <p className="text-[15px] font-bold text-slate-900 truncate" title={t?.sample_code_no || t?.material_details_location || "-"}>
                         {t?.sample_code_no || t?.material_details_location || "-"}
                       </p>
                     </div>
@@ -931,8 +946,8 @@ export function InwardDetailsView({
 
                   {/* Material Description for this specific test */}
                   {t?.material_description && (
-                    <div className="pt-1 text-xs text-slate-700 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
-                      <strong className="text-slate-900 font-extrabold mr-1.5">Material Description:</strong>
+                    <div className="pt-1 text-[15px] text-slate-700 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                      <strong className="text-slate-900 font-extrabold mr-1.5 text-[15px]">Material Description:</strong>
                       {t.material_description}
                     </div>
                   )}
@@ -953,7 +968,7 @@ export function InwardDetailsView({
                               className="bg-orange-50/70 hover:bg-orange-100/70 px-3.5 py-1.5 rounded-xl border border-orange-200 text-xs flex items-center gap-2 shadow-2xs transition-colors"
                             >
                               <span className="text-orange-950/60 font-bold uppercase text-[10px] tracking-wider">{key}:</span>
-                              <span className="font-extrabold text-slate-900">{String(val)}</span>
+                              <span className="font-extrabold text-slate-900 text-[15px]">{String(val)}</span>
                             </div>
                           );
                         })}
@@ -963,8 +978,8 @@ export function InwardDetailsView({
 
                   {/* Review Remark / Note */}
                   {assignment?.reviewer_remark && (
-                    <div className="pt-1 text-xs text-amber-900 bg-amber-50 p-3 rounded-2xl border border-amber-200">
-                      <strong className="font-extrabold mr-1.5">Reviewer Remark:</strong>
+                    <div className="pt-1 text-[15px] text-amber-900 bg-amber-50 p-3 rounded-2xl border border-amber-200">
+                      <strong className="font-extrabold mr-1.5 text-[15px]">Reviewer Remark:</strong>
                       {assignment.reviewer_remark}
                     </div>
                   )}
@@ -994,14 +1009,16 @@ export function InwardDetailsView({
             <span>Back to Top</span>
           </Button>
 
-          <Button
-            onClick={handleDownloadPdf}
-            disabled={isDownloading}
-            className="h-11 px-5 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm"
-          >
-            {isDownloading ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Download className="w-4 h-4" />}
-            <span>Download Job Card</span>
-          </Button>
+          {canDownload && (
+            <Button
+              onClick={handleDownloadPdf}
+              disabled={isDownloading}
+              className="h-11 px-5 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm"
+            >
+              {isDownloading ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Download className="w-4 h-4" />}
+              <span>Download Job Card</span>
+            </Button>
+          )}
         </div>
       </div>
 

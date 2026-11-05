@@ -17,7 +17,7 @@ export async function getAssignmentsAction(filters?: { team_id?: string; employe
     const assignments = await JobAssignmentService.getAssignments(effectiveFilters);
     return { success: true, data: assignments };
   } catch (error: any) {
-    console.error("getAssignmentsAction error:", error);
+    console.warn("getAssignmentsAction warning:", error);
     return { success: false, error: error.message || "Failed to retrieve assignments" };
   }
 }
@@ -50,15 +50,28 @@ export async function getUnassignedJobCardsAction(branchId?: string) {
   }
 }
 
-export async function getMyAssignmentsAction(_userId?: string) {
+export async function getMyAssignmentsAction(userId?: string) {
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) return { success: false, error: "Unauthorized" };
-    const assignments = await JobAssignmentService.getMyAssignments(user.id);
+    const assignments = await JobAssignmentService.getMyAssignments(userId || user.id);
     return { success: true, data: assignments };
   } catch (error: any) {
     console.error("getMyAssignmentsAction error:", error);
     return { success: false, error: error.message || "Failed to retrieve assignments" };
+  }
+}
+
+export async function getTodayAssignedTestsAction(userId?: string) {
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized", data: [] };
+    const targetUserId = userId || user.id;
+    const data = await JobAssignmentService.getTodayAssignedTests(targetUserId);
+    return { success: true, data };
+  } catch (error: any) {
+    console.warn("getTodayAssignedTestsAction warning:", error);
+    return { success: false, error: error.message || "Failed to retrieve today tests", data: [] };
   }
 }
 

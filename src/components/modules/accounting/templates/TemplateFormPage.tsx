@@ -205,8 +205,8 @@ export function TemplateFormPage({
 
           <div className="h-7 w-px bg-slate-200 hidden sm:block" />
 
-          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0">
-            <Edit3 className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold shrink-0">
+            <Edit3 className="w-5 h-5 text-orange-600" />
           </div>
 
           <div>
@@ -235,7 +235,7 @@ export function TemplateFormPage({
             type="button"
             onClick={handleSubmit}
             disabled={saving}
-            className="h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+            className="h-9 px-5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-2"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{formData.id ? "Update Template" : "Save Template"}</span>
@@ -257,7 +257,7 @@ export function TemplateFormPage({
           {/* Template Title */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-blue-600" />
+              <FileText className="w-3.5 h-3.5 text-orange-600" />
               <span>Template Title *</span>
             </label>
             <input
@@ -265,14 +265,14 @@ export function TemplateFormPage({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g. Standard Concrete Testing T&C 2026"
-              className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 transition-all"
+              className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 outline-none focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/10 transition-all"
             />
           </div>
 
           {/* Service Category Dropdown */}
           <div className="space-y-1.5 relative" ref={dropdownRef}>
             <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-blue-600" />
+              <Tag className="w-3.5 h-3.5 text-orange-600" />
               <span>Service Category *</span>
             </label>
 
@@ -287,7 +287,7 @@ export function TemplateFormPage({
               className={cn(
                 "w-full h-11 px-3.5 rounded-xl border text-xs font-medium flex items-center justify-between transition-all cursor-pointer",
                 isDropdownOpen
-                  ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs"
+                  ? "bg-white border-orange-500 ring-2 ring-orange-500/10 shadow-xs"
                   : "bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300"
               )}
             >
@@ -340,7 +340,7 @@ export function TemplateFormPage({
                       return (
                         <div
                           key={cat.id}
-                          className="flex items-center gap-1.5 p-1 bg-blue-50/50 rounded-lg border border-blue-200"
+                          className="flex items-center gap-1.5 p-1 bg-orange-50/50 rounded-lg border border-orange-200"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <input
@@ -348,7 +348,7 @@ export function TemplateFormPage({
                             type="text"
                             value={editingCategoryName}
                             onChange={(e) => setEditingCategoryName(e.target.value)}
-                            className="flex-1 h-7 px-2 text-xs bg-white border border-blue-300 rounded font-medium outline-none"
+                            className="flex-1 h-7 px-2 text-xs bg-white border border-orange-300 rounded font-medium outline-none"
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
                                 onRenameCategory(cat.id, editingCategoryName);
@@ -364,7 +364,7 @@ export function TemplateFormPage({
                               onRenameCategory(cat.id, editingCategoryName);
                               setEditingCategoryId(null);
                             }}
-                            className="p-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+                            className="p-1 rounded bg-orange-500 text-white hover:bg-orange-600"
                           >
                             <Check className="w-3 h-3" />
                           </button>
@@ -389,7 +389,7 @@ export function TemplateFormPage({
                         className={cn(
                           "w-full px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between group transition-colors cursor-pointer",
                           isSelected
-                            ? "bg-blue-50 text-blue-900 font-semibold"
+                            ? "bg-orange-50 text-orange-950 font-semibold"
                             : "text-slate-700 hover:bg-slate-100"
                         )}
                       >
@@ -399,7 +399,7 @@ export function TemplateFormPage({
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
-                          {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 mr-1" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-orange-600 mr-1" />}
                           {cat.isCustom && (
                             <>
                               <button
@@ -410,7 +410,7 @@ export function TemplateFormPage({
                                   setEditingCategoryName(cat.name);
                                   setTimeout(() => editInputRef.current?.focus(), 50);
                                 }}
-                                className="p-1 text-slate-400 hover:text-blue-600 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="p-1 text-slate-400 hover:text-orange-600 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                                 title="Rename category"
                               >
                                 <Edit3 className="w-3 h-3" />
@@ -443,7 +443,7 @@ export function TemplateFormPage({
                         setIsAddingInline(true);
                         setInlineAddName(dropdownSearch);
                       }}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50/70 rounded-lg transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold text-orange-600 hover:text-orange-700 hover:bg-orange-50/70 rounded-lg transition-colors cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add New Service Category</span>
@@ -458,7 +458,7 @@ export function TemplateFormPage({
                         value={inlineAddName}
                         onChange={(e) => setInlineAddName(e.target.value)}
                         placeholder="Category name (e.g. Chemical Analysis)"
-                        className="w-full h-8 px-2.5 text-xs bg-white border border-slate-200 rounded-lg font-medium outline-none focus:border-blue-500"
+                        className="w-full h-8 px-2.5 text-xs bg-white border border-slate-200 rounded-lg font-medium outline-none focus:border-orange-500"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleInlineAddCategorySubmit();
@@ -480,7 +480,7 @@ export function TemplateFormPage({
                                 "w-4 h-4 rounded-full transition-transform cursor-pointer",
                                 swatchConf.swatch,
                                 inlineAddColor === col
-                                  ? "ring-2 ring-blue-500 ring-offset-1 scale-110"
+                                  ? "ring-2 ring-orange-500 ring-offset-1 scale-110"
                                   : "opacity-70 hover:opacity-100"
                               )}
                             />
@@ -500,7 +500,7 @@ export function TemplateFormPage({
                           type="button"
                           onClick={handleInlineAddCategorySubmit}
                           disabled={!inlineAddName.trim() && !dropdownSearch.trim()}
-                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md disabled:opacity-50"
+                          className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-bold rounded-md disabled:opacity-50"
                         >
                           Create
                         </button>
@@ -544,7 +544,7 @@ export function TemplateFormPage({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Scroll className="w-3.5 h-3.5 text-blue-600" />
+                <Scroll className="w-3.5 h-3.5 text-orange-600" />
                 <span>Clause Specifications ({formData.clauses?.length || 0})</span>
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
@@ -555,7 +555,7 @@ export function TemplateFormPage({
             <button
               type="button"
               onClick={handleAddClause}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-2xs"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-2xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Clause</span>
@@ -572,7 +572,7 @@ export function TemplateFormPage({
                 {/* Clause Header Strip */}
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">
+                    <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-700 text-xs font-bold flex items-center justify-center">
                       {index + 1}
                     </span>
                     <span className="text-xs font-bold text-slate-700">Clause #{index + 1}</span>
@@ -615,7 +615,7 @@ export function TemplateFormPage({
                     value={clause.title}
                     onChange={(e) => handleUpdateClause(index, "title", e.target.value)}
                     placeholder="Clause Title (e.g. Turnaround Time & Reporting)"
-                    className="w-full h-10 px-3 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all"
+                    className="w-full h-10 px-3 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition-all"
                   />
                   <div className="relative">
                     <textarea
@@ -624,7 +624,7 @@ export function TemplateFormPage({
                       placeholder="Detailed clause description or legal terms statement..."
                       rows={3}
                       maxLength={600}
-                      className="w-full p-3 pb-6 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 placeholder:text-slate-400 outline-none resize-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all leading-relaxed"
+                      className="w-full p-3 pb-6 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 placeholder:text-slate-400 outline-none resize-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition-all leading-relaxed"
                     />
                     <div className="absolute bottom-2 right-2.5 text-[10px] text-slate-400 font-medium pointer-events-none">
                       {clause.content?.length || 0}/600
@@ -651,7 +651,7 @@ export function TemplateFormPage({
           <Button
             type="submit"
             disabled={saving}
-            className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+            className="h-10 px-6 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-2"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{formData.id ? "Update Template" : "Save Template"}</span>

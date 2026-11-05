@@ -156,10 +156,10 @@ export function SelectTestModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/50 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start justify-between gap-4 bg-gradient-to-r from-blue-50/60 via-indigo-50/30 to-white">
+        <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start justify-between gap-4 bg-gradient-to-r from-orange-50/60 via-amber-50/30 to-white">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2.5">
-              <div className="p-2.5 bg-blue-600 text-white rounded-2xl shadow-sm">
+              <div className="p-2.5 bg-orange-500 text-white rounded-2xl shadow-sm">
                 <FlaskConical className="w-5 h-5" />
               </div>
               <div>
@@ -190,11 +190,11 @@ export function SelectTestModal({
                 {category}
               </span>
               <span className="text-slate-300">•</span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-orange-700 border border-orange-200">
                 {department === "Construction" ? (
-                  <Building2 className="w-3 h-3 text-blue-600" />
+                  <Building2 className="w-3 h-3 text-orange-600" />
                 ) : (
-                  <Trees className="w-3 h-3 text-blue-600" />
+                  <Trees className="w-3 h-3 text-orange-600" />
                 )}
                 {department} Department
               </span>
@@ -224,7 +224,7 @@ export function SelectTestModal({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search tests by name, parameter, IS code (e.g. Cube, Sieve, IS 516)..."
-                className="w-full text-xs pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                className="w-full text-xs pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none"
               />
               {search && (
                 <button
@@ -273,7 +273,7 @@ export function SelectTestModal({
                   onClick={() => onDepartmentChange("Construction")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     department === "Construction"
-                      ? "bg-blue-600 text-white shadow-xs"
+                      ? "bg-orange-500 text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -284,7 +284,7 @@ export function SelectTestModal({
                   onClick={() => onDepartmentChange("Environment")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     department === "Environment"
-                      ? "bg-blue-600 text-white shadow-xs"
+                      ? "bg-teal-600 text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -300,11 +300,11 @@ export function SelectTestModal({
               type="button"
               onClick={handleSelectAll}
               disabled={filteredTests.length === 0}
-              className="flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-40 cursor-pointer"
+              className="flex items-center gap-1.5 font-semibold text-orange-600 hover:text-orange-800 disabled:opacity-40 cursor-pointer"
             >
               {selectedIds.size === filteredTests.length && filteredTests.length > 0 ? (
                 <>
-                  <CheckSquare className="w-4 h-4 text-blue-600" />
+                  <CheckSquare className="w-4 h-4 text-orange-600" />
                   <span>Deselect All ({filteredTests.length})</span>
                 </>
               ) : (
@@ -317,7 +317,7 @@ export function SelectTestModal({
 
             <span className="text-[11px] font-medium text-slate-500">
               {selectedIds.size > 0 ? (
-                <span className="font-bold text-blue-700">
+                <span className="font-bold text-orange-700">
                   {selectedIds.size} of {filteredTests.length} tests selected
                 </span>
               ) : (
@@ -355,7 +355,7 @@ export function SelectTestModal({
                   onClick={() => toggleSelect(t.id)}
                   className={`pt-2.5 first:pt-0 p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                     isSelected
-                      ? "bg-blue-50/70 border-blue-300 shadow-xs"
+                      ? "bg-orange-50/70 border-orange-300 shadow-xs"
                       : "bg-white hover:bg-slate-50/80 border-slate-200/80"
                   }`}
                 >
@@ -366,10 +366,10 @@ export function SelectTestModal({
                         e.stopPropagation();
                         toggleSelect(t.id);
                       }}
-                      className="mt-0.5 text-blue-600 cursor-pointer"
+                      className="mt-0.5 text-orange-600 cursor-pointer"
                     >
                       {isSelected ? (
-                        <CheckSquare className="w-4 h-4 text-blue-600" />
+                        <CheckSquare className="w-4 h-4 text-orange-600" />
                       ) : (
                         <Square className="w-4 h-4 text-slate-300 hover:text-slate-500" />
                       )}
@@ -425,7 +425,7 @@ export function SelectTestModal({
                         e.stopPropagation();
                         handleQuickAddSingle(t);
                       }}
-                      className="h-8 px-2.5 rounded-xl bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                      className="h-8 px-2.5 rounded-xl bg-slate-100 hover:bg-orange-500 hover:text-white text-slate-700 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
                       title="Add this test immediately"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -442,7 +442,7 @@ export function SelectTestModal({
         <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between gap-3">
           <div className="text-xs text-slate-600">
             {selectedIds.size > 0 ? (
-              <span className="font-bold text-blue-700">
+              <span className="font-bold text-orange-700">
                 {selectedIds.size} test{selectedIds.size > 1 ? "s" : ""} selected for quotation
               </span>
             ) : (
@@ -465,7 +465,7 @@ export function SelectTestModal({
               size="sm"
               onClick={handleConfirm}
               disabled={selectedIds.size === 0}
-              className="h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
+              className="h-9 px-5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { ClipboardList, X, Search, Calendar, FileText, User, Download, Loader2, SlidersHorizontal, RefreshCcw } from "lucide-react";
+import { ClipboardList, X, Search, Calendar, FileText, User, Download, Loader2, SlidersHorizontal } from "lucide-react";
 import { AssignJobsTab } from "./AssignJobsTab";
 import { updateAssignmentStatusAction, deleteAssignmentAction } from "@/actions/job-assignment.actions";
 import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
@@ -283,21 +283,7 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
               { value: "all", label: "All Time" },
             ]} />
           </div>
-          <div className="w-full sm:w-auto">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSearchQuery("");
-                setFilterStatus("all");
-                setFilterBranch("all");
-                setFilterDate("all");
-                setFilterNabl("all");
-              }}
-              className="w-full sm:w-auto h-10 px-4 rounded-xl text-orange-600 border-orange-200 bg-orange-50/50 hover:bg-orange-100 hover:text-orange-700 font-bold text-xs flex items-center gap-2 shadow-sm transition-colors"
-            >
-              <RefreshCcw className="w-4 h-4" /> Refresh
-            </Button>
-          </div>
+
         </div>
       </div>
 
@@ -343,17 +329,19 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
                       <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
                         <ClipboardList className="w-4 h-4" />
                       </div>
-                      <div className="font-bold text-slate-800 text-[13px] flex items-center gap-1.5 flex-wrap">
-                        <span>{assignmentUid(assignment)}</span>
-                        {isNabl ? (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                            NABL
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
-                            Non-NABL
-                          </span>
-                        )}
+                      <div className="flex flex-col items-start gap-1">
+                        <div className="font-bold text-slate-800 text-[13px] flex items-center gap-1.5 flex-wrap">
+                          <span>{assignmentUid(assignment)}</span>
+                          {isNabl ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                              NABL
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                              Non-NABL
+                            </span>
+                          )}
+                        </div>
                         {(assignment.branches?.name || branches.find((b: any) => b.id === (assignment.branch_id || assignment.job_entry_tests?.job_entries?.branch_id))?.name) && (
                           <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/50 text-[10px] font-bold">
                             {assignment.branches?.name || branches.find((b: any) => b.id === (assignment.branch_id || assignment.job_entry_tests?.job_entries?.branch_id))?.name}
