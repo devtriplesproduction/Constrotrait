@@ -209,7 +209,7 @@ export function QuotationApprovalPanel({
           <button
             type="button"
             onClick={() => onConvertToInward(quotation)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-xs hover:bg-blue-700 transition-all cursor-pointer ml-auto"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-500 text-white shadow-orange-500/20 shadow-xs hover:bg-orange-600 transition-all cursor-pointer ml-auto"
           >
             <ArrowRight className="w-3.5 h-3.5" />
             <span>Convert to Inward</span>
@@ -291,7 +291,7 @@ export function QuotationApprovalPanel({
                     ? "Modification instructions (e.g., Apply 5% discount on cube testing)..."
                     : "Optional approval remarks or PO reference number..."
                 }
-                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white outline-none focus:border-blue-500"
+                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white outline-none focus:border-orange-500"
               />
             </div>
           )}

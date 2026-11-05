@@ -95,11 +95,22 @@ export async function inspectUploadedBackupAction(jsonContent: string) {
  * Repopulate database with uploaded data
  */
 export async function repopulateDatabaseAction(
-  jsonContent: string,
-  options: RepopulateOptions
+  jsonContentOrParams:
+    | string
+    | { jsonContent: string; options: RepopulateOptions },
+  rawOptions?: RepopulateOptions
 ) {
   try {
     const user = await assertSystemAccess();
+    const jsonContent =
+      typeof jsonContentOrParams === "string"
+        ? jsonContentOrParams
+        : jsonContentOrParams.jsonContent;
+    const options =
+      typeof jsonContentOrParams === "object"
+        ? jsonContentOrParams.options
+        : rawOptions || { mode: "UPSERT" };
+
     const payload: BackupPayload = JSON.parse(jsonContent);
 
     if (!payload || !payload.tables) {

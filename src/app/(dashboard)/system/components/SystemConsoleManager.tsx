@@ -220,6 +220,9 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
         status: "Saving archive to local disk...",
       });
 
+      // Refresh history immediately so the table updates without waiting for file download dialog dismissal
+      fetchBackupHistory();
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -362,11 +365,22 @@ export function SystemConsoleManager({ currentUser, initialTab = "backup" }: Sys
         description: `Applying ${restoreMode} on ${selectedTables.length} tables in PostgreSQL. Please wait...`,
       });
 
-      const res = await repopulateDatabaseAction(fileContent, {
-        mode: restoreMode,
-        selectedTables,
-        fileName: uploadedFile?.name,
+      const response = await fetch("/api/system/repopulate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jsonContent: fileContent,
+          options: {
+            mode: restoreMode,
+            selectedTables,
+            fileName: uploadedFile?.name,
+          },
+        }),
       });
+
+      const res = await response.json();
 
       setIsRestoring(false);
 

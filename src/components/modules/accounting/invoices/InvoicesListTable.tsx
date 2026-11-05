@@ -101,16 +101,16 @@ export function InvoicesListTable({
   return (
     <div className="space-y-4">
       {/* Search and Filters Hub */}
-      <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs">
+      <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative flex-1 min-w-[240px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <Input
               placeholder="Search by invoice #, client name, UID, notes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9.5 pr-8 h-10 text-xs bg-slate-50/60 hover:bg-white focus:bg-white border-slate-200/90 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="pl-9.5 pr-8 h-10 text-xs bg-slate-50/70 hover:bg-white focus:bg-white border-slate-200/90 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all"
             />
             {searchTerm && (
               <button
@@ -126,14 +126,14 @@ export function InvoicesListTable({
           {/* Filter Groups */}
           <div className="flex flex-wrap items-center gap-2.5 justify-start lg:justify-end">
             {/* Type Filter */}
-            <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs font-semibold shadow-2xs">
+            <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/70 text-xs font-semibold shadow-2xs">
               <button
                 type="button"
                 onClick={() => setTypeFilter("all")}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   typeFilter === "all"
                     ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60 font-semibold"
                 }`}
               >
                 <span>All Types</span>
@@ -151,15 +151,15 @@ export function InvoicesListTable({
                 onClick={() => setTypeFilter("proforma")}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   typeFilter === "proforma"
-                    ? "bg-white text-indigo-700 shadow-xs border border-indigo-200/80 font-bold"
-                    : "text-slate-600 hover:text-indigo-700 hover:bg-white/60"
+                    ? "bg-white text-orange-600 shadow-xs border border-orange-200/80 font-bold"
+                    : "text-slate-600 hover:text-orange-600 hover:bg-white/60 font-semibold"
                 }`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${typeFilter === "proforma" ? "bg-indigo-600" : "bg-indigo-400"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${typeFilter === "proforma" ? "bg-orange-500" : "bg-orange-400"}`} />
                 <span>Proforma</span>
                 <span
                   className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                    typeFilter === "proforma" ? "bg-indigo-50 text-indigo-700 border border-indigo-200/60" : "bg-slate-200/70 text-slate-600"
+                    typeFilter === "proforma" ? "bg-orange-50 text-orange-700 border border-orange-200/60" : "bg-slate-200/70 text-slate-600"
                   }`}
                 >
                   {proformaCount}
@@ -172,7 +172,7 @@ export function InvoicesListTable({
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   typeFilter === "tax_invoice"
                     ? "bg-white text-emerald-700 shadow-xs border border-emerald-200/80 font-bold"
-                    : "text-slate-600 hover:text-emerald-700 hover:bg-white/60"
+                    : "text-slate-600 hover:text-emerald-700 hover:bg-white/60 font-semibold"
                 }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${typeFilter === "tax_invoice" ? "bg-emerald-600" : "bg-emerald-400"}`} />
@@ -243,7 +243,7 @@ export function InvoicesListTable({
                 ]}
                 align="right"
                 menuWidth={180}
-                buttonClassName="h-10 px-3 bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs rounded-xl text-xs font-semibold text-slate-700 transition-all cursor-pointer group"
+                buttonClassName="h-10 px-3.5 bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs rounded-xl text-xs font-semibold text-slate-700 transition-all cursor-pointer group"
                 iconClassName="text-slate-400 group-hover:text-slate-600 w-3.5 h-3.5"
                 itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
               />
@@ -253,10 +253,10 @@ export function InvoicesListTable({
       </div>
 
       {/* Invoices Table */}
-      <div className="border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs bg-white">
+      <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[10.5px] border-b border-slate-200/80 backdrop-blur-xs">
+            <thead className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
               <tr>
                 <th className="py-3.5 px-4">Invoice # / Date</th>
                 <th className="py-3.5 px-4">Customer & Inward UID</th>
@@ -269,11 +269,15 @@ export function InvoicesListTable({
             <tbody className="divide-y divide-slate-100 bg-white">
               {filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <FileText className="w-8 h-8 text-slate-300" />
-                      <p className="font-bold text-sm text-slate-700">No invoices match your filters</p>
-                      <p className="text-xs text-slate-400">Try adjusting your search query or reset filter options.</p>
+                  <td colSpan={6} className="py-14 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-3 py-4">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/70 flex items-center justify-center text-orange-500 shadow-xs mb-0.5">
+                        <FileText className="w-7 h-7 text-orange-500" />
+                      </div>
+                      <div className="text-center space-y-1">
+                        <p className="font-bold text-sm sm:text-base text-slate-800">No invoices match your filters</p>
+                        <p className="text-xs text-slate-500 max-w-sm">Try adjusting your search query or reset filter options.</p>
+                      </div>
                       {hasActiveFilters && (
                         <Button
                           variant="outline"
@@ -283,7 +287,7 @@ export function InvoicesListTable({
                             setTypeFilter("all");
                             setStatusFilter("all");
                           }}
-                          className="mt-2 text-xs h-8 cursor-pointer rounded-xl"
+                          className="mt-1 text-xs h-8.5 px-3.5 cursor-pointer rounded-xl border border-slate-200 hover:border-orange-300 hover:text-orange-600 font-semibold transition-all shadow-2xs"
                         >
                           Clear All Filters
                         </Button>
@@ -317,14 +321,14 @@ export function InvoicesListTable({
                         {/* Invoice # & Date */}
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-sm text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
+                            <span className="font-mono font-bold text-sm text-slate-900 tracking-tight group-hover:text-orange-600 transition-colors">
                               {inv.invoice_no}
                             </span>
                             <span
                               title={isProforma ? "Proforma Invoice" : "Tax Invoice"}
                               className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider shadow-2xs ${
                                 isProforma
-                                  ? "bg-indigo-50 text-indigo-700 border border-indigo-200/80"
+                                  ? "bg-orange-50 text-orange-700 border border-orange-200/80"
                                   : "bg-emerald-50 text-emerald-700 border border-emerald-200/80"
                               }`}
                             >
@@ -348,7 +352,7 @@ export function InvoicesListTable({
                           <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
                             {inv.job_entries?.uid_label && (
                               <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-mono text-[11px] font-semibold border border-slate-200/80 shadow-2xs">
-                                <Hash className="w-3 h-3 text-blue-500" />
+                                <Hash className="w-3 h-3 text-orange-500" />
                                 <span>UID: {inv.job_entries.uid_label}</span>
                               </span>
                             )}
@@ -361,13 +365,13 @@ export function InvoicesListTable({
                         </td>
 
                         {/* Total Amount */}
-                        <td className="py-4 px-4 text-right font-mono font-black text-slate-900 text-sm tracking-tight">
+                        <td className="py-4 px-4 text-right font-mono font-bold text-slate-900 text-sm tracking-tight tabular-nums">
                           {fmt(total)}
                         </td>
 
                         {/* Amount Received (Paid) with Progress */}
                         <td className="py-4 px-4 text-right">
-                          <div className="font-mono font-black text-emerald-700 text-sm tracking-tight">
+                          <div className="font-mono font-bold text-emerald-700 text-sm tracking-tight tabular-nums">
                             {fmt(paid)}
                           </div>
                           <div className="flex items-center justify-end gap-1.5 mt-1.5">
@@ -403,7 +407,7 @@ export function InvoicesListTable({
 
                         {/* Outstanding Balance */}
                         <td className="py-4 px-4 text-right">
-                          <div className="font-mono font-black text-sm text-slate-900 tracking-tight">
+                          <div className="font-mono font-bold text-sm text-slate-900 tracking-tight tabular-nums">
                             {fmt(bal)}
                           </div>
                           {bal <= 0 ? (

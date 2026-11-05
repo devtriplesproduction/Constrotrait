@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.lab_uid_counters (
 -- Enable RLS but don't add policies so it defaults to deny-all from frontend
 ALTER TABLE public.lab_uid_counters ENABLE ROW LEVEL SECURITY;
 
+DROP FUNCTION IF EXISTS public.next_uid_seq(text, int);
 CREATE OR REPLACE FUNCTION public.next_uid_seq(p_name text, p_year int)
 RETURNS int
 LANGUAGE plpgsql

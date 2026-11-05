@@ -487,7 +487,7 @@ export function RecordExpensePageClient({
             <span
               className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                 selectedScope === "inward_cost"
-                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                  ? "bg-orange-50 text-orange-700 border-orange-200"
                   : selectedScope === "test_expense"
                   ? "bg-indigo-50 text-indigo-700 border-indigo-200"
                   : selectedScope === "inhouse"
@@ -563,7 +563,7 @@ export function RecordExpensePageClient({
                 }}
                 className={`p-4 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
                   selectedScope === "inward_cost"
-                    ? "bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 shadow-xs"
+                    ? "bg-orange-50/80 border-orange-500 ring-2 ring-orange-500/20 shadow-xs"
                     : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
                 }`}
               >
@@ -571,14 +571,14 @@ export function RecordExpensePageClient({
                   <div
                     className={`p-2 rounded-lg ${
                       selectedScope === "inward_cost"
-                        ? "bg-blue-600 text-white"
+                        ? "bg-orange-600 text-white"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
                     <Package className="w-5 h-5" />
                   </div>
                   {selectedScope === "inward_cost" ? (
-                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                    <CheckCircle2 className="w-4 h-4 text-orange-600" />
                   ) : (
                     <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                       Inward Job
@@ -721,23 +721,23 @@ export function RecordExpensePageClient({
 
             {/* Scope 1: INWARD DIRECT COST */}
             {selectedScope === "inward_cost" && (
-              <div className="p-4 rounded-2xl bg-blue-50/40 border border-blue-200 space-y-4">
+              <div className="p-4 rounded-2xl bg-orange-50/40 border border-orange-200 space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Package className="w-4 h-4 text-blue-600" />
+                      <Package className="w-4 h-4 text-orange-600" />
                       <span>Select Target Inward Job UID</span>
                       <span className="text-rose-500">*</span>
                     </label>
                     {selectedInward && (
-                      <span className="text-[11px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[11px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
                         UID: {selectedInward.uid_label || selectedInward.uid}
                       </span>
                     )}
                   </div>
 
                   {initialInward ? (
-                    <div className="p-3.5 bg-white rounded-xl border border-blue-200 flex items-center justify-between">
+                    <div className="p-3.5 bg-white rounded-xl border border-orange-200 flex items-center justify-between">
                       <div>
                         <div className="text-xs font-bold text-slate-900">
                           Job UID: {initialInward.uid_label || initialInward.uid}
@@ -746,7 +746,7 @@ export function RecordExpensePageClient({
                           Client: {initialInward.clients?.name || "N/A"} · Project: {initialInward.project_name || "N/A"}
                         </div>
                       </div>
-                      <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200">
+                      <span className="text-[10px] font-bold text-orange-700 bg-orange-50 px-2.5 py-1 rounded-md border border-orange-200">
                         Pre-selected from Test Financials
                       </span>
                     </div>
@@ -768,7 +768,7 @@ export function RecordExpensePageClient({
                             }));
                           }
                         }}
-                        className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                        className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
                       >
                         <option value="">— Select an Inward Job UID —</option>
                         {filteredInwardOptions.map((inv) => (
@@ -786,7 +786,7 @@ export function RecordExpensePageClient({
                             placeholder="Type to filter Inward by UID or Client..."
                             value={inwardSearch}
                             onChange={(e) => setInwardSearch(e.target.value)}
-                            className="w-full h-8 pl-8 pr-3 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 placeholder-slate-400 outline-none focus:border-blue-500"
+                            className="w-full h-8 pl-8 pr-3 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 placeholder-slate-400 outline-none focus:border-orange-500"
                           />
                         </div>
                       )}
@@ -796,7 +796,7 @@ export function RecordExpensePageClient({
 
                 {/* Specific Test Parameter Tagging for Inward */}
                 {selectedInward?.job_entry_tests && selectedInward.job_entry_tests.length > 0 && (
-                  <div className="pt-3 border-t border-blue-200/60 space-y-2.5">
+                  <div className="pt-3 border-t border-orange-200/60 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                         <FlaskConical className="w-4 h-4 text-indigo-600" />
@@ -843,7 +843,7 @@ export function RecordExpensePageClient({
                           }));
                         }
                       }}
-                      className="w-full h-10 px-3 bg-white border border-blue-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                      className="w-full h-10 px-3 bg-white border border-orange-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
                     >
                       <option value="">— Entire Inward Job (Shared / General Inward Cost) —</option>
 
@@ -913,11 +913,11 @@ export function RecordExpensePageClient({
                       }}
                       className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                         selectedCategory === "Construction"
-                          ? "bg-white text-blue-700 border-blue-400 ring-2 ring-blue-500/20 shadow-xs"
+                          ? "bg-white text-orange-700 border-orange-400 ring-2 ring-orange-500/20 shadow-xs"
                           : "bg-white/60 text-slate-600 border-slate-200 hover:bg-white"
                       }`}
                     >
-                      <HardHat className="w-4 h-4 text-blue-600" />
+                      <HardHat className="w-4 h-4 text-orange-600" />
                       <span>🏗️ Construction</span>
                     </button>
 
@@ -1256,7 +1256,7 @@ export function RecordExpensePageClient({
               {selectedScope === "inward_cost" && selectedInward && (
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Inward UID:</span>
-                  <span className="font-bold text-blue-600">
+                  <span className="font-bold text-orange-600">
                     {selectedInward.uid_label || selectedInward.uid}
                   </span>
                 </div>

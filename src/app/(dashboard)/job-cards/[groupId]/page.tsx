@@ -27,9 +27,14 @@ export default async function JobCardDetailsPage(props: {
   if (!user) redirect("/login");
 
   // Fetch complete job entry record directly
-  let jobEntry = await JobEntryService.getJobEntryByUidOrId(decodedGroupId);
-  if (!jobEntry && jobEntryId) {
-    jobEntry = await JobEntryService.getJobEntryByUidOrId(jobEntryId);
+  let jobEntry: any = null;
+  try {
+    jobEntry = await JobEntryService.getJobEntryByUidOrId(decodedGroupId);
+    if (!jobEntry && jobEntryId) {
+      jobEntry = await JobEntryService.getJobEntryByUidOrId(jobEntryId);
+    }
+  } catch (error) {
+    console.warn("Could not retrieve job entry by UID/ID:", error);
   }
 
   let jobGroup: any[] = [];
@@ -42,23 +47,27 @@ export default async function JobCardDetailsPage(props: {
     branch = jobEntry.branches;
   } else {
     // Fallback: Fetch all tests and filter
-    const allTests = await JobEntryService.getAllJobEntryTests();
-    jobGroup = allTests
-      .filter((t: any) => (t.uid_label || t.id) === decodedGroupId || (jobEntryId && t.job_entry_id === jobEntryId))
-      .sort((a: any, b: any) => {
-        const dateA = a.date_of_testing ? new Date(a.date_of_testing).getTime() : Infinity;
-        const dateB = b.date_of_testing ? new Date(b.date_of_testing).getTime() : Infinity;
-        if (dateA !== dateB) return dateA - dateB;
+    try {
+      const allTests = await JobEntryService.getAllJobEntryTests();
+      jobGroup = allTests
+        .filter((t: any) => (t.uid_label || t.id) === decodedGroupId || (jobEntryId && t.job_entry_id === jobEntryId))
+        .sort((a: any, b: any) => {
+          const dateA = a.date_of_testing ? new Date(a.date_of_testing).getTime() : Infinity;
+          const dateB = b.date_of_testing ? new Date(b.date_of_testing).getTime() : Infinity;
+          if (dateA !== dateB) return dateA - dateB;
 
-        const dayA = parseInt(a.testing_day || a.testing_age || "0") || 0;
-        const dayB = parseInt(b.testing_day || b.testing_age || "0") || 0;
-        return dayA - dayB;
-      });
+          const dayA = parseInt(a.testing_day || a.testing_age || "0") || 0;
+          const dayB = parseInt(b.testing_day || b.testing_age || "0") || 0;
+          return dayA - dayB;
+        });
 
-    if (jobGroup.length > 0) {
-      client = jobGroup[0].job_entries?.clients;
-      branch = jobGroup[0].job_entries?.branches;
-      jobEntry = jobGroup[0].job_entries;
+      if (jobGroup.length > 0) {
+        client = jobGroup[0].job_entries?.clients;
+        branch = jobGroup[0].job_entries?.branches;
+        jobEntry = jobGroup[0].job_entries;
+      }
+    } catch (fallbackError) {
+      console.warn("Could not retrieve fallback tests:", fallbackError);
     }
   }
 

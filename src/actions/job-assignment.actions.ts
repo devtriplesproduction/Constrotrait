@@ -17,7 +17,7 @@ export async function getAssignmentsAction(filters?: { team_id?: string; employe
     const assignments = await JobAssignmentService.getAssignments(effectiveFilters);
     return { success: true, data: assignments };
   } catch (error: any) {
-    console.error("getAssignmentsAction error:", error);
+    console.warn("getAssignmentsAction warning:", error);
     return { success: false, error: error.message || "Failed to retrieve assignments" };
   }
 }

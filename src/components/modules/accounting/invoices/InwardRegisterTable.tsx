@@ -110,17 +110,17 @@ export function InwardRegisterTable({
   const hasActiveFilters = searchTerm.trim() !== "" || (!isUninvoicedView && statusFilter !== "all");
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden space-y-0">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
       {/* Header Info & Filter Bar */}
-      <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5 bg-slate-50/50">
+      <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5 bg-slate-50/60">
         {/* Search Input */}
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <Input
             placeholder="Search by UID, client, site, or test name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 pr-8 h-9.5 text-xs bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+            className="pl-9.5 pr-8 h-10 text-xs bg-white border-slate-200/90 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all"
           />
           {searchTerm && (
             <button
@@ -136,27 +136,18 @@ export function InwardRegisterTable({
         {/* Filter Pills / Status Info */}
         {isUninvoicedView ? (
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200/90 px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1.5">
+            <span className="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200/90 px-3.5 py-2 rounded-xl shadow-2xs flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
               <span>{filteredInwards.length} Inwards Awaiting Invoice</span>
             </span>
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm("")}
-                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer ml-1"
-              >
-                Reset
-              </button>
-            )}
           </div>
         ) : (
           <div className="flex items-center gap-2 w-full lg:w-auto justify-start lg:justify-end flex-wrap">
-            <div className="flex bg-slate-200/70 p-1 rounded-xl text-xs font-semibold">
+            <div className="flex bg-slate-200/60 p-1 rounded-xl text-xs font-semibold border border-slate-200/60">
               <button
                 type="button"
                 onClick={() => setStatusFilter("all")}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                   statusFilter === "all" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -165,50 +156,37 @@ export function InwardRegisterTable({
               <button
                 type="button"
                 onClick={() => setStatusFilter("pending")}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  statusFilter === "pending" ? "bg-white text-blue-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  statusFilter === "pending" ? "bg-white text-orange-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
                 <span>Ready for Proforma</span>
-                <span className="text-[10px] opacity-75">({pendingCount})</span>
+                <span className="text-[10px] opacity-75 font-mono">({pendingCount})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStatusFilter("partial")}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === "partial" ? "bg-white text-amber-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                 <span>Partial / Due</span>
-                <span className="text-[10px] opacity-75">({partialCount})</span>
+                <span className="text-[10px] opacity-75 font-mono">({partialCount})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStatusFilter("invoiced")}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === "invoiced" ? "bg-white text-emerald-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <span>Invoiced</span>
-                <span className="text-[10px] opacity-75">({invoicedCount})</span>
+                <span className="text-[10px] opacity-75 font-mono">({invoicedCount})</span>
               </button>
             </div>
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchTerm("");
-                  setStatusFilter("all");
-                }}
-                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer ml-1"
-              >
-                Reset
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -216,23 +194,28 @@ export function InwardRegisterTable({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-xs text-left">
-          <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
+          <thead className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
             <tr>
-              <th className="py-3 px-4">UID / Inward Date</th>
-              <th className="py-3 px-4">Customer & Contact</th>
-              <th className="py-3 px-4">Project / Site</th>
-              {showStatusColumn && <th className="py-3 px-4">Proforma / Billing Status</th>}
-              <th className="py-3 px-4 text-right">Actions</th>
+              <th className="py-3.5 px-4 whitespace-nowrap">Inward UID</th>
+              <th className="py-3.5 px-4 whitespace-nowrap">Inward Date</th>
+              <th className="py-3.5 px-4">Customer</th>
+              <th className="py-3.5 px-4">Project / Site</th>
+              {showStatusColumn && <th className="py-3.5 px-4">Proforma / Billing Status</th>}
+              <th className="py-3.5 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredInwards.length === 0 ? (
               <tr>
-                <td colSpan={showStatusColumn ? 5 : 4} className="py-12 text-center text-slate-400">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <FlaskConical className="w-8 h-8 text-slate-300" />
-                    <p className="font-bold text-sm text-slate-700">No inward entries found</p>
-                    <p className="text-xs text-slate-400">Inward job cards registered in Client Inward will appear here automatically.</p>
+                <td colSpan={showStatusColumn ? 6 : 5} className="py-14 text-center text-slate-400">
+                  <div className="flex flex-col items-center justify-center gap-3 py-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-50 to-orange-50 border border-indigo-100/80 flex items-center justify-center text-indigo-600 shadow-xs mb-0.5">
+                      <FlaskConical className="w-7 h-7 text-indigo-600" />
+                    </div>
+                    <div className="text-center space-y-1">
+                      <p className="font-bold text-sm sm:text-base text-slate-800">No inward entries found</p>
+                      <p className="text-xs text-slate-500 max-w-sm">Inward job cards registered in Client Inward will appear here automatically.</p>
+                    </div>
                     {hasActiveFilters && (
                       <Button
                         variant="outline"
@@ -241,7 +224,7 @@ export function InwardRegisterTable({
                           setSearchTerm("");
                           if (!isUninvoicedView) setStatusFilter("all");
                         }}
-                        className="mt-2 text-xs h-8 cursor-pointer rounded-xl"
+                        className="mt-1 text-xs h-8.5 px-3.5 cursor-pointer rounded-xl border border-slate-200 hover:border-orange-300 hover:text-orange-600 font-semibold transition-all shadow-2xs"
                       >
                         Clear Filters
                       </Button>
@@ -288,16 +271,18 @@ export function InwardRegisterTable({
 
                 return (
                   <tr key={job.id} className="hover:bg-slate-50/80 transition-colors group">
-                    {/* UID & Date */}
-                    <td className="py-4 px-4">
-                      <div className="inline-flex">
-                        <span className="font-mono font-bold text-xs text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/90">
-                          {uidStr}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
-                        <Calendar className="w-3 h-3 text-slate-400" />
-                        <span>{job.inward_on || job.created_at?.slice(0, 10) || "Recent"}</span>
+                    {/* Inward UID */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="font-mono font-bold text-xs text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/90 shadow-2xs">
+                        {uidStr}
+                      </span>
+                    </td>
+
+                    {/* Inward Date */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="text-xs text-slate-600 font-medium flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>{job.inward_on || job.created_at?.slice(0, 10) || "—"}</span>
                       </div>
                     </td>
 
@@ -306,19 +291,6 @@ export function InwardRegisterTable({
                       <div className="font-bold text-slate-900 text-sm">
                         {job.clients?.name || "Customer"}
                       </div>
-                      {job.clients?.contact_person && (
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          Attn: {job.clients.contact_person}
-                        </div>
-                      )}
-                      {job.clients?.mobile && (
-                        <div className="text-[11px] text-slate-400">{job.clients.mobile}</div>
-                      )}
-                      {job.clients?.gst_no && (
-                        <div className="text-[10px] text-slate-400 font-mono">
-                          GST: {job.clients.gst_no}
-                        </div>
-                      )}
                     </td>
 
                     {/* Project / Site */}
@@ -326,12 +298,6 @@ export function InwardRegisterTable({
                       <div className="font-semibold text-slate-800 text-xs">
                         {job.project_name || job.clients?.site_name || "General"}
                       </div>
-                      {job.division && (
-                        <div className="text-[11px] text-slate-500 mt-0.5">Div: {job.division}</div>
-                      )}
-                      {job.branches?.name && (
-                        <div className="text-[10px] text-slate-400">Branch: {job.branches.name}</div>
-                      )}
                     </td>
 
                     {/* Proforma / Invoice Status */}

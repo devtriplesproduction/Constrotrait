@@ -631,7 +631,7 @@ export function TemplateManager({
       <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/25 text-white">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-600 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/25 text-white">
               <FileText className="w-6 h-6" />
             </div>
             <div>
@@ -639,7 +639,7 @@ export function TemplateManager({
                 <h2 className="text-xl font-bold tracking-tight text-slate-900">
                   Terms & Conditions Template Manager
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-[11px] font-bold">
                   {stats.totalTemplates} Templates
                 </span>
               </div>
@@ -651,7 +651,7 @@ export function TemplateManager({
 
           <button 
             onClick={handleCreateNew}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 active:scale-98 cursor-pointer shrink-0"
+            className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-orange-500/20 active:scale-98 cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Create Template</span>
@@ -661,7 +661,7 @@ export function TemplateManager({
         {/* Quick Stats Pill Strip */}
         <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-4 text-xs">
           <div className="flex items-center gap-2 text-slate-500">
-            <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <Layers className="w-3.5 h-3.5 text-orange-600" />
             <span>Service Disciplines:</span>
             <span className="font-bold text-slate-800">{stats.totalCategories} Categories</span>
           </div>
@@ -686,7 +686,7 @@ export function TemplateManager({
         <div className="lg:col-span-5 space-y-4">
           <div className="bg-white border border-slate-200/90 rounded-2xl p-5 space-y-4 shadow-xs">
             {/* Search Input */}
-            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl focus-within:border-blue-500 focus-within:bg-white transition-all">
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl focus-within:border-orange-500 focus-within:bg-white transition-all">
               <Search className="w-4 h-4 text-slate-400 shrink-0" />
               <input 
                 type="text" 
@@ -766,7 +766,7 @@ export function TemplateManager({
             {/* Templates List */}
             {loading ? (
               <div className="py-16 flex items-center justify-center text-slate-400 gap-2">
-                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                <Loader2 className="w-5 h-5 animate-spin text-orange-600" />
                 <span className="text-xs font-semibold">Loading templates...</span>
               </div>
             ) : filteredTemplates.length === 0 ? (
@@ -780,7 +780,7 @@ export function TemplateManager({
                 </div>
                 <button 
                   onClick={handleCreateNew}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold transition-all cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" /> Create Template
                 </button>
@@ -798,13 +798,13 @@ export function TemplateManager({
                       className={cn(
                         "p-4 rounded-xl border text-left cursor-pointer transition-all flex justify-between items-start group relative border-l-4",
                         isSelected 
-                          ? cn("bg-blue-50/40 border-blue-400 shadow-xs", catStyle.cardBorder)
+                          ? cn("bg-orange-50/40 border-orange-400 shadow-xs", catStyle.cardBorder)
                           : cn("bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50", catStyle.cardBorder)
                       )}
                     >
                       <div className="space-y-2 flex-1 pr-3">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-orange-600 transition-colors">
                             {t.name}
                           </h4>
                           {t.is_default && (
@@ -849,7 +849,7 @@ export function TemplateManager({
                             setEditingTemplate(JSON.parse(JSON.stringify(t)));
                           }}
                           title="View / Edit Specification"
-                          className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 transition-all cursor-pointer"
+                          className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-orange-600 hover:border-orange-300 transition-all cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
@@ -892,7 +892,7 @@ export function TemplateManager({
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+                    <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600">
                       <Edit3 className="w-5 h-5" />
                     </div>
                     <div>
@@ -922,7 +922,7 @@ export function TemplateManager({
                       value={editingTemplate.name}
                       onChange={e => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
                       placeholder="e.g. Standard Material Testing T&C 2026"
-                      className="w-full h-10 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                      className="w-full h-10 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 outline-none focus:border-orange-500 focus:bg-white transition-all"
                     />
                   </div>
 
@@ -931,7 +931,7 @@ export function TemplateManager({
                   {/* ========================================================= */}
                   <div className="space-y-1.5 relative" ref={dropdownRef}>
                     <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5 text-blue-600" />
+                      <Tag className="w-3.5 h-3.5 text-orange-600" />
                       <span>Service Category *</span>
                     </label>
 
@@ -947,7 +947,7 @@ export function TemplateManager({
                       className={cn(
                         "w-full h-10 px-3.5 rounded-xl border text-xs font-medium flex items-center justify-between transition-all cursor-pointer",
                         isDropdownOpen 
-                          ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs" 
+                          ? "bg-white border-orange-500 ring-2 ring-orange-500/10 shadow-xs" 
                           : "bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300"
                       )}
                     >
@@ -957,7 +957,7 @@ export function TemplateManager({
                           {editingTemplate.category || 'Select Service Category'}
                         </span>
                       </div>
-                      <ChevronDown className={cn("w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200", isDropdownOpen && "rotate-180 text-blue-600")} />
+                      <ChevronDown className={cn("w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200", isDropdownOpen && "rotate-180 text-orange-600")} />
                     </button>
 
                     {/* Dropdown Menu Popover */}
@@ -972,7 +972,7 @@ export function TemplateManager({
                         >
                           {/* Search bar inside dropdown */}
                           <div className="p-2.5 bg-slate-50/70">
-                            <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus-within:border-blue-500 transition-all">
+                            <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus-within:border-orange-500 transition-all">
                               <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                               <input
                                 type="text"
@@ -1011,7 +1011,7 @@ export function TemplateManager({
                                 return (
                                   <div 
                                     key={c.id} 
-                                    className="p-1.5 rounded-xl bg-blue-50/60 border border-blue-200 flex items-center gap-1.5"
+                                    className="p-1.5 rounded-xl bg-orange-50/60 border border-orange-200 flex items-center gap-1.5"
                                   >
                                     <input
                                       ref={editInputRef}
@@ -1022,12 +1022,12 @@ export function TemplateManager({
                                         if (e.key === 'Enter') handleSaveRenameCategory(c.id, e);
                                         if (e.key === 'Escape') setEditingCategoryId(null);
                                       }}
-                                      className="flex-1 h-7 px-2 bg-white border border-blue-300 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:ring-1 focus:ring-blue-500"
+                                      className="flex-1 h-7 px-2 bg-white border border-orange-300 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:ring-1 focus:ring-orange-500"
                                     />
                                     <button
                                       type="button"
                                       onClick={(e) => handleSaveRenameCategory(c.id, e)}
-                                      className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                                      className="p-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors cursor-pointer"
                                       title="Save name"
                                     >
                                       <Check className="w-3.5 h-3.5" />
@@ -1057,14 +1057,14 @@ export function TemplateManager({
                                   className={cn(
                                     "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-all group",
                                     isSelected 
-                                      ? "bg-blue-50/80 text-blue-900 font-semibold" 
+                                      ? "bg-orange-50/80 text-orange-950 font-semibold" 
                                       : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                                   )}
                                 >
                                   <div className="flex items-center gap-2 overflow-hidden flex-1 pr-2">
                                     <span className={cn("w-2 h-2 rounded-full shrink-0", style.dot)} />
                                     <span className="truncate">{c.name}</span>
-                                    {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
+                                    {isSelected && <Check className="w-3.5 h-3.5 text-orange-600 shrink-0" />}
                                   </div>
 
                                   {/* Action Buttons: Edit & Delete right in dropdown row */}
@@ -1073,7 +1073,7 @@ export function TemplateManager({
                                       type="button"
                                       onClick={(e) => handleStartEditCategory(c, e)}
                                       title="Rename category"
-                                      className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-100/70 transition-colors cursor-pointer"
+                                      className="p-1 rounded-md text-slate-400 hover:text-orange-600 hover:bg-orange-100/70 transition-colors cursor-pointer"
                                     >
                                       <Edit3 className="w-3 h-3" />
                                     </button>
@@ -1101,7 +1101,7 @@ export function TemplateManager({
                               <button
                                 type="button"
                                 onClick={handleInlineAddCategory}
-                                className="w-full text-left px-3 py-2 rounded-xl bg-blue-50/70 hover:bg-blue-100/80 text-blue-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                                className="w-full text-left px-3 py-2 rounded-xl bg-orange-50/70 hover:bg-orange-100/80 text-orange-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                               >
                                 <Plus className="w-3.5 h-3.5" />
                                 <span>Create &quot;{dropdownSearch.trim()}&quot;</span>
@@ -1114,7 +1114,7 @@ export function TemplateManager({
                           {/* ========================================================= */}
                           <div className="p-2.5 bg-slate-50/60 border-t border-slate-100">
                             {isAddingInline ? (
-                              <div className="space-y-2.5 p-2 rounded-xl bg-white border border-blue-200 shadow-2xs">
+                              <div className="space-y-2.5 p-2 rounded-xl bg-white border border-orange-200 shadow-2xs">
                                 <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
                                   <span>Add New Service Category</span>
                                   <button
@@ -1141,7 +1141,7 @@ export function TemplateManager({
                                     }
                                   }}
                                   placeholder="e.g. Geotechnical Engineering"
-                                  className="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-900 outline-none focus:border-blue-500"
+                                  className="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-900 outline-none focus:border-orange-500"
                                 />
 
                                 {/* Color Swatches */}
@@ -1156,7 +1156,7 @@ export function TemplateManager({
                                         className={cn(
                                           "w-4 h-4 rounded-full transition-transform cursor-pointer",
                                           COLOR_CONFIG[col].swatch,
-                                          inlineAddColor === col ? "ring-2 ring-blue-500 ring-offset-1 scale-110" : "opacity-70 hover:opacity-100"
+                                          inlineAddColor === col ? "ring-2 ring-orange-500 ring-offset-1 scale-110" : "opacity-70 hover:opacity-100"
                                         )}
                                       />
                                     ))}
@@ -1178,7 +1178,7 @@ export function TemplateManager({
                                     type="button"
                                     onClick={handleInlineAddCategory}
                                     disabled={!inlineAddName.trim()}
-                                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-2xs"
+                                    className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-2xs"
                                   >
                                     Add Category
                                   </button>
@@ -1192,7 +1192,7 @@ export function TemplateManager({
                                   setInlineAddName(dropdownSearch);
                                   setTimeout(() => inlineInputRef.current?.focus(), 50);
                                 }}
-                                className="w-full py-2 px-3 rounded-xl border border-dashed border-blue-300 hover:border-blue-400 bg-blue-50/50 hover:bg-blue-50 text-blue-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                className="w-full py-2 px-3 rounded-xl border border-dashed border-orange-300 hover:border-orange-400 bg-orange-50/50 hover:bg-orange-50 text-orange-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                               >
                                 <Plus className="w-3.5 h-3.5" />
                                 <span>+ Add New Category</span>
@@ -1212,7 +1212,7 @@ export function TemplateManager({
                     id="is_default"
                     checked={editingTemplate.is_default || false}
                     onChange={e => setEditingTemplate({ ...editingTemplate, is_default: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                    className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 cursor-pointer accent-orange-600"
                   />
                   <label htmlFor="is_default" className="text-xs font-semibold text-slate-700 cursor-pointer select-none">
                     Set as system default template for quotations and proforma invoices in this branch
@@ -1223,13 +1223,13 @@ export function TemplateManager({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                      <LayoutGrid className="w-4 h-4 text-blue-600" />
+                      <LayoutGrid className="w-4 h-4 text-orange-600" />
                       <span>Legal Clauses & Conditions ({editingTemplate.clauses?.length || 0})</span>
                     </h4>
                     <button 
                       type="button"
                       onClick={addClause}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold text-blue-700 transition-all cursor-pointer shadow-2xs active:scale-95"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg text-xs font-bold text-orange-700 transition-all cursor-pointer shadow-2xs active:scale-95"
                     >
                       <Plus className="w-3.5 h-3.5" /> Add Clause
                     </button>
@@ -1239,7 +1239,7 @@ export function TemplateManager({
                     {(!editingTemplate.clauses || editingTemplate.clauses.length === 0) ? (
                       <div className="p-8 text-center border border-dashed border-slate-200 rounded-xl text-slate-400 space-y-2 bg-slate-50/50">
                         <p className="text-xs font-medium">No clauses defined in this template.</p>
-                        <button onClick={addClause} className="text-xs font-bold text-blue-600 hover:underline cursor-pointer">
+                        <button onClick={addClause} className="text-xs font-bold text-orange-600 hover:underline cursor-pointer">
                           + Add First Clause
                         </button>
                       </div>
@@ -1250,7 +1250,7 @@ export function TemplateManager({
                           className="p-4 rounded-xl bg-slate-50/70 border border-slate-200 space-y-3 relative group transition-all hover:bg-slate-50 hover:border-slate-300"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold">
+                            <span className="px-2.5 py-0.5 rounded-md bg-orange-100 text-orange-800 text-[10px] font-bold">
                               Clause #{index + 1}
                             </span>
                             
@@ -1290,7 +1290,7 @@ export function TemplateManager({
                               value={clause.title}
                               onChange={e => updateClause(index, 'title', e.target.value)}
                               placeholder="Clause Title (e.g. Turnaround Time & Reporting)"
-                              className="w-full h-8 px-3 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-500"
+                              className="w-full h-8 px-3 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 outline-none focus:border-orange-500"
                             />
                             <div className="relative">
                               <textarea 
@@ -1299,7 +1299,7 @@ export function TemplateManager({
                                 placeholder="Detailed clause description or legal terms statement..."
                                 rows={3}
                                 maxLength={500}
-                                className="w-full p-2.5 pb-6 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 placeholder:text-slate-400 outline-none resize-none focus:border-blue-500 leading-relaxed"
+                                className="w-full p-2.5 pb-6 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 placeholder:text-slate-400 outline-none resize-none focus:border-orange-500 leading-relaxed"
                               />
                               <div className="absolute bottom-2 right-2.5 text-[10px] text-slate-400 font-medium pointer-events-none">
                                 {clause.content?.length || 0}/500
@@ -1326,7 +1326,7 @@ export function TemplateManager({
                     type="button"
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50 active:scale-95"
+                    className="flex items-center gap-2 px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50 active:scale-95"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     <span>Save Template</span>
@@ -1335,7 +1335,7 @@ export function TemplateManager({
               </motion.div>
             ) : (
               <div className="h-[480px] border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-8 text-center text-slate-400 bg-slate-50/40">
-                <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200/80 flex items-center justify-center text-blue-500 mb-4 shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-orange-50 border border-orange-200/80 flex items-center justify-center text-orange-500 mb-4 shadow-sm">
                   <Compass className="w-8 h-8" />
                 </div>
                 <h4 className="text-sm font-bold text-slate-800 mb-1">No Template Selected</h4>
@@ -1344,7 +1344,7 @@ export function TemplateManager({
                 </p>
                 <button 
                   onClick={handleCreateNew}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer hover:opacity-95"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer hover:opacity-95"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Initialize Standard Template</span>

@@ -1549,6 +1549,90 @@ export type Database = {
           },
         ]
       }
+      delivery_challans: {
+        Row: {
+          challan_date: string
+          challan_no: string
+          client_id: string | null
+          company_agency_name: string | null
+          created_at: string
+          created_by: string | null
+          customer_name: string
+          id: string
+          issued_by_name: string
+          issued_by_signature_date: string | null
+          items: Json
+          material_taken_by: string
+          mobile_no: string | null
+          project_site_name: string | null
+          purpose_of_handover: string
+          purpose_other: string | null
+          receiver_name: string
+          receiver_signature_date: string | null
+          updated_at: string
+          verified_by_name: string | null
+        }
+        Insert: {
+          challan_date?: string
+          challan_no: string
+          client_id?: string | null
+          company_agency_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_name: string
+          id?: string
+          issued_by_name: string
+          issued_by_signature_date?: string | null
+          items?: Json
+          material_taken_by: string
+          mobile_no?: string | null
+          project_site_name?: string | null
+          purpose_of_handover: string
+          purpose_other?: string | null
+          receiver_name: string
+          receiver_signature_date?: string | null
+          updated_at?: string
+          verified_by_name?: string | null
+        }
+        Update: {
+          challan_date?: string
+          challan_no?: string
+          client_id?: string | null
+          company_agency_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_name?: string
+          id?: string
+          issued_by_name?: string
+          issued_by_signature_date?: string | null
+          items?: Json
+          material_taken_by: string
+          mobile_no?: string | null
+          project_site_name?: string | null
+          purpose_of_handover?: string
+          purpose_other?: string | null
+          receiver_name?: string
+          receiver_signature_date?: string | null
+          updated_at?: string
+          verified_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_challans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_challans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_applications: {
         Row: {
           application_date: string

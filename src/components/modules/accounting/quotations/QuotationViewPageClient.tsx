@@ -285,7 +285,7 @@ export function QuotationViewPageClient({
           <div className="h-6 w-px bg-slate-200 hidden sm:block" />
 
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center font-bold text-blue-600">
+            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center font-bold text-orange-600">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -401,7 +401,7 @@ export function QuotationViewPageClient({
           <div className="flex flex-col sm:flex-row justify-between items-start pb-6 border-b-2 border-slate-900 gap-4">
             <div>
               <div className="text-3xl font-black tracking-tight text-slate-900">
-                CONSTROTRAIT<span className="text-blue-600">.</span>
+                CONSTROTRAIT<span className="text-orange-500">.</span>
               </div>
               <div className="text-xs text-slate-500 font-medium mt-0.5">
                 Advanced Construction Materials Testing & Geotechnical Laboratory
@@ -521,7 +521,7 @@ export function QuotationViewPageClient({
                 <span>GST ({gstRate}%):</span>
                 <span className="font-semibold text-slate-800">{fmt(gstAmount)}</span>
               </div>
-              <div className="flex justify-between text-base font-black text-blue-700 pt-2.5 border-t border-slate-200">
+              <div className="flex justify-between text-base font-black text-orange-600 pt-2.5 border-t border-slate-200">
                 <span>Total Quotation:</span>
                 <span>{fmt(totalAmount)}</span>
               </div>
@@ -532,12 +532,12 @@ export function QuotationViewPageClient({
           {clauses.length > 0 && (
             <div className="space-y-4 pt-4 border-t border-slate-200">
               <div className="flex items-center gap-2">
-                <Scroll className="w-4 h-4 text-blue-600" />
+                <Scroll className="w-4 h-4 text-orange-600" />
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                   Contractual Terms & Testing Specifications
                 </h4>
               </div>
-              <div className="space-y-3 pl-4 border-l-2 border-blue-500">
+              <div className="space-y-3 pl-4 border-l-2 border-orange-500">
                 {clauses.map((c: QuotationClause, idx: number) => (
                   <div key={idx} className="text-xs text-slate-700 leading-relaxed">
                     <strong className="text-slate-900 font-bold mr-1">

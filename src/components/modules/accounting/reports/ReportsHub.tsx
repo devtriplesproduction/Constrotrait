@@ -431,7 +431,7 @@ export function ReportsHub() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-blue-600" />
+              <BarChart3 className="w-5 h-5 text-orange-600" />
               <span>Financial Statements & Intelligence Reports</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -486,7 +486,7 @@ export function ReportsHub() {
               <span className="font-semibold">From:</span>
               <input
                 type="date"
-                className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:border-blue-500 outline-none"
+                className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:border-orange-500 outline-none"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
               />
@@ -496,7 +496,7 @@ export function ReportsHub() {
               <span className="font-semibold">To:</span>
               <input
                 type="date"
-                className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:border-blue-500 outline-none"
+                className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:border-orange-500 outline-none"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
               />
@@ -511,7 +511,7 @@ export function ReportsHub() {
                 }
               }}
               disabled={isPending || loadingTests}
-              className="h-8 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs cursor-pointer gap-1.5"
+              className="h-8 px-4 text-xs font-bold bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-orange-500/20 shadow-xs cursor-pointer gap-1.5"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isPending || loadingTests ? "animate-spin" : ""}`} />
               <span>Apply Filter</span>
@@ -588,7 +588,7 @@ export function ReportsHub() {
           onClick={() => handleSelectReportTab("pnl")}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeReportTab === "pnl"
-              ? "bg-white text-blue-700 shadow-xs border border-slate-200/80"
+              ? "bg-white text-orange-600 shadow-xs border border-slate-200/80"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
@@ -601,7 +601,7 @@ export function ReportsHub() {
           onClick={() => handleSelectReportTab("balancesheet")}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeReportTab === "balancesheet"
-              ? "bg-white text-blue-700 shadow-xs border border-slate-200/80"
+              ? "bg-white text-orange-600 shadow-xs border border-slate-200/80"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
@@ -1052,7 +1052,7 @@ export function ReportsHub() {
         <div className="space-y-6">
           {loadingTests && !testReportData ? (
             <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
-              <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
+              <RefreshCw className="w-8 h-8 text-orange-600 animate-spin mx-auto mb-3" />
               <p className="text-sm font-semibold text-slate-800">Calculating Test-Wise Financial Economics...</p>
               <p className="text-xs text-slate-500 mt-1">Aggregating test volumes, inward direct costs, and in-house lab operations.</p>
             </div>
@@ -1063,7 +1063,7 @@ export function ReportsHub() {
                 <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
                   <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
                     <span>Total Tests Conducted</span>
-                    <FlaskConical className="w-4 h-4 text-blue-600" />
+                    <FlaskConical className="w-4 h-4 text-orange-600" />
                   </div>
                   <div className="text-2xl font-black text-slate-900 mt-1">
                     {Number(testReportData?.summary?.totalTests || 0).toLocaleString("en-IN")}
@@ -1160,7 +1160,7 @@ export function ReportsHub() {
                       onClick={() => setSelectedMaterialFilter(m.material)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                         selectedMaterialFilter === m.material
-                          ? "bg-blue-600 text-white shadow-xs"
+                          ? "bg-orange-500 text-white shadow-xs shadow-orange-500/20"
                           : "bg-slate-100 text-slate-600 hover:text-slate-900"
                       }`}
                     >
@@ -1179,7 +1179,7 @@ export function ReportsHub() {
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                    <FlaskConical className="w-4 h-4 text-blue-600" />
+                    <FlaskConical className="w-4 h-4 text-orange-600" />
                     <span>Unit Economics & Profitability per Test</span>
                     <span className="text-xs font-normal text-slate-500">
                       ({(testReportData?.testBreakdown || []).filter((t: any) => {

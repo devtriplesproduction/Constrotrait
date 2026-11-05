@@ -109,11 +109,22 @@ export const getAuthenticatedUserWithRoles = cache(async () => {
   if (!user) return null;
 
   const supabase = await createClient();
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from('profiles')
     .select('roles, branch_id')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
+
+  if (!profile && user.email) {
+    const fallback = await supabase
+      .from('profiles')
+      .select('roles, branch_id')
+      .eq('email', user.email)
+      .maybeSingle();
+    if (fallback.data) {
+      profile = fallback.data;
+    }
+  }
 
   const rawRoles = (profile?.roles || []) as string[];
   const allRoles = Array.from(new Set(rawRoles.filter(Boolean)));

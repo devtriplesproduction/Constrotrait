@@ -422,13 +422,13 @@ export function CreateProformaInvoiceModal({
         <div className={`px-6 py-4 border-b border-slate-100 flex items-center justify-between ${
           remainingBalanceMode
             ? "bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-white"
-            : "bg-gradient-to-r from-blue-50/70 via-indigo-50/30 to-white"
+            : "bg-gradient-to-r from-orange-50/70 via-amber-50/30 to-white"
         }`}>
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-md font-bold ${
               remainingBalanceMode
                 ? "bg-amber-600 shadow-amber-500/20"
-                : "bg-blue-600 shadow-blue-500/20"
+                : "bg-orange-500 shadow-orange-500/20"
             }`}>
               <FileText className="w-5 h-5" />
             </div>
@@ -440,7 +440,7 @@ export function CreateProformaInvoiceModal({
                 <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
                   remainingBalanceMode
                     ? "bg-amber-100 text-amber-800 border border-amber-200"
-                    : "bg-blue-100 text-blue-700 border border-blue-200/60"
+                    : "bg-orange-100 text-orange-800 border border-orange-200/60"
                 }`}>
                   {remainingBalanceMode ? "Remaining Amount Due" : "Proforma"}
                 </span>
@@ -467,10 +467,10 @@ export function CreateProformaInvoiceModal({
             <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
               remainingBalanceMode
                 ? "bg-amber-50/90 border-amber-200 text-amber-950"
-                : "bg-blue-50/60 border-blue-200 text-blue-900"
+                : "bg-orange-50/60 border-orange-200 text-orange-950"
             }`}>
               <div className="flex items-start gap-2.5">
-                <Clock className={`w-4 h-4 mt-0.5 shrink-0 ${remainingBalanceMode ? "text-amber-600" : "text-blue-600"}`} />
+                <Clock className={`w-4 h-4 mt-0.5 shrink-0 ${remainingBalanceMode ? "text-amber-600" : "text-orange-600"}`} />
                 <div>
                   <div className="font-bold">
                     {remainingBalanceMode
@@ -524,10 +524,10 @@ export function CreateProformaInvoiceModal({
 
           {/* Inward Selector (if inwards list provided and inward not hard-locked) */}
           {!inward && inwards.length > 0 && (
-            <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-200/80 space-y-2.5">
+            <div className="p-4 rounded-xl bg-orange-50/40 border border-orange-200/80 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
-                  <Package className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-bold text-orange-950 flex items-center gap-1.5">
+                  <Package className="w-4 h-4 text-orange-600" />
                   Select Inward Job Card (Links Billing to Laboratory Job UID)
                 </span>
                 {selectedInwardId && (
@@ -544,7 +544,7 @@ export function CreateProformaInvoiceModal({
                 <select
                   value={selectedInwardId}
                   onChange={(e) => handleSelectInward(e.target.value)}
-                  className="h-9 px-3 bg-white border border-blue-300 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                  className="h-9 px-3 bg-white border border-orange-300 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   <option value="">— Select an Inward UID (Optional) —</option>
                   {filteredInwards.map((inv) => {
@@ -563,7 +563,7 @@ export function CreateProformaInvoiceModal({
                     placeholder="Search Inwards by UID, Client, or Project..."
                     value={inwardSearch}
                     onChange={(e) => setInwardSearch(e.target.value)}
-                    className="w-full h-9 pl-8 pr-3 bg-white border border-blue-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 outline-none"
+                    className="w-full h-9 pl-8 pr-3 bg-white border border-orange-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 outline-none focus:ring-2 focus:ring-orange-500/20"
                   />
                 </div>
               </div>
@@ -605,7 +605,7 @@ export function CreateProformaInvoiceModal({
               <div className="space-y-1 text-xs text-slate-600">
                 {activeInward?.uid_label ? (
                   <div className="flex items-center gap-1.5 font-medium text-slate-800">
-                    <Hash className="w-3.5 h-3.5 text-blue-500" />
+                    <Hash className="w-3.5 h-3.5 text-orange-500" />
                     <span>Inward UID: <strong>{activeInward.uid_label}</strong></span>
                   </div>
                 ) : (
@@ -646,7 +646,7 @@ export function CreateProformaInvoiceModal({
                     onClick={() => switchBillingMode("test_wise")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       billingMode === "test_wise"
-                        ? "bg-blue-600 text-white shadow-xs"
+                        ? "bg-orange-500 text-white shadow-xs"
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
@@ -676,18 +676,18 @@ export function CreateProformaInvoiceModal({
 
               {/* Mode Explanation */}
               {billingMode === "test_wise" ? (
-                <div className="p-3 bg-blue-50/70 rounded-lg border border-blue-200/80 text-xs text-blue-900 flex items-start justify-between gap-3">
+                <div className="p-3 bg-orange-50/70 rounded-lg border border-orange-200/80 text-xs text-orange-950 flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-semibold text-blue-950 flex items-center gap-1.5">
-                      <FlaskConical className="w-4 h-4 text-blue-600" />
+                    <div className="font-semibold text-orange-950 flex items-center gap-1.5">
+                      <FlaskConical className="w-4 h-4 text-orange-600" />
                       <span>Test-Wise Itemized Billing Active</span>
                     </div>
-                    <p className="text-[11px] text-blue-700 mt-0.5">
+                    <p className="text-[11px] text-orange-800 mt-0.5">
                       Each laboratory test registered under this Inward is listed as an individual billable line item below with its own quantity and rate.
                     </p>
                   </div>
                   {activeInward.job_entry_tests && activeInward.job_entry_tests.length > 0 && (
-                    <span className="text-[10px] font-bold px-2 py-1 rounded bg-blue-100 text-blue-800 shrink-0">
+                    <span className="text-[10px] font-bold px-2 py-1 rounded bg-orange-100 text-orange-800 shrink-0">
                       {activeInward.job_entry_tests.length} Registered Tests
                     </span>
                   )}
@@ -714,7 +714,7 @@ export function CreateProformaInvoiceModal({
           {/* Previous Invoice & Outstanding Balance Tracker Alert */}
           {loadingPrev ? (
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2 text-xs text-slate-500">
-              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+              <Loader2 className="w-4 h-4 animate-spin text-orange-500" />
               <span>Checking previous invoice & outstanding balance for this client...</span>
             </div>
           ) : previousInvoice ? (
@@ -764,7 +764,7 @@ export function CreateProformaInvoiceModal({
                       type="checkbox"
                       checked={carryForwardPrev}
                       onChange={(e) => setCarryForwardPrev(e.target.checked)}
-                      className="rounded text-blue-600 focus:ring-blue-500"
+                      className="rounded text-orange-600 focus:ring-orange-500 accent-orange-600"
                     />
                     <span>Include on Invoice</span>
                   </label>
@@ -790,7 +790,7 @@ export function CreateProformaInvoiceModal({
                 variant="outline"
                 size="sm"
                 onClick={addItem}
-                className="h-8 text-xs font-medium text-blue-600 hover:text-blue-700 border-blue-200 hover:bg-blue-50"
+                className="h-8 text-xs font-medium text-orange-600 hover:text-orange-700 border-orange-200 hover:bg-orange-50"
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
                 Add Line Item
@@ -818,7 +818,7 @@ export function CreateProformaInvoiceModal({
                       />
                       {item.material_product && (
                         <div className="flex items-center gap-1.5 px-0.5">
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200">
                             {item.material_product}
                           </span>
                           {item.test_name && item.test_name !== item.description && (
@@ -863,7 +863,7 @@ export function CreateProformaInvoiceModal({
                           placeholder="0.00"
                           value={item.amount || ""}
                           onChange={(e) => updateItem(idx, "amount", e.target.value)}
-                          className="h-8 text-xs text-right pl-5 font-bold text-slate-900 bg-blue-50/20 border-blue-200 focus:bg-white"
+                          className="h-8 text-xs text-right pl-5 font-bold text-slate-900 bg-orange-50/20 border-orange-200 focus:bg-white"
                         />
                       </div>
                       {items.length > 1 && (
@@ -966,7 +966,7 @@ export function CreateProformaInvoiceModal({
             </div>
             <div className="pt-2 border-t border-slate-200 flex justify-between text-sm font-bold text-slate-900">
               <span>{remainingBalanceMode ? "This Balance Invoice Total" : "Current Proforma Total"}</span>
-              <span className={remainingBalanceMode ? "text-amber-700" : "text-blue-700"}>{fmt(currentProformaTotal)}</span>
+              <span className={remainingBalanceMode ? "text-amber-700" : "text-orange-700"}>{fmt(currentProformaTotal)}</span>
             </div>
 
             {/* Previous Outstanding Balance row */}
@@ -979,9 +979,9 @@ export function CreateProformaInvoiceModal({
 
             {/* Net Total Payable */}
             {prevBalance > 0 && carryForwardPrev && (
-              <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200 flex justify-between items-center text-sm font-bold text-blue-950 mt-2">
+              <div className="p-2.5 rounded-lg bg-orange-50 border border-orange-200 flex justify-between items-center text-sm font-bold text-orange-950 mt-2">
                 <span>Net Total Payable by Customer</span>
-                <span className="text-base text-blue-700">{fmt(netPayableWithPrevious)}</span>
+                <span className="text-base text-orange-700">{fmt(netPayableWithPrevious)}</span>
               </div>
             )}
           </div>
@@ -990,7 +990,7 @@ export function CreateProformaInvoiceModal({
           <div className="space-y-2 pt-2 border-t border-slate-200">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Scroll className="w-3.5 h-3.5 text-blue-600" />
+                <Scroll className="w-3.5 h-3.5 text-orange-600" />
                 Terms & Conditions / Client Notes
               </label>
 
@@ -1000,7 +1000,7 @@ export function CreateProformaInvoiceModal({
                   <select
                     value={selectedTemplateId}
                     onChange={(e) => handleApplyTemplate(e.target.value)}
-                    className="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-orange-500"
                   >
                     <option value="">-- Custom Terms --</option>
                     {tcTemplates.map((tpl) => (
@@ -1032,7 +1032,7 @@ export function CreateProformaInvoiceModal({
                 <div className="space-y-1">
                   {selectedClauses.map((c: any, idx: number) => (
                     <div key={c.id || idx} className="text-[11px] text-slate-600 flex gap-1.5 items-start">
-                      <span className="font-bold text-blue-600 shrink-0">{idx + 1}. {c.title}:</span>
+                      <span className="font-bold text-orange-600 shrink-0">{idx + 1}. {c.title}:</span>
                       <span className="text-slate-500 truncate">{c.content}</span>
                     </div>
                   ))}
@@ -1044,7 +1044,7 @@ export function CreateProformaInvoiceModal({
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-orange-500"
               placeholder="Terms of payment, testing timelines, account details or remarks for the customer"
             />
           </div>
@@ -1060,7 +1060,7 @@ export function CreateProformaInvoiceModal({
             type="submit"
             onClick={handleSubmit}
             disabled={isPending || items.length === 0}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md shadow-blue-500/20 px-6 cursor-pointer"
+            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-md shadow-orange-500/20 px-6 cursor-pointer"
           >
             {isPending ? (
               <>

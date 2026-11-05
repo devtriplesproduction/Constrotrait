@@ -3,7 +3,7 @@
 import { JobEntryService } from "@/services/job-entry.service";
 import { Database } from "@/types/database";
 import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
-import { canManageClientsAndJobs, isSuperAdmin } from "@/config/roles";
+import { canManageClientsAndJobs, canViewJobCardDetails, isSuperAdmin } from "@/config/roles";
 
 export async function updateJobEntryTestAction(
   id: string,
@@ -37,7 +37,7 @@ export async function getJobEntriesByClientIdAction(clientId: string) {
 export async function getAllJobEntryTestsAction(branchId?: string) {
   try {
     const user = await getAuthenticatedUserWithRoles();
-    if (!user || !canManageClientsAndJobs(user.roles)) {
+    if (!user || !canViewJobCardDetails(user.roles)) {
       return { success: false, error: "Unauthorized" };
     }
     const isSuper = isSuperAdmin(user.roles);
@@ -53,7 +53,7 @@ export async function getAllJobEntryTestsAction(branchId?: string) {
 export async function getAllJobEntriesAction(branchId?: string) {
   try {
     const user = await getAuthenticatedUserWithRoles();
-    if (!user || !canManageClientsAndJobs(user.roles)) {
+    if (!user || !canViewJobCardDetails(user.roles)) {
       return { success: false, error: "Unauthorized" };
     }
     const isSuper = isSuperAdmin(user.roles);
@@ -63,6 +63,20 @@ export async function getAllJobEntriesAction(branchId?: string) {
   } catch (error) {
     console.error("getAllJobEntriesAction error:", error);
     return { success: false, error: "Failed to retrieve job entries" };
+  }
+}
+
+export async function getJobEntryByUidOrIdAction(identifier: string) {
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user || !canViewJobCardDetails(user.roles)) {
+      return { success: false, error: "Unauthorized" };
+    }
+    const data = await JobEntryService.getJobEntryByUidOrId(identifier);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error("getJobEntryByUidOrIdAction error:", error);
+    return { success: false, error: error.message || "Failed to retrieve job entry" };
   }
 }
 

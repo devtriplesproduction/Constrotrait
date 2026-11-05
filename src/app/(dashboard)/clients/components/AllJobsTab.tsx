@@ -285,7 +285,7 @@ export default function AllJobsTab({
                       <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20 group-hover:shadow-orange-500/40 transition-all">
                         <Briefcase className="w-5 h-5" />
                       </div>
-                      <div>
+                      <div className="flex flex-col items-start gap-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-slate-800 text-lg tracking-tight">
                             UID: {job.uid_label || "Missing"}
@@ -299,12 +299,12 @@ export default function AllJobsTab({
                               Non-NABL
                             </span>
                           )}
-                          {job.branches?.name && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/50 text-xs font-bold">
-                              {job.branches.name}
-                            </span>
-                          )}
                         </div>
+                        {job.branches?.name && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/50 text-xs font-bold">
+                            {job.branches.name}
+                          </span>
+                        )}
                       </div>
                     </div>
                     {/* Top Right Date */}

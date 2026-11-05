@@ -32,8 +32,7 @@ DELETE FROM public.inward_receipts;
 -- 7. Clear test accounting expenses tied to inward records
 DELETE FROM public.accounting_expenses 
 WHERE expense_type = 'inward' 
-   OR inward_id IS NOT NULL 
-   OR job_entry_test_id IS NOT NULL;
+   OR inward_id IS NOT NULL;
 
 -- 8. Clear lab reports, report lines, and ULR queue
 DELETE FROM public.lab_report_lines;
@@ -41,7 +40,7 @@ DELETE FROM public.lab_reports;
 DELETE FROM public.ulr_generation_queue;
 
 -- 9. Clear job assignments and test result rows
-DELETE FROM public.test_result_rows;
+DELETE FROM public.test_results;
 DELETE FROM public.job_assignments;
 
 -- 10. Clear all job entry tests and job entries (inward transactional records)

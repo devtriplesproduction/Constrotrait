@@ -155,13 +155,13 @@ export function InwardProfitabilityLedger({
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
-        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-blue-50/30 via-white to-white rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
+        <div className="p-3.5 sm:p-4 bg-gradient-to-b from-orange-50/30 via-white to-white rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 Total Invoiced Revenue
               </span>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 border border-blue-100/80 text-blue-600 flex items-center justify-center">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-50 border border-orange-100/80 text-orange-600 flex items-center justify-center">
                 <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
@@ -315,7 +315,7 @@ export function InwardProfitabilityLedger({
                       {/* Inward UID */}
                       <td className="py-3.5 px-3.5 whitespace-nowrap">
                         <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                          <Package className="w-3.5 h-3.5 text-blue-600" />
+                          <Package className="w-3.5 h-3.5 text-orange-600" />
                           <span>{r.uid}</span>
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">{r.inwardDate}</div>
@@ -389,7 +389,7 @@ export function InwardProfitabilityLedger({
                             <Button
                               size="sm"
                               onClick={() => onCreateProforma(r.job)}
-                              className="h-7.5 px-2.5 text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                              className="h-7.5 px-2.5 text-[11px] font-bold bg-orange-500 hover:bg-orange-600 shadow-orange-500/20 text-white cursor-pointer"
                             >
                               Invoice
                             </Button>

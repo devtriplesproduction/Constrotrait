@@ -395,7 +395,7 @@ export function CreateQuotationModal({
   if (!isOpen) return null;
 
   const inputCls =
-    "w-full text-xs border border-slate-200 rounded-xl px-3 py-2.5 bg-white text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all";
+    "w-full text-xs border border-slate-200 rounded-xl px-3 py-2.5 bg-white text-slate-800 placeholder:text-slate-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 outline-none transition-all";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
@@ -403,7 +403,7 @@ export function CreateQuotationModal({
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -461,7 +461,7 @@ export function CreateQuotationModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                <Building className="w-3.5 h-3.5 text-blue-600" /> Client Name <span className="text-rose-500">*</span>
+                <Building className="w-3.5 h-3.5 text-orange-600" /> Client Name <span className="text-rose-500">*</span>
               </label>
               <select
                 required
@@ -480,7 +480,7 @@ export function CreateQuotationModal({
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-blue-600" /> Project / Site
+                <Briefcase className="w-3.5 h-3.5 text-orange-600" /> Project / Site
               </label>
               <select
                 className={inputCls}
@@ -532,7 +532,7 @@ export function CreateQuotationModal({
                 <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-purple-500"></span> Department <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
                   {form.department} Lab
                 </span>
               </div>
@@ -574,7 +574,7 @@ export function CreateQuotationModal({
                 <button
                   type="button"
                   onClick={() => setIsSelectTestModalOpen(true)}
-                  className="text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-1 cursor-pointer px-3 py-1.5 rounded-lg shadow-xs"
+                  className="text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 flex items-center gap-1 cursor-pointer px-3 py-1.5 rounded-lg shadow-xs"
                 >
                   <FlaskConical className="w-3.5 h-3.5" /> Select from Test Catalog
                 </button>
@@ -594,7 +594,7 @@ export function CreateQuotationModal({
               <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200/80">
                 <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">⚡ Quick Add:</span>
                 <select
-                  className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 focus:border-blue-500 outline-none cursor-pointer flex-1"
+                  className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 focus:border-orange-500 outline-none cursor-pointer flex-1"
                   value=""
                   onChange={(e) => {
                     handleQuickAddTest(e.target.value);
@@ -628,7 +628,7 @@ export function CreateQuotationModal({
                       <input
                         required
                         list="modal-test-masters-list"
-                        className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:border-blue-500 outline-none"
+                        className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:border-orange-500 outline-none"
                         placeholder={`e.g. Test from ${form.category}...`}
                         value={it.description}
                         onChange={(e) => updateItem(i, "description", e.target.value)}
@@ -636,7 +636,7 @@ export function CreateQuotationModal({
                       <button
                         type="button"
                         onClick={() => setIsSelectTestModalOpen(true)}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50"
+                        className="p-1.5 text-slate-400 hover:text-orange-600 rounded hover:bg-orange-50"
                         title="Pick from Catalog"
                       >
                         <FlaskConical className="w-3.5 h-3.5" />
@@ -646,7 +646,7 @@ export function CreateQuotationModal({
                       <input
                         type="number"
                         min="1"
-                        className="w-full text-xs text-center border border-slate-200 rounded-lg py-1.5 focus:border-blue-500 outline-none"
+                        className="w-full text-xs text-center border border-slate-200 rounded-lg py-1.5 focus:border-orange-500 outline-none"
                         value={it.qty}
                         onChange={(e) => updateItem(i, "qty", Number(e.target.value))}
                       />
@@ -655,7 +655,7 @@ export function CreateQuotationModal({
                       <input
                         type="number"
                         step="0.01"
-                        className="w-full text-xs text-right border border-slate-200 rounded-lg py-1.5 px-2 focus:border-blue-500 outline-none"
+                        className="w-full text-xs text-right border border-slate-200 rounded-lg py-1.5 px-2 focus:border-orange-500 outline-none"
                         placeholder="0.00"
                         value={it.rate}
                         onChange={(e) => updateItem(i, "rate", Number(e.target.value))}
@@ -683,7 +683,7 @@ export function CreateQuotationModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5 text-blue-600" /> Discount Amount (₹)
+                <DollarSign className="w-3.5 h-3.5 text-orange-600" /> Discount Amount (₹)
               </label>
               <input
                 type="number"
@@ -716,7 +716,7 @@ export function CreateQuotationModal({
               <div>
                 GST ({gstRate}%): <strong className="text-slate-900">{fmt(gst)}</strong>
               </div>
-              <div className="text-sm font-bold text-blue-700">Total Quotation: {fmt(total)}</div>
+              <div className="text-sm font-bold text-orange-700">Total Quotation: {fmt(total)}</div>
             </div>
           </div>
 
@@ -724,7 +724,7 @@ export function CreateQuotationModal({
           <div className="space-y-3 pt-2 border-t border-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Scroll className="w-4 h-4 text-blue-600" />
+                <Scroll className="w-4 h-4 text-orange-600" />
                 <h4 className="text-xs font-bold text-slate-900">Legal Terms & Conditions Specification</h4>
               </div>
 
@@ -732,7 +732,7 @@ export function CreateQuotationModal({
                 <button
                   type="button"
                   onClick={addCustomClause}
-                  className="px-2.5 py-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all cursor-pointer flex items-center gap-1"
+                  className="px-2.5 py-1 text-[11px] font-bold text-orange-700 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-all cursor-pointer flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> Add Clause
                 </button>
@@ -759,14 +759,14 @@ export function CreateQuotationModal({
                     onClick={refreshTemplatesList}
                     disabled={isRefreshingTemplates}
                     title="Refresh template list"
-                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    className="text-[11px] font-semibold text-orange-600 hover:text-orange-800 flex items-center gap-1 cursor-pointer disabled:opacity-50"
                   >
                     <RefreshCw className={cn("w-3 h-3", isRefreshingTemplates && "animate-spin")} />
                     <span>{isRefreshingTemplates ? "Refreshing..." : "Refresh"}</span>
                   </button>
                 </div>
                 <select
-                  className="w-full text-xs font-medium border border-slate-200 rounded-lg p-2 bg-white outline-none focus:border-blue-500"
+                  className="w-full text-xs font-medium border border-slate-200 rounded-lg p-2 bg-white outline-none focus:border-orange-500"
                   value={selectedTemplateId}
                   onChange={(e) => setSelectedTemplateId(e.target.value)}
                 >
@@ -784,7 +784,7 @@ export function CreateQuotationModal({
                   type="button"
                   onClick={() => handleLoadTemplate(false)}
                   disabled={!selectedTemplateId}
-                  className="px-3 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+                  className="px-3 py-1.5 text-xs font-bold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all disabled:opacity-40 cursor-pointer shadow-orange-500/20"
                 >
                   Load Template
                 </button>
@@ -810,7 +810,7 @@ export function CreateQuotationModal({
                   <div key={clause.id || idx} className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs">
                     <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-200">
                       <div className="flex items-center gap-2 flex-1">
-                        <span className="w-5 h-5 rounded bg-blue-100 text-blue-800 text-[10px] font-bold flex items-center justify-center shrink-0">
+                        <span className="w-5 h-5 rounded bg-orange-100 text-orange-800 text-[10px] font-bold flex items-center justify-center shrink-0">
                           {idx + 1}
                         </span>
                         <input
@@ -826,7 +826,7 @@ export function CreateQuotationModal({
                           onClick={() => moveClause(idx, "up")}
                           disabled={idx === 0}
                           title="Move Up"
-                          className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
+                          className="p-1 rounded text-slate-400 hover:text-orange-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
                         >
                           <ArrowUp className="w-3 h-3" />
                         </button>
@@ -835,7 +835,7 @@ export function CreateQuotationModal({
                           onClick={() => moveClause(idx, "down")}
                           disabled={idx === activeClauses.length - 1}
                           title="Move Down"
-                          className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
+                          className="p-1 rounded text-slate-400 hover:text-orange-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
                         >
                           <ArrowDown className="w-3 h-3" />
                         </button>
@@ -856,7 +856,7 @@ export function CreateQuotationModal({
                         placeholder="Detailed contractual clause terms or testing limitations..."
                         rows={2}
                         maxLength={500}
-                        className="w-full text-xs text-slate-700 bg-transparent border border-slate-200 rounded-lg p-2 pb-5 outline-none focus:border-blue-500 resize-none leading-relaxed"
+                        className="w-full text-xs text-slate-700 bg-transparent border border-slate-200 rounded-lg p-2 pb-5 outline-none focus:border-orange-500 resize-none leading-relaxed"
                       />
                       <div className="absolute bottom-4 right-4 text-[10px] text-slate-400 pointer-events-none">
                         {clause.content?.length || 0}/500
@@ -872,7 +872,7 @@ export function CreateQuotationModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-blue-600" /> Quotation Validity Date
+                <Calendar className="w-3.5 h-3.5 text-orange-600" /> Quotation Validity Date
               </label>
               <input
                 type="date"
@@ -908,7 +908,7 @@ export function CreateQuotationModal({
               className={`px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 ${
                 revisingQuotation
                   ? "bg-amber-600 hover:bg-amber-700 shadow-amber-500/20"
-                  : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20"
+                  : "bg-orange-500 hover:bg-orange-600 shadow-orange-500/20"
               }`}
             >
               {isSubmitting ? (

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { getAuthenticatedUserWithRoles } from "./auth.service";
-import { canManageClientsAndJobs, isSuperAdmin } from "@/config/roles";
+import { canManageClientsAndJobs, canViewJobCardDetails, isSuperAdmin } from "@/config/roles";
 import { compareJobCardsByUidRecentFirst } from "@/utils/uid-sort";
 
 export class JobEntryService {
@@ -448,7 +448,7 @@ export class JobEntryService {
   static async getAllJobEntryTests(branchId?: string) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
-    if (!canManageClientsAndJobs(user.roles)) {
+    if (!canViewJobCardDetails(user.roles)) {
       throw new Error("Unauthorized: You do not have permission to view job entries");
     }
     const supabase = await createClient();
@@ -478,7 +478,7 @@ export class JobEntryService {
   static async getAllJobEntries(branchId?: string) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
-    if (!canManageClientsAndJobs(user.roles)) {
+    if (!canViewJobCardDetails(user.roles)) {
       throw new Error("Unauthorized: You do not have permission to view job entries");
     }
     const supabase = await createClient();
@@ -527,7 +527,7 @@ export class JobEntryService {
   static async getJobEntryByUidOrId(identifier: string) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
-    if (!canManageClientsAndJobs(user.roles)) {
+    if (!canViewJobCardDetails(user.roles)) {
       throw new Error("Unauthorized: You do not have permission to view job entries");
     }
     const supabase = await createClient();

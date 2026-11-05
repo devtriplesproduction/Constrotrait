@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { canManageJobAssignments, isHR, isTestEngineer, isSuperAdmin } from "@/config/roles";
+import { canManageJobAssignments, isHR, isTestEngineer, isSuperAdmin, canViewJobCardDetails, isAccountant } from "@/config/roles";
 import { compareJobCardsByUidRecentFirst } from "@/utils/uid-sort";
 
 const TEST_SELECT = `
@@ -46,7 +46,14 @@ export class JobAssignmentService {
 
     if (profileError || !profile) throw new Error("Failed to verify permissions");
     const roles = profile.roles || [];
-    if (!canManageJobAssignments(roles) && !isHR(roles) && !isTestEngineer(roles)) {
+    if (
+      !canManageJobAssignments(roles) &&
+      !isHR(roles) &&
+      !isTestEngineer(roles) &&
+      !canViewJobCardDetails(roles) &&
+      !isAccountant(roles) &&
+      roles.length === 0
+    ) {
       throw new Error("Insufficient permissions to view job assignments");
     }
     return user;

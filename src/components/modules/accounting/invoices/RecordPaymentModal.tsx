@@ -236,7 +236,7 @@ export function RecordPaymentModal({
                 <button
                   type="button"
                   onClick={handlePayFull}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-semibold underline underline-offset-2 cursor-pointer"
+                  className="text-xs text-orange-600 hover:text-orange-700 font-semibold underline underline-offset-2 cursor-pointer"
                 >
                   Pay Full Balance ({fmt(currentBalance)})
                 </button>

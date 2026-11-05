@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { PrintableApplication } from "./PrintableApplication";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
-import { Calendar, FileText, CheckSquare, MessageSquare, ArrowRight, ArrowLeft, Send } from "lucide-react";
+import { Calendar, FileText, CheckSquare, MessageSquare, ArrowRight, ArrowLeft, Send, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface ApplicationFormModalProps {
@@ -93,7 +93,7 @@ export function ApplicationFormModal({ isOpen, onClose, userProfile }: Applicati
         "bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-h-[92vh] flex flex-col overflow-hidden transition-all duration-300",
         step === 1 ? "max-w-3xl" : "max-w-4xl"
       )}>
-        <div className="p-5 border-b flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-md z-10 rounded-t-lg">
+        <div className="p-5 border-b flex justify-between items-center shrink-0 bg-white/95 backdrop-blur-md z-10 rounded-t-3xl">
           <div className="flex flex-col">
             <h2 className="text-xl font-bold tracking-tight text-slate-900">
               {step === 1 ? "New Application" : "Preview Application"}
@@ -102,13 +102,22 @@ export function ApplicationFormModal({ isOpen, onClose, userProfile }: Applicati
               {step === 1 ? "Fill in the details for your application" : "Review your application before submitting"}
             </p>
           </div>
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 font-semibold text-slate-600 text-sm">
-            {step}/2
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 font-semibold text-slate-600 text-sm">
+              {step}/2
+            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="w-9 h-9 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        <div className="p-4 flex-1">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
             {step === 1 ? (
               <div className="space-y-5 p-2">
                 <div>
@@ -162,39 +171,39 @@ export function ApplicationFormModal({ isOpen, onClose, userProfile }: Applicati
                 </div>
               </div>
             ) : (
-              <div className="p-4 sm:p-6 bg-white overflow-y-auto flex-1">
+              <div className="bg-white">
                 <PrintableApplication application={previewApp} userProfile={userProfile} />
               </div>
             )}
+          </div>
 
-            <div className="flex justify-between items-center pt-4 border-t bg-slate-50/50 p-4 rounded-b-lg">
+          <div className="shrink-0 flex justify-between items-center p-4 border-t bg-slate-50/80 rounded-b-3xl">
+            {step === 1 ? (
+              <div /> // Spacer
+            ) : (
+              <Button type="button" variant="outline" onClick={() => setStep(1)} className="shadow-sm">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Back to Edit
+              </Button>
+            )}
+            
+            <div className="flex gap-3">
+              <Button type="button" variant="ghost" onClick={handleClose}>
+                Cancel
+              </Button>
               {step === 1 ? (
-                <div /> // Spacer
+                <Button type="submit" disabled={loading} className="shadow-sm font-medium">
+                  Preview Application <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               ) : (
-                <Button type="button" variant="outline" onClick={() => setStep(1)} className="shadow-sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to Edit
+                <Button type="submit" disabled={loading} className="shadow-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
+                  {loading ? "Submitting..." : (
+                    <>Submit Application <Send className="w-4 h-4 ml-2" /></>
+                  )}
                 </Button>
               )}
-              
-              <div className="flex gap-3">
-                <Button type="button" variant="ghost" onClick={handleClose}>
-                  Cancel
-                </Button>
-                {step === 1 ? (
-                  <Button type="submit" disabled={loading} className="shadow-sm font-medium">
-                    Preview Application <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                ) : (
-                  <Button type="submit" disabled={loading} className="shadow-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
-                    {loading ? "Submitting..." : (
-                      <>Submit Application <Send className="w-4 h-4 ml-2" /></>
-                    )}
-                  </Button>
-                )}
-              </div>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );

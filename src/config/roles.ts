@@ -102,6 +102,17 @@ export function canManageClientsAndJobs(roles?: string[] | null): boolean {
   );
 }
 
+export function canViewJobCardDetails(roles?: string[] | null): boolean {
+  if (!roles) return false;
+  return (
+    canManageClientsAndJobs(roles) ||
+    roles.includes("TEST_ENGINEER") ||
+    roles.includes("LAB_ANALYST") ||
+    roles.includes("QUALITY_MANAGER") ||
+    roles.includes("TECHNICAL_MANAGER")
+  );
+}
+
 export function canManageJobAssignments(roles?: string[] | null): boolean {
   if (!roles) return false;
   return (

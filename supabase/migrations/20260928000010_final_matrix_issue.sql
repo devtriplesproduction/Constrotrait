@@ -73,6 +73,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.ensure_job_uid(UUID);
 CREATE OR REPLACE FUNCTION public.ensure_job_uid(p_job_id UUID)
 RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
