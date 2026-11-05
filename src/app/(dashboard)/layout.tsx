@@ -2,11 +2,11 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { getCurrentUserProfileAction, getTodayBirthdaysAction } from "@/actions/employee.actions";
-import { getMyAssignmentsAction } from "@/actions/job-assignment.actions";
+import { getTodayAssignedTestsAction } from "@/actions/job-assignment.actions";
 import { ClientLayout } from "@/components/layout/ClientLayout";
 import { BirthdayNotifier } from "@/components/modules/employees/BirthdayNotifier";
 import { TestAssignmentNotifier } from "@/components/modules/employees/TestAssignmentNotifier";
-import { canViewAllBirthdays } from "@/config/roles";
+import { canViewAllBirthdays, isTestEngineer, canManageJobAssignments } from "@/config/roles";
 
 export default async function DashboardLayout({
   children,
@@ -31,27 +31,17 @@ export default async function DashboardLayout({
     ? activeRoleCookie
     : (roles[0] || "UNKNOWN");
 
-  // Only fetch birthdays if the active role has permission
-  let todayBirthdays: Array<{ id: string; first_name: string; last_name: string }> = [];
-  if (canViewAllBirthdays([activeRole])) {
-    const birthdaysRes = await getTodayBirthdaysAction();
-    todayBirthdays = ('data' in birthdaysRes && birthdaysRes.data) ? birthdaysRes.data : [];
-  }
+  // Parallelize secondary layout notifications (birthdays and today's test assignments)
+  const shouldFetchBirthdays = canViewAllBirthdays([activeRole]);
+  const shouldFetchTodayTests = isTestEngineer(roles) || canManageJobAssignments(roles);
 
-  // Fetch tests assigned to user that are scheduled for today
-  let todayTests: any[] = [];
-  const assignmentsRes = await getMyAssignmentsAction(user.id);
-  if (assignmentsRes.success && assignmentsRes.data) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    todayTests = assignmentsRes.data.filter((a: any) => {
-      const constraintDate = a.job_entry_tests?.date_of_testing || a.due_date;
-      if (!constraintDate) return false;
-      const due = new Date(constraintDate);
-      due.setHours(0, 0, 0, 0);
-      return due.getTime() === today.getTime();
-    });
-  }
+  const [birthdaysRes, todayTestsRes] = await Promise.all([
+    shouldFetchBirthdays ? getTodayBirthdaysAction() : Promise.resolve({ data: [] }),
+    shouldFetchTodayTests ? getTodayAssignedTestsAction(user.id) : Promise.resolve({ data: [] }),
+  ]);
+
+  const todayBirthdays = ('data' in birthdaysRes && birthdaysRes.data) ? birthdaysRes.data : [];
+  const todayTests = ('data' in todayTestsRes && todayTestsRes.data) ? todayTestsRes.data : [];
 
   const branchName = currentUserProfile?.branches?.name || "";
 

@@ -34,7 +34,7 @@ export async function getJobEntriesByClientIdAction(clientId: string) {
   }
 }
 
-export async function getAllJobEntryTestsAction(branchId?: string) {
+export async function getAllJobEntryTestsAction(branchId?: string, limit?: number) {
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user || !canViewJobCardDetails(user.roles)) {
@@ -42,7 +42,7 @@ export async function getAllJobEntryTestsAction(branchId?: string) {
     }
     const isSuper = isSuperAdmin(user.roles);
     const effectiveBranchId = isSuper ? branchId : (user.branch_id || undefined);
-    const data = await JobEntryService.getAllJobEntryTests(effectiveBranchId);
+    const data = await JobEntryService.getAllJobEntryTests(effectiveBranchId, limit);
     return { success: true, data };
   } catch (error) {
     console.error("getAllJobEntryTestsAction error:", error);
@@ -50,7 +50,7 @@ export async function getAllJobEntryTestsAction(branchId?: string) {
   }
 }
 
-export async function getAllJobEntriesAction(branchId?: string) {
+export async function getAllJobEntriesAction(branchId?: string, limit?: number) {
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user || !canViewJobCardDetails(user.roles)) {
@@ -58,7 +58,7 @@ export async function getAllJobEntriesAction(branchId?: string) {
     }
     const isSuper = isSuperAdmin(user.roles);
     const effectiveBranchId = isSuper ? branchId : (user.branch_id || undefined);
-    const data = await JobEntryService.getAllJobEntries(effectiveBranchId);
+    const data = await JobEntryService.getAllJobEntries(effectiveBranchId, limit);
     return { success: true, data };
   } catch (error) {
     console.error("getAllJobEntriesAction error:", error);

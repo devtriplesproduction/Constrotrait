@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser } from "@/services/auth.service";
 import { canManageJobAssignments, isHR, isTestEngineer, isSuperAdmin, canViewJobCardDetails, isAccountant } from "@/config/roles";
 import { compareJobCardsByUidRecentFirst } from "@/utils/uid-sort";
 
@@ -35,8 +36,8 @@ const TEST_SELECT = `
 
 export class JobAssignmentService {
   private static async checkViewPermission(supabase: any) {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) throw new Error("Unauthorized");
+    const user = await getAuthenticatedUser();
+    if (!user) throw new Error("Unauthorized");
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -60,8 +61,8 @@ export class JobAssignmentService {
   }
 
   private static async checkPermission(supabase: any) {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) throw new Error("Unauthorized");
+    const user = await getAuthenticatedUser();
+    if (!user) throw new Error("Unauthorized");
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -223,9 +224,9 @@ export class JobAssignmentService {
   }
 
   static async getTestsDueToday(requestedUserId?: string) {
+    const user = await getAuthenticatedUser();
+    if (!user) throw new Error("Unauthorized");
     const supabase = await createClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) throw new Error("Unauthorized");
     const { data: profile } = await supabase.from("profiles").select("roles").eq("id", user.id).single();
     const isSuper = isSuperAdmin(profile?.roles);
     const targetUserId = (isSuper && requestedUserId) ? requestedUserId : user.id;
@@ -274,11 +275,12 @@ export class JobAssignmentService {
     });
   }
 
-  static async getMyAssignments(_userId?: string) {
+  static async getMyAssignments(targetUserId?: string) {
+    const user = await getAuthenticatedUser();
+    if (!user) throw new Error("Unauthorized");
+    const effectiveUserId = targetUserId || user.id;
     const supabase = await createClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) throw new Error("Unauthorized");
-    const { data: userTeams } = await supabase.from("team_members").select("team_id").eq("employee_id", user.id);
+    const { data: userTeams } = await supabase.from("team_members").select("team_id").eq("employee_id", effectiveUserId);
     const teamIds = userTeams?.map((t: any) => t.team_id) || [];
     let query = supabase
       .from("job_assignments")
@@ -291,11 +293,59 @@ export class JobAssignmentService {
         branches ( id, name, code )
       `)
       .order("created_at", { ascending: false });
-    if (teamIds.length > 0) query = query.or(`assigned_to.eq.${user.id},team_id.in.(${teamIds.join(",")})`);
-    else query = query.eq("assigned_to", user.id);
+    if (teamIds.length > 0) query = query.or(`assigned_to.eq.${effectiveUserId},team_id.in.(${teamIds.join(",")})`);
+    else query = query.eq("assigned_to", effectiveUserId);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
     return (data || []).sort(compareJobCardsByUidRecentFirst);
+  }
+
+  static async getTodayAssignedTests(userId: string) {
+    if (!userId) return [];
+    try {
+      const supabase = await createClient();
+      const { data: userTeams } = await supabase
+        .from("team_members")
+        .select("team_id")
+        .eq("employee_id", userId);
+      const teamIds = userTeams?.map((t: any) => t.team_id) || [];
+
+      const todayStr = new Date().toISOString().split("T")[0];
+
+      let query = supabase
+        .from("job_assignments")
+        .select(`
+          id,
+          due_date,
+          job_entry_tests!inner (
+            id,
+            date_of_testing,
+            test_master (
+              specific_test,
+              component_parameter
+            )
+          )
+        `)
+        .not("status", "in", '("COMPLETED","REPORT_ISSUED","CANCELLED")')
+        .or(`due_date.eq.${todayStr},job_entry_tests.date_of_testing.eq.${todayStr}`)
+        .limit(20);
+
+      if (teamIds.length > 0) {
+        query = query.or(`assigned_to.eq.${userId},team_id.in.(${teamIds.join(",")})`);
+      } else {
+        query = query.eq("assigned_to", userId);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.warn("getTodayAssignedTests warning:", error.message);
+        return [];
+      }
+      return data || [];
+    } catch (err: any) {
+      console.warn("getTodayAssignedTests error:", err.message);
+      return [];
+    }
   }
 
   static async assignJobCard(data: {
@@ -351,9 +401,9 @@ export class JobAssignmentService {
   }
 
   static async updateAssignmentStatus(id: string, status: string, payload?: { report_url?: string; reviewer_remark?: string }) {
+    const user = await getAuthenticatedUser();
+    if (!user) throw new Error("Unauthorized");
     const supabase = await createClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) throw new Error("Unauthorized");
     const { data: profile, error: profileError } = await supabase.from("profiles").select("roles").eq("id", user.id).single();
     if (profileError || !profile) throw new Error("Failed to verify permissions");
     const isManager = canManageJobAssignments(profile.roles);
@@ -395,7 +445,7 @@ export class JobAssignmentService {
 
   static async deleteAssignment(id: string) {
     const supabase = await createClient();
-    const user = await this.checkPermission(supabase);
+    await this.checkPermission(supabase);
     
     const { error } = await supabase.from("job_assignments").delete().eq("id", id);
     if (error) throw new Error(error.message);

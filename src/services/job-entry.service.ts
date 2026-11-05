@@ -445,7 +445,7 @@ export class JobEntryService {
     return data;
   }
 
-  static async getAllJobEntryTests(branchId?: string) {
+  static async getAllJobEntryTests(branchId?: string, limit = 300) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
     if (!canViewJobCardDetails(user.roles)) {
@@ -455,7 +455,8 @@ export class JobEntryService {
     let query = supabase
       .from("job_entry_tests")
       .select(`*, job_assignments ( id, status, report_url, reviewer_remark ), job_entries!job_entry_tests_job_entry_id_fkey!inner ( *, clients ( * ), branches ( id, name, code ) ), test_master ( * )`)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(limit);
 
     const isSuper = isSuperAdmin(user.roles);
     if (isSuper) {
@@ -475,7 +476,7 @@ export class JobEntryService {
     return data;
   }
 
-  static async getAllJobEntries(branchId?: string) {
+  static async getAllJobEntries(branchId?: string, limit = 300) {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
     if (!canViewJobCardDetails(user.roles)) {
@@ -485,7 +486,8 @@ export class JobEntryService {
     let query = supabase
       .from("job_entries")
       .select(`*, branches ( id, name, code ), job_entry_tests!job_entry_tests_job_entry_id_fkey (*, job_assignments(id, status, report_url, reviewer_remark), test_master(*)), clients ( * )`)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(limit);
 
     const isSuper = isSuperAdmin(user.roles);
     if (isSuper) {
@@ -554,11 +556,14 @@ export class JobEntryService {
         )
       `);
 
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
     const isNum = !isNaN(Number(identifier));
-    if (isNum) {
-      query = query.or(`uid_label.eq.${identifier},uid.eq.${Number(identifier)},id.eq.${identifier}`);
+    if (isUuid) {
+      query = query.or(`id.eq.${identifier},uid_label.eq.${identifier}`);
+    } else if (isNum) {
+      query = query.or(`uid.eq.${Number(identifier)},uid_label.eq.${identifier}`);
     } else {
-      query = query.or(`uid_label.eq.${identifier},id.eq.${identifier}`);
+      query = query.eq("uid_label", identifier);
     }
 
     const isSuper = isSuperAdmin(user.roles);
@@ -566,7 +571,7 @@ export class JobEntryService {
       query = query.eq("branch_id", user.branch_id);
     }
 
-    const { data, error } = await query.maybeSingle();
+    const { data } = await query.maybeSingle();
     if (data) return data;
 
     // Fallback: Check if identifier is a job_entry_test id or test uid_label
@@ -593,8 +598,12 @@ export class JobEntryService {
             )
           )
         )
-      `)
-      .or(`id.eq.${identifier},uid_label.eq.${identifier}`);
+      `);
+    if (isUuid) {
+      testQuery = testQuery.or(`id.eq.${identifier},uid_label.eq.${identifier}`);
+    } else {
+      testQuery = testQuery.eq("uid_label", identifier);
+    }
 
     if (!isSuper && user.branch_id) {
       testQuery = testQuery.eq("job_entries.branch_id", user.branch_id);
