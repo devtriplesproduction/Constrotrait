@@ -27,7 +27,13 @@ export function NotificationBell() {
 
   useEffect(() => {
     let mounted = true;
+    let lastFetched = 0;
+
     const fetchUnread = () => {
+      if (typeof document !== "undefined" && document.hidden) {
+        return;
+      }
+      lastFetched = Date.now();
       getUnreadNotificationCountAction().then(res => {
         if (mounted && res.success && 'count' in res && res.count !== undefined) {
           setUnreadCount(res.count as number);
@@ -38,10 +44,26 @@ export function NotificationBell() {
     };
     
     fetchUnread();
-    const interval = setInterval(fetchUnread, 60000);
+
+    // 3 minutes base interval with random jitter (150s - 210s) to avoid thundering herd across 1000 users
+    const jitterMs = (Math.random() * 60 - 30) * 1000;
+    const intervalMs = Math.max(120000, 180000 + jitterMs);
+    const interval = setInterval(fetchUnread, intervalMs);
+
+    // Refresh immediately on tab focus if at least 60s passed
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && !document.hidden) {
+        if (Date.now() - lastFetched > 60000) {
+          fetchUnread();
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       mounted = false;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
@@ -56,7 +78,7 @@ export function NotificationBell() {
           }
           setLoading(false);
         }
-      }).catch(err => {
+      }).catch(() => {
         // Ignore fetch error to prevent dev overlay popups
         if (mounted) setLoading(false);
       });

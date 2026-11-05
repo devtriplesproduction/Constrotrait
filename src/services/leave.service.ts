@@ -470,7 +470,8 @@ export async function getLeaves() {
       .from("leave_requests")
       .select("id, status, start_date, leave_type, end_date, is_half_day, reason, rejection_reason, is_paid")
       .eq("employee_id", user.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(100);
 
     if (error) return { success: false, error: "Failed to fetch leaves" };
     
@@ -503,7 +504,9 @@ export async function getLeavesToApprove() {
       query = query.eq('profiles.reporting_manager_id', user.id);
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(100);
     if (error) return { success: false, error: "Failed to fetch pending leaves" };
 
     return { success: true, data };

@@ -234,15 +234,24 @@ export async function getAllEmployees(options?: { compact?: boolean, branchId?: 
         if (data && data.length > 0) {
           const pathsToSign = [...new Set(data.map((e: { profile_photo?: string | null }) => e.profile_photo).filter((p): p is string => typeof p === 'string' && !p.startsWith('http') && !p.startsWith('data:')))];
           if (pathsToSign.length > 0) {
-            const { data: signedUrls } = await supabase.storage.from('employee-documents').createSignedUrls(pathsToSign, 60 * 60);
-            if (signedUrls) {
-              const urlMap = Object.fromEntries(signedUrls.map(s => [s.path, s.signedUrl]));
-              data.forEach((e: { profile_photo?: string | null; display_profile_photo?: string | null }) => {
-                if (e.profile_photo && urlMap[e.profile_photo]) {
-                  e.display_profile_photo = urlMap[e.profile_photo];
+            const CHUNK_SIZE = 50;
+            const urlMap: Record<string, string> = {};
+            for (let i = 0; i < pathsToSign.length; i += CHUNK_SIZE) {
+              const chunk = pathsToSign.slice(i, i + CHUNK_SIZE);
+              const { data: signedUrls } = await supabase.storage.from('employee-documents').createSignedUrls(chunk, 60 * 60);
+              if (signedUrls) {
+                for (const s of signedUrls) {
+                  if (s.path && s.signedUrl) {
+                    urlMap[s.path] = s.signedUrl;
+                  }
                 }
-              });
+              }
             }
+            data.forEach((e: { profile_photo?: string | null; display_profile_photo?: string | null }) => {
+              if (e.profile_photo && urlMap[e.profile_photo]) {
+                e.display_profile_photo = urlMap[e.profile_photo];
+              }
+            });
           }
         }
         return { success: true, data };
@@ -304,15 +313,24 @@ export async function getAllEmployees(options?: { compact?: boolean, branchId?: 
       if (data && data.length > 0) {
         const pathsToSign = [...new Set(data.map((e: { profile_photo?: string | null }) => e.profile_photo).filter((p): p is string => typeof p === 'string' && !p.startsWith('http') && !p.startsWith('data:')))];
         if (pathsToSign.length > 0) {
-          const { data: signedUrls } = await supabase.storage.from('employee-documents').createSignedUrls(pathsToSign, 60 * 60);
-          if (signedUrls) {
-            const urlMap = Object.fromEntries(signedUrls.map(s => [s.path, s.signedUrl]));
-            data.forEach((e: { profile_photo?: string | null; display_profile_photo?: string | null }) => {
-              if (e.profile_photo && urlMap[e.profile_photo]) {
-                e.display_profile_photo = urlMap[e.profile_photo];
+          const CHUNK_SIZE = 50;
+          const urlMap: Record<string, string> = {};
+          for (let i = 0; i < pathsToSign.length; i += CHUNK_SIZE) {
+            const chunk = pathsToSign.slice(i, i + CHUNK_SIZE);
+            const { data: signedUrls } = await supabase.storage.from('employee-documents').createSignedUrls(chunk, 60 * 60);
+            if (signedUrls) {
+              for (const s of signedUrls) {
+                if (s.path && s.signedUrl) {
+                  urlMap[s.path] = s.signedUrl;
+                }
               }
-            });
+            }
           }
+          data.forEach((e: { profile_photo?: string | null; display_profile_photo?: string | null }) => {
+            if (e.profile_photo && urlMap[e.profile_photo]) {
+              e.display_profile_photo = urlMap[e.profile_photo];
+            }
+          });
         }
       }
       return { success: true, data };

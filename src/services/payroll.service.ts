@@ -94,24 +94,61 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
   const lastDay = new Date(year, month, 0).getDate();
   const endOfMonth = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-  // 2. Fetch all attendance logs for this month
-  const { data: attendanceLogs, error: attendanceError } = await supabase
-    .from('attendance')
-    .select('employee_id, date, status')
-    .gte('date', startOfMonth)
-    .lte('date', endOfMonth);
-    
-  if (attendanceError) throw attendanceError;
+  // 2. Fetch all attendance logs for this month (chunked to bypass PostgREST 1000 max-rows limit)
+  const attendanceLogs: { employee_id: string; date: string; status: string }[] = [];
+  const BATCH_SIZE = 1000;
+  let attFrom = 0;
+  let hasMoreAttendance = true;
 
-  // 3. Fetch all approved leave requests
-  const { data: leaveRequests, error: leaveError } = await supabase
-    .from('leave_requests')
-    .select('employee_id, start_date, end_date, is_half_day, is_paid, status')
-    .lte('start_date', endOfMonth)
-    .gte('end_date', startOfMonth)
-    .eq('status', 'Approved');
+  while (hasMoreAttendance) {
+    const { data: batch, error: attendanceError } = await supabase
+      .from('attendance')
+      .select('employee_id, date, status')
+      .gte('date', startOfMonth)
+      .lte('date', endOfMonth)
+      .range(attFrom, attFrom + BATCH_SIZE - 1);
 
-  if (leaveError) throw leaveError;
+    if (attendanceError) throw attendanceError;
+
+    if (batch && batch.length > 0) {
+      attendanceLogs.push(...batch);
+      if (batch.length < BATCH_SIZE) {
+        hasMoreAttendance = false;
+      } else {
+        attFrom += BATCH_SIZE;
+      }
+    } else {
+      hasMoreAttendance = false;
+    }
+  }
+
+  // 3. Fetch all approved leave requests (chunked to bypass PostgREST limit)
+  const leaveRequests: { employee_id: string; start_date: string; end_date: string; is_half_day: boolean | null; is_paid: boolean | null; status: string }[] = [];
+  let leaveFrom = 0;
+  let hasMoreLeaves = true;
+
+  while (hasMoreLeaves) {
+    const { data: batch, error: leaveError } = await supabase
+      .from('leave_requests')
+      .select('employee_id, start_date, end_date, is_half_day, is_paid, status')
+      .lte('start_date', endOfMonth)
+      .gte('end_date', startOfMonth)
+      .eq('status', 'Approved')
+      .range(leaveFrom, leaveFrom + BATCH_SIZE - 1);
+
+    if (leaveError) throw leaveError;
+
+    if (batch && batch.length > 0) {
+      leaveRequests.push(...batch);
+      if (batch.length < BATCH_SIZE) {
+        hasMoreLeaves = false;
+      } else {
+        leaveFrom += BATCH_SIZE;
+      }
+    } else {
+      hasMoreLeaves = false;
+    }
+  }
 
   // 4. Fetch all active holidays for the month
   const { data: allHolidays, error: holidaysError } = await supabase
@@ -244,7 +281,6 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
     let calculated_performance_incentive = 0;
     let calculated_food_allowance = 0;
     let calculated_tds = 0;
-    let tds_ledger_id = '';
 
     for (const entry of empLedger) {
         const amount = Number(entry.remaining_amount);
@@ -260,7 +296,6 @@ export async function calculateMonthlyPayroll(month: number, year: number, branc
         } else if (typeLower === 'food allowance') {
             calculated_food_allowance += amount;
         } else if (typeLower === 'tds') {
-            tds_ledger_id = entry.id;
             calculated_tds += amount;
         } else if (typeLower.includes('advance')) {
             calculated_salary_advance_recovery += amount;

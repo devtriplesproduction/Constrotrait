@@ -69,13 +69,6 @@ export async function loginWithEmailPassword(
     } catch (auditErr) {
       console.error("Failed to record login audit log:", auditErr);
     }
-
-    try {
-      const { createAdminNotification } = await import("@/services/notification.service");
-      await createAdminNotification(`${fullName} logged into the account.`, "LOGIN");
-    } catch (err) {
-      console.error("Failed to send login notification:", err);
-    }
   }
 
   return { success: true, data: authData };

@@ -217,7 +217,7 @@ export async function getPendingEODs() {
 
     const supabase = await createClient();
     
-    // Fetch only pending, order by oldest first
+    // Fetch only pending, order by oldest first (capped to 200 for performance)
     const { data, error } = await supabase
       .from('eod_reports')
       .select(`
@@ -225,7 +225,8 @@ export async function getPendingEODs() {
         profiles!eod_reports_employee_id_fkey(first_name, last_name, employee_id)
       `)
       .eq('status', 'Pending')
-      .order('report_date', { ascending: true });
+      .order('report_date', { ascending: true })
+      .limit(200);
 
     if (error) {
       console.error("Failed to fetch pending EODs:", error);
@@ -258,13 +259,14 @@ export async function getEODStreak(employeeId: string) {
 
     const supabase = await createClient();
 
-    // Get all approved/pending EODs, order by date descending
+    // Get recent approved/pending EODs (max 90 days sufficient for consecutive streak calculation)
     const { data, error } = await supabase
       .from('eod_reports')
       .select('report_date')
       .eq('employee_id', employeeId)
       .in('status', ['Approved', 'Pending'])
-      .order('report_date', { ascending: false });
+      .order('report_date', { ascending: false })
+      .limit(90);
 
     if (error || !data || data.length === 0) return { success: true, streak: 0 };
 
@@ -353,12 +355,12 @@ export async function getAllEODs(filters?: {
       query = query.eq('profiles.branch_id', filters.branchId);
     }
 
-    // Pagination
-    if (filters?.page !== undefined && filters?.limit !== undefined) {
-      const from = (filters.page - 1) * filters.limit;
-      const to = from + filters.limit - 1;
-      query = query.range(from, to);
-    }
+    // Pagination (defaults to page 1, limit 200 to prevent unbounded full-table memory exhaustion)
+    const page = filters?.page ?? 1;
+    const limit = filters?.limit ?? 200;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    query = query.range(from, to);
 
     // Order by date descending
     query = query.order('report_date', { ascending: false });
