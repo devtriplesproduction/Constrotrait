@@ -42,7 +42,7 @@ export default async function JobAssignmentsPage(props: {
         initialTab={tab}
         isManager={isManager}
         userId={user.id}
-        userRoles={[activeRole]}
+        userRoles={user.roles && user.roles.length > 0 ? user.roles : [activeRole]}
         branches={branches}
         assignments={assignments}
         employees={employees}

@@ -51,8 +51,12 @@ export function MyAssignmentsTab({
 
   const effectiveRoles = userRoles && userRoles.length > 0
     ? userRoles
-    : (assignments.find((a: any) => a.assigned_to === userId)?.assigned_to_profile?.roles || []);
-  const isTestEngineerUser = isTestEngineer(effectiveRoles) && !isSuperAdmin(effectiveRoles) && !isBranchManager(effectiveRoles);
+    : (assignments.find((a: any) => a.assigned_to === userId || a.teams?.team_members?.some((m: any) => m.employee_id === userId))?.assigned_to_profile?.roles || []);
+  const isTestEngineerUser = (
+    isTestEngineer(effectiveRoles) ||
+    effectiveRoles.some((r: string) => String(r).toUpperCase().replace(/\s+/g, '_') === 'TEST_ENGINEER') ||
+    userRoles.some((r: string) => String(r).toUpperCase().replace(/\s+/g, '_') === 'TEST_ENGINEER')
+  ) && !isSuperAdmin(effectiveRoles) && !isBranchManager(effectiveRoles);
 
   const myAssignments = React.useMemo(() => {
     return assignments.filter((a: any) => {
@@ -596,7 +600,9 @@ return (
                               options={[
                                 { label: "Job Card Details", value: "details" },
                                 { label: "View Job Card PDF", value: "view" },
-                                { label: "Download Job Card", value: "download" },
+                                ...(!isTestEngineerUser ? [
+                                  { label: "Download Job Card", value: "download" }
+                                ] : []),
                                 ...(getAggregateStatus(a.all_assignments) === 'assigned' ? [
                                   { label: "Accept", value: "accept" },
                                   { label: "Reject", value: "reject" }
@@ -620,6 +626,7 @@ return (
                                     a.job_entry_tests?.material_description || a.job_entry_tests?.test_master?.material_product || ''
                                   );
                                 } else if (val === "download") {
+                                  if (isTestEngineerUser) return;
                                   handleDownloadPdf(a.job_entry_test_id, a.job_entry_tests?.uid_label || 'Unknown');
                                 } else if (val === "accept") {
                                   setLoadingId(a.id);

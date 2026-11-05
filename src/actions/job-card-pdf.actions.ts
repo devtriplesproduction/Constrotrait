@@ -70,12 +70,18 @@ export async function getJobCardPdfAction(jobEntryTestId: string) {
 
 /**
  * Download Job Card PDF.
- * Authorized laboratory roles (including Test Engineers) can download job cards.
+ * Test engineers are strictly forbidden from downloading job cards (view-only).
  */
 export async function downloadJobCardAction(jobEntryTestId: string) {
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user) throw new Error("Unauthorized");
+
+    // Strictly disallow test engineers from downloading job cards
+    const rolesToCheck = user.roles && user.roles.length > 0 ? user.roles : [user.activeRole];
+    if ((isTestEngineer(rolesToCheck) || user.activeRole === "TEST_ENGINEER") && !isSuperAdmin(rolesToCheck) && !isBranchManager(rolesToCheck)) {
+      return { success: false, error: "Unauthorized: Test engineers are only permitted to view job cards, not download." };
+    }
 
     if (!canViewJobCardDetails(user.roles)) {
       return { success: false, error: "Unauthorized: You do not have permission to download job cards" };

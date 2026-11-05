@@ -2,6 +2,8 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { JobEntryService } from "@/services/job-entry.service";
+import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
+import { isTestEngineer, isSuperAdmin, isBranchManager } from "@/config/roles";
 import { Briefcase } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/modules/PageHeader";
@@ -19,12 +21,15 @@ export default async function JobCardDetailsPage(props: {
   const returnUrl = searchParams.returnUrl || null;
   const jobEntryId = searchParams.jobEntryId || null;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getAuthenticatedUserWithRoles();
   if (!user) redirect("/login");
+
+  const effectiveRoles = user.roles && user.roles.length > 0 ? user.roles : [user.activeRole];
+  const isTestEngineerUser = (
+    isTestEngineer(effectiveRoles) ||
+    effectiveRoles.some((r: string) => String(r).toUpperCase().replace(/\s+/g, '_') === 'TEST_ENGINEER') ||
+    user.activeRole === "TEST_ENGINEER"
+  ) && !isSuperAdmin(effectiveRoles) && !isBranchManager(effectiveRoles);
 
   // Fetch complete job entry record directly
   let jobEntry: any = null;
@@ -88,14 +93,17 @@ export default async function JobCardDetailsPage(props: {
   const primaryJob = jobEntry || jobGroup[0]?.job_entries || {};
 
   return (
-    <div className="w-full max-w-screen-2xl mx-auto min-h-screen flex flex-col gap-6 pb-12">
+    <div
+      className="w-full max-w-screen-2xl mx-auto min-h-screen flex flex-col gap-6 pb-12 job-card-calibri-page"
+      style={{ fontFamily: "Calibri, 'Candara', 'Segoe', 'Segoe UI', Optima, Arial, sans-serif" }}
+    >
       {/* Top Page Header */}
       <PageHeader
         title={
           <div className="flex items-center gap-3">
             <span>
               Inward Details:{" "}
-              <span className="text-orange-500 font-mono">{primaryJob.uid_label || decodedGroupId}</span>
+              <span className="text-orange-500 font-bold">{primaryJob.uid_label || decodedGroupId}</span>
             </span>
           </div>
         }
@@ -119,6 +127,7 @@ export default async function JobCardDetailsPage(props: {
         branch={branch}
         assignmentId={assignmentId}
         returnUrl={returnUrl}
+        canDownload={!isTestEngineerUser}
       />
     </div>
   );

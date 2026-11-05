@@ -75,6 +75,12 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Job Card Details Page Only - Calibri Font */
+.job-card-calibri-page,
+.job-card-calibri-page * {
+  font-family: Calibri, 'Candara', 'Segoe', 'Segoe UI', Optima, Arial, sans-serif !important;
+}
+
 @keyframes float {
   0% {
     transform: translateY(0px);
