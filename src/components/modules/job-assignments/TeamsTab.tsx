@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Users, X, Trash2 } from "lucide-react";
 import { createTeamAction, addTeamMemberAction, removeTeamMemberAction } from "@/actions/team.actions";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 export function TeamsTab({ initialTeams, employees }: { initialTeams: any[], employees: any[] }) {
   const [teams, setTeams] = useState(initialTeams);
@@ -149,17 +149,17 @@ export function TeamsTab({ initialTeams, employees }: { initialTeams: any[], emp
             {selectedTeamId === team.id ? (
               <div className="flex gap-2 mt-auto">
                 <div className="flex-1">
-                  <Select 
+                  <Dropdown 
                     value={selectedEmployeeId}
-                    onValueChange={setSelectedEmployeeId}
+                    onChange={setSelectedEmployeeId}
                     placeholder="Select Employee"
-                  >
-                    {employees
+                    options={employees
                       .filter(e => !(team.team_members || []).find((m: any) => m.employee_id === e.id))
-                      .map(emp => (
-                      <SelectItem key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</SelectItem>
-                    ))}
-                  </Select>
+                      .map(emp => ({
+                        value: emp.id,
+                        label: `${emp.first_name} ${emp.last_name}`,
+                      }))}
+                  />
                 </div>
                 <Button size="sm" onClick={() => handleAddMember(team.id)} disabled={!selectedEmployeeId || loading}>Add</Button>
                 <Button size="sm" variant="outline" onClick={() => setSelectedTeamId(null)}><X className="w-4 h-4"/></Button>

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useTransition } from "react";
 import { X, Plus, Trash2, FileText, AlertCircle, CheckCircle2, IndianRupee, Loader2, Building, Calendar, Hash, Scroll, Clock, Package, FlaskConical, Search, Layers, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { useToast } from "@/hooks/use-toast";
 import { createInvoiceWithItemsAction, getClientPreviousInvoiceAction, getQuotationTemplatesAction } from "@/actions/accounting.actions";
 
@@ -541,21 +542,22 @@ export function CreateProformaInvoiceModal({
                 )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <select
+                <Dropdown
                   value={selectedInwardId}
-                  onChange={(e) => handleSelectInward(e.target.value)}
-                  className="h-9 px-3 bg-white border border-orange-300 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-orange-500"
-                >
-                  <option value="">— Select an Inward UID (Optional) —</option>
-                  {filteredInwards.map((inv) => {
-                    const hasInv = Array.isArray(inv.invoices) && inv.invoices.length > 0;
-                    return (
-                      <option key={inv.id} value={inv.id}>
-                        {hasInv ? "✓" : "⚡"} UID: {inv.uid_label || inv.uid} — {inv.clients?.name || "Client"} ({inv.project_name || "Project"}) [{(inv.job_entry_tests || []).length} Tests]{!hasInv ? " [Awaiting Invoice]" : ""}
-                      </option>
-                    );
-                  })}
-                </select>
+                  onChange={(val) => handleSelectInward(val)}
+                  placeholder="— Select an Inward UID (Optional) —"
+                  buttonClassName="h-9 px-3 bg-white border border-orange-300 rounded-lg text-xs font-medium text-slate-800"
+                  options={[
+                    { value: "", label: "— Select an Inward UID (Optional) —" },
+                    ...filteredInwards.map((inv) => {
+                      const hasInv = Array.isArray(inv.invoices) && inv.invoices.length > 0;
+                      return {
+                        value: inv.id,
+                        label: `${hasInv ? "✓" : "⚡"} UID: ${inv.uid_label || inv.uid} — ${inv.clients?.name || "Client"} (${inv.project_name || "Project"}) [${(inv.job_entry_tests || []).length} Tests]${!hasInv ? " [Awaiting Invoice]" : ""}`,
+                      };
+                    }),
+                  ]}
+                />
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
@@ -584,17 +586,16 @@ export function CreateProformaInvoiceModal({
                   {resolvedClient.mobile && <div className="text-xs text-slate-500">Contact: {resolvedClient.mobile}</div>}
                 </div>
               ) : (
-                <select
-                  required
+                <Dropdown
                   value={selectedClientId}
-                  onChange={(e) => setSelectedClientId(e.target.value)}
-                  className="w-full mt-1 border border-slate-300 rounded-lg p-2 text-sm bg-white"
-                >
-                  <option value="">Select a Client</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedClientId(val)}
+                  placeholder="Select a Client"
+                  buttonClassName="w-full mt-1 border border-slate-300 rounded-lg p-2 text-sm bg-white"
+                  options={[
+                    { value: "", label: "Select a Client" },
+                    ...clients.map((c) => ({ value: c.id, label: c.name })),
+                  ]}
+                />
               )}
             </div>
 
@@ -906,17 +907,18 @@ export function CreateProformaInvoiceModal({
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">GST Rate</label>
-              <select
-                value={gstRate}
-                onChange={(e) => setGstRate(Number(e.target.value))}
-                className="w-full h-9 border border-slate-300 rounded-lg px-3 text-xs bg-white text-slate-800"
-              >
-                <option value={18}>18% (Standard GST)</option>
-                <option value={12}>12% GST</option>
-                <option value={5}>5% GST</option>
-                <option value={0}>0% (Exempted)</option>
-                <option value={28}>28% GST</option>
-              </select>
+              <Dropdown
+                value={String(gstRate)}
+                onChange={(val) => setGstRate(Number(val))}
+                buttonClassName="w-full h-9 border border-slate-300 rounded-lg px-3 text-xs bg-white text-slate-800"
+                options={[
+                  { value: "18", label: "18% (Standard GST)" },
+                  { value: "12", label: "12% GST" },
+                  { value: "5", label: "5% GST" },
+                  { value: "0", label: "0% (Exempted)" },
+                  { value: "28", label: "28% GST" },
+                ]}
+              />
             </div>
           </div>
 
@@ -997,18 +999,19 @@ export function CreateProformaInvoiceModal({
               {tcTemplates.length > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-slate-500 font-medium">Apply Template:</span>
-                  <select
+                  <Dropdown
                     value={selectedTemplateId}
-                    onChange={(e) => handleApplyTemplate(e.target.value)}
-                    className="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-orange-500"
-                  >
-                    <option value="">-- Custom Terms --</option>
-                    {tcTemplates.map((tpl) => (
-                      <option key={tpl.id} value={tpl.id}>
-                        {tpl.name} {tpl.is_default ? "★" : ""} ({tpl.clauses?.length || 0} clauses)
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => handleApplyTemplate(val)}
+                    placeholder="-- Custom Terms --"
+                    buttonClassName="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white text-slate-700 font-medium h-8 min-w-[180px]"
+                    options={[
+                      { value: "", label: "-- Custom Terms --" },
+                      ...tcTemplates.map((tpl) => ({
+                        value: tpl.id,
+                        label: `${tpl.name} ${tpl.is_default ? "★" : ""} (${tpl.clauses?.length || 0} clauses)`,
+                      })),
+                    ]}
+                  />
                 </div>
               )}
             </div>

@@ -78,3 +78,28 @@ export function resolveWorkingDay(
 
   return !isHolidayForEmployee(datePart, employee, activeHolidays);
 }
+
+/**
+ * Returns an array of YYYY-MM-DD date strings inclusive of startDateStr and endDateStr.
+ */
+export function getDatesInRange(startDateStr: string, endDateStr: string): string[] {
+  if (!startDateStr) return [];
+  if (!endDateStr || endDateStr < startDateStr) return [startDateStr];
+
+  const dates: string[] = [];
+  const [sy, sm, sd] = startDateStr.split("-").map(Number);
+  const [ey, em, ed] = endDateStr.split("-").map(Number);
+
+  const curr = new Date(sy, sm - 1, sd);
+  const stop = new Date(ey, em - 1, ed);
+
+  while (curr <= stop) {
+    const y = curr.getFullYear();
+    const m = String(curr.getMonth() + 1).padStart(2, "0");
+    const d = String(curr.getDate()).padStart(2, "0");
+    dates.push(`${y}-${m}-${d}`);
+    curr.setDate(curr.getDate() + 1);
+  }
+
+  return dates;
+}

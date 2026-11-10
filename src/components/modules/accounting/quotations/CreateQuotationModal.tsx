@@ -24,6 +24,7 @@ import {
   Trees,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { Dropdown } from "@/components/ui/Dropdown";
 import {
   createQuotationWithItemsAction,
   reviseQuotationAction,
@@ -463,37 +464,38 @@ export function CreateQuotationModal({
               <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                 <Building className="w-3.5 h-3.5 text-orange-600" /> Client Name <span className="text-rose-500">*</span>
               </label>
-              <select
-                required
-                className={inputCls}
+              <Dropdown
                 value={form.client_id}
-                onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-              >
-                <option value="">Select a Client</option>
-                {(data?.clients || []).map((c: any) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setForm({ ...form, client_id: val })}
+                placeholder="Select a Client"
+                buttonClassName={inputCls}
+                options={[
+                  { value: "", label: "Select a Client" },
+                  ...(data?.clients || []).map((c: any) => ({
+                    value: c.id,
+                    label: c.name,
+                  })),
+                ]}
+              />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                 <Briefcase className="w-3.5 h-3.5 text-orange-600" /> Project / Site
               </label>
-              <select
-                className={inputCls}
+              <Dropdown
                 value={form.project_id}
-                onChange={(e) => setForm({ ...form, project_id: e.target.value })}
-              >
-                <option value="">General Project / Site</option>
-                {(data?.projects || []).map((p: any) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setForm({ ...form, project_id: val })}
+                placeholder="General Project / Site"
+                buttonClassName={inputCls}
+                options={[
+                  { value: "", label: "General Project / Site" },
+                  ...(data?.projects || []).map((p: any) => ({
+                    value: p.id,
+                    label: p.name,
+                  })),
+                ]}
+              />
             </div>
           </div>
 
@@ -514,17 +516,15 @@ export function CreateQuotationModal({
                   {form.category}
                 </span>
               </div>
-              <select
-                className={inputCls}
+              <Dropdown
                 value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value as any })}
-              >
-                {QUOTATION_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat === "NABL" ? "NABL (Accredited Testing)" : "Non-NABL (Standard Testing)"}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setForm({ ...form, category: val as any })}
+                buttonClassName={inputCls}
+                options={QUOTATION_CATEGORIES.map((cat) => ({
+                  value: cat,
+                  label: cat === "NABL" ? "NABL (Accredited Testing)" : "Non-NABL (Standard Testing)",
+                }))}
+              />
             </div>
 
             <div>
@@ -536,17 +536,15 @@ export function CreateQuotationModal({
                   {form.department} Lab
                 </span>
               </div>
-              <select
-                className={inputCls}
+              <Dropdown
                 value={form.department}
-                onChange={(e) => setForm({ ...form, department: e.target.value as any })}
-              >
-                {QUOTATION_DEPARTMENTS.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept === "Construction" ? "Construction (Civil Materials)" : "Environment (Pollution & Environmental)"}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setForm({ ...form, department: val as any })}
+                buttonClassName={inputCls}
+                options={QUOTATION_DEPARTMENTS.map((dept) => ({
+                  value: dept,
+                  label: dept === "Construction" ? "Construction (Civil Materials)" : "Environment (Pollution & Environmental)",
+                }))}
+              />
             </div>
           </div>
 
@@ -593,22 +591,21 @@ export function CreateQuotationModal({
             {filteredTestMasters.length > 0 && (
               <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200/80">
                 <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">⚡ Quick Add:</span>
-                <select
-                  className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 focus:border-orange-500 outline-none cursor-pointer flex-1"
+                <Dropdown
                   value=""
-                  onChange={(e) => {
-                    handleQuickAddTest(e.target.value);
-                    e.target.value = "";
+                  onChange={(val) => {
+                    if (val) handleQuickAddTest(val);
                   }}
-                >
-                  <option value="">-- Quick pick a test from {form.category} {form.department}... --</option>
-                  {filteredTestMasters.map((tm: any) => (
-                    <option key={tm.id} value={tm.id}>
-                      {tm.component_parameter || tm.specific_test || tm.particulars}
-                      {tm.test_method ? ` (${tm.test_method})` : ""}
-                    </option>
-                  ))}
-                </select>
+                  placeholder={`-- Quick pick a test from ${form.category} ${form.department}... --`}
+                  buttonClassName="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 h-8 flex-1"
+                  options={[
+                    { value: "", label: `-- Quick pick a test from ${form.category} ${form.department}... --` },
+                    ...filteredTestMasters.map((tm: any) => ({
+                      value: tm.id,
+                      label: `${tm.component_parameter || tm.specific_test || tm.particulars}${tm.test_method ? ` (${tm.test_method})` : ""}`,
+                    })),
+                  ]}
+                />
               </div>
             )}
 
@@ -696,16 +693,17 @@ export function CreateQuotationModal({
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">GST Rate</label>
-              <select
-                className={inputCls}
+              <Dropdown
                 value={form.gst_rate}
-                onChange={(e) => setForm({ ...form, gst_rate: e.target.value })}
-              >
-                <option value="18">18% (Standard GST)</option>
-                <option value="12">12% GST</option>
-                <option value="5">5% GST</option>
-                <option value="0">0% (Exempt)</option>
-              </select>
+                onChange={(val) => setForm({ ...form, gst_rate: val })}
+                buttonClassName={inputCls}
+                options={[
+                  { value: "18", label: "18% (Standard GST)" },
+                  { value: "12", label: "12% GST" },
+                  { value: "5", label: "5% GST" },
+                  { value: "0", label: "0% (Exempt)" },
+                ]}
+              />
             </div>
 
             <div className="sm:col-span-2 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs">
@@ -765,18 +763,19 @@ export function CreateQuotationModal({
                     <span>{isRefreshingTemplates ? "Refreshing..." : "Refresh"}</span>
                   </button>
                 </div>
-                <select
-                  className="w-full text-xs font-medium border border-slate-200 rounded-lg p-2 bg-white outline-none focus:border-orange-500"
+                <Dropdown
                   value={selectedTemplateId}
-                  onChange={(e) => setSelectedTemplateId(e.target.value)}
-                >
-                  <option value="">-- Choose a T&C Template --</option>
-                  {templates.map((tpl: any) => (
-                    <option key={tpl.id} value={tpl.id}>
-                      {tpl.name} ({tpl.category}) {tpl.is_default ? "★ Default" : ""}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedTemplateId(val)}
+                  placeholder="-- Choose a T&C Template --"
+                  buttonClassName="w-full text-xs font-medium border border-slate-200 rounded-lg p-2 bg-white h-9"
+                  options={[
+                    { value: "", label: "-- Choose a T&C Template --" },
+                    ...templates.map((tpl: any) => ({
+                      value: tpl.id,
+                      label: `${tpl.name} (${tpl.category}) ${tpl.is_default ? "★ Default" : ""}`,
+                    })),
+                  ]}
+                />
               </div>
 
               <div className="flex items-center gap-2 pt-4 sm:pt-0">

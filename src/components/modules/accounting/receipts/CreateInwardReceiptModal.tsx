@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react";
 import { X, Receipt, IndianRupee, Landmark, Building, Calendar, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { useToast } from "@/hooks/use-toast";
 import { createInwardReceiptAction } from "@/actions/accounting.actions";
 
@@ -161,31 +162,33 @@ export function CreateInwardReceiptModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">Party Type</label>
-              <select
-                className="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+              <Dropdown
                 value={form.party_type}
-                onChange={(e) => set("party_type", e.target.value)}
-              >
-                <option value="client">Client / Customer</option>
-                <option value="government">Government Authority</option>
-                <option value="other">Other Entity</option>
-              </select>
+                onChange={(val) => set("party_type", val)}
+                buttonClassName="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+                options={[
+                  { value: "client", label: "Client / Customer" },
+                  { value: "government", label: "Government Authority" },
+                  { value: "other", label: "Other Entity" },
+                ]}
+              />
             </div>
 
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">Select Client (Optional)</label>
-              <select
-                className="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+              <Dropdown
                 value={form.client_id}
-                onChange={(e) => set("client_id", e.target.value)}
-              >
-                <option value="">— Direct / Custom Party —</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => set("client_id", val)}
+                placeholder="— Direct / Custom Party —"
+                buttonClassName="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+                options={[
+                  { value: "", label: "— Direct / Custom Party —" },
+                  ...clients.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                  })),
+                ]}
+              />
             </div>
           </div>
 
@@ -207,33 +210,35 @@ export function CreateInwardReceiptModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">Payment Mode</label>
-              <select
-                className="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+              <Dropdown
                 value={form.payment_mode}
-                onChange={(e) => set("payment_mode", e.target.value)}
-              >
-                <option value="neft">NEFT / RTGS</option>
-                <option value="bank">Bank Transfer</option>
-                <option value="upi">UPI / QR</option>
-                <option value="cash">Cash</option>
-                <option value="cheque">Cheque</option>
-              </select>
+                onChange={(val) => set("payment_mode", val)}
+                buttonClassName="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+                options={[
+                  { value: "neft", label: "NEFT / RTGS" },
+                  { value: "bank", label: "Bank Transfer" },
+                  { value: "upi", label: "UPI / QR" },
+                  { value: "cash", label: "Cash" },
+                  { value: "cheque", label: "Cheque" },
+                ]}
+              />
             </div>
 
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">Deposited Into Account</label>
-              <select
-                className="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+              <Dropdown
                 value={form.account_id}
-                onChange={(e) => set("account_id", e.target.value)}
-              >
-                <option value="">— Select Account —</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name} ({a.bank_name || a.account_type?.toUpperCase()})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => set("account_id", val)}
+                placeholder="— Select Account —"
+                buttonClassName="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+                options={[
+                  { value: "", label: "— Select Account —" },
+                  ...accounts.map((a) => ({
+                    value: a.id,
+                    label: `${a.name} (${a.bank_name || a.account_type?.toUpperCase()})`,
+                  })),
+                ]}
+              />
             </div>
           </div>
 
@@ -241,18 +246,19 @@ export function CreateInwardReceiptModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">Accounting Project</label>
-              <select
-                className="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+              <Dropdown
                 value={form.project_id}
-                onChange={(e) => set("project_id", e.target.value)}
-              >
-                <option value="">— General / No Project —</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => set("project_id", val)}
+                placeholder="— General / No Project —"
+                buttonClassName="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+                options={[
+                  { value: "", label: "— General / No Project —" },
+                  ...projects.map((p) => ({
+                    value: p.id,
+                    label: p.name,
+                  })),
+                ]}
+              />
             </div>
 
             <div>

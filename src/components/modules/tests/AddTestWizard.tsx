@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Plus, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 
@@ -231,14 +231,11 @@ export function AddTestWizard({
                     {isSuperAdmin && branches.length > 0 ? (
                       <div className="col-span-1 md:col-span-2 flex flex-col justify-end gap-1.5">
                         <label className="text-sm font-semibold text-slate-700">Branch <span className="text-red-500">*</span></label>
-                        <Select
+                        <Dropdown
                           value={branch_id || branches[0]?.id || ""}
-                          onValueChange={(val) => setValue("branch_id", val)}
-                        >
-                          {branches.map((b) => (
-                            <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>
-                          ))}
-                        </Select>
+                          onChange={(val) => setValue("branch_id", val)}
+                          options={branches.map((b) => ({ value: b.id, label: `${b.name} (${b.code})` }))}
+                        />
                         {errors.branch_id && <p className="text-red-500 text-xs">{errors.branch_id.message}</p>}
                       </div>
                     ) : (
@@ -254,25 +251,27 @@ export function AddTestWizard({
 
                     <div className="flex flex-col justify-end gap-1.5">
                       <label className="text-sm font-semibold text-slate-700">Category <span className="text-red-500">*</span></label>
-                      <Select
+                      <Dropdown
                         value={category || "Construction"}
-                        onValueChange={(val) => setValue("category", val as "Construction" | "Environmental")}
-                      >
-                        <SelectItem value="Construction">Construction</SelectItem>
-                        <SelectItem value="Environmental">Environmental</SelectItem>
-                      </Select>
+                        onChange={(val) => setValue("category", val as "Construction" | "Environmental")}
+                        options={[
+                          { value: "Construction", label: "Construction" },
+                          { value: "Environmental", label: "Environmental" },
+                        ]}
+                      />
                       {errors.category && <p className="text-red-500 text-xs">{errors.category.message}</p>}
                     </div>
 
                     <div className="flex flex-col justify-end gap-1.5">
                       <label className="text-sm font-semibold text-slate-700">Accreditation <span className="text-red-500">*</span></label>
-                      <Select
+                      <Dropdown
                         value={is_nabl ? "true" : "false"}
-                        onValueChange={(val) => setValue("is_nabl", val === "true")}
-                      >
-                        <SelectItem value="true">NABL</SelectItem>
-                        <SelectItem value="false">Non-NABL</SelectItem>
-                      </Select>
+                        onChange={(val) => setValue("is_nabl", val === "true")}
+                        options={[
+                          { value: "true", label: "NABL" },
+                          { value: "false", label: "Non-NABL" },
+                        ]}
+                      />
                       {errors.is_nabl && <p className="text-red-500 text-xs">{errors.is_nabl.message}</p>}
                     </div>
 
@@ -297,13 +296,15 @@ export function AddTestWizard({
 
                         <div className="flex flex-col justify-end gap-1.5">
                           <label className="text-sm font-semibold text-slate-700 leading-tight">Group <span className="text-red-500">*</span></label>
-                          <Select
+                          <Dropdown
                             value={discipline_group || ""}
-                            onValueChange={(val) => setValue("discipline_group", val)}
-                          >
-                            <SelectItem value="Mechanical">Mechanical</SelectItem>
-                            <SelectItem value="Chemical">Chemical</SelectItem>
-                          </Select>
+                            onChange={(val) => setValue("discipline_group", val)}
+                            placeholder="Select Group"
+                            options={[
+                              { value: "Mechanical", label: "Mechanical" },
+                              { value: "Chemical", label: "Chemical" },
+                            ]}
+                          />
                           {errors.discipline_group && <p className="text-red-500 text-xs">{errors.discipline_group.message}</p>}
                         </div>
 
@@ -334,13 +335,15 @@ export function AddTestWizard({
 
                         <div className="col-span-1 md:col-span-2 flex flex-col justify-end gap-1.5">
                           <label className="text-sm font-semibold text-slate-700 leading-tight">Group <span className="text-red-500">*</span></label>
-                          <Select
+                          <Dropdown
                             value={discipline_group || ""}
-                            onValueChange={(val) => setValue("discipline_group", val)}
-                          >
-                            <SelectItem value="Mechanical">Mechanical</SelectItem>
-                            <SelectItem value="Chemical">Chemical</SelectItem>
-                          </Select>
+                            onChange={(val) => setValue("discipline_group", val)}
+                            placeholder="Select Group"
+                            options={[
+                              { value: "Mechanical", label: "Mechanical" },
+                              { value: "Chemical", label: "Chemical" },
+                            ]}
+                          />
                           {errors.discipline_group && <p className="text-red-500 text-xs">{errors.discipline_group.message}</p>}
                         </div>
 

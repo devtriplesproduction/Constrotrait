@@ -12,7 +12,7 @@ import { deleteTestMasterAction } from "@/actions/test.actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
@@ -181,43 +181,44 @@ export function TestMasterClient({
           
           <div className="flex-1 w-full space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">NABL Status</label>
-            <Select
+            <Dropdown
               value={nablFilter}
-              onValueChange={(val) => setNablFilter(val as any)}
+              onChange={(val) => setNablFilter(val as any)}
               buttonClassName="h-[40px] bg-white rounded-xl border-slate-200 hover:border-slate-300"
-            >
-              <SelectItem value="all">All NABL</SelectItem>
-              <SelectItem value="nabl">NABL</SelectItem>
-              <SelectItem value="non-nabl">NON-NABL</SelectItem>
-            </Select>
+              options={[
+                { value: "all", label: "All NABL" },
+                { value: "nabl", label: "NABL" },
+                { value: "non-nabl", label: "NON-NABL" },
+              ]}
+            />
           </div>
           
           <div className="flex-1 w-full space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
-            <Select
+            <Dropdown
               value={categoryFilter}
-              onValueChange={(val) => setCategoryFilter(val as any)}
+              onChange={(val) => setCategoryFilter(val as any)}
               buttonClassName="h-[40px] bg-white rounded-xl border-slate-200 hover:border-slate-300"
-            >
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="Construction">Construction</SelectItem>
-              <SelectItem value="Environmental">Environmental</SelectItem>
-            </Select>
+              options={[
+                { value: "all", label: "All Categories" },
+                { value: "Construction", label: "Construction" },
+                { value: "Environmental", label: "Environmental" },
+              ]}
+            />
           </div>
 
           {isSuperAdmin && branches.length > 0 && (
             <div className="flex-1 w-full space-y-1.5">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Branch</label>
-              <Select
+              <Dropdown
                 value={branchFilter}
-                onValueChange={(val) => setBranchFilter(val)}
+                onChange={(val) => setBranchFilter(val)}
                 buttonClassName="h-[40px] bg-white rounded-xl border-slate-200 hover:border-slate-300"
-              >
-                <SelectItem value="all">All Branches</SelectItem>
-                {branches.map(b => (
-                  <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                ))}
-              </Select>
+                options={[
+                  { value: "all", label: "All Branches" },
+                  ...branches.map((b) => ({ value: b.id, label: b.name })),
+                ]}
+              />
             </div>
           )}
 

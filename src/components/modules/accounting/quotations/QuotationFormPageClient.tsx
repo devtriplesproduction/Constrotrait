@@ -41,6 +41,7 @@ import {
   Trees,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils/cn";
 import { numberToWordsINR } from "@/utils/numberToWords";
@@ -940,46 +941,45 @@ export function QuotationFormPageClient({
                         <Plus className="w-3 h-3" /> + New Client Form
                       </button>
                     </div>
-                    <select
-                      required={clientMode === "existing"}
-                      className={inputCls}
+                    <Dropdown
                       value={form.client_id}
-                      onChange={(e) => {
-                        if (e.target.value === "__NEW_CLIENT__") {
+                      onChange={(val) => {
+                        if (val === "__NEW_CLIENT__") {
                           setClientMode("new");
                         } else {
-                          setForm({ ...form, client_id: e.target.value });
+                          setForm({ ...form, client_id: val });
                         }
                       }}
-                    >
-                      <option value="">-- Choose a Client --</option>
-                      <option value="__NEW_CLIENT__" className="font-semibold text-orange-600 bg-orange-50/60">
-                        ➕ + Create New Client...
-                      </option>
-                      {clientsList.map((c: any) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} {c.contact_person ? `(${c.contact_person})` : ""} {c.gst_no ? `• GST: ${c.gst_no}` : ""}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="-- Choose a Client --"
+                      buttonClassName={inputCls}
+                      options={[
+                        { value: "", label: "-- Choose a Client --" },
+                        { value: "__NEW_CLIENT__", label: "➕ + Create New Client..." },
+                        ...clientsList.map((c: any) => ({
+                          value: c.id,
+                          label: `${c.name} ${c.contact_person ? `(${c.contact_person})` : ""} ${c.gst_no ? `• GST: ${c.gst_no}` : ""}`,
+                        })),
+                      ]}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                       <Briefcase className="w-3.5 h-3.5 text-orange-600" /> Project / Site Name
                     </label>
-                    <select
-                      className={inputCls}
+                    <Dropdown
                       value={form.project_id}
-                      onChange={(e) => setForm({ ...form, project_id: e.target.value })}
-                    >
-                      <option value="">General Project / Site</option>
-                      {projectsList.map((p: any) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setForm({ ...form, project_id: val })}
+                      placeholder="General Project / Site"
+                      buttonClassName={inputCls}
+                      options={[
+                        { value: "", label: "General Project / Site" },
+                        ...projectsList.map((p: any) => ({
+                          value: p.id,
+                          label: p.name,
+                        })),
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -1156,17 +1156,15 @@ export function QuotationFormPageClient({
                       {form.category === "NABL" ? "NABL Accredited" : "Non-NABL Standard"}
                     </span>
                   </div>
-                  <select
-                    className={inputCls}
+                  <Dropdown
                     value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value as any })}
-                  >
-                    {QUOTATION_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat === "NABL" ? "NABL (Accredited Testing)" : "Non-NABL (Standard Testing)"}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setForm({ ...form, category: val as any })}
+                    buttonClassName={inputCls}
+                    options={QUOTATION_CATEGORIES.map((cat) => ({
+                      value: cat,
+                      label: cat === "NABL" ? "NABL (Accredited Testing)" : "Non-NABL (Standard Testing)",
+                    }))}
+                  />
                   <p className="text-[11px] text-slate-400 mt-1">Filters laboratory test parameters by NABL accreditation status</p>
                 </div>
 
@@ -1179,17 +1177,15 @@ export function QuotationFormPageClient({
                       {form.department} Lab
                     </span>
                   </div>
-                  <select
-                    className={inputCls}
+                  <Dropdown
                     value={form.department}
-                    onChange={(e) => setForm({ ...form, department: e.target.value as any })}
-                  >
-                    {QUOTATION_DEPARTMENTS.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept === "Construction" ? "Construction (Civil & Materials Testing)" : "Environment (Environmental & Pollution Lab)"}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setForm({ ...form, department: val as any })}
+                    buttonClassName={inputCls}
+                    options={QUOTATION_DEPARTMENTS.map((dept) => ({
+                      value: dept,
+                      label: dept === "Construction" ? "Construction (Civil & Materials Testing)" : "Environment (Environmental & Pollution Lab)",
+                    }))}
+                  />
                   <p className="text-[11px] text-slate-400 mt-1">Filters laboratory tests by discipline & responsible testing division</p>
                 </div>
               </div>
@@ -1282,22 +1278,21 @@ export function QuotationFormPageClient({
 
               {/* Quick Dropdown Picker - uses remaining width */}
               <div className="flex-1 min-w-[260px] flex items-center">
-                <select
-                  className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:border-orange-500 outline-none cursor-pointer shadow-2xs"
+                <Dropdown
                   value=""
-                  onChange={(e) => {
-                    handleQuickAddTest(e.target.value);
-                    e.target.value = "";
+                  onChange={(val) => {
+                    if (val) handleQuickAddTest(val);
                   }}
-                >
-                  <option value="">⚡ + Quick Pick a Test from {form.category} • {form.department}...</option>
-                  {filteredTestMasters.map((tm: any) => (
-                    <option key={tm.id} value={tm.id}>
-                      {tm.component_parameter || tm.specific_test || tm.particulars}
-                      {tm.test_method ? ` (${tm.test_method})` : ""}
-                    </option>
-                  ))}
-                </select>
+                  placeholder={`⚡ + Quick Pick a Test from ${form.category} • ${form.department}...`}
+                  buttonClassName="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 h-9 shadow-2xs"
+                  options={[
+                    { value: "", label: `⚡ + Quick Pick a Test from ${form.category} • ${form.department}...` },
+                    ...filteredTestMasters.map((tm: any) => ({
+                      value: tm.id,
+                      label: `${tm.component_parameter || tm.specific_test || tm.particulars}${tm.test_method ? ` (${tm.test_method})` : ""}`,
+                    })),
+                  ]}
+                />
               </div>
             </div>
 
@@ -1458,18 +1453,19 @@ export function QuotationFormPageClient({
                     <span>{isRefreshingTemplates ? "Refreshing..." : "Refresh List"}</span>
                   </button>
                 </div>
-                <select
-                  className="w-full text-xs font-medium border border-slate-200 rounded-xl px-3 py-2 bg-white outline-none focus:border-orange-500"
+                <Dropdown
                   value={selectedTemplateId}
-                  onChange={(e) => setSelectedTemplateId(e.target.value)}
-                >
-                  <option value="">-- Choose a T&C Template --</option>
-                  {templates.map((tpl: any) => (
-                    <option key={tpl.id} value={tpl.id}>
-                      {tpl.name} ({tpl.category}) {tpl.is_default ? "★ Default" : ""}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedTemplateId(val)}
+                  placeholder="-- Choose a T&C Template --"
+                  buttonClassName="w-full text-xs font-medium border border-slate-200 rounded-xl px-3 py-2 bg-white h-10"
+                  options={[
+                    { value: "", label: "-- Choose a T&C Template --" },
+                    ...templates.map((tpl: any) => ({
+                      value: tpl.id,
+                      label: `${tpl.name} (${tpl.category}) ${tpl.is_default ? "★ Default" : ""}`,
+                    })),
+                  ]}
+                />
               </div>
 
               <div className="flex items-center gap-2 pt-1 sm:pt-4">
@@ -1615,16 +1611,17 @@ export function QuotationFormPageClient({
                   </span>
                   <span className="text-[11px] font-bold text-slate-600">₹{gst.toFixed(2)}</span>
                 </label>
-                <select
-                  className={inputCls}
+                <Dropdown
                   value={form.gst_rate}
-                  onChange={(e) => setForm({ ...form, gst_rate: e.target.value })}
-                >
-                  <option value="18">18% (Standard Testing GST)</option>
-                  <option value="12">12% GST</option>
-                  <option value="5">5% GST</option>
-                  <option value="0">0% (GST Exempt / SEZ)</option>
-                </select>
+                  onChange={(val) => setForm({ ...form, gst_rate: val })}
+                  buttonClassName={inputCls}
+                  options={[
+                    { value: "18", label: "18% (Standard Testing GST)" },
+                    { value: "12", label: "12% GST" },
+                    { value: "5", label: "5% GST" },
+                    { value: "0", label: "0% (GST Exempt / SEZ)" },
+                  ]}
+                />
               </div>
             </div>
 

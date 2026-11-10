@@ -6,7 +6,6 @@ import { ClipboardList, Calendar, User, FileText, StickyNote, ArrowLeft, Edit2 }
 import { assignJobCardAction, getAssignmentsAction, getUnassignedJobCardsAction } from "@/actions/job-assignment.actions";
 import { useRouter } from "next/navigation";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { Select, SelectItem, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { toast } from "@/hooks/use-toast";
 import { isTestEngineer, isSuperAdminOrBranchManager } from "@/config/roles";
@@ -176,38 +175,45 @@ export function AssignJobsTab({ employees, teams, branches, initialAssignment, o
             <div className="space-y-5">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Select Job Card</label>
-                <Select
+                <Dropdown
                   value={selectedJobEntryId} 
-                  onValueChange={setSelectedJobEntryId} 
+                  onChange={setSelectedJobEntryId} 
                   placeholder="Select a Job Card"
                   buttonClassName="w-full bg-white border-slate-200"
                   isSearchable={true}
                   searchValue={searchJobCard}
                   onSearchChange={setSearchJobCard}
-                >
-                  <SelectGroup>
-                    <SelectLabel className="text-orange-600 bg-orange-50/80">⚠️ Unassigned Job Cards</SelectLabel>
-                    {uniqueJobEntries.filter(je => !je.isAssigned && (!searchJobCard || je.uid_label?.toLowerCase().includes(searchJobCard.toLowerCase()) || je.name?.toLowerCase().includes(searchJobCard.toLowerCase()))).map(je => {
-                      const uidStr = je.uid_label ? `UID: ${je.uid_label}` : `Unknown UID (${je.name})`;
-                      return (
-                        <SelectItem key={je.job_entry_id} value={je.job_entry_id}>
-                          {`${uidStr} (${je.testCount} tests)`}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="text-emerald-600 bg-emerald-50/80 mt-1">🔄 Assigned Job Cards</SelectLabel>
-                    {uniqueJobEntries.filter(je => je.isAssigned && (!searchJobCard || je.uid_label?.toLowerCase().includes(searchJobCard.toLowerCase()) || je.name?.toLowerCase().includes(searchJobCard.toLowerCase()))).map(je => {
-                      const uidStr = je.uid_label ? `UID: ${je.uid_label}` : `Unknown UID (${je.name})`;
-                      return (
-                        <SelectItem key={je.job_entry_id} value={je.job_entry_id}>
-                          {`${uidStr} (${je.testCount} tests)`}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectGroup>
-                </Select>
+                  options={[
+                    ...uniqueJobEntries
+                      .filter(je => !je.isAssigned && (!searchJobCard || je.uid_label?.toLowerCase().includes(searchJobCard.toLowerCase()) || je.name?.toLowerCase().includes(searchJobCard.toLowerCase())))
+                      .map(je => {
+                        const uidStr = je.uid_label ? `UID: ${je.uid_label}` : `Unknown UID (${je.name})`;
+                        return {
+                          value: je.job_entry_id,
+                          label: (
+                            <span className="flex items-center gap-1.5">
+                              <span className="text-orange-600 font-semibold text-xs">⚠️</span>
+                              <span>{`${uidStr} (${je.testCount} tests)`}</span>
+                            </span>
+                          ),
+                        };
+                      }),
+                    ...uniqueJobEntries
+                      .filter(je => je.isAssigned && (!searchJobCard || je.uid_label?.toLowerCase().includes(searchJobCard.toLowerCase()) || je.name?.toLowerCase().includes(searchJobCard.toLowerCase())))
+                      .map(je => {
+                        const uidStr = je.uid_label ? `UID: ${je.uid_label}` : `Unknown UID (${je.name})`;
+                        return {
+                          value: je.job_entry_id,
+                          label: (
+                            <span className="flex items-center gap-1.5">
+                              <span className="text-emerald-600 font-semibold text-xs">🔄</span>
+                              <span>{`${uidStr} (${je.testCount} tests)`}</span>
+                            </span>
+                          ),
+                        };
+                      }),
+                  ]}
+                />
                 <div className="mt-1.5 text-xs text-slate-500 text-right">Loaded {uniqueJobEntries.length} Job Cards</div>
               </div>
 

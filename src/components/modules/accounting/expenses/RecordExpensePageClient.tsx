@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { useToast } from "@/hooks/use-toast";
 import { createExpenseAction } from "@/actions/accounting.actions";
 
@@ -752,11 +753,9 @@ export function RecordExpensePageClient({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <select
-                        required
+                      <Dropdown
                         value={inwardId}
-                        onChange={(e) => {
-                          const id = e.target.value;
+                        onChange={(id) => {
                           setInwardId(id);
                           const inv = initialInwards.find((i) => i.id === id);
                           if (inv) {
@@ -768,15 +767,16 @@ export function RecordExpensePageClient({
                             }));
                           }
                         }}
-                        className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
-                      >
-                        <option value="">— Select an Inward Job UID —</option>
-                        {filteredInwardOptions.map((inv) => (
-                          <option key={inv.id} value={inv.id}>
-                            UID: {inv.uid_label || inv.uid} — {inv.clients?.name || "Client"} ({inv.project_name || "Project"})
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="— Select an Inward Job UID —"
+                        buttonClassName="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium cursor-pointer"
+                        options={[
+                          { value: "", label: "— Select an Inward Job UID —" },
+                          ...filteredInwardOptions.map((inv) => ({
+                            value: inv.id,
+                            label: `UID: ${inv.uid_label || inv.uid} — ${inv.clients?.name || "Client"} (${inv.project_name || "Project"})`,
+                          })),
+                        ]}
+                      />
 
                       {initialInwards.length > 5 && (
                         <div className="relative">
@@ -816,10 +816,9 @@ export function RecordExpensePageClient({
                       </div>
                     </div>
 
-                    <select
+                    <Dropdown
                       value={form.job_entry_test_id}
-                      onChange={(e) => {
-                        const testId = e.target.value;
+                      onChange={(testId) => {
                         setField("job_entry_test_id", testId);
                         const t = findMatchingTest(selectedInward, testId);
                         if (t) {
@@ -843,54 +842,26 @@ export function RecordExpensePageClient({
                           }));
                         }
                       }}
-                      className="w-full h-10 px-3 bg-white border border-orange-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
-                    >
-                      <option value="">— Entire Inward Job (Shared / General Inward Cost) —</option>
-
-                      {/* Construction Tests OptGroup */}
-                      {selectedInward.job_entry_tests.some((t: any) => (t.test_master?.category || "Construction") === "Construction") && (
-                        <optgroup label="🏗️ Construction Tests">
-                          {selectedInward.job_entry_tests
-                            .filter((t: any) => (t.test_master?.category || "Construction") === "Construction")
-                            .map((t: any) => {
-                              const tm = t.test_master;
-                              const testName =
-                                tm?.specific_test ||
-                                tm?.component_parameter ||
-                                t.material_description ||
-                                "Test Parameter";
-                              const mat = tm?.material_product || tm?.discipline_group || "Material";
-                              return (
-                                <option key={t.id} value={t.id}>
-                                  [Construction] {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
-                                </option>
-                              );
-                            })}
-                        </optgroup>
-                      )}
-
-                      {/* Environmental Tests OptGroup */}
-                      {selectedInward.job_entry_tests.some((t: any) => t.test_master?.category === "Environmental") && (
-                        <optgroup label="🌱 Environmental Tests">
-                          {selectedInward.job_entry_tests
-                            .filter((t: any) => t.test_master?.category === "Environmental")
-                            .map((t: any) => {
-                              const tm = t.test_master;
-                              const testName =
-                                tm?.specific_test ||
-                                tm?.component_parameter ||
-                                t.material_description ||
-                                "Test Parameter";
-                              const mat = tm?.material_product || tm?.discipline_group || "Material";
-                              return (
-                                <option key={t.id} value={t.id}>
-                                  [Environmental] {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
-                                </option>
-                              );
-                            })}
-                        </optgroup>
-                      )}
-                    </select>
+                      placeholder="— Entire Inward Job (Shared / General Inward Cost) —"
+                      buttonClassName="w-full h-10 px-3 bg-white border border-orange-200 rounded-xl text-xs font-semibold text-slate-800"
+                      options={[
+                        { value: "", label: "— Entire Inward Job (Shared / General Inward Cost) —" },
+                        ...selectedInward.job_entry_tests.map((t: any) => {
+                          const tm = t.test_master;
+                          const cat = tm?.category || "Construction";
+                          const testName =
+                            tm?.specific_test ||
+                            tm?.component_parameter ||
+                            t.material_description ||
+                            "Test Parameter";
+                          const mat = tm?.material_product || tm?.discipline_group || "Material";
+                          return {
+                            value: t.id,
+                            label: `[${cat}] ${testName} — [${mat}] ${t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}`,
+                          };
+                        }),
+                      ]}
+                    />
                   </div>
                 )}
               </div>
@@ -952,11 +923,9 @@ export function RecordExpensePageClient({
                     </span>
                   </div>
 
-                  <select
-                    required
+                  <Dropdown
                     value={form.job_entry_test_id}
-                    onChange={(e) => {
-                      const testId = e.target.value;
+                    onChange={(testId) => {
                       setField("job_entry_test_id", testId);
                       const found = categoryTestsList.find((t) => t.id === testId);
                       if (found) {
@@ -967,15 +936,16 @@ export function RecordExpensePageClient({
                         );
                       }
                     }}
-                    className="w-full h-11 px-3 bg-white border border-indigo-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
-                  >
-                    <option value="">— Select a Test Name ({selectedCategory}) —</option>
-                    {categoryTestsList.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        [{selectedCategory}] {t.displayName}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder={`— Select a Test Name (${selectedCategory}) —`}
+                    buttonClassName="w-full h-11 px-3 bg-white border border-indigo-200 rounded-xl text-xs font-semibold text-slate-800"
+                    options={[
+                      { value: "", label: `— Select a Test Name (${selectedCategory}) —` },
+                      ...categoryTestsList.map((t) => ({
+                        value: t.id,
+                        label: `[${selectedCategory}] ${t.displayName}`,
+                      })),
+                    ]}
+                  />
                 </div>
               </div>
             )}
@@ -1120,18 +1090,19 @@ export function RecordExpensePageClient({
                 <label className="text-xs font-bold text-slate-800 block mb-1">
                   Accounting Category
                 </label>
-                <select
+                <Dropdown
                   value={form.category_id}
-                  onChange={(e) => setField("category_id", e.target.value)}
-                  className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-slate-900 outline-none"
-                >
-                  <option value="">— Select Category —</option>
-                  {displayedCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} {c.scope ? `(${c.scope})` : ""}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setField("category_id", val)}
+                  placeholder="— Select Category —"
+                  buttonClassName="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium"
+                  options={[
+                    { value: "", label: "— Select Category —" },
+                    ...displayedCategories.map((c) => ({
+                      value: c.id,
+                      label: `${c.name} ${c.scope ? `(${c.scope})` : ""}`,
+                    })),
+                  ]}
+                />
               </div>
 
               {/* Paid From Account */}
@@ -1139,19 +1110,19 @@ export function RecordExpensePageClient({
                 <label className="text-xs font-bold text-slate-800 block mb-1">
                   Paid From Bank / Cash Account
                 </label>
-                <select
+                <Dropdown
                   value={form.account_id}
-                  onChange={(e) => setField("account_id", e.target.value)}
-                  className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-slate-900 outline-none"
-                >
-                  <option value="">Direct Cash Drawer / Unallocated</option>
-                  {accounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} ({a.account_type?.toUpperCase()}) — Balance: ₹
-                      {Number(a.current_balance || 0).toLocaleString("en-IN")}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setField("account_id", val)}
+                  placeholder="Direct Cash Drawer / Unallocated"
+                  buttonClassName="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium"
+                  options={[
+                    { value: "", label: "Direct Cash Drawer / Unallocated" },
+                    ...accounts.map((a) => ({
+                      value: a.id,
+                      label: `${a.name} (${a.account_type?.toUpperCase()}) — Balance: ₹${Number(a.current_balance || 0).toLocaleString("en-IN")}`,
+                    })),
+                  ]}
+                />
                 {selectedAccount && (
                   <span className="text-[11px] text-emerald-600 font-semibold mt-1 block">
                     Available Balance: ₹{Number(selectedAccount.current_balance || 0).toLocaleString("en-IN")}
@@ -1166,17 +1137,19 @@ export function RecordExpensePageClient({
                 <label className="text-xs font-bold text-slate-800 block mb-1">
                   Payment Mode
                 </label>
-                <select
+                <Dropdown
                   value={form.payment_mode}
-                  onChange={(e) => setField("payment_mode", e.target.value)}
-                  className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-slate-900 outline-none"
-                >
-                  <option value="bank">Bank Transfer / NEFT / IMPS</option>
-                  <option value="upi">UPI / QR Code</option>
-                  <option value="cash">Cash</option>
-                  <option value="cheque">Cheque</option>
-                  <option value="rtgs">RTGS</option>
-                </select>
+                  onChange={(val) => setField("payment_mode", val)}
+                  placeholder="Select Payment Mode"
+                  buttonClassName="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-medium"
+                  options={[
+                    { value: "bank", label: "Bank Transfer / NEFT / IMPS" },
+                    { value: "upi", label: "UPI / QR Code" },
+                    { value: "cash", label: "Cash" },
+                    { value: "cheque", label: "Cheque" },
+                    { value: "rtgs", label: "RTGS" },
+                  ]}
+                />
               </div>
 
               {/* Vendor / Payee */}

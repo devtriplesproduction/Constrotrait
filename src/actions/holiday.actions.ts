@@ -3,34 +3,51 @@
 import { revalidatePath } from "next/cache";
 import { 
   createHoliday, 
+  createHolidaysBatch,
   updateHoliday, 
   deactivateHoliday, 
   deleteHoliday,
   CreateHolidayInput,
   UpdateHolidayInput
 } from "@/services/holiday.service";
+import { getDatesInRange } from "@/lib/holiday-utils";
 
-export async function createHolidayAction(data: CreateHolidayInput & { branches?: string[] }) {
-  const { branches, ...holidayData } = data;
-  
-  if (branches && branches.length > 1) {
-    // Multiple branches selected, create a holiday for each
-    for (const branch of branches) {
-      const result = await createHoliday({ ...holidayData, branch_id: branch });
-      if (!result.success) {
-        return result; // return first error
-      }
-    }
-    revalidatePath("/holidays");
-    return { success: true };
-  } else {
-    // Single branch or all branches (null)
-    const result = await createHoliday(holidayData);
-    if (result.success) {
-      revalidatePath("/holidays");
-    }
-    return result;
+export async function createHolidayAction(
+  data: CreateHolidayInput & {
+    branches?: string[];
+    isRange?: boolean;
+    endDate?: string;
   }
+) {
+  const { branches, isRange, endDate, ...holidayData } = data;
+
+  const dates =
+    isRange && endDate && endDate >= holidayData.date
+      ? getDatesInRange(holidayData.date, endDate)
+      : [holidayData.date];
+
+  const targetBranches: (string | null)[] =
+    branches && branches.length > 0
+      ? branches.includes("all")
+        ? [null]
+        : branches
+      : holidayData.branch_id
+      ? [holidayData.branch_id]
+      : [null];
+
+  const result = await createHolidaysBatch({
+    name: holidayData.name,
+    dates,
+    description: holidayData.description,
+    department: holidayData.department,
+    branch_ids: targetBranches,
+    is_active: holidayData.is_active !== undefined ? holidayData.is_active : true,
+  });
+
+  if (result.success) {
+    revalidatePath("/holidays");
+  }
+  return result;
 }
 
 export async function updateHolidayAction(id: string, data: UpdateHolidayInput & { branches?: string[] }) {

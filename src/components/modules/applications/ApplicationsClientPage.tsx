@@ -7,7 +7,7 @@ import { ReviewApplicationList } from "./ReviewApplicationList";
 import { ApplicationFormModal } from "./ApplicationFormModal";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/modules/PageHeader";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { 
   Plus, 
   FileText, 
@@ -269,17 +269,18 @@ export function ApplicationsClientPage({
 
           {/* Status Select */}
           <div className="shrink-0 z-20">
-            <Select
+            <Dropdown
               value={statusFilter}
-              onValueChange={setStatusFilter}
+              onChange={setStatusFilter}
               placeholder="Filter Status"
               buttonClassName="h-9 px-3 text-xs bg-white border border-slate-200 rounded-xl font-medium min-w-[130px]"
-            >
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </Select>
+              options={[
+                { value: "all", label: "All Statuses" },
+                { value: "pending", label: "Pending" },
+                { value: "approved", label: "Approved" },
+                { value: "rejected", label: "Rejected" },
+              ]}
+            />
           </div>
         </div>
       </div>

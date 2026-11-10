@@ -158,6 +158,146 @@ export async function createHoliday(input: CreateHolidayInput) {
   }
 }
 
+export interface CreateHolidayBatchInput {
+  name: string;
+  dates: string[];
+  description?: string | null;
+  department?: string | null;
+  branch_ids?: (string | null)[];
+  is_active?: boolean;
+}
+
+export async function createHolidaysBatch(input: CreateHolidayBatchInput) {
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const superAdmin = isSuperAdmin(user.roles);
+    const hr = isHR(user.roles);
+    const bm = isBranchManager(user.roles);
+
+    if (!superAdmin && !hr && !bm) {
+      return { success: false, error: "Insufficient permissions to create holidays." };
+    }
+
+    if (!input.dates || input.dates.length === 0) {
+      return { success: false, error: "At least one date is required." };
+    }
+
+    let branchIds: (string | null)[] =
+      input.branch_ids && input.branch_ids.length > 0
+        ? input.branch_ids
+        : [null];
+
+    if (superAdmin) {
+      // Super admin can target whatever branches were passed
+    } else if (hr) {
+      if (!user.branch_id) {
+        return { success: false, error: "Your HR profile does not have an assigned branch." };
+      }
+      if (!input.department) {
+        return { success: false, error: "Department is required." };
+      }
+      branchIds = [user.branch_id];
+    } else if (bm) {
+      if (!user.branch_id) {
+        return { success: false, error: "Your profile does not have an assigned branch." };
+      }
+      branchIds = [user.branch_id];
+    }
+
+    if (!superAdmin && !input.department && (!branchIds || branchIds.every((b) => !b))) {
+      return { success: false, error: "A holiday must be specific to a branch or department." };
+    }
+
+    const supabase = await createClient();
+
+    // Check for existing active holidays on any of these dates
+    const { data: existingHolidays } = await supabase
+      .from("holidays")
+      .select("id, date, name, branch_id, department, branches(name)")
+      .in("date", input.dates)
+      .eq("is_active", true);
+
+    if (existingHolidays && existingHolidays.length > 0) {
+      for (const targetDate of input.dates) {
+        for (const targetBranchId of branchIds) {
+          const matchingForDate = existingHolidays.filter((e) => e.date === targetDate);
+          for (const existing of matchingForDate) {
+            if (!targetBranchId && existing.branch_id) {
+              const branchName = (existing.branches as { name?: string })?.name || "a specific branch";
+              return {
+                success: false,
+                error: `Holiday for ${targetDate} is already given for ${branchName}.`,
+              };
+            }
+            if (targetBranchId && !existing.branch_id) {
+              return {
+                success: false,
+                error: `An all-branches holiday already exists for ${targetDate} (${existing.name}).`,
+              };
+            }
+            if (targetBranchId === existing.branch_id && input.department === existing.department) {
+              return {
+                success: false,
+                error: `A holiday on ${targetDate} with this scope already exists (${existing.name}).`,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    const recordsToInsert = [];
+    for (const d of input.dates) {
+      for (const bId of branchIds) {
+        recordsToInsert.push({
+          name: input.name,
+          date: d,
+          description: input.description || null,
+          department: input.department || null,
+          branch_id: bId,
+          is_active: input.is_active !== undefined ? input.is_active : true,
+          created_by: user.id,
+        });
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("holidays")
+      .insert(recordsToInsert)
+      .select(
+        "id, name, date, description, department, branch_id, is_active, created_by, updated_by, created_at, updated_at"
+      );
+
+    if (error) {
+      if (error.code === "23505") {
+        return { success: false, error: "A holiday with this date and scope already exists." };
+      }
+      console.error("Failed to create holidays batch:", error);
+      return { success: false, error: "Failed to create holidays" };
+    }
+
+    // Send notifications
+    const dateText =
+      input.dates.length > 1
+        ? `${input.dates[0]} to ${input.dates[input.dates.length - 1]} (${input.dates.length} days)`
+        : `${input.dates[0]}`;
+
+    for (const bId of branchIds) {
+      await createHolidayNotification(
+        `A new holiday "${input.name}" has been added for ${dateText}.`,
+        { branchId: bId, department: input.department || null }
+      );
+    }
+
+    return { success: true, data: data as Holiday[], count: recordsToInsert.length };
+  } catch (error) {
+    console.error("Error creating holidays batch:", error);
+    return { success: false, error: "An unexpected error occurred" };
+  }
+}
+
 export async function updateHoliday(id: string, input: UpdateHolidayInput) {
   try {
     const user = await getAuthenticatedUserWithRoles();

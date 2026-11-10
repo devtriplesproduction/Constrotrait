@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react";
 import { X, CreditCard, Calendar, IndianRupee, Landmark, Loader2, CheckCircle2, AlertCircle, ArrowRight, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { useToast } from "@/hooks/use-toast";
 import { recordInvoicePaymentAction } from "@/actions/accounting.actions";
 
@@ -271,19 +272,20 @@ export function RecordPaymentModal({
 
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">Payment Mode *</label>
-              <select
+              <Dropdown
                 value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value)}
-                className="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
-              >
-                <option value="bank">Bank Transfer (NEFT/RTGS)</option>
-                <option value="upi">UPI / QR Code</option>
-                <option value="cheque">Cheque</option>
-                <option value="cash">Cash</option>
-                <option value="neft">NEFT</option>
-                <option value="rtgs">RTGS</option>
-                <option value="other">Other</option>
-              </select>
+                onChange={(val) => setPaymentMode(val)}
+                buttonClassName="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+                options={[
+                  { value: "bank", label: "Bank Transfer (NEFT/RTGS)" },
+                  { value: "upi", label: "UPI / QR Code" },
+                  { value: "cheque", label: "Cheque" },
+                  { value: "cash", label: "Cash" },
+                  { value: "neft", label: "NEFT" },
+                  { value: "rtgs", label: "RTGS" },
+                  { value: "other", label: "Other" },
+                ]}
+              />
             </div>
           </div>
 
@@ -305,20 +307,19 @@ export function RecordPaymentModal({
                 </a>
               )}
             </div>
-            <select
+            <Dropdown
               value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              className="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
-            >
-              <option value="">
-                {accounts.length === 0 ? "No accounts found (Optional)" : "Select Account (Optional)"}
-              </option>
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.name} ({acc.account_type === "cash" ? "Cash" : acc.bank_name || "Bank"}) - Bal: {fmt(acc.current_balance || 0)}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setAccountId(val)}
+              placeholder={accounts.length === 0 ? "No accounts found (Optional)" : "Select Account (Optional)"}
+              buttonClassName="w-full h-9 border border-slate-300 rounded-lg px-2.5 text-xs bg-white text-slate-800"
+              options={[
+                { value: "", label: accounts.length === 0 ? "No accounts found (Optional)" : "Select Account (Optional)" },
+                ...accounts.map((acc) => ({
+                  value: acc.id,
+                  label: `${acc.name} (${acc.account_type === "cash" ? "Cash" : acc.bank_name || "Bank"}) - Bal: ${fmt(acc.current_balance || 0)}`,
+                })),
+              ]}
+            />
             {accounts.length === 0 && (
               <p className="text-[10px] text-slate-400 mt-1">
                 No bank accounts created yet in the system. You can add them under the <strong>Bank Accounts</strong> tab.

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { useToast } from "@/hooks/use-toast";
 import { submitLeaveAction } from "@/actions/leave.actions";
 import { Loader2, Calendar, FileText, Stethoscope, UploadCloud, Clock } from "lucide-react";
@@ -61,25 +61,31 @@ export function LeaveForm({ onSuccess, onCancel }: LeaveFormProps) {
           <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
             <FileText className="w-4 h-4 text-orange-500" /> Leave Type
           </label>
-          <Select value={leaveType} onValueChange={setLeaveType} placeholder="Select type">
-            <SelectItem value="Sick Leave">Sick Leave</SelectItem>
-            <SelectItem value="Casual Leave">Casual Leave</SelectItem>
-            <SelectItem value="Unpaid Leave">Unpaid Leave</SelectItem>
-            <SelectItem value="Compensatory Off">Compensatory Off</SelectItem>
-          </Select>
+          <Dropdown
+            value={leaveType}
+            onChange={(val) => setLeaveType(val)}
+            placeholder="Select type"
+            options={[
+              { value: "Sick Leave", label: "Sick Leave" },
+              { value: "Casual Leave", label: "Casual Leave" },
+              { value: "Unpaid Leave", label: "Unpaid Leave" },
+              { value: "Compensatory Off", label: "Compensatory Off" },
+            ]}
+          />
         </div>
 
         <div className="grid gap-2">
           <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
             <Clock className="w-4 h-4 text-orange-500" /> Leave Duration
           </label>
-          <Select 
+          <Dropdown 
             value={isHalfDay ? "Half Day" : "Full Day"} 
-            onValueChange={(val) => setIsHalfDay(val === "Half Day")}
-          >
-            <SelectItem value="Full Day">Full Day</SelectItem>
-            <SelectItem value="Half Day">Half Day (Applies for a single day only)</SelectItem>
-          </Select>
+            onChange={(val) => setIsHalfDay(val === "Half Day")}
+            options={[
+              { value: "Full Day", label: "Full Day" },
+              { value: "Half Day", label: "Half Day (Applies for a single day only)" },
+            ]}
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

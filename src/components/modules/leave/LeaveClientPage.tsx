@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { LeaveForm } from "./LeaveForm";
 import { approveLeaveAction, rejectLeaveAction, cancelApprovedLeaveAction, verifyMedicalCertificateAction, deleteMedicalCertificateAction, rejectMedicalCertificateAction, getMedicalCertificateUrlAction } from "@/actions/leave.actions";
 import { useToast } from "@/hooks/use-toast";
@@ -153,18 +153,19 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
 
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full 2xl:w-auto overflow-x-auto pb-2 2xl:pb-0">
           <div className="shrink-0 z-50">
-            <Select
+            <Dropdown
               value={statusFilter}
-              onValueChange={setStatusFilter}
+              onChange={setStatusFilter}
               placeholder="Filter Status"
               buttonClassName="w-[140px] bg-white border border-slate-200 rounded-xl"
-            >
-              <SelectItem value="All">All Statuses</SelectItem>
-              <SelectItem value="Approved">Approved</SelectItem>
-              <SelectItem value="Rejected">Rejected</SelectItem>
-              <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="Cancelled">Cancelled</SelectItem>
-            </Select>
+              options={[
+                { value: "All", label: "All Statuses" },
+                { value: "Approved", label: "Approved" },
+                { value: "Rejected", label: "Rejected" },
+                { value: "Pending", label: "Pending" },
+                { value: "Cancelled", label: "Cancelled" },
+              ]}
+            />
           </div>
 
           {canApprove && (
@@ -411,9 +412,9 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                           )}
                           {leave.leave_type === 'Sick Leave' && leave.status !== 'Cancelled' && leave.status !== 'Rejected' && leave.medical_certificate_url && (isHR || isSuperAdmin) && (
                             <div className="w-full relative">
-                              <Select
+                              <Dropdown
                                 value=""
-                                onValueChange={(val) => {
+                                onChange={(val) => {
                                   if (val === 'view') handleViewMedicalCertificate(leave.id as string);
                                   else if (val === 'delete') handleAction(deleteMedicalCertificateAction, leave.id as string);
                                   else if (val === 'valid') handleAction(verifyMedicalCertificateAction, leave.id as string);
@@ -421,16 +422,15 @@ export function LeaveClientPage({ myLeaves, canApprove, leavesToApprove, isHR, c
                                 }}
                                 placeholder="Cert Actions"
                                 buttonClassName="w-full rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 shadow-sm flex justify-center items-center font-bold"
-                              >
-                                <SelectItem value="view" className="text-orange-700 hover:bg-orange-50 font-semibold">View</SelectItem>
-                                <SelectItem value="delete" className="text-orange-700 hover:bg-orange-50 font-semibold">Delete</SelectItem>
-                                {!leave.certificate_verified_by && (
-                                  <>
-                                    <SelectItem value="valid" className="text-orange-700 hover:bg-orange-50 font-semibold">Valid</SelectItem>
-                                    <SelectItem value="invalid" className="text-orange-700 hover:bg-orange-50 font-semibold">Invalid</SelectItem>
-                                  </>
-                                )}
-                              </Select>
+                                options={[
+                                  { value: "view", label: "View" },
+                                  { value: "delete", label: "Delete" },
+                                  ...(!leave.certificate_verified_by ? [
+                                    { value: "valid", label: "Valid" },
+                                    { value: "invalid", label: "Invalid" },
+                                  ] : []),
+                                ]}
+                              />
                             </div>
                           )}
                           {leave.status === 'Approved' && isHR && (

@@ -10,6 +10,7 @@ import {
   Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { useToast } from "@/hooks/use-toast";
 import {
   calculateAccountBalanceAsOfAction,
@@ -342,17 +343,16 @@ export function BankReconHub({ accounts = [], onRefresh }: BankReconHubProps) {
             <label className="text-xs font-semibold text-slate-600 block mb-1">
               Select Financial Account
             </label>
-            <select
-              className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-medium focus:border-orange-500 outline-none"
+            <Dropdown
               value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-            >
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {(a.name || a.account_name || "Account")} ({a.bank_name || (a.account_type ? a.account_type.toUpperCase() : "BANK")}) - {fmt(a.current_balance)}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedAccountId(val)}
+              placeholder="Select Financial Account"
+              buttonClassName="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-medium h-9"
+              options={accounts.map((a) => ({
+                value: a.id,
+                label: `${a.name || a.account_name || "Account"} (${a.bank_name || (a.account_type ? a.account_type.toUpperCase() : "BANK")}) - ${fmt(a.current_balance)}`,
+              }))}
+            />
           </div>
 
           <div>

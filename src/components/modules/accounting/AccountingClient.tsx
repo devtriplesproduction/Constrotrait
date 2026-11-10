@@ -73,7 +73,7 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
     { id: "quotations", href: "/accounting/quotations", label: "Quotations", subtitle: "Create and manage quotations and line items." },
     { id: "templates", href: "/accounting/templates", label: "T&C Templates", subtitle: "Standardize, manage and authorize legal terms and condition templates." },
     { id: "billing", href: "/accounting/billing", label: "Billings & Collection", subtitle: "Manage client invoices, inward receipts, and expenses." },
-    { id: "test-financials", href: "/accounting/test-financials", label: "Test Economics & Expenses", subtitle: "Itemized test unit economics from paid invoices, direct test expense allocation, and margins." },
+    { id: "test-financials", href: "/accounting/test-financials", label: "Test Economics & Expenses", subtitle: "Test-wise Revenue, Costs & Profit Margins." },
     { id: "ledgers", href: "/accounting/ledgers", label: "Ledgers", subtitle: "Double-entry Income Ledger, Expense Ledger, and Inward Job Costing." },
     { id: "banks", href: "/accounting/banks", label: "Bank Accounts", subtitle: "Track bank accounts, cash accounts, and ledger balances." },
     { id: "recon", href: "/accounting/reconciliation", label: "Reconciliation", subtitle: "Reconcile bank statements against ledger balances." },
@@ -93,8 +93,8 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
   const currentTab = activeTab
     ? (isDirectSubTab ? "billing" : activeTab)
     : isPathSubTab
-    ? "billing"
-    : pathTab || "dashboard";
+      ? "billing"
+      : pathTab || "dashboard";
 
   const [billingSubTab, setBillingSubTab] = useState<"invoices" | "receipts" | "expenses">(() => {
     if (initialSubTab === "receipts" || initialSubTab === "expenses" || initialSubTab === "invoices") {
@@ -193,13 +193,13 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
   };
 
   // Test Economics Excel export handler ref
-  const exportTestEconomicsExcelRef = useRef<() => void>(() => {});
+  const exportTestEconomicsExcelRef = useRef<() => void>(() => { });
   const handleRegisterExportExcel = useCallback((fn: () => void) => {
     exportTestEconomicsExcelRef.current = fn;
   }, []);
 
   // Template Manager Create handler ref
-  const openCreateTemplateRef = useRef<() => void>(() => {});
+  const openCreateTemplateRef = useRef<() => void>(() => { });
   const handleRegisterOpenCreateTemplate = useCallback((fn: () => void) => {
     openCreateTemplateRef.current = fn;
   }, []);
@@ -282,14 +282,15 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
   const expensesList = data.expenses || [];
 
   const headerActions = currentTab === "billing" ? (
-    <div className="flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs overflow-x-auto no-scrollbar">
-      <button
-        type="button"
+    <div className="flex bg-slate-100 p-1 rounded-xl h-[48px] items-center">
+      <Button
+        variant="custom"
+        size="none"
         onClick={() => handleSubTabChange("invoices")}
-        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+        className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 cursor-pointer ${
           billingSubTab === "invoices"
-            ? "bg-white text-orange-600 shadow-sm border border-orange-200/70 ring-1 ring-orange-500/10"
-            : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+            ? "bg-orange-500 text-white shadow"
+            : "text-slate-600 hover:text-slate-800"
         }`}
       >
         <FileText className="w-4 h-4" />
@@ -297,21 +298,22 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
         <span
           className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
             billingSubTab === "invoices"
-              ? "bg-orange-100 text-orange-800"
+              ? "bg-white/25 text-white"
               : "bg-slate-200 text-slate-700"
           }`}
         >
           {invoicesList.length}
         </span>
-      </button>
+      </Button>
 
-      <button
-        type="button"
+      <Button
+        variant="custom"
+        size="none"
         onClick={() => handleSubTabChange("receipts")}
-        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+        className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 cursor-pointer ${
           billingSubTab === "receipts"
-            ? "bg-white text-emerald-800 shadow-sm border border-emerald-200/70 ring-1 ring-emerald-500/10"
-            : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+            ? "bg-orange-500 text-white shadow"
+            : "text-slate-600 hover:text-slate-800"
         }`}
       >
         <Receipt className="w-4 h-4" />
@@ -319,21 +321,22 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
         <span
           className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
             billingSubTab === "receipts"
-              ? "bg-emerald-100 text-emerald-800"
+              ? "bg-white/25 text-white"
               : "bg-slate-200 text-slate-700"
           }`}
         >
           {receiptsList.length}
         </span>
-      </button>
+      </Button>
 
-      <button
-        type="button"
+      <Button
+        variant="custom"
+        size="none"
         onClick={() => handleSubTabChange("expenses")}
-        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+        className={`px-4 h-full rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 cursor-pointer ${
           billingSubTab === "expenses"
-            ? "bg-white text-purple-800 shadow-sm border border-purple-200/70 ring-1 ring-purple-500/10"
-            : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+            ? "bg-orange-500 text-white shadow"
+            : "text-slate-600 hover:text-slate-800"
         }`}
       >
         <Banknote className="w-4 h-4" />
@@ -341,13 +344,13 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
         <span
           className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
             billingSubTab === "expenses"
-              ? "bg-purple-100 text-purple-800"
+              ? "bg-white/25 text-white"
               : "bg-slate-200 text-slate-700"
           }`}
         >
           {expensesList.length}
         </span>
-      </button>
+      </Button>
     </div>
   ) : currentTab === "banks" ? (
     <Button
@@ -424,7 +427,7 @@ export function AccountingClient({ initialData, initialLedgersData, activeTab, i
         variant="custom"
         size="none"
         onClick={() => handleOpenRecordExpense(undefined, { defaultExpenseType: "inward" })}
-        className="h-[42px] px-5 bg-gradient-to-r from-rose-600 via-rose-500 to-red-500 hover:from-rose-700 hover:to-red-600 text-white rounded-xl font-bold shadow-md shadow-rose-500/25 hover:shadow-rose-500/35 transition-all hover:scale-[1.02] flex items-center gap-2 text-xs sm:text-sm cursor-pointer"
+        className="h-[42px] px-5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-sm transition-all hover:scale-[1.02] flex items-center gap-2 text-xs sm:text-sm cursor-pointer"
       >
         <Plus className="w-4 h-4" />
         <span>Record Test Expense</span>
@@ -773,7 +776,7 @@ function ExpensesTab({
       <ExpenseLedgerTable
         expenses={data.expenses || []}
         onRecordExpense={onOpenRecordExpense}
-        onRefresh={() => run(async () => {}, "Refreshed")}
+        onRefresh={() => run(async () => { }, "Refreshed")}
         hideSummaryCards={true}
         fromDate={fromDate}
         toDate={toDate}
@@ -823,18 +826,16 @@ function InvoicesTab({
           <button
             type="button"
             onClick={() => setSubTab("invoices")}
-            className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              subTab === "invoices"
+            className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${subTab === "invoices"
                 ? "bg-white text-orange-600 shadow-xs border border-orange-200/70 font-bold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/60 font-semibold"
-            }`}
+              }`}
           >
             <FileText className="w-3.5 h-3.5" />
             <span>All Invoices</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                subTab === "invoices" ? "bg-orange-100 text-orange-800" : "bg-slate-200 text-slate-700"
-              }`}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${subTab === "invoices" ? "bg-orange-100 text-orange-800" : "bg-slate-200 text-slate-700"
+                }`}
             >
               {invoicesCount}
             </span>
@@ -844,22 +845,20 @@ function InvoicesTab({
           <button
             type="button"
             onClick={() => setSubTab("uninvoiced")}
-            className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              subTab === "uninvoiced"
+            className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${subTab === "uninvoiced"
                 ? "bg-white text-amber-800 shadow-xs border border-amber-300 ring-1 ring-amber-300/40 font-bold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/60 font-semibold"
-            }`}
+              }`}
           >
             <Clock className={`w-3.5 h-3.5 ${unbilledInwards > 0 ? "text-amber-600" : "text-slate-400"}`} />
             <span>Uninvoiced Inwards</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 ${
-                subTab === "uninvoiced"
+              className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 ${subTab === "uninvoiced"
                   ? "bg-amber-100 text-amber-900 font-mono"
                   : unbilledInwards > 0
-                  ? "bg-amber-100/90 text-amber-800 font-mono"
-                  : "bg-slate-200 text-slate-700 font-mono"
-              }`}
+                    ? "bg-amber-100/90 text-amber-800 font-mono"
+                    : "bg-slate-200 text-slate-700 font-mono"
+                }`}
             >
               {unbilledInwards > 0 && (
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
@@ -872,18 +871,16 @@ function InvoicesTab({
           <button
             type="button"
             onClick={() => setSubTab("inwards")}
-            className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              subTab === "inwards"
+            className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${subTab === "inwards"
                 ? "bg-white text-indigo-700 shadow-xs border border-indigo-200/80 font-bold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/60 font-semibold"
-            }`}
+              }`}
           >
             <FlaskConical className="w-3.5 h-3.5" />
             <span>Inward Register (All)</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                subTab === "inwards" ? "bg-indigo-100 text-indigo-800" : "bg-slate-200 text-slate-700"
-              }`}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${subTab === "inwards" ? "bg-indigo-100 text-indigo-800" : "bg-slate-200 text-slate-700"
+                }`}
             >
               {inwardsCount}
             </span>
@@ -1176,11 +1173,10 @@ function BillingAndCollectionTab({
             </div>
             <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{inwards.length} inward entries</span>
-              <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap shadow-2xs ${
-                unbilledInwards > 0
+              <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap shadow-2xs ${unbilledInwards > 0
                   ? "bg-amber-50 text-amber-900 border-amber-200/80 group-hover:bg-amber-100 group-hover:text-amber-950 group-hover:border-amber-300"
                   : "bg-emerald-50 text-emerald-800 border-emerald-200/70"
-              }`}>
+                }`}>
                 {unbilledInwards > 0 ? (
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
@@ -1353,14 +1349,14 @@ function BillingAndCollectionTab({
                 {expensePeriod === "this_month"
                   ? "This Month"
                   : expensePeriod === "last_month"
-                  ? "Last Month"
-                  : expensePeriod === "this_quarter"
-                  ? "This Quarter"
-                  : expensePeriod === "this_fy"
-                  ? "This FY"
-                  : expensePeriod === "custom"
-                  ? "Custom Range"
-                  : "All Outflows"}
+                    ? "Last Month"
+                    : expensePeriod === "this_quarter"
+                      ? "This Quarter"
+                      : expensePeriod === "this_fy"
+                        ? "This FY"
+                        : expensePeriod === "custom"
+                          ? "Custom Range"
+                          : "All Outflows"}
               </span>
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-500" />
@@ -1456,11 +1452,10 @@ function BillingAndCollectionTab({
             </div>
             <div className="flex items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100/90 gap-1.5 mt-auto">
               <span className="truncate">{fmt(collectionsInDate)} in · {fmt(totalExpenses)} out</span>
-              <span className={`font-semibold px-2.5 py-0.5 rounded-full text-[10px] border shrink-0 whitespace-nowrap shadow-2xs ${
-                netCashFlow >= 0
+              <span className={`font-semibold px-2.5 py-0.5 rounded-full text-[10px] border shrink-0 whitespace-nowrap shadow-2xs ${netCashFlow >= 0
                   ? "bg-emerald-50 text-emerald-800 border-emerald-200/70"
                   : "bg-rose-50 text-rose-800 border-rose-200/70"
-              }`}>
+                }`}>
                 {netMarginPercent}% Margin
               </span>
             </div>
@@ -1699,17 +1694,15 @@ function QuotationsTab({
                 <button
                   key={tab.id}
                   onClick={() => setStatusFilter(tab.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                    active
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${active
                       ? "bg-slate-900 text-white shadow-xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <span>{tab.label}</span>
                   <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                      active ? "bg-white/20 text-white" : "bg-white text-slate-600"
-                    }`}
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] ${active ? "bg-white/20 text-white" : "bg-white text-slate-600"
+                      }`}
                   >
                     {tab.count}
                   </span>

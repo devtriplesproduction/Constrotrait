@@ -49,7 +49,6 @@ import { getActiveBranchesAction } from "@/actions/branch.actions";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Avatar } from "@/components/common/Avatar";
 import { cn } from "@/lib/utils/cn";
-import { Select, SelectItem } from "@/components/ui/select";
 import { PremiumDatePicker } from "@/components/ui/PremiumDatePicker";
 import { MultiSelect } from "@/components/ui/MultiSelect";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -952,13 +951,13 @@ export function EmployeeProfileModal({
                   <label className="text-xs font-bold text-slate-500">
                     Designation / Role *
                   </label>
-                  <Select
+                  <Dropdown
                     value={(() => {
                       const mappedDesignations = formData.department ? getDesignationsForDepartment(formData.department) : [];
                       const primaryDesignation = mappedDesignations.find(d => formData.roles?.includes(d.id));
                       return primaryDesignation ? primaryDesignation.id : "";
                     })()}
-                    onValueChange={(val) => {
+                    onChange={(val) => {
                       const mappedDesignations = formData.department ? getDesignationsForDepartment(formData.department) : [];
                       const primaryDesignation = mappedDesignations.find(d => formData.roles?.includes(d.id));
                       const designationValue = primaryDesignation ? primaryDesignation.id : "";
@@ -969,11 +968,12 @@ export function EmployeeProfileModal({
                       setFormData({ ...formData, roles: newRoles });
                     }}
                     buttonClassName="w-full px-4 py-3 h-12 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700"
-                  >
-                    {formData.department ? getDesignationsForDepartment(formData.department).map(d => (
-                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                    )) : []}
-                  </Select>
+                    placeholder="Select Designation"
+                    options={formData.department ? getDesignationsForDepartment(formData.department).map(d => ({
+                      value: d.id,
+                      label: d.name,
+                    })) : []}
+                  />
                 </div>
               </div>
 
@@ -1012,15 +1012,16 @@ export function EmployeeProfileModal({
                     <label className="text-xs font-bold text-slate-500">
                       Branch Assignment {formData.roles?.includes("BRANCH_MANAGER_ADMINISTRATIVE") ? "*" : ""}
                     </label>
-                    <Select
+                    <Dropdown
                       value={formData.branch_id || ""}
-                      onValueChange={(val) => setFormData({ ...formData, branch_id: val })}
+                      onChange={(val) => setFormData({ ...formData, branch_id: val })}
+                      placeholder="Select Branch"
                       buttonClassName="w-full px-4 py-3 h-12 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700"
-                    >
-                      {activeBranches.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>
-                      ))}
-                    </Select>
+                      options={activeBranches.map((b) => ({
+                        value: b.id,
+                        label: `${b.name} (${b.code})`,
+                      }))}
+                    />
                   </div>
                 )}
               </div>
@@ -1030,18 +1031,20 @@ export function EmployeeProfileModal({
                   <label className="text-xs font-bold text-slate-500">
                     Employment Type
                   </label>
-                  <Select
+                  <Dropdown
                     value={formData.employment_type || ""}
-                    onValueChange={(val) =>
+                    onChange={(val) =>
                       setFormData({ ...formData, employment_type: val })
                     }
+                    placeholder="Select Employment Type"
                     buttonClassName="w-full px-4 py-3 h-12 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700"
-                  >
-                    <SelectItem value="full-time">Full Time</SelectItem>
-                    <SelectItem value="part-time">Part Time</SelectItem>
-                    <SelectItem value="contract">Contract</SelectItem>
-                    <SelectItem value="intern">Intern</SelectItem>
-                  </Select>
+                    options={[
+                      { value: "full-time", label: "Full Time" },
+                      { value: "part-time", label: "Part Time" },
+                      { value: "contract", label: "Contract" },
+                      { value: "intern", label: "Intern" },
+                    ]}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500">
@@ -1532,20 +1535,21 @@ export function EmployeeProfileModal({
                     <label className="text-xs font-bold text-slate-500">
                       Account Status Override *
                     </label>
-                    <Select
+                    <Dropdown
                       value={formData.status || "Probation"}
-                      onValueChange={(val) =>
+                      onChange={(val) =>
                         setFormData({ ...formData, status: val })
                       }
                       buttonClassName="w-full h-11 px-4 bg-white border border-slate-200 rounded-2xl text-sm font-medium text-slate-700"
-                    >
-                      <SelectItem value="Probation">Probation</SelectItem>
-                      <SelectItem value="Confirmed">Confirmed</SelectItem>
-                      <SelectItem value="Notice Period">Notice Period</SelectItem>
-                      <SelectItem value="Resigned">Resigned</SelectItem>
-                      <SelectItem value="Terminated">Terminated</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
-                    </Select>
+                      options={[
+                        { value: "Probation", label: "Probation" },
+                        { value: "Confirmed", label: "Confirmed" },
+                        { value: "Notice Period", label: "Notice Period" },
+                        { value: "Resigned", label: "Resigned" },
+                        { value: "Terminated", label: "Terminated" },
+                        { value: "Inactive", label: "Inactive" },
+                      ]}
+                    />
                   </div>
                 </div>
               </div>

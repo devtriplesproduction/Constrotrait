@@ -19,6 +19,7 @@ import {
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { useToast } from "@/hooks/use-toast";
@@ -296,33 +297,31 @@ export function IncomeLedgerTable({
           </div>
 
           <div>
-            <select
+            <Dropdown
               value={paymentModeFilter}
-              onChange={(e) => setPaymentModeFilter(e.target.value)}
-              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none"
-            >
-              <option value="all">All Payment Modes</option>
-              <option value="cash">Cash</option>
-              <option value="bank">Bank Transfer / NEFT</option>
-              <option value="upi">UPI</option>
-              <option value="cheque">Cheque</option>
-              <option value="rtgs">RTGS</option>
-            </select>
+              onChange={(val) => setPaymentModeFilter(val)}
+              buttonClassName="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium"
+              options={[
+                { value: "all", label: "All Payment Modes" },
+                { value: "cash", label: "Cash" },
+                { value: "bank", label: "Bank Transfer / NEFT" },
+                { value: "upi", label: "UPI" },
+                { value: "cheque", label: "Cheque" },
+                { value: "rtgs", label: "RTGS" },
+              ]}
+            />
           </div>
 
           <div>
-            <select
+            <Dropdown
               value={accountFilter}
-              onChange={(e) => setAccountFilter(e.target.value)}
-              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none"
-            >
-              <option value="all">All Accounts / Banks</option>
-              {accounts.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setAccountFilter(val)}
+              buttonClassName="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium"
+              options={[
+                { value: "all", label: "All Accounts / Banks" },
+                ...accounts.map((a) => ({ value: a, label: a })),
+              ]}
+            />
           </div>
 
           <div className="flex items-center gap-1">

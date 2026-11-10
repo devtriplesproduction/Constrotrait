@@ -1,33 +1,25 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo } from "react";
+import { format } from "date-fns";
 import {
   Search,
-  Download,
-  Filter,
-  CheckCircle2,
-  Clock,
-  XCircle,
+  Calendar,
+  Banknote,
+  SlidersHorizontal,
+  Plus,
+  X,
   Package,
   Building2,
-  Calendar,
-  Layers,
-  ArrowDownRight,
-  TrendingDown,
-  ChevronDown,
-  User,
-  CreditCard,
-  FileText,
-  AlertCircle,
   FlaskConical,
-  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { approveExpenseAction } from "@/actions/accounting.actions";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { approveExpenseAction } from "@/actions/accounting.actions";
+import { useToast } from "@/hooks/use-toast";
 
 interface ExpenseLedgerTableProps {
   expenses: any[];
@@ -63,8 +55,6 @@ export function ExpenseLedgerTable({
   const [internalFromDate, setInternalFromDate] = useState("");
   const [internalToDate, setInternalToDate] = useState("");
   const [internalPeriod, setInternalPeriod] = useState("all");
-  const [isDateOpen, setIsDateOpen] = useState(false);
-  const datePickerRef = useRef<HTMLDivElement>(null);
 
   const effectiveFromDate = fromDate !== undefined ? fromDate : internalFromDate;
   const effectiveToDate = toDate !== undefined ? toDate : internalToDate;
@@ -76,16 +66,6 @@ export function ExpenseLedgerTable({
     setInternalPeriod(p);
     onDateRangeChange?.(s, e, p);
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
-        setIsDateOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleSetPreset = (preset: "this_month" | "last_month" | "this_quarter" | "this_fy" | "all") => {
     const today = new Date();
@@ -120,18 +100,6 @@ export function ExpenseLedgerTable({
 
     handleDateChange(fmtLocal(start), fmtLocal(end), preset);
   };
-
-  const periodDisplayLabel = useMemo(() => {
-    if (effectivePeriod === "this_month") return "This Month";
-    if (effectivePeriod === "last_month") return "Last Month";
-    if (effectivePeriod === "this_quarter") return "This Quarter";
-    if (effectivePeriod === "this_fy") return "Financial Year";
-    if (effectivePeriod === "all") return "All Dates";
-    if (effectiveFromDate && effectiveToDate) return `${effectiveFromDate} to ${effectiveToDate}`;
-    if (effectiveFromDate) return `From ${effectiveFromDate}`;
-    if (effectiveToDate) return `Up to ${effectiveToDate}`;
-    return "All Dates";
-  }, [effectivePeriod, effectiveFromDate, effectiveToDate]);
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -207,8 +175,7 @@ export function ExpenseLedgerTable({
         e.job_entries?.clients?.name ||
         e.client_name ||
         ""
-      )
-        .toLowerCase()
+      ).toLowerCase().includes(q);
       const testMatch = (
         e.test_name ||
         e.job_entry_tests?.test_master?.specific_test ||
@@ -283,468 +250,353 @@ export function ExpenseLedgerTable({
   };
 
   return (
-    <div className="space-y-6">
-      {/* KPI Cards */}
-      {!hideSummaryCards && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-          <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Total Outflows
-              </span>
-              <div className="p-1.5 rounded-xl bg-rose-50 text-rose-600">
-                <TrendingDown className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-xl font-black text-slate-900 mt-2">{fmt(summary.total)}</div>
-            <span className="text-[10px] text-slate-500">All cleared debit transactions</span>
+    <div className="animate-in fade-in duration-500 mt-2 space-y-6">
+      {/* ================= Filter Card (Following Job Assignments Filter UI) ================= */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+          <div className="flex items-center gap-2 text-slate-800 font-bold">
+            <SlidersHorizontal className="w-5 h-5 text-orange-500" />
+            <span>Filter Expenses</span>
           </div>
-
-          <div className="p-4 bg-white rounded-2xl border border-blue-200 bg-blue-50/20 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
-                Inward Direct
-              </span>
-              <div className="p-1.5 rounded-xl bg-blue-100 text-blue-700">
-                <Package className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-xl font-black text-blue-900 mt-2">{fmt(summary.inwardTotal)}</div>
-            <span className="text-[10px] text-blue-600 font-medium">Job testing & field costs</span>
-          </div>
-
-          <div className="p-4 bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
-                In-House Lab
-              </span>
-              <div className="p-1.5 rounded-xl bg-emerald-100 text-emerald-700">
-                <FlaskConical className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-xl font-black text-emerald-900 mt-2">{fmt(summary.inhouseTotal)}</div>
-            <span className="text-[10px] text-emerald-600 font-medium">Calibration, chemicals & PT/ILC</span>
-          </div>
-
-          <div className="p-4 bg-white rounded-2xl border border-purple-200 bg-purple-50/20 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">
-                Company Overheads
-              </span>
-              <div className="p-1.5 rounded-xl bg-purple-100 text-purple-700">
-                <Building2 className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-xl font-black text-purple-900 mt-2">{fmt(summary.companyTotal)}</div>
-            <span className="text-[10px] text-purple-600 font-medium">Rent, salaries & admin</span>
-          </div>
-
-          <div className="p-4 bg-white rounded-2xl border border-amber-200 bg-amber-50/20 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
-                Pending
-              </span>
-              <div className="p-1.5 rounded-xl bg-amber-100 text-amber-700">
-                <Clock className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-xl font-black text-amber-900 mt-2">{fmt(summary.pendingAmount)}</div>
-            <span className="text-[10px] text-amber-700 font-bold">
-              {summary.pendingCount} transaction{summary.pendingCount === 1 ? "" : "s"} waiting
-            </span>
-          </div>
+          {onRecordExpense && (
+            <Button
+              onClick={onRecordExpense}
+              className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-bold shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Record Expense
+            </Button>
+          )}
         </div>
-      )}
 
-      {/* Filter and Control Bar */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
-        {/* Header Action Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-800">Expense Ledger</span>
-            <span className="text-[11px] text-slate-400 font-mono">
-              ({filtered.length} of {expenses.length} records)
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Date Range Selector Popover */}
-            <div className="relative" ref={datePickerRef}>
-              <button
-                type="button"
-                onClick={() => setIsDateOpen(!isDateOpen)}
-                className="h-9 px-3.5 bg-white hover:bg-slate-50 rounded-xl border border-slate-200/90 text-xs font-semibold text-slate-700 flex items-center gap-2 shadow-2xs hover:border-orange-300 transition-colors cursor-pointer group"
-              >
-                <Calendar className="w-3.5 h-3.5 text-orange-500 shrink-0 group-hover:text-orange-600" />
-                <span className="truncate max-w-[180px]">{periodDisplayLabel}</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
-                    isDateOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {isDateOpen && (
-                <div className="absolute right-0 top-full mt-2 z-50 w-72 bg-white rounded-2xl border border-slate-200 shadow-xl p-3.5 space-y-3 animate-in fade-in-0 zoom-in-95 duration-150">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                      Quick Presets
-                    </span>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {[
-                        { id: "all", label: "All Time" },
-                        { id: "this_month", label: "This Month" },
-                        { id: "last_month", label: "Last Month" },
-                        { id: "this_quarter", label: "This Quarter" },
-                        { id: "this_fy", label: "This FY" },
-                      ].map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => {
-                            handleSetPreset(p.id as any);
-                            setIsDateOpen(false);
-                          }}
-                          className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold text-left transition-colors cursor-pointer ${
-                            effectivePeriod === p.id
-                              ? "bg-orange-50 text-orange-700 border border-orange-200 font-bold"
-                              : "bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/60"
-                          }`}
-                        >
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-2.5 border-t border-slate-100 space-y-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Custom Date Range
-                    </span>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
-                          From:
-                        </label>
-                        <input
-                          type="date"
-                          value={effectiveFromDate}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            handleDateChange(val, effectiveToDate, "custom");
-                          }}
-                          className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 outline-none focus:border-orange-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
-                          To:
-                        </label>
-                        <input
-                          type="date"
-                          value={effectiveToDate}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            handleDateChange(effectiveFromDate, val, "custom");
-                          }}
-                          className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 outline-none focus:border-orange-500"
-                        />
-                      </div>
-                    </div>
-                    {(effectiveFromDate || effectiveToDate) && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleSetPreset("all");
-                          setIsDateOpen(false);
-                        }}
-                        className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 transition-colors cursor-pointer block mt-1"
-                      >
-                        Clear date filter
-                      </button>
-                    )}
-                  </div>
-                </div>
+        <div className="flex flex-wrap items-end gap-4">
+          {/* SEARCH */}
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search Vendor, Description, Bill No, UID, Client..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-10 pl-10 pr-8 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors shadow-sm bg-white"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               )}
             </div>
           </div>
-        </div>
 
-        {/* Secondary Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-2.5 border-t border-slate-100">
-          <div className="relative md:col-span-2">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <Input
-              placeholder="Search by vendor, description, bill no, UID, client..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 h-8.5 text-xs bg-slate-50/50"
+          {/* STATUS */}
+          <div className="w-full sm:w-48">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
+            <Dropdown
+              value={approvalFilter}
+              onChange={setApprovalFilter}
+              placeholder="All Statuses"
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10"
+              options={[
+                { value: "all", label: "All Statuses" },
+                { value: "approved", label: "Approved" },
+                { value: "pending", label: "Pending" },
+                { value: "rejected", label: "Rejected" },
+              ]}
             />
           </div>
 
-          <div>
-            <select
+          {/* SCOPE / TYPE */}
+          <div className="w-full sm:w-44">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Scope / Type</label>
+            <Dropdown
               value={scopeFilter}
-              onChange={(e) => setScopeFilter(e.target.value as any)}
-              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none cursor-pointer"
-            >
-              <option value="all">All Expenses ({countsByScope.all})</option>
-              <option value="inward">Inward Expenses ({countsByScope.inward})</option>
-              <option value="inhouse">In-House Lab ({countsByScope.inhouse})</option>
-              <option value="company">Company Expenses ({countsByScope.company})</option>
-            </select>
+              onChange={(val) => setScopeFilter(val as any)}
+              placeholder="All Types"
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10"
+              options={[
+                { value: "all", label: `All Types (${countsByScope.all})` },
+                { value: "inward", label: `Inward (${countsByScope.inward})` },
+                { value: "inhouse", label: `In-House Lab (${countsByScope.inhouse})` },
+                { value: "company", label: `Company (${countsByScope.company})` },
+              ]}
+            />
           </div>
 
-          <div>
-            <select
+          {/* CATEGORY */}
+          <div className="w-full sm:w-44">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Category</label>
+            <Dropdown
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none cursor-pointer"
-            >
-              <option value="all">All Categories</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+              onChange={setCategoryFilter}
+              placeholder="All Categories"
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10"
+              options={[
+                { value: "all", label: "All Categories" },
+                ...categories.map((c) => ({ value: c, label: c })),
+              ]}
+            />
           </div>
 
-          <div>
-            <select
-              value={approvalFilter}
-              onChange={(e) => setApprovalFilter(e.target.value)}
-              className="w-full h-8.5 px-2.5 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium outline-none cursor-pointer"
-            >
-              <option value="all">All Statuses</option>
-              <option value="approved">Approved Only</option>
-              <option value="pending">Pending Approval</option>
-              <option value="rejected">Rejected</option>
-            </select>
+          {/* DATE RANGE */}
+          <div className="w-full sm:w-44">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Range</label>
+            <Dropdown
+              value={effectivePeriod}
+              onChange={(val) => {
+                if (val === "custom") {
+                  handleDateChange(effectiveFromDate, effectiveToDate, "custom");
+                } else {
+                  handleSetPreset(val as any);
+                }
+              }}
+              placeholder="All Time"
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10"
+              options={[
+                { value: "all", label: "All Time" },
+                { value: "this_month", label: "This Month" },
+                { value: "last_month", label: "Last Month" },
+                { value: "this_quarter", label: "This Quarter" },
+                { value: "this_fy", label: "FY" },
+                { value: "custom", label: "Custom Dates..." },
+              ]}
+            />
           </div>
         </div>
-      </div>
 
-      {/* Ledger Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200">
-                <th className="py-3 px-3.5">Date</th>
-                <th className="py-3 px-3.5">Voucher / Bill</th>
-                <th className="py-3 px-3.5">Scope & Ref</th>
-                <th className="py-3 px-3.5">Category</th>
-                <th className="py-3 px-3.5">Payee / Handler</th>
-                <th className="py-3 px-3.5">Account & Mode</th>
-                <th className="py-3 px-3.5">Particulars</th>
-                <th className="py-3 px-3.5 text-right">Debit Amount (₹)</th>
-                <th className="py-3 px-3.5 text-center">Status</th>
-                {canApprove && <th className="py-3 px-3.5 text-right">Action</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={canApprove ? 10 : 9}
-                    className="py-12 text-center text-slate-400 font-medium"
-                  >
-                    No expense ledger entries match the selected filters.
-                  </td>
-                </tr>
-              ) : (
-                pagination.paginatedData.map((e) => {
-                  const isUnderInward = !!(e.inward_id || e.job_entries);
-                  const type = e.expense_type || (isUnderInward ? "inward" : "company");
-                  const inward = e.job_entries;
-                  const uid =
-                    inward?.uid_label || (inward?.uid ? `UID-${inward.uid}` : e.inward_uid || null);
-                  const client = inward?.clients?.name || e.client_name || null;
-                  const cat = e.expense_categories?.name || e.category_name || "General";
-                  const acc = e.financial_accounts?.name || e.account_name || "Direct / Cash";
-                  const status = e.approval_status || "approved";
-
-                  return (
-                    <tr
-                      key={e.id}
-                      className="hover:bg-slate-50/80 transition-colors group"
-                    >
-                      {/* Date */}
-                      <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-900">
-                        {e.expense_date || (e.created_at ? e.created_at.slice(0, 10) : "N/A")}
-                      </td>
-
-                      {/* Voucher / Bill */}
-                      <td className="py-3 px-3.5 whitespace-nowrap font-mono text-[11px] text-slate-600">
-                        {e.bill_number || e.voucher_no || `EXP-${e.id.slice(0, 6).toUpperCase()}`}
-                        {e.bill_attached && (
-                          <span
-                            title="Bill Attached"
-                            className="ml-1.5 inline-block text-blue-600 font-sans"
-                          >
-                            📎
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Scope & Ref */}
-                      <td className="py-3 px-3.5">
-                        {type === "inward" ? (
-                          <div className="space-y-1">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                              <Package className="w-3 h-3 text-blue-600" />
-                              <span>{uid || "INWARD"}</span>
-                            </span>
-                            {(e.test_name || e.job_entry_tests?.test_master?.specific_test || e.job_entry_tests?.material_description) && (
-                              <div
-                                className="flex items-center gap-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50/90 px-1.5 py-0.5 rounded border border-indigo-200/80 max-w-[170px] truncate"
-                                title={`Tagged to Test: ${e.test_name || e.job_entry_tests?.test_master?.specific_test || e.job_entry_tests?.material_description}`}
-                              >
-                                <FlaskConical className="w-2.5 h-2.5 shrink-0 text-indigo-600" />
-                                <span className="truncate">
-                                  {e.test_name || e.job_entry_tests?.test_master?.specific_test || e.job_entry_tests?.material_description}
-                                </span>
-                              </div>
-                            )}
-                            {client && (
-                              <div className="text-[11px] text-slate-500 truncate max-w-[150px]">
-                                {client}
-                              </div>
-                            )}
-                          </div>
-                        ) : type === "inhouse" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <FlaskConical className="w-3 h-3 text-emerald-600" />
-                            <span>IN-HOUSE LAB</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                            <Building2 className="w-3 h-3 text-purple-600" />
-                            <span>COMPANY</span>
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Category */}
-                      <td className="py-3 px-3.5 whitespace-nowrap">
-                        <span className="font-semibold text-slate-800">{cat}</span>
-                        {e.department && (
-                          <div className="text-[10px] text-slate-400">{e.department}</div>
-                        )}
-                      </td>
-
-                      {/* Payee / Handler */}
-                      <td className="py-3 px-3.5">
-                        <div className="font-medium text-slate-800">
-                          {e.vendor_name || e.paid_through_person || "—"}
-                        </div>
-                        {e.is_reimbursement && (
-                          <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                            Reimbursement
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Account & Mode */}
-                      <td className="py-3 px-3.5 whitespace-nowrap">
-                        <div className="text-slate-800 font-medium">{acc}</div>
-                        <span className="text-[10px] uppercase font-bold text-slate-500">
-                          {e.payment_mode || "cash"}
-                        </span>
-                      </td>
-
-                      {/* Particulars */}
-                      <td className="py-3 px-3.5 max-w-[200px] truncate text-slate-600">
-                        {e.description || e.remarks || "—"}
-                      </td>
-
-                      {/* Debit Amount */}
-                      <td className="py-3 px-3.5 whitespace-nowrap text-right font-black text-rose-700 text-sm">
-                        {fmt(e.amount)}
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3 px-3.5 whitespace-nowrap text-center">
-                        {status === "approved" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            <span>Approved</span>
-                          </span>
-                        ) : status === "pending" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                            <Clock className="w-3 h-3 text-amber-600" />
-                            <span>Pending</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                            <XCircle className="w-3 h-3 text-rose-600" />
-                            <span>Rejected</span>
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Approval Actions */}
-                      {canApprove && (
-                        <td className="py-3 px-3.5 whitespace-nowrap text-right">
-                          {status === "pending" && (
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleApproval(e.id, true)}
-                                className="h-7 px-2.5 text-[11px] font-bold text-emerald-700 hover:bg-emerald-50 border-emerald-300"
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleApproval(e.id, false)}
-                                className="h-7 px-2.5 text-[11px] font-bold text-rose-700 hover:bg-rose-50 border-rose-300"
-                              >
-                                Reject
-                              </Button>
-                            </div>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <Pagination
-          currentPage={pagination.currentPage}
-          totalPages={pagination.totalPages}
-          totalItems={pagination.totalItems}
-          pageSize={pagination.pageSize}
-          pageSizeOptions={[10, 25, 50, 100]}
-          onPageChange={pagination.setPage}
-          onPageSizeChange={pagination.setPageSize}
-          itemLabel="expenses"
-        />
-
-        {onRecordExpense && (
-          <div className="p-3.5 sm:p-4 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <span className="text-xs text-slate-500 font-medium">
-              Need to record a new expenditure or debit voucher?
-            </span>
-            <Button
-              variant="custom"
-              size="none"
-              onClick={onRecordExpense}
-              className="h-9 px-4 text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl shadow-md shadow-orange-500/20 hover:shadow-orange-500/30 transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Record Expense</span>
-            </Button>
+        {/* Custom date range inputs */}
+        {effectivePeriod === "custom" && (
+          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-3 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+              <span>From:</span>
+              <input
+                type="date"
+                value={effectiveFromDate}
+                onChange={(e) => handleDateChange(e.target.value, effectiveToDate, "custom")}
+                className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none focus:border-orange-500 shadow-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+              <span>To:</span>
+              <input
+                type="date"
+                value={effectiveToDate}
+                onChange={(e) => handleDateChange(effectiveFromDate, e.target.value, "custom")}
+                className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none focus:border-orange-500 shadow-sm"
+              />
+            </div>
           </div>
         )}
       </div>
+
+      {/* ================= Table (Following Job Assignments Table UI) ================= */}
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-sm bg-white mb-6">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-slate-50/80 text-[11px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-200/80">
+            <tr>
+              <th className="px-6 py-4 rounded-tl-2xl">Voucher / Bill (UID)</th>
+              <th className="px-6 py-4">Particulars & Scope</th>
+              <th className="px-6 py-4">Expense Date</th>
+              <th className="px-6 py-4">Payee / Handler</th>
+              <th className="px-6 py-4">Status</th>
+              <th className="px-6 py-4 text-right">Debit Amount</th>
+              {canApprove && <th className="px-6 py-4 rounded-tr-2xl text-right">Actions</th>}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={canApprove ? 7 : 6} className="py-14 text-center text-slate-400 font-medium">
+                  <div className="flex flex-col items-center justify-center gap-3 py-4">
+                    <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-500 shadow-sm">
+                      <Banknote className="w-7 h-7" />
+                    </div>
+                    <div className="text-center space-y-1">
+                      <p className="font-bold text-sm sm:text-base text-slate-800">No expense records found</p>
+                      <p className="text-xs text-slate-500 max-w-sm">No expense ledger entries match the selected filters or date range.</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              pagination.paginatedData.map((e) => {
+                const isUnderInward = !!(e.inward_id || e.job_entries);
+                const type = e.expense_type || (isUnderInward ? "inward" : "company");
+                const inward = e.job_entries;
+                const uid = inward?.uid_label || (inward?.uid ? `UID-${inward.uid}` : e.inward_uid || null);
+                const client = inward?.clients?.name || e.client_name || null;
+                const cat = e.expense_categories?.name || e.category_name || "General";
+                const acc = e.financial_accounts?.name || e.account_name || "Direct / Cash";
+                const status = (e.approval_status || "approved").toLowerCase();
+
+                const payeeName = e.vendor_name || e.paid_through_person || "Vendor / Payee";
+                const payeeInitial = (payeeName.trim().charAt(0) || "P").toUpperCase();
+
+                let expenseDateStr = "—";
+                const dRaw = e.expense_date || e.created_at;
+                if (dRaw) {
+                  try {
+                    expenseDateStr = format(new Date(dRaw), "dd MMM, yyyy");
+                  } catch {
+                    expenseDateStr = String(dRaw).slice(0, 10);
+                  }
+                }
+
+                return (
+                  <tr
+                    key={e.id}
+                    className="hover:bg-orange-50/30 transition-colors group cursor-pointer"
+                  >
+                    {/* 1. Voucher / Bill (UID) - MATCHING JOB CARD (UID) */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                          <Banknote className="w-4 h-4" />
+                        </div>
+                        <div className="flex flex-col items-start gap-1">
+                          <div className="font-bold text-slate-800 text-[13px] flex items-center gap-1.5 flex-wrap">
+                            <span className="font-mono">{e.bill_number || e.voucher_no || `EXP-${e.id.slice(0, 6).toUpperCase()}`}</span>
+                            {type === "inward" ? (
+                              <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
+                                Inward
+                              </span>
+                            ) : type === "inhouse" ? (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                In-House Lab
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold">
+                                Company
+                              </span>
+                            )}
+                            {e.bill_attached && (
+                              <span title="Bill Attached" className="text-blue-600 text-xs">📎</span>
+                            )}
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-semibold">
+                            {acc} · <span className="uppercase">{e.payment_mode || "CASH"}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* 2. Particulars & Scope - MATCHING MATERIAL */}
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-700 truncate max-w-[220px]" title={e.description || cat}>
+                          {e.description || cat}
+                        </span>
+                        <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium truncate max-w-[220px]">
+                          <span>{cat}</span>
+                          {uid && <span>• {uid}</span>}
+                          {client && <span className="truncate">• {client}</span>}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* 3. Expense Date - MATCHING RECEIVED DATE */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Calendar className="w-4 h-4 text-slate-400" />
+                        <span className="font-semibold text-[13px]">{expenseDateStr}</span>
+                      </div>
+                    </td>
+
+                    {/* 4. Payee / Handler - MATCHING ASSIGNED TO */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold shadow-sm bg-blue-100 text-blue-700">
+                          {payeeInitial}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-800 text-[13px] truncate max-w-[180px]" title={payeeName}>
+                            {payeeName}
+                          </span>
+                          {e.is_reimbursement && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-amber-50 text-amber-700 font-bold uppercase tracking-wider border border-amber-200 w-fit">
+                              Reimbursement
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* 5. Status - MATCHING STATUS */}
+                    <td className="px-6 py-4">
+                      {status === "approved" ? (
+                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                          Approved
+                        </Badge>
+                      ) : status === "pending" ? (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                          Pending
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                          Rejected
+                        </Badge>
+                      )}
+                    </td>
+
+                    {/* 6. Debit Amount */}
+                    <td className="px-6 py-4 text-right">
+                      <div className="font-mono font-bold text-rose-700 text-[14px] tracking-tight tabular-nums">
+                        {fmt(e.amount)}
+                      </div>
+                    </td>
+
+                    {/* 7. Actions */}
+                    {canApprove && (
+                      <td className="px-6 py-4 text-right">
+                        {status === "pending" ? (
+                          <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleApproval(e.id, true)}
+                              className="text-emerald-700 hover:text-white border-emerald-200 hover:bg-emerald-600 hover:border-emerald-600 shadow-sm rounded-xl h-8 px-3 text-xs font-bold transition-all cursor-pointer"
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleApproval(e.id, false)}
+                              className="text-rose-700 hover:text-white border-rose-200 hover:bg-rose-600 hover:border-rose-600 shadow-sm rounded-xl h-8 px-3 text-xs font-bold transition-all cursor-pointer"
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 font-medium">Settled</span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        pageSizeOptions={[10, 20, 50, 100]}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+        itemLabel="expenses"
+      />
     </div>
   );
 }

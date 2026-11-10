@@ -14,7 +14,8 @@ export interface DropdownProps {
   value?: string;
   onChange?: (value: string) => void;
   placeholder?: React.ReactNode;
-  label?: string;
+  label?: React.ReactNode;
+  labelClassName?: string;
   error?: string;
   disabled?: boolean;
   required?: boolean;
@@ -26,6 +27,9 @@ export interface DropdownProps {
   align?: "left" | "right";
   isClearable?: boolean;
   isSearchable?: boolean;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchInMenu?: boolean;
   searchPlaceholder?: string;
   menuWidth?: number | string;
   itemClassName?: string;
@@ -40,6 +44,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
       onChange,
       placeholder = "Select an option",
       label,
+      labelClassName,
       error,
       disabled,
       required,
@@ -51,6 +56,9 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
       align,
       isClearable,
       isSearchable,
+      searchValue,
+      onSearchChange,
+      searchInMenu,
       searchPlaceholder,
       menuWidth,
       itemClassName,
@@ -61,7 +69,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
     return (
       <div className={cn("w-full space-y-1.5", className)} ref={ref}>
         {label && (
-          <label htmlFor={id} className="block text-sm font-medium text-foreground">
+          <label htmlFor={id} className={cn("block text-sm font-medium text-foreground", labelClassName)}>
             {label}
             {required && <span className="text-error ml-1">*</span>}
           </label>
@@ -83,6 +91,9 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
           align={align}
           isClearable={isClearable}
           isSearchable={isSearchable}
+          searchValue={searchValue}
+          onSearchChange={onSearchChange}
+          searchInMenu={searchInMenu}
           searchPlaceholder={searchPlaceholder}
           menuWidth={menuWidth}
           placement={placement}

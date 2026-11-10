@@ -1,27 +1,23 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { format } from "date-fns";
 import {
   Search,
   FilePlus2,
   Eye,
   Calendar,
-  Building,
-  CheckCircle2,
-  AlertCircle,
-  Hash,
+  ClipboardList,
   FlaskConical,
-  ArrowRight,
   Plus,
-  Receipt,
   X,
-  Filter,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { compareJobCardsByUidRecentFirst, isNablJob } from "@/utils/uid-sort";
 
 interface InwardRegisterTableProps {
   inwards: any[];
@@ -44,12 +40,11 @@ export function InwardRegisterTable({
 }: InwardRegisterTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "partial" | "invoiced">(initialStatusFilter);
+  const [filterNabl, setFilterNabl] = useState<string>("all");
 
   useEffect(() => {
     setStatusFilter(initialStatusFilter);
   }, [initialStatusFilter]);
-
-  const showStatusColumn = !isUninvoicedView && statusFilter !== "pending";
 
   const pendingCount = useMemo(() => {
     return inwards.filter((item) => !item.invoices || item.invoices.length === 0).length;
@@ -69,7 +64,7 @@ export function InwardRegisterTable({
   }, [inwards]);
 
   const filteredInwards = useMemo(() => {
-    return inwards.filter((item) => {
+    const list = inwards.filter((item) => {
       const linkedInvoices = (Array.isArray(item.invoices) ? [...item.invoices] : []).sort((a: any, b: any) => {
         const dateA = new Date(a.created_at || a.invoice_date || 0).getTime();
         const dateB = new Date(b.created_at || b.invoice_date || 0).getTime();
@@ -87,6 +82,13 @@ export function InwardRegisterTable({
       if (statusFilter === "partial" && !isPartial) return false;
       if (statusFilter === "invoiced" && !hasInvoice) return false;
 
+      // Accreditation filter
+      if (filterNabl !== "all") {
+        const isNabl = isNablJob(item);
+        if (filterNabl === "nabl" && !isNabl) return false;
+        if (filterNabl === "non_nabl" && isNabl) return false;
+      }
+
       // Search term
       if (!searchTerm.trim()) return true;
       const q = searchTerm.toLowerCase();
@@ -95,126 +97,159 @@ export function InwardRegisterTable({
       const projectMatch = item.project_name?.toLowerCase().includes(q) || item.clients?.site_name?.toLowerCase().includes(q);
       const testMatch = item.job_entry_tests?.some((t: any) =>
         t.test_master?.specific_test?.toLowerCase().includes(q) ||
+        t.test_master?.component_parameter?.toLowerCase().includes(q) ||
         t.material_description?.toLowerCase().includes(q)
       );
 
       return uidMatch || clientMatch || projectMatch || testMatch;
     });
-  }, [inwards, searchTerm, statusFilter, isUninvoicedView]);
+
+    return list.sort(compareJobCardsByUidRecentFirst);
+  }, [inwards, searchTerm, statusFilter, filterNabl, isUninvoicedView]);
 
   const pagination = usePagination({
     data: filteredInwards,
     initialPageSize: 10,
   });
 
-  const hasActiveFilters = searchTerm.trim() !== "" || (!isUninvoicedView && statusFilter !== "all");
+  const hasActiveFilters = searchTerm.trim() !== "" || (!isUninvoicedView && statusFilter !== "all") || filterNabl !== "all";
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
-      {/* Header Info & Filter Bar */}
-      <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5 bg-slate-50/60">
-        {/* Search Input */}
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <Input
-            placeholder="Search by UID, client, site, or test name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9.5 pr-8 h-10 text-xs bg-white border-slate-200/90 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all"
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Filter Pills / Status Info */}
-        {isUninvoicedView ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200/90 px-3.5 py-2 rounded-xl shadow-2xs flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              <span>{filteredInwards.length} Inwards Awaiting Invoice</span>
-            </span>
+    <div className="animate-in fade-in duration-500 mt-2 space-y-5">
+      {/* Filter Inwards Hub */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 mb-5">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+          <div className="flex items-center gap-2 text-slate-800 font-bold">
+            <SlidersHorizontal className="w-5 h-5 text-orange-500" />
+            <span>Filter Inwards</span>
           </div>
-        ) : (
-          <div className="flex items-center gap-2 w-full lg:w-auto justify-start lg:justify-end flex-wrap">
-            <div className="flex bg-slate-200/60 p-1 rounded-xl text-xs font-semibold border border-slate-200/60">
-              <button
-                type="button"
-                onClick={() => setStatusFilter("all")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  statusFilter === "all" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                All Inwards ({inwards.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter("pending")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  statusFilter === "pending" ? "bg-white text-orange-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                <span>Ready for Proforma</span>
-                <span className="text-[10px] opacity-75 font-mono">({pendingCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter("partial")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  statusFilter === "partial" ? "bg-white text-amber-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                <span>Partial / Due</span>
-                <span className="text-[10px] opacity-75 font-mono">({partialCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter("invoiced")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  statusFilter === "invoiced" ? "bg-white text-emerald-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span>Invoiced</span>
-                <span className="text-[10px] opacity-75 font-mono">({invoicedCount})</span>
-              </button>
+
+          <div className="flex items-center gap-3 flex-wrap justify-start sm:justify-end">
+            {!isUninvoicedView ? (
+              <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl text-xs font-semibold border border-slate-200/60 overflow-x-auto no-scrollbar max-w-full">
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("all")}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                    statusFilter === "all" ? "bg-white text-slate-900 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  All Inwards ({inwards.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("pending")}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    statusFilter === "pending" ? "bg-white text-orange-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                  <span>Ready for Proforma</span>
+                  <span className="text-[10px] opacity-75 font-mono">({pendingCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("partial")}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    statusFilter === "partial" ? "bg-white text-amber-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span>Partial / Due</span>
+                  <span className="text-[10px] opacity-75 font-mono">({partialCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("invoiced")}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    statusFilter === "invoiced" ? "bg-white text-emerald-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>Invoiced</span>
+                  <span className="text-[10px] opacity-75 font-mono">({invoicedCount})</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200/90 px-3.5 py-1.5 rounded-xl shadow-sm flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span>{filteredInwards.length} Inwards Awaiting Invoice</span>
+                </span>
+              </div>
+            )}
+
+            <div className="w-36 sm:w-40 shrink-0">
+              <Dropdown
+                value={filterNabl}
+                onChange={setFilterNabl}
+                placeholder="All Types"
+                buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-9.5 text-xs font-semibold"
+                options={[
+                  { value: "all", label: "All Types" },
+                  { value: "nabl", label: "NABL" },
+                  { value: "non_nabl", label: "Non-NABL" },
+                ]}
+              />
             </div>
           </div>
-        )}
+        </div>
+
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex-1 min-w-[220px]">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search Job Card, Material, Date, Client, Site..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-10 pl-10 pr-9 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors shadow-sm bg-white"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs text-left">
-          <thead className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
+      {/* Table Container */}
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-sm bg-white">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-slate-50/80 text-[11px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-200/80">
             <tr>
-              <th className="py-3.5 px-4 whitespace-nowrap">Inward UID</th>
-              <th className="py-3.5 px-4 whitespace-nowrap">Inward Date</th>
-              <th className="py-3.5 px-4">Customer</th>
-              <th className="py-3.5 px-4">Project / Site</th>
-              {showStatusColumn && <th className="py-3.5 px-4">Proforma / Billing Status</th>}
-              <th className="py-3.5 px-4 text-right">Actions</th>
+              <th className="px-6 py-4 rounded-tl-2xl">Job Card (UID)</th>
+              <th className="px-6 py-4">Material</th>
+              <th className="px-6 py-4">Received Date</th>
+              <th className="px-6 py-4">Customer</th>
+              <th className="px-6 py-4 rounded-tr-2xl text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredInwards.length === 0 ? (
               <tr>
-                <td colSpan={showStatusColumn ? 6 : 5} className="py-14 text-center text-slate-400">
+                <td colSpan={5} className="py-14 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-3 py-4">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-50 to-orange-50 border border-indigo-100/80 flex items-center justify-center text-indigo-600 shadow-xs mb-0.5">
-                      <FlaskConical className="w-7 h-7 text-indigo-600" />
+                    <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-500 shadow-sm">
+                      <FlaskConical className="w-7 h-7" />
                     </div>
                     <div className="text-center space-y-1">
                       <p className="font-bold text-sm sm:text-base text-slate-800">No inward entries found</p>
-                      <p className="text-xs text-slate-500 max-w-sm">Inward job cards registered in Client Inward will appear here automatically.</p>
+                      <p className="text-xs text-slate-500 max-w-sm">
+                        {hasActiveFilters
+                          ? "No inwards match the active search or filters. Try clearing your filters."
+                          : "Inward job cards registered in Client Inward will appear here automatically."}
+                      </p>
                     </div>
                     {hasActiveFilters && (
                       <Button
@@ -222,9 +257,10 @@ export function InwardRegisterTable({
                         size="sm"
                         onClick={() => {
                           setSearchTerm("");
+                          setFilterNabl("all");
                           if (!isUninvoicedView) setStatusFilter("all");
                         }}
-                        className="mt-1 text-xs h-8.5 px-3.5 cursor-pointer rounded-xl border border-slate-200 hover:border-orange-300 hover:text-orange-600 font-semibold transition-all shadow-2xs"
+                        className="mt-1 text-xs h-8 px-4 cursor-pointer rounded-xl border border-slate-200 hover:border-orange-300 hover:text-orange-600 font-semibold transition-all shadow-sm"
                       >
                         Clear Filters
                       </Button>
@@ -243,7 +279,6 @@ export function InwardRegisterTable({
                 const bal = latestInvoice ? Number(latestInvoice.balance_amount || 0) : 0;
                 const paid = latestInvoice ? Number(latestInvoice.paid_amount || 0) : 0;
 
-                // Helper: check if a partial invoice's remaining balance has already been invoiced into another invoice
                 const isInvoiceAlreadyContinued = (invId?: string, invNo?: string) => {
                   if (!invId) return false;
                   return linkedInvoices.some((other: any) =>
@@ -267,107 +302,139 @@ export function InwardRegisterTable({
                   !isInvoiceAlreadyContinued(latestInvoice.id, latestInvoice.invoice_no)
                 );
 
-                const uidStr = job.uid_label || (job.uid ? `UID-${job.uid}` : "—");
+                const isNabl = isNablJob(job);
+                const uidVal = job.uid_label || (job.uid ? String(job.uid) : "—");
+                const branchName = job.branches?.name;
+
+                // Material & Tests
+                const tests = Array.isArray(job.job_entry_tests) ? job.job_entry_tests : [];
+                const firstTest = tests[0];
+                const materialName = firstTest?.material_description || firstTest?.test_master?.material_product || "General Materials";
+                const testCount = tests.length;
+
+                // Received Date formatted cleanly
+                const dateRaw = job.inward_on || job.created_at;
+                let receivedStr = "—";
+                if (dateRaw) {
+                  try {
+                    receivedStr = format(new Date(dateRaw), "dd MMM, yyyy");
+                  } catch {
+                    receivedStr = String(dateRaw).slice(0, 10);
+                  }
+                }
+
+                // Customer info & initial
+                const clientName = job.clients?.name || "Customer";
+                const clientInitial = (clientName.trim().charAt(0) || "C").toUpperCase();
+                const projectName = job.project_name || job.clients?.site_name || "General";
 
                 return (
-                  <tr key={job.id} className="hover:bg-slate-50/80 transition-colors group">
-                    {/* Inward UID */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span className="font-mono font-bold text-xs text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/90 shadow-2xs">
-                        {uidStr}
-                      </span>
+                  <tr
+                    key={job.id}
+                    className="hover:bg-orange-50/30 transition-colors group cursor-pointer"
+                  >
+                    {/* Job Card (UID) */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                          <ClipboardList className="w-4 h-4" />
+                        </div>
+                        <div className="flex flex-col items-start gap-1">
+                          <div className="font-bold text-slate-800 text-[13px] flex items-center gap-1.5 flex-wrap">
+                            <span>UID: {uidVal}</span>
+                            {isNabl ? (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                NABL
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                                Non-NABL
+                              </span>
+                            )}
+                          </div>
+                          {branchName && (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/50 text-[10px] font-bold">
+                              {branchName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </td>
 
-                    {/* Inward Date */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="text-xs text-slate-600 font-medium flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>{job.inward_on || job.created_at?.slice(0, 10) || "—"}</span>
+                    {/* Material */}
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-700 truncate max-w-[200px]" title={materialName}>
+                          {materialName}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]">
+                          {testCount > 0 ? `${testCount} test${testCount !== 1 ? "s" : ""} assigned` : "Inward received"}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Received Date */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="font-semibold text-[13px]">{receivedStr}</span>
                       </div>
                     </td>
 
                     {/* Customer */}
-                    <td className="py-4 px-4">
-                      <div className="font-bold text-slate-900 text-sm">
-                        {job.clients?.name || "Customer"}
-                      </div>
-                    </td>
-
-                    {/* Project / Site */}
-                    <td className="py-4 px-4">
-                      <div className="font-semibold text-slate-800 text-xs">
-                        {job.project_name || job.clients?.site_name || "General"}
-                      </div>
-                    </td>
-
-                    {/* Proforma / Invoice Status */}
-                    {showStatusColumn && (
-                      <td className="py-4 px-4">
-                        {latestInvoice ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wide ${
-                                latestInvoice.invoice_type === "proforma"
-                                  ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              }`}>
-                                {latestInvoice.invoice_no}
-                              </span>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                                latestInvoice.status === "paid"
-                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                  : latestInvoice.status === "partial"
-                                  ? "bg-amber-50 text-amber-800 border border-amber-200"
-                                  : "bg-rose-50 text-rose-800 border border-rose-200"
-                              }`}>
-                                {latestInvoice.status === "partial" ? "Partial" : latestInvoice.status}
-                              </span>
-                            </div>
-
-                            <div className="text-[11px] text-slate-500 mt-1">
-                              Total: <strong className="font-mono text-slate-900">{fmt(latestInvoice.total_amount)}</strong>
-                              {paid > 0 && (
-                                <span className="text-emerald-700 ml-1.5 font-medium">
-                                  · Paid <strong className="font-mono">{fmt(paid)}</strong>
-                                </span>
-                              )}
-                            </div>
-
-                            {bal > 0 && (
-                              <div className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                                <span>Due: <strong className="font-mono">{fmt(bal)}</strong></span>
-                              </div>
-                            )}
-
-                            {linkedInvoices.length > 1 && (
-                              <div className="text-[10px] text-slate-400 font-medium">
-                                Remaining balance invoice generated
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            <span>Ready for Proforma</span>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold shadow-sm bg-blue-100 text-blue-700">
+                          {clientInitial}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-800 text-[13px] truncate max-w-[190px]" title={clientName}>
+                            {clientName}
                           </span>
-                        )}
-                      </td>
-                    )}
+                          <span className="text-[11px] text-slate-400 font-medium truncate max-w-[190px]" title={projectName}>
+                            {projectName}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
 
-                    {/* Actions Dropdown */}
-                    <td className="py-4 px-4 text-right">
+                    {/* Actions */}
+                    <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        {isFullyPaid && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            <span>Paid</span>
-                          </span>
+                        {latestInvoice && onViewInvoice && (
+                          <Button
+                            onClick={() => onViewInvoice(latestInvoice)}
+                            size="sm"
+                            variant="outline"
+                            className="text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-100 shadow-sm rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-all cursor-pointer"
+                            title="View Invoice"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
                         )}
-                        <div className="w-[84px]" onClick={(e) => e.stopPropagation()}>
+                        {latestInvoice && hasRemainingBalance && (
+                          <Button
+                            onClick={() =>
+                              onCreateProforma(job, {
+                                isRemainingBalance: true,
+                                defaultBalanceAmount: bal,
+                                previousInvoice: latestInvoice,
+                              })
+                            }
+                            size="sm"
+                            variant="outline"
+                            className="text-amber-700 hover:text-white border-amber-200 hover:bg-amber-600 hover:border-amber-600 shadow-sm rounded-xl h-8 px-2.5 text-xs font-bold transition-all cursor-pointer"
+                            title={`Invoice Remaining Balance (${fmt(bal)})`}
+                          >
+                            <span>Invoice Bal</span>
+                          </Button>
+                        )}
+
+                        <div className="w-[84px]">
                           <Dropdown
                             className="w-[84px] space-y-0"
                             placeholder={
-                              <span className="font-semibold text-slate-700 text-xs tracking-tight">
+                              <span className="font-semibold text-slate-700 text-xs">
                                 Actions
                               </span>
                             }
@@ -376,8 +443,8 @@ export function InwardRegisterTable({
                                 ? [
                                     {
                                       label: (
-                                        <span className="flex items-center gap-2 text-blue-700 font-semibold">
-                                          <FilePlus2 className="w-3.5 h-3.5 text-blue-600" />
+                                        <span className="flex items-center gap-2 text-orange-600 font-semibold">
+                                          <FilePlus2 className="w-3.5 h-3.5 text-orange-500" />
                                           <span>Create Proforma</span>
                                         </span>
                                       ),
@@ -427,7 +494,7 @@ export function InwardRegisterTable({
                             ]}
                             align="right"
                             menuWidth={180}
-                            buttonClassName="h-7 py-0 px-2.5 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs rounded-lg transition-all text-slate-700 cursor-pointer group text-xs font-semibold"
+                            buttonClassName="h-8 py-0 px-2.5 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm rounded-xl transition-all text-slate-700 cursor-pointer group text-xs font-semibold"
                             iconClassName="text-slate-400 group-hover:text-slate-600 w-3 h-3"
                             itemClassName="text-xs py-2 px-3 hover:bg-slate-50 cursor-pointer"
                             value=""

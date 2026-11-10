@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { useToast } from "@/hooks/use-toast";
 import { createExpenseAction } from "@/actions/accounting.actions";
 
@@ -486,11 +487,9 @@ export function RecordExpenseModal({
                 <label className="text-xs font-bold text-slate-800 block mb-1">
                   2. Select Test Name ({selectedCategory}) <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  required
+                <Dropdown
                   value={form.job_entry_test_id}
-                  onChange={(e) => {
-                    const testId = e.target.value;
+                  onChange={(testId) => {
                     set("job_entry_test_id", testId);
                     const matching = (selectedInward?.job_entry_tests || []).find((t: any) =>
                       t.id === testId || t.test_master_id === testId || t.test_master?.id === testId
@@ -500,22 +499,20 @@ export function RecordExpenseModal({
                       set("description", `Direct test expense for: [${selectedCategory}] ${tName}`);
                     }
                   }}
-                  className="w-full h-10 px-3 bg-white border border-indigo-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
-                >
-                  <option value="">— Select a Test Name ({selectedCategory}) —</option>
-                  {(selectedInward?.job_entry_tests || [])
+                  placeholder={`— Select a Test Name (${selectedCategory}) —`}
+                  buttonClassName="w-full h-10 px-3 bg-white border border-indigo-200 rounded-xl text-xs font-semibold text-slate-800"
+                  options={(selectedInward?.job_entry_tests || [])
                     .filter((t: any) => (t.test_master?.category || "Construction") === selectedCategory)
                     .map((t: any) => {
                       const tm = t.test_master;
                       const testName = tm?.specific_test || tm?.component_parameter || t.material_description || "Test Parameter";
                       const mat = tm?.material_product || tm?.discipline_group || "";
-                      return (
-                        <option key={t.id} value={t.id}>
-                          [{selectedCategory}] {testName} {mat ? `[${mat}]` : ""}
-                        </option>
-                      );
+                      return {
+                        value: t.id,
+                        label: `[${selectedCategory}] ${testName} ${mat ? `[${mat}]` : ""}`,
+                      };
                     })}
-                </select>
+                />
               </div>
             </div>
           )}
@@ -598,11 +595,9 @@ export function RecordExpenseModal({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <select
-                    required
+                  <Dropdown
                     value={inwardId}
-                    onChange={(e) => {
-                      const id = e.target.value;
+                    onChange={(id) => {
                       setInwardId(id);
                       const inv = inwards.find((i) => i.id === id);
                       if (inv) {
@@ -614,16 +609,16 @@ export function RecordExpenseModal({
                         }));
                       }
                     }}
-                    className="w-full h-10 px-3 bg-white border border-orange-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-orange-500 outline-none"
-                  >
-                    <option value="">— Select an Inward Job UID —</option>
-                    {filteredInwardOptions.map((inv) => (
-                      <option key={inv.id} value={inv.id}>
-                        UID: {inv.uid_label || inv.uid} — {inv.clients?.name || "Client"} (
-                        {inv.project_name || "Project"})
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="— Select an Inward Job UID —"
+                    buttonClassName="w-full h-10 px-3 bg-white border border-orange-300 rounded-xl text-xs font-medium"
+                    options={[
+                      { value: "", label: "— Select an Inward Job UID —" },
+                      ...filteredInwardOptions.map((inv) => ({
+                        value: inv.id,
+                        label: `UID: ${inv.uid_label || inv.uid} — ${inv.clients?.name || "Client"} (${inv.project_name || "Project"})`,
+                      })),
+                    ]}
+                  />
 
                   {inwards.length > 5 && (
                     <input
@@ -650,83 +645,54 @@ export function RecordExpenseModal({
                     </span>
                   </div>
 
-                    <select
-                      value={form.job_entry_test_id}
-                      onChange={(e) => {
-                        const testId = e.target.value;
-                        set("job_entry_test_id", testId);
-                        const t = selectedInward.job_entry_tests.find((item: any) =>
-                          item.id === testId || item.test_master_id === testId || item.test_master?.id === testId
-                        );
-                        if (t) {
-                          const cat = t.test_master?.category || "Construction";
-                          const testName =
-                            t.test_master?.specific_test ||
-                            t.test_master?.component_parameter ||
-                            t.material_description ||
-                            "Test";
-                          setForm((prev) => ({
-                            ...prev,
-                            job_entry_test_id: t.id,
-                            department: `${cat} Department`,
-                            description: `Direct test expense for: [${cat}] ${testName} (Inward UID: ${selectedInward.uid_label || selectedInward.uid})`,
-                          }));
-                        } else {
-                          setForm((prev) => ({
-                            ...prev,
-                            job_entry_test_id: "",
-                            description: `Direct expense for Inward UID: ${selectedInward.uid_label || selectedInward.uid}`,
-                          }));
-                        }
-                      }}
-                      className="w-full h-9 px-3 bg-white border border-orange-300 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
-                    >
-                      <option value="">— Entire Inward Job (Shared / General Inward Cost) —</option>
-
-                      {/* Construction Tests */}
-                      {selectedInward.job_entry_tests.some((t: any) => (t.test_master?.category || "Construction") === "Construction") && (
-                        <optgroup label="🏗️ Construction Tests">
-                          {selectedInward.job_entry_tests
-                            .filter((t: any) => (t.test_master?.category || "Construction") === "Construction")
-                            .map((t: any) => {
-                              const tm = t.test_master;
-                              const testName =
-                                tm?.specific_test ||
-                                tm?.component_parameter ||
-                                t.material_description ||
-                                "Test Parameter";
-                              const mat = tm?.material_product || tm?.discipline_group || "Material";
-                              return (
-                                <option key={t.id} value={t.id}>
-                                  [Construction] {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
-                                </option>
-                              );
-                            })}
-                        </optgroup>
-                      )}
-
-                      {/* Environmental Tests */}
-                      {selectedInward.job_entry_tests.some((t: any) => t.test_master?.category === "Environmental") && (
-                        <optgroup label="🌱 Environmental Tests">
-                          {selectedInward.job_entry_tests
-                            .filter((t: any) => t.test_master?.category === "Environmental")
-                            .map((t: any) => {
-                              const tm = t.test_master;
-                              const testName =
-                                tm?.specific_test ||
-                                tm?.component_parameter ||
-                                t.material_description ||
-                                "Test Parameter";
-                              const mat = tm?.material_product || tm?.discipline_group || "Material";
-                              return (
-                                <option key={t.id} value={t.id}>
-                                  [Environmental] {testName} — [{mat}] {t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}
-                                </option>
-                              );
-                            })}
-                        </optgroup>
-                      )}
-                    </select>
+                  <Dropdown
+                    value={form.job_entry_test_id}
+                    onChange={(testId) => {
+                      set("job_entry_test_id", testId);
+                      const t = selectedInward.job_entry_tests.find((item: any) =>
+                        item.id === testId || item.test_master_id === testId || item.test_master?.id === testId
+                      );
+                      if (t) {
+                        const cat = t.test_master?.category || "Construction";
+                        const testName =
+                          t.test_master?.specific_test ||
+                          t.test_master?.component_parameter ||
+                          t.material_description ||
+                          "Test";
+                        setForm((prev) => ({
+                          ...prev,
+                          job_entry_test_id: t.id,
+                          department: `${cat} Department`,
+                          description: `Direct test expense for: [${cat}] ${testName} (Inward UID: ${selectedInward.uid_label || selectedInward.uid})`,
+                        }));
+                      } else {
+                        setForm((prev) => ({
+                          ...prev,
+                          job_entry_test_id: "",
+                          description: `Direct expense for Inward UID: ${selectedInward.uid_label || selectedInward.uid}`,
+                        }));
+                      }
+                    }}
+                    placeholder="— Entire Inward Job (Shared / General Inward Cost) —"
+                    buttonClassName="w-full h-9 px-3 bg-white border border-orange-300 rounded-xl text-xs font-medium text-slate-800"
+                    options={[
+                      { value: "", label: "— Entire Inward Job (Shared / General Inward Cost) —" },
+                      ...selectedInward.job_entry_tests.map((t: any) => {
+                        const tm = t.test_master;
+                        const cat = tm?.category || "Construction";
+                        const testName =
+                          tm?.specific_test ||
+                          tm?.component_parameter ||
+                          t.material_description ||
+                          "Test Parameter";
+                        const mat = tm?.material_product || tm?.discipline_group || "Material";
+                        return {
+                          value: t.id,
+                          label: `[${cat}] ${testName} — [${mat}] ${t.sample_quantity ? `(Qty: ${t.sample_quantity})` : ""}`,
+                        };
+                      }),
+                    ]}
+                  />
                   <p className="text-[10px] text-orange-700/80">
                     Tagging a specific test attributes this cost directly to that test for individual test-wise revenue & profitability tracking.
                   </p>
@@ -781,37 +747,38 @@ export function RecordExpenseModal({
               <label className="text-xs font-bold text-slate-700 block mb-1">
                 Category
               </label>
-              <select
+              <Dropdown
                 value={form.category_id}
-                onChange={(e) => set("category_id", e.target.value)}
-                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-slate-900 outline-none"
-              >
-                <option value="">Select Category</option>
-                {displayedCategories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => set("category_id", val)}
+                placeholder="Select Category"
+                buttonClassName="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium"
+                options={[
+                  { value: "", label: "Select Category" },
+                  ...displayedCategories.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                  })),
+                ]}
+              />
             </div>
 
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
                 Paid From Account
               </label>
-              <select
+              <Dropdown
                 value={form.account_id}
-                onChange={(e) => set("account_id", e.target.value)}
-                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-slate-900 outline-none"
-              >
-                <option value="">Direct / Cash Drawer</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name} ({a.account_type?.toUpperCase()}) — Balance: ₹
-                    {Number(a.current_balance || 0).toLocaleString("en-IN")}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => set("account_id", val)}
+                placeholder="Direct / Cash Drawer"
+                buttonClassName="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium"
+                options={[
+                  { value: "", label: "Direct / Cash Drawer" },
+                  ...accounts.map((a) => ({
+                    value: a.id,
+                    label: `${a.name} (${a.account_type?.toUpperCase()}) — Balance: ₹${Number(a.current_balance || 0).toLocaleString("en-IN")}`,
+                  })),
+                ]}
+              />
             </div>
           </div>
 
@@ -821,17 +788,19 @@ export function RecordExpenseModal({
               <label className="text-xs font-bold text-slate-700 block mb-1">
                 Payment Mode
               </label>
-              <select
+              <Dropdown
                 value={form.payment_mode}
-                onChange={(e) => set("payment_mode", e.target.value)}
-                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-slate-900 outline-none"
-              >
-                <option value="cash">Cash</option>
-                <option value="bank">Bank Transfer / NEFT</option>
-                <option value="upi">UPI / QR Code</option>
-                <option value="cheque">Cheque</option>
-                <option value="rtgs">RTGS</option>
-              </select>
+                onChange={(val) => set("payment_mode", val)}
+                placeholder="Select Payment Mode"
+                buttonClassName="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium"
+                options={[
+                  { value: "cash", label: "Cash" },
+                  { value: "bank", label: "Bank Transfer / NEFT" },
+                  { value: "upi", label: "UPI / QR Code" },
+                  { value: "cheque", label: "Cheque" },
+                  { value: "rtgs", label: "RTGS" },
+                ]}
+              />
             </div>
 
             <div>

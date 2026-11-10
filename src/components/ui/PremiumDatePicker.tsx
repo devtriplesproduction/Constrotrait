@@ -17,9 +17,10 @@ interface PremiumDatePickerProps {
   disabled?: boolean;
   triggerClassName?: string;
   minDate?: string | Date;
+  displayFormat?: string;
 }
 
-export function PremiumDatePicker({ value, onChange, className, align = 'left', side = 'bottom', disabled = false, triggerClassName, minDate }: PremiumDatePickerProps) {
+export function PremiumDatePicker({ value, onChange, className, align = 'left', side = 'bottom', disabled = false, triggerClassName, minDate, displayFormat = 'PPP' }: PremiumDatePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [currentMonth, setCurrentMonth] = React.useState(value ? new Date(value) : new Date());
   const [mounted, setMounted] = React.useState(false);
@@ -287,7 +288,7 @@ export function PremiumDatePicker({ value, onChange, className, align = 'left', 
       >
         <CalendarIcon className="w-4 h-4 text-slate-500 group-hover:text-orange-500 transition-colors" />
         <span className={cn("flex-1 font-medium", !value ? "text-slate-400 " : "text-slate-900 ")}>
-          {value ? format(new Date(value), "PPP") : "Select Date"}
+          {value ? format(new Date(value.includes('T') ? value : `${value}T12:00:00`), displayFormat) : "Select Date"}
         </span>
         <ChevronDown className="w-4 h-4 text-slate-500" />
       </div>
