@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { updateAssignmentStatusAction } from "@/actions/job-assignment.actions";
 import { downloadJobCardAction, getJobCardPdfAction } from "@/actions/job-card-pdf.actions";
 import { isTestEngineer, isSuperAdmin, isBranchManager } from "@/config/roles";
-import { Loader2, Check, X, ClipboardList, Download, Tag, Calendar, Beaker, AlertCircle, FileText, Zap, Search, SlidersHorizontal, RefreshCcw } from "lucide-react";
+import { Loader2, Check, X, ClipboardList, Download, Eye, Tag, Calendar, Beaker, AlertCircle, FileText, Zap, Search, SlidersHorizontal, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/modules/PageHeader";
 import { createClient } from "@/lib/supabase/client";
@@ -663,6 +663,23 @@ return (
                         </div>
 
 
+
+                        {(() => {
+                          const reportUrl = a.all_assignments?.find((asg: Record<string, unknown>) => asg.report_url)?.report_url as string | undefined;
+                          if (!reportUrl) return null;
+                          const isExcel = /\.(xlsx|xls|csv|xlsm)(\?.*)?$/i.test(reportUrl);
+                          return (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(reportUrl, '_blank')}
+                              className="border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm rounded-lg h-8 px-2.5 font-bold text-[11px]"
+                            >
+                              {isExcel ? <Download className="w-3.5 h-3.5 mr-1 text-emerald-600" /> : <Eye className="w-3.5 h-3.5 mr-1" />}
+                              {isExcel ? "Download Excel" : "View Report"}
+                            </Button>
+                          );
+                        })()}
 
                         {getAggregateStatus(a.all_assignments) === 'report_uploaded' && (
                           <Button size="sm" onClick={() => handleStatusGroupUpdate(a.all_assignments, 'in_review')} disabled={loadingId === a.id} className="bg-fuchsia-50 text-fuchsia-600 hover:bg-fuchsia-500 hover:text-white border border-fuchsia-200 shadow-sm rounded-lg h-8 px-3 font-bold text-[11px]">

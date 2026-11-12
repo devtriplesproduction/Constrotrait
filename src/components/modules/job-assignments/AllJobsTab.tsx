@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { ClipboardList, X, Search, Calendar, FileText, User, Download, Loader2, SlidersHorizontal } from "lucide-react";
+import { ClipboardList, X, Search, Calendar, FileText, User, Download, Eye, Loader2, SlidersHorizontal } from "lucide-react";
 import { AssignJobsTab } from "./AssignJobsTab";
 import { updateAssignmentStatusAction, deleteAssignmentAction } from "@/actions/job-assignment.actions";
 import { downloadJobCardAction } from "@/actions/job-card-pdf.actions";
@@ -421,60 +421,84 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
                         </div>
                       )}
                       
-                      {(getAggregateStatus(assignment.all_assignments) === 'in_review' || getAggregateStatus(assignment.all_assignments) === 'report_uploaded') && (
-                        <div className="flex flex-col gap-2 mt-1">
-                          {getAggregateStatus(assignment.all_assignments) === 'report_uploaded' ? (
-                            <Button size="sm" disabled className="bg-amber-500 h-7 text-[10px] px-3 text-white rounded-lg font-bold shadow-sm opacity-50 cursor-not-allowed">Review Report</Button>
-                          ) : remarkObj && remarkObj.id === assignment.id ? (
-                            <div className="flex flex-col gap-1 items-end">
-                              <input
-                                type="text"
-                                autoFocus
-                                placeholder="Remark (required for reject)"
-                                className="text-xs border border-slate-300 rounded-md px-2 py-1.5 w-40 focus:outline-none focus:border-orange-400 shadow-sm"
-                                value={remarkObj.remark}
-                                onChange={(e) => setRemarkObj({ ...remarkObj, remark: e.target.value })}
-                              />
-                              <div className="flex gap-1.5 justify-end w-full">
-                                <Button size="sm" onClick={async () => {
-                                  let hasError = false;
-                                  for (const asg of assignment.all_assignments) {
-                                    const res = await updateAssignmentStatusAction(asg.id, 'approved', { reviewer_remark: remarkObj.remark });
-                                    if (!res.success) {
-                                      toast({ title: "Error", description: res.error, variant: "error" });
-                                      hasError = true;
-                                    }
-                                  }
-                                  if (!hasError) {
-                                    toast({ title: "Success", description: "Status updated successfully", variant: "success" });
-                                  }
-                                  setRemarkObj(null);
-                                  router.refresh();
-                                }} className="bg-emerald-500 hover:bg-emerald-600 h-7 text-[10px] px-2.5 rounded-lg text-white font-bold shadow-sm">Approve</Button>
-                                <Button size="sm" variant="outline" onClick={async () => {
-                                  if (!remarkObj.remark) return toast({ title: 'Error', description: 'Remark required for rejection', variant: 'error' });
-                                  let hasError = false;
-                                  for (const asg of assignment.all_assignments) {
-                                    const res = await updateAssignmentStatusAction(asg.id, 'rejected', { reviewer_remark: remarkObj.remark });
-                                    if (!res.success) {
-                                      toast({ title: "Error", description: res.error, variant: "error" });
-                                      hasError = true;
-                                    }
-                                  }
-                                  if (!hasError) {
-                                    toast({ title: "Success", description: "Status updated successfully", variant: "success" });
-                                  }
-                                  setRemarkObj(null);
-                                  router.refresh();
-                                }} className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 h-7 text-[10px] px-2.5 rounded-lg font-bold shadow-sm">Reject</Button>
-                                <Button size="sm" variant="ghost" onClick={() => setRemarkObj(null)} className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:bg-slate-100"><X className="w-3.5 h-3.5" /></Button>
+                      {(() => {
+                        const aggStatus = getAggregateStatus(assignment.all_assignments);
+                        const reportUrl = assignment.all_assignments?.find((a: Record<string, unknown>) => a.report_url)?.report_url as string | undefined;
+                        const isExcel = reportUrl ? /\.(xlsx|xls|csv|xlsm)(\?.*)?$/i.test(reportUrl) : false;
+
+                        return (
+                          <>
+                            {reportUrl && (
+                              <div className="flex items-center justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => window.open(reportUrl, '_blank')}
+                                  className="h-7 text-[10px] px-2.5 border-slate-200 text-slate-700 hover:bg-slate-100 rounded-lg font-bold shadow-sm"
+                                >
+                                  {isExcel ? <Download className="w-3.5 h-3.5 mr-1 text-emerald-600" /> : <Eye className="w-3.5 h-3.5 mr-1" />}
+                                  {isExcel ? "Download Excel" : "View Report"}
+                                </Button>
                               </div>
-                            </div>
-                          ) : (
-                            <Button size="sm" onClick={() => setRemarkObj({ id: assignment.id, remark: "" })} className="bg-amber-500 hover:bg-amber-600 h-7 text-[10px] px-3 text-white rounded-lg font-bold shadow-sm">Review Report</Button>
-                          )}
-                        </div>
-                      )}
+                            )}
+
+                            {(aggStatus === 'in_review' || aggStatus === 'report_uploaded') && (
+                              <div className="flex flex-col gap-2 mt-1">
+                                {aggStatus === 'report_uploaded' ? (
+                                  <Button size="sm" disabled className="bg-amber-500 h-7 text-[10px] px-3 text-white rounded-lg font-bold shadow-sm opacity-50 cursor-not-allowed">Review Report</Button>
+                                ) : remarkObj && remarkObj.id === assignment.id ? (
+                                  <div className="flex flex-col gap-1 items-end">
+                                    <input
+                                      type="text"
+                                      autoFocus
+                                      placeholder="Remark (required for reject)"
+                                      className="text-xs border border-slate-300 rounded-md px-2 py-1.5 w-40 focus:outline-none focus:border-orange-400 shadow-sm"
+                                      value={remarkObj.remark}
+                                      onChange={(e) => setRemarkObj({ ...remarkObj, remark: e.target.value })}
+                                    />
+                                    <div className="flex gap-1.5 justify-end w-full">
+                                      <Button size="sm" onClick={async () => {
+                                        let hasError = false;
+                                        for (const asg of assignment.all_assignments) {
+                                          const res = await updateAssignmentStatusAction(asg.id, 'approved', { reviewer_remark: remarkObj.remark });
+                                          if (!res.success) {
+                                            toast({ title: "Error", description: res.error, variant: "error" });
+                                            hasError = true;
+                                          }
+                                        }
+                                        if (!hasError) {
+                                          toast({ title: "Success", description: "Status updated successfully", variant: "success" });
+                                        }
+                                        setRemarkObj(null);
+                                        router.refresh();
+                                      }} className="bg-emerald-500 hover:bg-emerald-600 h-7 text-[10px] px-2.5 rounded-lg text-white font-bold shadow-sm">Approve</Button>
+                                      <Button size="sm" variant="outline" onClick={async () => {
+                                        if (!remarkObj.remark) return toast({ title: 'Error', description: 'Remark required for rejection', variant: 'error' });
+                                        let hasError = false;
+                                        for (const asg of assignment.all_assignments) {
+                                          const res = await updateAssignmentStatusAction(asg.id, 'rejected', { reviewer_remark: remarkObj.remark });
+                                          if (!res.success) {
+                                            toast({ title: "Error", description: res.error, variant: "error" });
+                                            hasError = true;
+                                          }
+                                        }
+                                        if (!hasError) {
+                                          toast({ title: "Success", description: "Status updated successfully", variant: "success" });
+                                        }
+                                        setRemarkObj(null);
+                                        router.refresh();
+                                      }} className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 h-7 text-[10px] px-2.5 rounded-lg font-bold shadow-sm">Reject</Button>
+                                      <Button size="sm" variant="ghost" onClick={() => setRemarkObj(null)} className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:bg-slate-100"><X className="w-3.5 h-3.5" /></Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <Button size="sm" onClick={() => setRemarkObj({ id: assignment.id, remark: "" })} className="bg-amber-500 hover:bg-amber-600 h-7 text-[10px] px-3 text-white rounded-lg font-bold shadow-sm">Review Report</Button>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </td>
                 </tr>

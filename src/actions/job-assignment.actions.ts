@@ -163,27 +163,43 @@ export async function uploadTestDocumentAction(formData: FormData) {
     const file = formData.get("file") as File;
     if (!file) return { success: false, error: "No file provided" };
 
-    if (file.size > 10 * 1024 * 1024) {
-      return { success: false, error: "File exceeds 10MB maximum limit." };
+    if (file.size > 15 * 1024 * 1024) {
+      return { success: false, error: "File exceeds 15MB maximum limit." };
     }
 
     const { validateFileMagicBytes, getAllowedExtension } = await import("@/lib/file-validation");
-    const ext = getAllowedExtension(file);
+    const ext = getAllowedExtension(file, { allowExcel: true });
     if (!ext) {
-      return { success: false, error: "Invalid file extension. Only PDF and verified images are allowed." };
+      return { success: false, error: "Invalid file extension. Only PDF, Excel (XLSX, XLS, CSV), and verified images are allowed." };
     }
 
-    const isValidMagic = await validateFileMagicBytes(file);
+    const isValidMagic = await validateFileMagicBytes(file, { allowExcel: true });
     if (!isValidMagic) {
-      return { success: false, error: "Invalid file type. Only PDF and verified images are allowed." };
+      return { success: false, error: "Invalid file type. Only PDF, Excel, and verified images are allowed." };
     }
 
     const fileName = `${user.id}_${Date.now()}.${ext}`;
+
+    const contentTypeMap: Record<string, string> = {
+      pdf: "application/pdf",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      webp: "image/webp",
+      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      xls: "application/vnd.ms-excel",
+      csv: "text/csv",
+      xlsm: "application/vnd.ms-excel.sheet.macroEnabled.12",
+      xlsb: "application/vnd.ms-excel.sheet.binary.macroEnabled.12",
+    };
+
+    const contentType = file.type || contentTypeMap[ext] || "application/octet-stream";
 
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
     const { error: uploadError } = await supabase.storage.from("reports").upload(fileName, file, {
       upsert: true,
+      contentType,
     });
     if (uploadError) throw uploadError;
 

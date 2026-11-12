@@ -89,8 +89,10 @@ export function JobAssignmentActions({ assignment, currentUserId, allAssignments
       }
     } catch (err: any) {
       toast({ title: "Error", description: "Upload error: " + err.message, variant: "error" });
+    } finally {
+      e.target.value = "";
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const isMine = assignment.assigned_to === currentUserId || 
@@ -157,11 +159,12 @@ export function JobAssignmentActions({ assignment, currentUserId, allAssignments
             type="file" 
             id={`file-upload-${assignment.id}`} 
             className="hidden" 
+            accept=".pdf,image/*,.xlsx,.xls,.csv,.xlsm,.xlsb,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
             onChange={handleFileUpload} 
           />
           <Button size="sm" disabled={loading || !allTestsStarted} onClick={() => document.getElementById(`file-upload-${assignment.id}`)?.click()} className="bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200">
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-            {assignment.status === 'rejected' ? 'Re-upload Combined Report' : 'Upload Combined Report'}
+            {assignment.status === 'rejected' ? 'Re-upload Combined Report (PDF / Excel)' : 'Upload Combined Report (PDF / Excel)'}
           </Button>
         </div>
       )}
@@ -173,17 +176,20 @@ export function JobAssignmentActions({ assignment, currentUserId, allAssignments
         </Button>
       )}
 
-      {assignment.report_url && (
-        <Button 
-          size="sm" 
-          variant="outline" 
-          className="border-slate-200 text-slate-700 hover:bg-slate-100"
-          onClick={() => window.open(assignment.report_url, '_blank')}
-        >
-          <Eye className="w-4 h-4 mr-2" />
-          View Report
-        </Button>
-      )}
+      {assignment.report_url && (() => {
+        const isExcel = /\.(xlsx|xls|csv|xlsm)(\?.*)?$/i.test(assignment.report_url);
+        return (
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="border-slate-200 text-slate-700 hover:bg-slate-100"
+            onClick={() => window.open(assignment.report_url, '_blank')}
+          >
+            {isExcel ? <Download className="w-4 h-4 mr-2 text-emerald-600" /> : <Eye className="w-4 h-4 mr-2" />}
+            {isExcel ? "Download Excel Report" : "View Report"}
+          </Button>
+        );
+      })()}
 
       {assignment.status === 'in_review' && (
         <>
