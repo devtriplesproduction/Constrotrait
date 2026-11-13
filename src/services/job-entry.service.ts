@@ -36,7 +36,7 @@ export class JobEntryService {
     return words.slice(0, 4).map(w => w[0]).join("").toUpperCase();
   }
 
-  private static async buildSampleCodes(
+  static async buildSampleCodes(
     supabase: any,
     jobYear: number,
     materialInitials: string | undefined,
