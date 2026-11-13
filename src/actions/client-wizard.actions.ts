@@ -139,53 +139,121 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
       return { success: false, error: "Unauthorized: Insufficient permissions to update client wizard" };
     }
 
-    const clientId = data.client.id;
-    if (!clientId) throw new Error("Client ID is required for updating");
-    await ClientService.updateClient(clientId, {
-      name: data.client.name,
-      address: data.client.address,
-      mobile: data.client.mobile,
-      email: data.client.email,
-      gst_no: data.client.gst_no,
-      company_name: data.client.company_name,
-      division: data.jobEntry.division,
-      site_name: data.jobEntry.site_name,
-      agency_name: data.jobEntry.agency_name,
-      project_name: data.jobEntry.project_name,
-      dispatch_name: data.jobEntry.dispatch_name,
-      dispatch_address: data.jobEntry.dispatch_address,
-      contact_person: data.jobEntry.contact_person,
-      collected_by: data.jobEntry.collected_by,
-    });
-
     const supabase = await createClient() as any;
 
-    // Resolve jobEntryId whether targetId is a job_entry_id or a job_entry_test_id
+    // Resolve jobEntryId whether targetId is a job_entry_id, job_entry_test_id, or uid_label
     let jobEntryId = targetId;
-    const { data: jeDirect } = await supabase
-      .from("job_entries")
-      .select("id, uid, uid_label, created_at")
-      .eq("id", targetId)
-      .maybeSingle();
+    let oldClientId: string | undefined;
+    let jobCreatedAt: string | undefined;
+    let jobUidLabel: string | undefined;
+    let jobBranchId: string | undefined;
+    let jobIsNabl: boolean | undefined;
 
-    let jobCreatedAt = jeDirect?.created_at;
-    let jobUidLabel = jeDirect?.uid_label;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
 
-    if (!jeDirect) {
-      const { data: testRow } = await supabase
-        .from("job_entry_tests")
-        .select("id, job_entry_id, uid_label, job_entries (id, created_at, uid_label)")
+    if (isUuid) {
+      const { data: jeDirect } = await supabase
+        .from("job_entries")
+        .select("id, uid, uid_label, created_at, client_id, branch_id, is_nabl")
         .eq("id", targetId)
         .maybeSingle();
-      if (testRow?.job_entry_id) {
-        jobEntryId = testRow.job_entry_id;
-        jobCreatedAt = testRow.job_entries?.created_at;
-        jobUidLabel = testRow.uid_label || testRow.job_entries?.uid_label;
+
+      if (jeDirect) {
+        jobEntryId = jeDirect.id;
+        oldClientId = jeDirect.client_id;
+        jobCreatedAt = jeDirect.created_at;
+        jobUidLabel = jeDirect.uid_label;
+        jobBranchId = jeDirect.branch_id;
+        jobIsNabl = jeDirect.is_nabl;
+      } else {
+        const { data: testRow } = await supabase
+          .from("job_entry_tests")
+          .select("id, job_entry_id, uid_label, job_entries (id, created_at, uid_label, client_id, branch_id, is_nabl)")
+          .eq("id", targetId)
+          .maybeSingle();
+        if (testRow?.job_entry_id) {
+          jobEntryId = testRow.job_entry_id;
+          oldClientId = testRow.job_entries?.client_id;
+          jobCreatedAt = testRow.job_entries?.created_at;
+          jobUidLabel = testRow.uid_label || testRow.job_entries?.uid_label;
+          jobBranchId = testRow.job_entries?.branch_id;
+          jobIsNabl = testRow.job_entries?.is_nabl;
+        }
       }
+    } else {
+      const { data: jeByUid } = await supabase
+        .from("job_entries")
+        .select("id, uid, uid_label, created_at, client_id, branch_id, is_nabl")
+        .eq("uid_label", targetId)
+        .maybeSingle();
+      if (jeByUid) {
+        jobEntryId = jeByUid.id;
+        oldClientId = jeByUid.client_id;
+        jobCreatedAt = jeByUid.created_at;
+        jobUidLabel = jeByUid.uid_label;
+        jobBranchId = jeByUid.branch_id;
+        jobIsNabl = jeByUid.is_nabl;
+      }
+    }
+
+    let clientId = data.client?.id;
+
+    // If client ID belongs to a shared Dummy Client and user changed the customer name, detach and create a new client
+    if (clientId) {
+      const { data: existingClient } = await supabase
+        .from("clients")
+        .select("id, name")
+        .eq("id", clientId)
+        .maybeSingle();
+
+      if (existingClient?.name === "Dummy Client" && data.client?.name && data.client.name.trim() !== "Dummy Client") {
+        clientId = undefined;
+      }
+    }
+
+    const effectiveBranchId = data.client?.branch_id || jobBranchId || (user as any).branch_id || undefined;
+
+    if (!clientId) {
+      const newClient = await ClientService.createClient({
+        name: data.client.name,
+        address: data.client.address,
+        mobile: data.client.mobile,
+        email: data.client.email,
+        gst_no: data.client.gst_no,
+        company_name: data.client.company_name,
+        branch_id: effectiveBranchId,
+        division: data.jobEntry.division,
+        site_name: data.jobEntry.site_name,
+        agency_name: data.jobEntry.agency_name,
+        project_name: data.jobEntry.project_name,
+        dispatch_name: data.jobEntry.dispatch_name,
+        dispatch_address: data.jobEntry.dispatch_address,
+        contact_person: data.jobEntry.contact_person,
+        collected_by: data.jobEntry.collected_by,
+      });
+      clientId = newClient.id;
+    } else {
+      await ClientService.updateClient(clientId, {
+        name: data.client.name,
+        address: data.client.address,
+        mobile: data.client.mobile,
+        email: data.client.email,
+        gst_no: data.client.gst_no,
+        company_name: data.client.company_name,
+        division: data.jobEntry.division,
+        site_name: data.jobEntry.site_name,
+        agency_name: data.jobEntry.agency_name,
+        project_name: data.jobEntry.project_name,
+        dispatch_name: data.jobEntry.dispatch_name,
+        dispatch_address: data.jobEntry.dispatch_address,
+        contact_person: data.jobEntry.contact_person,
+        collected_by: data.jobEntry.collected_by,
+      });
     }
 
     if (jobEntryId) {
       await supabase.from("job_entries").update({
+        client_id: clientId,
         site_name: toNull(data.jobEntry?.site_name),
         division: toNull(data.jobEntry?.division),
         agency: toNull(data.jobEntry?.agency_name),
@@ -235,6 +303,10 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
     }
     if (isNaN(qty) || qty <= 0) qty = 1;
 
+    const testsToProcess = data.jobEntryTests || [];
+    let newSampleSeqName = '';
+    let newSampleNo = 0;
+
     if (unifiedSampleCode) {
       const firstCode = String(unifiedSampleCode).split(/,\s*(?=CMTS\/)|,\s*/)[0]?.trim();
       const match = firstCode?.match(parse5Part);
@@ -250,10 +322,31 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
         }
         unifiedSampleCode = codes.join(', ');
       }
+    } else if (testsToProcess.length > 0) {
+      // Dummy inward or inward without sample code receiving tests for the first time
+      const testMasterIds = testsToProcess.map((t: any) => t.test_master_id).filter(Boolean);
+      if (testMasterIds.length > 0) {
+        const { data: tmData } = await supabase.from("test_master").select("id, category, is_nabl, material_product, component_parameter, specific_test").in("id", testMasterIds as string[]);
+        if (tmData && tmData.length > 0) {
+          const jobYear = new Date(jobCreatedAt || Date.now()).getFullYear();
+          const sampleRes = await JobEntryService.buildSampleCodes(
+            supabase,
+            jobYear,
+            cleanInitials,
+            tmData,
+            testsToProcess,
+            jobBranchId || undefined
+          );
+          if (sampleRes.sampleCodes.length > 0) {
+            unifiedSampleCode = sampleRes.sampleCodes.join(', ');
+            newSampleSeqName = sampleRes.seqName;
+            newSampleNo = sampleRes.sampleNo;
+          }
+        }
+      }
     }
 
     const submittedTestIds = new Set<string>();
-    const testsToProcess = data.jobEntryTests || [];
 
     for (let i = 0; i < testsToProcess.length; i++) {
       const t = testsToProcess[i];
@@ -314,8 +407,31 @@ export async function updateClientWizardAction(data: ClientWizardValues, targetI
       }
     }
 
+    if (newSampleSeqName && newSampleNo > 0) {
+      const jobYear = new Date(jobCreatedAt || Date.now()).getFullYear();
+      await supabase.rpc("advance_uid_seq", { 
+        p_name: newSampleSeqName, 
+        p_year: jobYear, 
+        p_val: newSampleNo,
+        p_branch_id: jobBranchId || null
+      });
+    }
+
     revalidatePath("/dashboard");
     revalidatePath("/clients");
+    revalidatePath("/job-cards");
+    if (jobUidLabel) {
+      revalidatePath(`/job-cards/${jobUidLabel}`);
+    }
+    if (jobEntryId) {
+      revalidatePath(`/job-cards/${jobEntryId}`);
+    }
+    if (oldClientId) {
+      revalidatePath(`/clients/${oldClientId}`);
+    }
+    if (clientId && clientId !== oldClientId) {
+      revalidatePath(`/clients/${clientId}`);
+    }
     revalidatePath("/", "layout");
     return { success: true, uids: [] };
   } catch (error) {
