@@ -90,8 +90,6 @@ export function AdminSidebar({ isOpen, setIsOpen, role, roles, hideOnDesktop = f
     adminLinks.push({ title: "Payroll", href: "/hr/payroll", icon: Banknote });
   }
 
-  // Accounting and System tabs are hidden
-  /*
   if (canViewAccounting(roleArray)) {
     adminLinks.push({
       title: "Accounting",
@@ -117,7 +115,6 @@ export function AdminSidebar({ isOpen, setIsOpen, role, roles, hideOnDesktop = f
       icon: Database,
     });
   }
-  */
 
   return <BaseSidebar links={adminLinks} isOpen={isOpen} setIsOpen={setIsOpen} hideOnDesktop={hideOnDesktop} />;
 }
