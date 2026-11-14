@@ -531,7 +531,7 @@ export function ReceiptsListTable({
                               } else if (val === "cancel") {
                                 const reason = prompt(`Reason for cancelling receipt ${r.receipt_no}?`);
                                 if (reason && reason.trim()) {
-                                  onCancelReceipt(r.id, reason.trim());
+                                  onCancelReceipt?.(r.id, reason.trim());
                                 }
                               }
                             }}
