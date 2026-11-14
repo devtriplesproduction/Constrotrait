@@ -96,37 +96,20 @@ export function InvoicesListTable({
             <span>Filter Invoices</span>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl text-xs font-semibold border border-slate-200/60 overflow-x-auto no-scrollbar max-w-full">
+          {hasActiveFilters && (
             <button
               type="button"
-              onClick={() => setTypeFilter("all")}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                typeFilter === "all" ? "bg-white text-slate-900 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
-              }`}
+              onClick={() => {
+                setSearchTerm("");
+                setTypeFilter("all");
+                setStatusFilter("all");
+              }}
+              className="text-xs font-semibold text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-1.5 cursor-pointer"
             >
-              All Types ({invoices.length})
+              <X className="w-3.5 h-3.5" />
+              <span>Reset Filters</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setTypeFilter("proforma")}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                typeFilter === "proforma" ? "bg-white text-orange-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-              <span>Proforma ({proformaCount})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTypeFilter("tax_invoice")}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                typeFilter === "tax_invoice" ? "bg-white text-emerald-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>Tax Invoices ({taxCount})</span>
-            </button>
-          </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-end gap-4">
@@ -155,18 +138,94 @@ export function InvoicesListTable({
             </div>
           </div>
 
-          <div className="w-full sm:w-48">
+          <div className="w-full sm:w-56 shrink-0">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Invoice Type</label>
+            <Dropdown
+              value={typeFilter}
+              onChange={(v) => setTypeFilter(v as any)}
+              placeholder="All Types"
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10 text-xs font-semibold"
+              options={[
+                {
+                  value: "all",
+                  label: (
+                    <span className="flex items-center gap-1.5">
+                      <span>All Types</span>
+                      <span className="text-[10px] opacity-75 font-mono">({invoices.length})</span>
+                    </span>
+                  ),
+                },
+                {
+                  value: "proforma",
+                  label: (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                      <span>Proforma</span>
+                      <span className="text-[10px] opacity-75 font-mono">({proformaCount})</span>
+                    </span>
+                  ),
+                },
+                {
+                  value: "tax_invoice",
+                  label: (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span>Tax Invoices</span>
+                      <span className="text-[10px] opacity-75 font-mono">({taxCount})</span>
+                    </span>
+                  ),
+                },
+              ]}
+            />
+          </div>
+
+          <div className="w-full sm:w-52 shrink-0">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Payment Status</label>
             <Dropdown
               value={statusFilter}
               onChange={(v) => setStatusFilter(v as any)}
               placeholder="All Statuses"
-              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10"
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10 text-xs font-semibold"
               options={[
-                { value: "all", label: `All Statuses (${invoices.length})` },
-                { value: "unpaid", label: `Unpaid (${unpaidCount})` },
-                { value: "partial", label: `Partial (${partialCount})` },
-                { value: "paid", label: `Paid (${paidCount})` },
+                {
+                  value: "all",
+                  label: (
+                    <span className="flex items-center gap-1.5">
+                      <span>All Statuses</span>
+                      <span className="text-[10px] opacity-75 font-mono">({invoices.length})</span>
+                    </span>
+                  ),
+                },
+                {
+                  value: "unpaid",
+                  label: (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                      <span>Unpaid</span>
+                      <span className="text-[10px] opacity-75 font-mono">({unpaidCount})</span>
+                    </span>
+                  ),
+                },
+                {
+                  value: "partial",
+                  label: (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                      <span>Partial</span>
+                      <span className="text-[10px] opacity-75 font-mono">({partialCount})</span>
+                    </span>
+                  ),
+                },
+                {
+                  value: "paid",
+                  label: (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span>Paid</span>
+                      <span className="text-[10px] opacity-75 font-mono">({paidCount})</span>
+                    </span>
+                  ),
+                },
               ]}
             />
           </div>
@@ -387,16 +446,6 @@ export function InvoicesListTable({
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            onClick={() => onViewInvoice(inv)}
-                            size="sm"
-                            variant="outline"
-                            className="text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-100 shadow-sm rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-all cursor-pointer"
-                            title="View / Print Invoice"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-
                           {bal > 0 && (
                             <Button
                               onClick={() => onRecordPayment(inv)}
@@ -409,9 +458,9 @@ export function InvoicesListTable({
                             </Button>
                           )}
 
-                          <div className="w-[84px]">
+                          <div className="w-[92px]">
                             <Dropdown
-                              className="w-[84px] space-y-0"
+                              className="w-[92px] space-y-0"
                               placeholder={<span className="font-semibold text-slate-700 text-xs">Actions</span>}
                               options={[
                                 {

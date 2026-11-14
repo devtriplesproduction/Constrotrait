@@ -77,7 +77,7 @@ export class JobAssignmentService {
     return user;
   }
 
-  static async getUnassignedJobCards(branchId?: string) {
+  static async getUnassignedJobCards(branchId?: string, options?: { limit?: number; offset?: number }) {
     const supabase = await createClient();
     const user = await this.checkPermission(supabase);
     const { data: profile } = await supabase.from("profiles").select("roles, branch_id").eq("id", user.id).single();
@@ -86,10 +86,18 @@ export class JobAssignmentService {
     let query = supabase
       .from("job_entry_tests")
       .select(`
-        id, job_entry_id, date_of_testing, uid_label, test_master_id,
-        test_master:test_master_id ( component_parameter, specific_test, category, is_nabl ),
-        job_entries!job_entry_tests_job_entry_id_fkey!inner ( id, uid, uid_label, branch_id, branches ( id, name, code ) )
-      `);
+        id, job_entry_id, date_of_testing, uid_label, test_master_id, created_at,
+        material_description, sample_quantity,
+        test_master:test_master_id ( id, component_parameter, specific_test, category, is_nabl ),
+        job_entries!job_entry_tests_job_entry_id_fkey!inner ( 
+          id, uid, uid_label, branch_id, project_name, created_at, is_nabl,
+          clients ( id, name, company_name ),
+          branches ( id, name, code ) 
+        ),
+        job_assignments!job_assignments_job_entry_test_id_fkey ( id )
+      `)
+      .is("job_assignments", null)
+      .order("created_at", { ascending: false });
 
     if (isSuper) {
       if (branchId && branchId !== "all") {
@@ -103,16 +111,17 @@ export class JobAssignmentService {
       }
     }
 
+    if (options?.limit) {
+      const from = options.offset || 0;
+      const to = from + options.limit - 1;
+      query = query.range(from, to);
+    }
+
     const { data: tests, error: testsErr } = await query;
     if (testsErr) throw new Error(testsErr.message);
 
-    const { data: assignments, error: asgnErr } = await supabase
-      .from("job_assignments")
-      .select("job_entry_test_id");
-    if (asgnErr) throw new Error(asgnErr.message);
-
-    const assignedIds = new Set(assignments.map((a: any) => a.job_entry_test_id));
-    return (tests || []).filter((test: any) => !assignedIds.has(test.id)).sort(compareJobCardsByUidRecentFirst);
+    const unassigned = (tests || []).filter((test: any) => !test.job_assignments || test.job_assignments.length === 0);
+    return unassigned.sort(compareJobCardsByUidRecentFirst);
   }
 
   static async getAssignments(filters?: { team_id?: string; employee_id?: string; status?: string; branch_id?: string }) {

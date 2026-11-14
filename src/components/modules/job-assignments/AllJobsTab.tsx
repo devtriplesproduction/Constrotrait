@@ -25,7 +25,21 @@ function assignmentUid(assignment: any) {
   return `Test ID missing`;
 }
 
-export function AllJobsTab({ assignments, branches, employees, filterStatus, setFilterStatus }: { assignments: any[], branches: any[], employees: any[], filterStatus: string, setFilterStatus: (s: string) => void }) {
+export function AllJobsTab({ 
+  assignments, 
+  branches, 
+  employees, 
+  filterStatus, 
+  setFilterStatus,
+  unassignedJobCards = []
+}: { 
+  assignments: any[], 
+  branches: any[], 
+  employees: any[], 
+  filterStatus: string, 
+  setFilterStatus: (s: string) => void,
+  unassignedJobCards?: any[]
+}) {
   const router = useRouter();
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [initialAssignment, setInitialAssignment] = useState<any>(null);
@@ -406,13 +420,29 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
                             )}
                           </Button>
                           <Button onClick={() => {
+                            const firstTest = assignment.grouped_tests?.[0] || assignment.job_entry_tests;
+                            const jobEntry = firstTest?.job_entries;
+                            const clientName = jobEntry?.clients?.company_name || jobEntry?.clients?.name || "";
+                            const projectName = jobEntry?.project_name || "";
+                            const testNames = assignment.grouped_tests
+                              ?.map((t: any) => t?.test_master?.component_parameter || t?.test_parameters)
+                              .filter(Boolean)
+                              .join(", ") || firstTest?.test_master?.component_parameter || "";
+
                             setInitialAssignment({
                               job_entry_test_id: assignment.job_entry_test_id,
-                              uid: assignment.job_entry_tests?.job_entries?.uid,
+                              job_entry_id: firstTest?.job_entry_id,
+                              test_ids: assignment.all_assignments?.map((a: any) => a.job_entry_test_id) || [assignment.job_entry_test_id],
+                              uid: jobEntry?.uid,
+                              uid_label: firstTest?.uid_label || jobEntry?.uid_label || jobEntry?.uid,
+                              client_name: clientName,
+                              project_name: projectName,
+                              test_name: testNames,
                               assigned_to: assignment.assigned_to,
                               team_id: assignment.team_id,
                               due_date: assignment.due_date,
                               notes: assignment.notes,
+                              is_edit: true,
                             });
                             setIsAssignModalOpen(true);
                           }} size="sm" variant="outline" className="text-orange-600 hover:text-white border-orange-200 hover:bg-orange-500 hover:border-orange-500 shadow-sm rounded-xl h-8 px-4 text-xs font-bold transition-all">
@@ -531,19 +561,39 @@ export function AllJobsTab({ assignments, branches, employees, filterStatus, set
 
       {/* Assignment Modal */}
       {isAssignModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 sm:p-6 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col relative overflow-hidden border border-slate-100">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 sm:p-6 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] flex flex-col relative overflow-hidden border border-slate-100">
             <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-orange-500" />
-                Assign Job
-              </h3>
-              <button onClick={() => setIsAssignModalOpen(false)} className="text-slate-400 hover:text-slate-700 bg-white shadow-sm border border-slate-200 hover:bg-slate-100 p-1.5 rounded-full transition-colors">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shadow-sm">
+                  <ClipboardList className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800">
+                    {initialAssignment ? "Edit Job Assignment" : "Assign Job Card"}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {initialAssignment ? `Updating assignment for UID: ${initialAssignment.uid_label || initialAssignment.uid}` : "Assign pending job cards to test engineers"}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setIsAssignModalOpen(false); setInitialAssignment(null); }} 
+                className="text-slate-400 hover:text-slate-700 bg-white shadow-sm border border-slate-200 hover:bg-slate-100 p-1.5 rounded-full transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              <AssignJobsTab employees={employees} branches={branches} initialAssignment={initialAssignment} onSuccess={() => { setIsAssignModalOpen(false); router.refresh(); }} />
+              <AssignJobsTab 
+                employees={employees} 
+                branches={branches} 
+                existingAssignments={assignments}
+                initialUnassignedJobCards={unassignedJobCards}
+                initialAssignment={initialAssignment} 
+                onSuccess={() => { setIsAssignModalOpen(false); setInitialAssignment(null); router.refresh(); }} 
+                onClose={() => { setIsAssignModalOpen(false); setInitialAssignment(null); }}
+              />
             </div>
           </div>
         </div>

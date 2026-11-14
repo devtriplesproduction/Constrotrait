@@ -34,7 +34,7 @@ export async function getAssignmentByIdAction(id: string) {
   }
 }
 
-export async function getUnassignedJobCardsAction(branchId?: string) {
+export async function getUnassignedJobCardsAction(branchId?: string, options?: { limit?: number; offset?: number }) {
   try {
     const user = await getAuthenticatedUserWithRoles();
     if (!user || (!canManageJobAssignments(user.roles) && !canManageClientsAndJobs(user.roles))) {
@@ -42,7 +42,7 @@ export async function getUnassignedJobCardsAction(branchId?: string) {
     }
     const isSuper = isSuperAdmin(user.roles);
     const effectiveBranchId = isSuper ? branchId : (user.branch_id || undefined);
-    const unassigned = await JobAssignmentService.getUnassignedJobCards(effectiveBranchId);
+    const unassigned = await JobAssignmentService.getUnassignedJobCards(effectiveBranchId, options);
     return { success: true, data: unassigned };
   } catch (error: any) {
     console.error("getUnassignedJobCardsAction error:", error);
@@ -99,6 +99,41 @@ export async function assignJobCardAction(data: {
   } catch (error: any) {
     console.error("assignJobCardAction error:", error);
     return { success: false, error: error.message || "Failed to assign job card" };
+  }
+}
+
+export async function assignJobCardsBatchAction(data: {
+  job_entry_test_ids: string[];
+  team_id?: string;
+  assigned_to?: string;
+  due_date?: string;
+  notes?: string;
+  branch_id?: string;
+}) {
+  try {
+    const user = await getAuthenticatedUserWithRoles();
+    if (!user || (!canManageJobAssignments(user.roles) && !canManageClientsAndJobs(user.roles))) {
+      return { success: false, error: "Unauthorized: Insufficient permissions to assign job card" };
+    }
+    const isSuper = isSuperAdmin(user.roles);
+    const effectiveBranchId = isSuper ? data.branch_id : user.branch_id;
+    const results = await Promise.all(
+      data.job_entry_test_ids.map(testId =>
+        JobAssignmentService.assignJobCard({
+          job_entry_test_id: testId,
+          team_id: data.team_id,
+          assigned_to: data.assigned_to,
+          due_date: data.due_date,
+          notes: data.notes,
+          branch_id: effectiveBranchId || undefined,
+        })
+      )
+    );
+    revalidatePath("/job-assignments");
+    return { success: true, count: results.length, data: results };
+  } catch (error: any) {
+    console.error("assignJobCardsBatchAction error:", error);
+    return { success: false, error: error.message || "Failed to assign job card(s)" };
   }
 }
 

@@ -26,6 +26,7 @@ interface InwardRegisterTableProps {
   onRecordExpense?: (inward: any) => void;
   initialStatusFilter?: "all" | "pending" | "partial" | "invoiced";
   isUninvoicedView?: boolean;
+  title?: string;
 }
 
 const fmt = (n: number) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
@@ -37,6 +38,7 @@ export function InwardRegisterTable({
   onRecordExpense,
   initialStatusFilter = "all",
   isUninvoicedView = false,
+  title = "Filter Inwards",
 }: InwardRegisterTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "partial" | "invoiced">(initialStatusFilter);
@@ -112,7 +114,16 @@ export function InwardRegisterTable({
     initialPageSize: 10,
   });
 
-  const hasActiveFilters = searchTerm.trim() !== "" || (!isUninvoicedView && statusFilter !== "all") || filterNabl !== "all";
+  const hasActiveFilters =
+    searchTerm.trim() !== "" ||
+    (!isUninvoicedView && statusFilter !== initialStatusFilter) ||
+    filterNabl !== "all";
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setFilterNabl("all");
+    if (!isUninvoicedView) setStatusFilter(initialStatusFilter);
+  };
 
   return (
     <div className="animate-in fade-in duration-500 mt-2 space-y-5">
@@ -121,78 +132,19 @@ export function InwardRegisterTable({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
           <div className="flex items-center gap-2 text-slate-800 font-bold">
             <SlidersHorizontal className="w-5 h-5 text-orange-500" />
-            <span>Filter Inwards</span>
+            <span>{title}</span>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap justify-start sm:justify-end">
-            {!isUninvoicedView ? (
-              <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl text-xs font-semibold border border-slate-200/60 overflow-x-auto no-scrollbar max-w-full">
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("all")}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                    statusFilter === "all" ? "bg-white text-slate-900 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  All Inwards ({inwards.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("pending")}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                    statusFilter === "pending" ? "bg-white text-orange-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                  <span>Ready for Proforma</span>
-                  <span className="text-[10px] opacity-75 font-mono">({pendingCount})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("partial")}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                    statusFilter === "partial" ? "bg-white text-amber-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>Partial / Due</span>
-                  <span className="text-[10px] opacity-75 font-mono">({partialCount})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("invoiced")}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                    statusFilter === "invoiced" ? "bg-white text-emerald-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span>Invoiced</span>
-                  <span className="text-[10px] opacity-75 font-mono">({invoicedCount})</span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200/90 px-3.5 py-1.5 rounded-xl shadow-sm flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                  <span>{filteredInwards.length} Inwards Awaiting Invoice</span>
-                </span>
-              </div>
-            )}
-
-            <div className="w-36 sm:w-40 shrink-0">
-              <Dropdown
-                value={filterNabl}
-                onChange={setFilterNabl}
-                placeholder="All Types"
-                buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-9.5 text-xs font-semibold"
-                options={[
-                  { value: "all", label: "All Types" },
-                  { value: "nabl", label: "NABL" },
-                  { value: "non_nabl", label: "Non-NABL" },
-                ]}
-              />
-            </div>
-          </div>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-xs font-semibold text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-1.5 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Reset Filters</span>
+            </button>
+          )}
         </div>
 
         <div className="flex flex-wrap items-end gap-4">
@@ -219,6 +171,82 @@ export function InwardRegisterTable({
                 </button>
               )}
             </div>
+          </div>
+
+          {!isUninvoicedView ? (
+            <div className="w-full sm:w-56 shrink-0">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Inward Status</label>
+              <Dropdown
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v as any)}
+                placeholder="All Inwards"
+                buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10 text-xs font-semibold"
+                options={[
+                  {
+                    value: "all",
+                    label: (
+                      <span className="flex items-center gap-1.5">
+                        <span>All Inwards</span>
+                        <span className="text-[10px] opacity-75 font-mono">({inwards.length})</span>
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "pending",
+                    label: (
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                        <span>Ready for Proforma</span>
+                        <span className="text-[10px] opacity-75 font-mono">({pendingCount})</span>
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "partial",
+                    label: (
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                        <span>Partial / Due</span>
+                        <span className="text-[10px] opacity-75 font-mono">({partialCount})</span>
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "invoiced",
+                    label: (
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span>Invoiced</span>
+                        <span className="text-[10px] opacity-75 font-mono">({invoicedCount})</span>
+                      </span>
+                    ),
+                  },
+                ]}
+              />
+            </div>
+          ) : (
+            <div className="w-full sm:w-auto shrink-0">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Inward Status</label>
+              <div className="h-10 px-3.5 bg-amber-50 border border-amber-200/90 rounded-xl flex items-center gap-2 text-xs font-bold text-amber-900 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <span>{filteredInwards.length} Inwards Awaiting Invoice</span>
+              </div>
+            </div>
+          )}
+
+          <div className="w-full sm:w-40 shrink-0">
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Job Type</label>
+            <Dropdown
+              value={filterNabl}
+              onChange={setFilterNabl}
+              placeholder="All Types"
+              buttonClassName="bg-white border-slate-200 shadow-sm rounded-xl h-10 text-xs font-semibold"
+              options={[
+                { value: "all", label: "All Types" },
+                { value: "nabl", label: "NABL" },
+                { value: "non_nabl", label: "Non-NABL" },
+              ]}
+            />
           </div>
         </div>
       </div>
@@ -255,11 +283,7 @@ export function InwardRegisterTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          setSearchTerm("");
-                          setFilterNabl("all");
-                          if (!isUninvoicedView) setStatusFilter("all");
-                        }}
+                        onClick={handleResetFilters}
                         className="mt-1 text-xs h-8 px-4 cursor-pointer rounded-xl border border-slate-200 hover:border-orange-300 hover:text-orange-600 font-semibold transition-all shadow-sm"
                       >
                         Clear Filters
@@ -401,17 +425,6 @@ export function InwardRegisterTable({
                     {/* Actions */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        {latestInvoice && onViewInvoice && (
-                          <Button
-                            onClick={() => onViewInvoice(latestInvoice)}
-                            size="sm"
-                            variant="outline"
-                            className="text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-100 shadow-sm rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-all cursor-pointer"
-                            title="View Invoice"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        )}
                         {latestInvoice && hasRemainingBalance && (
                           <Button
                             onClick={() =>
@@ -430,9 +443,9 @@ export function InwardRegisterTable({
                           </Button>
                         )}
 
-                        <div className="w-[84px]">
+                        <div className="w-[92px]">
                           <Dropdown
-                            className="w-[84px] space-y-0"
+                            className="w-[92px] space-y-0"
                             placeholder={
                               <span className="font-semibold text-slate-700 text-xs">
                                 Actions

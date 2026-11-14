@@ -17,6 +17,7 @@ interface JobAssignmentsContentProps {
   branches: any[];
   assignments: any[];
   employees: any[];
+  unassignedJobCards?: any[];
 }
 
 import { PageHeader } from "@/components/modules/PageHeader";
@@ -29,7 +30,8 @@ export function JobAssignmentsContent({
   userRoles = [],
   branches,
   assignments,
-  employees
+  employees,
+  unassignedJobCards = []
 }: JobAssignmentsContentProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -62,7 +64,14 @@ export function JobAssignmentsContent({
       <div>
 
         {isManager && activeTab === "list" && (
-          <AllJobsTab assignments={assignments} branches={branches} employees={employees} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
+          <AllJobsTab 
+            assignments={assignments} 
+            branches={branches} 
+            employees={employees} 
+            filterStatus={filterStatus} 
+            setFilterStatus={setFilterStatus}
+            unassignedJobCards={unassignedJobCards}
+          />
         )}
         {activeTab === "my" && (
           <MyAssignmentsTab 

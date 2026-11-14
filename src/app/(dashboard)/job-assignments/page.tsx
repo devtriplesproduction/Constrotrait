@@ -3,7 +3,7 @@ import { getAuthenticatedUserWithRoles } from "@/services/auth.service";
 import { canManageJobAssignments } from "@/config/roles";
 import { JobAssignmentsContent } from "@/components/modules/job-assignments/JobAssignmentsContent";
 import { getActiveBranchesAction } from "@/actions/branch.actions";
-import { getAssignmentsAction, getMyAssignmentsAction } from "@/actions/job-assignment.actions";
+import { getAssignmentsAction, getMyAssignmentsAction, getUnassignedJobCardsAction } from "@/actions/job-assignment.actions";
 import { getAllEmployeesAction } from "@/actions/employee.actions";
 
 export default async function JobAssignmentsPage(props: {
@@ -26,15 +26,17 @@ export default async function JobAssignmentsPage(props: {
     redirect("/job-assignments?tab=my");
   }
 
-  const [branchesRes, assignmentsRes, employeesRes] = await Promise.all([
+  const [branchesRes, assignmentsRes, employeesRes, unassignedRes] = await Promise.all([
     getActiveBranchesAction(),
     getAssignmentsAction(),
-    getAllEmployeesAction()
+    getAllEmployeesAction(),
+    isManager ? getUnassignedJobCardsAction() : Promise.resolve({ success: true, data: [] })
   ]);
 
   const branches = branchesRes.success ? (branchesRes.data || []) : [];
   const assignments = assignmentsRes.success ? (assignmentsRes.data || []) : [];
   const employees = employeesRes.success ? (employeesRes.data || []) : [];
+  const unassignedJobCards = unassignedRes.success ? (unassignedRes.data || []) : [];
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
@@ -46,6 +48,7 @@ export default async function JobAssignmentsPage(props: {
         branches={branches}
         assignments={assignments}
         employees={employees}
+        unassignedJobCards={unassignedJobCards}
       />
     </div>
   );

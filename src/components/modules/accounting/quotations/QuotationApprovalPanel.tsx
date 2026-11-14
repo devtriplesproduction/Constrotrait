@@ -111,7 +111,7 @@ export function QuotationApprovalPanel({
   return (
     <div className="space-y-3">
       {/* Workflow Action Buttons */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         {/* Send to Client */}
         {canSend && (
           <button
@@ -121,10 +121,10 @@ export function QuotationApprovalPanel({
               setSelectedAction(selectedAction === "send" ? null : "send");
               setReason("");
             }}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
               selectedAction === "send"
                 ? "bg-blue-600 text-white border-blue-600 shadow-xs"
-                : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                : "bg-blue-50/80 text-blue-700 border-blue-200/80 hover:bg-blue-100 hover:border-blue-300"
             }`}
           >
             <Send className="w-3.5 h-3.5" />
@@ -141,10 +141,10 @@ export function QuotationApprovalPanel({
               setSelectedAction(selectedAction === "approve" ? null : "approve");
               setReason("");
             }}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
               selectedAction === "approve"
                 ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                : "bg-emerald-50/80 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100 hover:border-emerald-300"
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -161,10 +161,10 @@ export function QuotationApprovalPanel({
               setSelectedAction(selectedAction === "rework" ? null : "rework");
               setReason("");
             }}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
               selectedAction === "rework"
                 ? "bg-amber-600 text-white border-amber-600 shadow-xs"
-                : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                : "bg-amber-50/80 text-amber-800 border-amber-200/80 hover:bg-amber-100 hover:border-amber-300"
             }`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -181,10 +181,10 @@ export function QuotationApprovalPanel({
               setSelectedAction(selectedAction === "reject" ? null : "reject");
               setReason("");
             }}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
               selectedAction === "reject"
                 ? "bg-rose-600 text-white border-rose-600 shadow-xs"
-                : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                : "bg-rose-50/80 text-rose-700 border-rose-200/80 hover:bg-rose-100 hover:border-rose-300"
             }`}
           >
             <XCircle className="w-3.5 h-3.5" />
@@ -197,7 +197,7 @@ export function QuotationApprovalPanel({
           <button
             type="button"
             onClick={() => onRevise(quotation)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-all cursor-pointer shadow-2xs"
           >
             <Edit3 className="w-3.5 h-3.5" />
             <span>Revise (Draft Next Version)</span>
@@ -209,7 +209,7 @@ export function QuotationApprovalPanel({
           <button
             type="button"
             onClick={() => onConvertToInward(quotation)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-500 text-white shadow-orange-500/20 shadow-xs hover:bg-orange-600 transition-all cursor-pointer ml-auto"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-xs hover:bg-orange-600 transition-all cursor-pointer ml-auto"
           >
             <ArrowRight className="w-3.5 h-3.5" />
             <span>Convert to Inward</span>
@@ -221,7 +221,7 @@ export function QuotationApprovalPanel({
           <button
             type="button"
             onClick={() => onConvertToProforma(quotation)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 transition-all cursor-pointer ml-auto"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 transition-all cursor-pointer ml-auto"
           >
             <ArrowRight className="w-3.5 h-3.5" />
             <span>Create Proforma Invoice</span>
@@ -231,43 +231,51 @@ export function QuotationApprovalPanel({
 
       {/* Confirmation & Comment Box for Selected Action */}
       {selectedAction && (
-        <div className="p-3.5 rounded-xl border bg-slate-50 border-slate-200 space-y-2.5 animate-in fade-in duration-150">
+        <div className="p-4 rounded-2xl border bg-slate-50/90 border-slate-200/90 space-y-3 shadow-xs animate-in fade-in duration-200">
           <div className="flex items-center gap-2">
             {selectedAction === "approve" && (
               <>
-                <UserCheck className="w-4 h-4 text-emerald-600" />
-                <span className="text-xs font-bold text-slate-800">
+                <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <UserCheck className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-xs font-bold text-slate-900">
                   Confirm Quotation Approval
                 </span>
               </>
             )}
             {selectedAction === "send" && (
               <>
-                <Send className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-bold text-slate-800">
+                <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                  <Send className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-xs font-bold text-slate-900">
                   Confirm Sending Quotation to Client
                 </span>
               </>
             )}
             {selectedAction === "rework" && (
               <>
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-                <span className="text-xs font-bold text-slate-800">
+                <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-xs font-bold text-slate-900">
                   Request Quotation Rework / Revision
                 </span>
               </>
             )}
             {selectedAction === "reject" && (
               <>
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
-                <span className="text-xs font-bold text-slate-800">
+                <div className="w-6 h-6 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-xs font-bold text-slate-900">
                   Reject Quotation
                 </span>
               </>
             )}
           </div>
 
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-500 leading-relaxed">
             {selectedAction === "approve" &&
               "This marks the quotation as Approved and enables conversion to a Proforma or Final Invoice."}
             {selectedAction === "send" &&
@@ -291,7 +299,7 @@ export function QuotationApprovalPanel({
                     ? "Modification instructions (e.g., Apply 5% discount on cube testing)..."
                     : "Optional approval remarks or PO reference number..."
                 }
-                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white outline-none focus:border-orange-500"
+                className="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 bg-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition-all placeholder:text-slate-400"
               />
             </div>
           )}
@@ -304,7 +312,7 @@ export function QuotationApprovalPanel({
                 setSelectedAction(null);
                 setReason("");
               }}
-              className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-lg transition-all cursor-pointer"
+              className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200/70 rounded-xl transition-all cursor-pointer"
             >
               Cancel
             </button>
@@ -312,14 +320,14 @@ export function QuotationApprovalPanel({
               type="button"
               disabled={isPending}
               onClick={handleActionSubmit}
-              className={`px-4 py-1.5 text-xs font-bold rounded-lg text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+              className={`px-4 py-1.5 text-xs font-bold rounded-xl text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
                 selectedAction === "reject"
-                  ? "bg-rose-600 hover:bg-rose-700"
+                  ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"
                   : selectedAction === "rework"
-                  ? "bg-amber-600 hover:bg-amber-700"
+                  ? "bg-amber-600 hover:bg-amber-700 shadow-amber-600/20"
                   : selectedAction === "approve"
-                  ? "bg-emerald-600 hover:bg-emerald-700"
-                  : "bg-blue-600 hover:bg-blue-700"
+                  ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20"
+                  : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"
               }`}
             >
               {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
